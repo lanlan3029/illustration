@@ -3,6 +3,7 @@
     <div class="cropper_area">
      <div class="top-btn">
           <!-- 裁剪框 -->
+          
       <div class="cropper">
         <img id="image" ref="image" :src="curComponent.propValue" alt="" />
       </div>
@@ -171,6 +172,7 @@ export default {
         sureSave(){
           this.afterImg = this.myCropper
             .getCroppedCanvas({
+              fillColor:"#fff",
               imageSmoothingQuality:"high"
             })
             .toDataURL("image/jpeg")
@@ -183,6 +185,7 @@ export default {
         upload(){
           this.afterImg = this.myCropper
             .getCroppedCanvas({
+              fillColor:"#fff",
               imageSmoothingQuality:"high"
             })
             .toDataURL("image/jpeg")

@@ -2,19 +2,37 @@
   <div>
     <div class="content">
       <div class="content-left">
-       
-        <div class="item" v-for="(item, index) in books" :key="index">
-          
-            <div>
-              <el-image :src="item" class="image" fit="cover"  @click="toDetail()"/>
-            <div class="data">
-              <span class="name">快乐的玛丽</span>
-              <span class="icon"><i class="el-icon-edit"></i>123</span>
-               <span class="icon"><i class="el-icon-share"></i>2345</span>
-            </div>
-            </div>
-         
+        <div class="el-select">
+          <el-select
+            v-model="model"
+            style="width: 12vw;margin:0"
+            placeholder="排序方式"
+             size="mini"
+          >
+            <el-option
+              v-for="item in sortList"
+              :value="item.value"
+              :key="item.value"
+              >{{ item.label }}</el-option
+            >
+          </el-select>
         </div>
+
+       <div class="items" v-infinite-scroll="load" style="overflow:auto">
+        <div class="item" v-for="item in illsArry" :key="item._id">
+          
+          <div>
+            <el-image :src="(`http://10.0.0.31:3000/` + item.content)" class="image" fit="cover"  @click="toDetail(item._id)"/>
+          <div class="data">
+            <span class="name">{{ item.title }}</span>
+            <span class="icon"><i class="iconfont icon-aixin"></i>{{ item.like_num }}</span>
+             <span class="icon"><i class="iconfont icon-shoucang"></i>25</span>
+          </div>
+          </div>
+       
+      </div>
+       </div>
+    
       </div>
 
       <right-menu />
@@ -38,21 +56,8 @@ export default {
   },
   data() {
     return {
-      books: [
-        require("../assets/books/image-12085380--square.jpg"),
-        require("../assets/books/image-12085381--square.jpg"),
-        require("../assets/books/image-12085382--square.jpg"),
-        require("../assets/books/image-12085389--square.jpg"),
-        require("../assets/books/image-12086904--square.jpg"),
-        require("../assets/books/image-12086905--square.jpg"),
-        require("../assets/books/image-12086906--square.jpg"),
-        require("../assets/books/image-12086907--square.jpg"),
-        require("../assets/books/image-12086908--square.jpg"),
-        require("../assets/books/image-12087548--square.jpg"),
-        require("../assets/books/image-12089476--square.jpg"),
-        require("../assets/books/image-12089477--square.jpg"),
-        require("../assets/books/image-12089478--square.jpg"),
-      ],
+      illsArry:[],
+      num:1,
       sortList: [
         {
           value: "default",
@@ -73,10 +78,34 @@ export default {
     };
   },
   methods: {
-    toDetail() {
-      this.$router.push("/original-illustration/original-illusdetails");
+    toDetail(id) {
+      this.$router.push({name:'original-illusdetails',params:{illId:id}});
     },
+    getIllus(){
+      this.$http
+        .get(`/ill/?sort_param=heat&sort_num=desc&page=1`)
+        .then((response) => {
+          this.illsArry=response.data.message
+          console.log(this.illsArry)
+        })
+        .catch((error) => console.log(error));
+    },
+    async load(){
+      this.num++
+      try{
+         let res=await this.$http.get(`/ill/?sort_param=heat&sort_num=desc&page=`+this.num)
+         console.log(res.data.message)
+         this.illsArry=this.illsArry.concat(res.data.message)
+         console.log(this.illsArry)
+       } catch(err){
+         console.log(err)
+       }
+    }
+
   },
+  mounted(){
+    this.getIllus()
+  }
 };
 </script>
 <style scoped>
@@ -85,16 +114,21 @@ export default {
 }
 .content-left {
   width: 80vw;
-  padding: 0 7vw;
   height: 88vh;
-  display: flex;
-  flex-wrap: wrap;
   background-color: #f5f6fa;
   overflow: scroll;
 }
+.items{
+  width:100%;
+  padding: 0 7vw;
+  height:88vw;
+  margin-top:2vh;
+  display: flex;
+  flex-wrap: wrap;
+}
 .item {
   width: 20vw;
-  margin: 2vh 1vw;
+  margin:1vw;
   height: 16vw;
   overflow: hidden;
   border-radius: 4px;
@@ -118,7 +152,7 @@ color:#606266;
   align-items: center;
 }
 .data .name{
-  width:14vw;
+  width:12vw;
   display: inline-block;
  white-space:nowrap;
 overflow:hidden;
@@ -127,8 +161,21 @@ font-size:14px;
 font-weight: 500;
 }
 .data .icon{
-  width:3vw;
+  width:4vw;
   display: block;
-  font-size:12px;
+  font-size:14px;
+  text-align:center
+}
+.el-select {
+  margin-top: 2vh;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  height: 30px;
+  padding: 0 1vw;
 }
 </style>
+
+
+
+

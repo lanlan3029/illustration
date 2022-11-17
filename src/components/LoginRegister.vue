@@ -30,7 +30,7 @@
             <input v-model="emailCount.emailName" type="text" name="email" class="input" placeholder="请输入账号" /></div>
             <div class="logLine"><span>密 码</span>
             <input v-model="emailCount.emailPwd" type="text" name="password" class="input" placeholder="请输入密码" /></div>
-            <el-button @click="login" class="btn">登录/注册</el-button>
+            <el-button @click="register" class="btn">登录/注册</el-button>
             <div class="toregister" @click="toregister">没有账号？<span @click="toregister">注册</span></div>
         </div>
       </div>
@@ -39,6 +39,7 @@
 </template>
 
 <script>
+
 export default{
     data(){
         return{
@@ -61,11 +62,57 @@ export default{
           this.countLog=true;
         },
         emailIn(){
-          this.countLog=false;
-         
+          this.countLog=false; 
         },
         login(){
-          console.log("====")
+          this.$http
+        .post(`/pb/login`, {
+         email:this.count.name, 
+          password: this.count.pwd,
+        })
+        .then((response) => {
+          if (response.data.desc === "success") {
+            console.log(response)
+            this.closeMask();
+            localStorage.setItem("token", response.data.message);
+          } else {
+              this.$message({
+    message: '邮箱或密码错误',
+    type: 'warning',
+    offset:'180',
+  })
+              console.log(localStorage.getItem("token"));
+          }
+        })
+        .catch((error) => console.log(error));
+          
+
+
+        },
+        register(){
+          this.$http
+        .post(`/pb/regist/`, {
+         email:this.emailCount.emailName, 
+          password: this.emailCount.emailPwd,
+        })
+        .then((response) => {
+          if (response.data.desc === "success") {
+            this.countLog=true
+            this.$message({
+    message: '注册成功，请登陆吧',
+    type: 'success',
+    offset:'180',
+  })
+          } else {
+              this.$message({
+    message: '邮箱地址不规范',
+    type: 'warning',
+    offset:'180',
+  })
+          }
+        })
+        .catch((error) => console.log(error));
+          
         },
         toregister(){
           this.countLog=false;

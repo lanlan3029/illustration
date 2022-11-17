@@ -10,7 +10,6 @@
             <ul class="user-info">
                 <li @click="toMyHomePage">我的主页</li>
                   <li @click="toProfile">个人资料</li>
-                  <el-divider></el-divider>
                    <li >退出登陆</li>
             </ul>
 
@@ -31,7 +30,7 @@
 export default {
      data(){
         return{
-            hasLogin:true,
+            hasLogin:false,
             
         }
     },
@@ -97,10 +96,10 @@ background-image: url('../assets/images/search.svg');
     background-color: rgb(255, 255, 255);
      box-shadow: 2px 2px 2px 2px rgb(0 0 0 / 10%);
      width:196px;
-     height:224px;
+     height:178px;
      transition: .3s;
      border-radius: 4px;
-     z-index: 100;
+     z-index: 10000;
 }
 .user:hover .user-info{
     display: block;

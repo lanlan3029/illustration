@@ -121,7 +121,9 @@ export default {
    text-align: center;
    border-radius: 0 4vh 4vh 0;
 }
-
+.menu-item .iconfont{
+    font-size: 22px;
+}
 
 .menu-item:hover{
     background-color: #f5f6fa;

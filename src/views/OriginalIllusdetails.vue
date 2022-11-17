@@ -6,15 +6,15 @@
          <div class="info">   
         <el-avatar :src="details.author_avatar" :size="48" class="avatar"></el-avatar>
         <div class="text">
-          <div class="title"><span>{{details.title}}</span></div>
-          <div class="author" @click="toAuthor"><span>{{details.author_name}}</span><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></div>
+          <div class="title"><span>{{illsDetails.title}}</span></div>
+          <div class="author" ><span @click="toAuthor(illsDetails.ownerid)">{{authorDetails.name}}</span><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></div>
           </div>
         </div>
 
  <div class="book">
-          <div class="desc">{{details.desc}}</div>
+          <div class="desc">{{illsDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 73vw; height: 51.4vw" :src="details.src" /></div>
+          <el-image style="width: 73vw; height: 51.4vw" :src="`http://10.0.0.31:3000/`+illsDetails.content" fit="contain" /></div>
       </div>
          </div>
 
@@ -32,6 +32,7 @@
 // @ is an alias to /src
 
 
+
 import RightInfo from "../components/RightInfo.vue";
 import Suggestion from "../components/Suggestion.vue"
 export default {
@@ -42,14 +43,55 @@ export default {
   },
   data(){
     return{
+     id:this.$router.currentRoute.params.illId,
+      illsDetails:[],
+      authorDetails:[],
+      authorId:'',
       details:{id:1,title:"背景",desc:"就是一个背景,这里是一些关于插画内容的介绍",thumb:23,src:require("../assets/blush/background.svg"),author_id:12,author_avatar:require("../assets/blush/cat.png"),author_name:"进击的大佬"}
     }
   },
   methods:{
-    toAuthor(){
-      this.$router.push('/user/upload/compose-illustration/');
+    async getIllsDetails(){ 
+      try{
+       
+        let res=await this.$http.get(`/ill/`+this.id)
+        this.illsDetails=res.data.message 
+      } catch(err){
+        console.log(err)
+      }
+    
+    },
+    setId(){
+      
+     this.authorId=this.illsDetails.ownerid
+    },
+    async getAuthor(){
+      try{
+        let res=await this.$http.get(`/user/`+this.authorId)
+        this.authorDetails=res.data.message 
+      } catch(err){
+        console.log(err)
+      }
+    },
+    attention(){
+    console.log("关注作者")
+   },
+   likeit(){
+    console.log("点赞")
+   },
+   collectit(){
+    console.log("收藏")
+   },
+    toAuthor(id){
+      this.$router.push({name:'user-g',params:{authorId:id}});
     }
+  },
+  async mounted(){
+     await this.getIllsDetails(); 
+     await this.setId();
+     await this.getAuthor();
   }
+
 };
 </script>
 <style scoped>

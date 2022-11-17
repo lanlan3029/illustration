@@ -7,12 +7,28 @@
   <el-step title="待审核"></el-step>
   <el-step title="发布成功"></el-step>
 </el-steps></div>
+
+<div class="middle">
+  <el-button type="primary" @click="upload">继续上传</el-button>
+  <el-button @click="home">返回首页</el-button>
+</div>
   </div>
 </div>
 </template>
 
 <script>
 export default {
+  data(){
+    return{}
+  },
+  methods:{
+   upload(){
+    this.$router.push('/user/upload');
+   },
+   home(){
+    this.$router.push('/')
+   }
+  }
     
 }
 </script>
@@ -38,5 +54,11 @@ export default {
   
   width:600px;
   margin:120px auto;
+}
+.box .middle{
+  width: 400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
 }
 </style>

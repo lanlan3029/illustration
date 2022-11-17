@@ -6,13 +6,20 @@ import store from './store'
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import '@/assets/iconfont/iconfont.css'
+
 import '@/styles/reset.css'
 import '@/styles/cropper.css'
 import 'animate.css';
 import '@/assets/lefticon/iconfont.css'
+import axios from 'axios'
 
 Vue.config.productionTip = false
 Vue.use(ElementUI)
+Vue.prototype.$http = axios
+
+axios.defaults.baseURL = 'http://10.0.0.31:3000'
+
+
 
 new Vue({
     router,

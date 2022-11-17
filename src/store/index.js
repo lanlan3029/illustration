@@ -36,7 +36,8 @@ export default new Vuex.Store({
         isLoginBox: false,
         //creation页面要上传的图片
         imgUrl: '',
-        editionItem: {}
+        editionItem: {},
+        books: [],
     },
     mutations: {
         ...contextmenu.mutations,
@@ -117,6 +118,9 @@ export default new Vuex.Store({
         },
         editionItemFun(state, item) {
             state.editionItem = item
+        },
+        addBooks(state, items) {
+            state.books = items
         }
 
     },

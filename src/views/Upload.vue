@@ -1,9 +1,10 @@
 <template>
     <div class="container">
     <ul class="upload">
+        <router-link to="/user/upload/upload-element"><li><i class="el-icon-apple"></i><span>上传图元</span></li></router-link>
        <router-link to="/user/upload/upload-local-illustration"><li><i class="el-icon-edit"></i><span>上传插画</span></li></router-link>
        <router-link to="/user/upload/compose-illustration"><li><i class="el-icon-document-add" ></i><span>合成绘本</span></li></router-link>
-       <router-link to="/user/upload/upload-loacl-pdf"><li><i class="el-icon-document-add" ></i><span>上传本地绘本</span></li></router-link>
+       <router-link to="/user/upload/upload-loacl-pdf"><li><i class="el-icon-reading" ></i><span>上传本地绘本</span></li></router-link>
     </ul> 
     </div>
 </template>
@@ -18,10 +19,10 @@ export default {
 .container{
     width:100vw;
     height:90vh;
-    padding:15vw;      
+    padding:10vw;      
 }
 .upload{
-    width:70vw;
+    width:80vw;
     background-color: #fff;
     list-style: none;
     display: flex;

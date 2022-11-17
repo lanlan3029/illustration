@@ -7,7 +7,7 @@
                     <li @click="paste">粘贴</li>
                     <li @click="cut">剪切</li>
                     <li @click="deleteComponent">删除</li>
-                    <li v-show="curComponent.component !== 'v-text'" @click="cropper">裁剪</li>
+                    <li v-show="curComponent.component !== 'v-text'" @click="cropper">编辑</li>
                     <!-- <li>锁定</li>
                     <li>置顶</li>
                     <li>置底</li>

@@ -44,14 +44,14 @@
           <ul class="illu-items">
             <li
               class="illu-item"
-              v-for="(item, index) in pictures.slice(0, 4)"
+              v-for="(item, index) in illArry.slice(0, 4)"
               :key="index"
             >
               <el-image
-                :src="item.src"
-                style="width: 15vw; height: 10vw"
-                fit="contain"
-                @click="goIllusDetails"
+                :src="`http://10.0.0.31:3000/`+item.content"
+                style="width: 16vw; height: 11.26vw"
+                fit="cover"
+                @click="goIllusDetails(item._id)"
               ></el-image>
             </li>
           </ul>
@@ -67,12 +67,12 @@
           <ul class="books-items">
             <li
               class="books-items"
-              v-for="(item, index) in pictures.slice(4, 8)"
+              v-for="(item, index) in bookArry.slice(4, 8)"
               :key="index"
             >
               <el-image
-                :src="item.src"
-                style="width: 15vw; height: 10vw"
+                :src="`http://10.0.0.31:3000/`+item.content"
+                style="width: 16vw; height: 11.26vw"
                 fit="contain"
               ></el-image>
             </li>
@@ -121,6 +121,7 @@
 export default {
   data() {
     return {
+      id:this.$router.currentRoute.params.authorId,
       activeIndex: "1",
       details: {
         id: 1,
@@ -132,71 +133,8 @@ export default {
         author_avatar: require("../assets/blush/cat.png"),
         author_name: "进击的大佬",
       },
-      pictures: [
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background2.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/bike.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/cat.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/decoration.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/desk.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/flower.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people2.svg"),
-        },
-      ],
+      illArry:[],
+      bookArry:[],
     };
   },
   methods: {
@@ -204,6 +142,42 @@ export default {
       this.activeIndex = key;
       console.log(key, keyPath);
     },
+    //获取该用户的所有插画
+    async getIlls(){ 
+      try{
+        let res = await this.$http.get(`/ill/`,{
+          params:{
+            ownerid:this.id
+          }
+        })
+        this.illArry=res.data.message 
+        console.log(this.illArry)
+        
+      } catch(err){
+        console.log(err)
+      }
+    
+    },
+      //获取该用户的所有绘本
+      async getbook(){ 
+      try{
+        let res = await this.$http.get(`/book/`,{
+          params:{
+            ownerid:this.id
+          }
+        })
+        this.bookArry=res.data.message 
+        console.log(this.bookArry)
+        
+      } catch(err){
+        console.log(err)
+      }
+    
+    },
+
+
+
+
     goPdf() {
       this.$router.push("/user/upload/compose-illustration/");
     },
@@ -216,10 +190,15 @@ export default {
     goMybooks() {
       this.activeIndex = 3;
     },
-    goIllusDetails() {
-      this.$router.push("/original-illustration/original-illusdetails");
+    goIllusDetails(id) {
+      this.$router.push({name:'original-illusdetails',params:{illId:id}});
     },
   },
+
+  mounted(){
+    this.getIlls()
+    this.getBook()
+  }
 };
 </script>
 
@@ -263,7 +242,7 @@ export default {
   height: 38vh;
   background-color: #fff;
   margin-top: 8px;
-  padding: 4vh;
+  padding: 2vw;
   font-size: 18px;
 }
 .container .left .illustration .title {
@@ -278,13 +257,17 @@ export default {
   list-style: none;
   margin-top: 4vh;
   display: flex;
-  justify-content: space-between;
+  
 }
 .container .left .illustration ul li {
-  width: 15vw;
-  height: 10vw;
+  width: 16vw;
+  height: 11.26vw;
   background-color: #f5f6fa;
   cursor: pointer;
+  margin-right: 3vw;
+}
+.container .left .illustration ul li:last-child{
+  margin-right: 0;
 }
 .container .left .books ul {
   list-style: none;
@@ -293,10 +276,14 @@ export default {
   justify-content: space-between;
 }
 .container .left .books ul li {
-  width: 15vw;
-  height: 10vw;
+  width: 16vw;
+  height: 11.26vw;
   background-color: #f5f6fa;
   cursor: pointer;
+  margin-right: 3vw;
+}
+.container .left .books ul li:last-child{
+  margin-right: 0;
 }
 .container .right {
   width: 20vw;

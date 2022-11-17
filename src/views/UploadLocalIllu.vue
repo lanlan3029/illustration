@@ -7,6 +7,8 @@
     <el-upload
   action="https://jsonplaceholder.typicode.com/posts/"
   list-type="picture-card"
+  :auto-upload="false"
+  :on-change="fileChange"
   :on-preview="handlePictureCardPreview"
   :on-remove="handleRemove">
   <i class="el-icon-plus"></i>
@@ -18,11 +20,21 @@
   <el-form-item label="作品名称">
     <el-input v-model="form.name"></el-input>
   </el-form-item>
+  <el-form-item label="类别"> 
+    <el-select v-model="form.category" placeholder="请选择图元类别">
+      <el-option label="生活日常" value="daily"></el-option>
+      <el-option label="欢庆节日" value="festival"></el-option>
+       <el-option label="校园生活" value="school"></el-option>
+        <el-option label="动物世界" value="animal"></el-option>
+        <el-option label="奇幻想象" value="fantasy"></el-option>
+        <el-option label="其他" value="others"></el-option>
+    </el-select>
+  </el-form-item>
   <el-form-item label="作品描述">
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn">上传</el-button>
+    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">上传</el-button>
    
   </el-form-item>
 
@@ -38,9 +50,11 @@ export default {
       return {
         dialogImageUrl: '',
         dialogVisible: false,
+        disabled:false,
         form: {
           name: '',
-          desc: ''
+          desc: '',
+          category:''
         }
       };
     },
@@ -52,11 +66,39 @@ export default {
         this.dialogImageUrl = file.url;
         this.dialogVisible = true;
       },
-      onSubmit() {
-        console.log('submit!');
+      fileChange(file){
+            
+            this.fileStore=file.raw
+            console.log(this.fileStore)
+         },
+         onSubmit(){
+          this.disabled = true;
+           let formdata = new window.FormData()
+           formdata.append('picture',this.fileStore)
+           formdata.append('title',this.form.name)
+           formdata.append('description',this.form.desc)
+           formdata.append('type',this.form.category)
+           console.log(formdata)
+        this.$http
+       .post(`/ill/`,formdata
+       ,{
+         headers:{
+           'Content-Type': 'multipart/form-data',
+           "Authorization":"Bearer "+localStorage.getItem("token")
+         }
+       })
+       .then((response) => {
+         if (response.data.desc === "success") {
+          this.$router.push('/user/upload/submit-res/')        
+         } else {
+            this.$router.push({path:'/errorpage'});   
+         }
+       })
+       .catch((error) => console.log(error));
+   },
       }
     }
-}
+
 </script>
 
 <style scoped>

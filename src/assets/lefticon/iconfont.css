@@ -1,21 +1,34 @@
 @font-face {
     font-family: "iconfont";
     /* Project id 3678405 */
-    src: url('iconfont.woff2?t=1664520898882') format('woff2'), url('iconfont.woff?t=1664520898882') format('woff'), url('iconfont.ttf?t=1664520898882') format('truetype');
+    src: url('iconfont.woff2?t=1668601661840') format('woff2'), url('iconfont.woff?t=1668601661840') format('woff'), url('iconfont.ttf?t=1668601661840') format('truetype');
 }
 
 .iconfont {
     font-family: "iconfont" !important;
-    font-size: 22px;
     font-style: normal;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-aixin:before {
+    content: "\e8ab";
+}
+
+.icon-shoucang:before {
+    content: "\e8b9";
+}
+
+.icon-aixin1:before {
+    content: "\e8c3";
+}
+
+.icon-shoucang1:before {
+    content: "\e8c6";
+}
+
 .icon-shoucang-shoucang:before {
     content: "\e607";
-    font-size: 30px;
-    color: #fff;
 }
 
 .icon-jimu2:before {
@@ -48,8 +61,6 @@
 
 .icon-dianzan_kuai:before {
     content: "\ec8c";
-    font-size: 30px;
-    color: #fff;
 }
 
 .icon-tupian:before {

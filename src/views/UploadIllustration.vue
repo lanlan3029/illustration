@@ -8,6 +8,14 @@
   <el-form-item label="作品名称">
     <el-input v-model="form.name"></el-input>
   </el-form-item>
+  <el-form-item label="类别">
+    <el-select v-model="form.category" placeholder="请选择图元类别">
+      <el-option label="节庆" value="shanghai"></el-option>
+      <el-option label="风景" value="beijing"></el-option>
+       <el-option label="日常" value="beijing"></el-option>
+        <el-option label="氛围" value="beijing"></el-option>
+    </el-select>
+  </el-form-item>
   <el-form-item label="作品描述">
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
@@ -31,7 +39,9 @@ export default {
     return{
      form: {
           name: '',
-          desc: ''
+          desc: '',
+          category:'',
+          content:this.imgUrl
         }
     }
   },
@@ -44,6 +54,7 @@ export default {
   },
   methods:{
     onSubmit(){
+      console.log(this.imgUrl)
       this.$router.push('/user/upload/compose-illustration/submit-res/')
     },
  

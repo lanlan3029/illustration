@@ -30,18 +30,21 @@
             <el-radio-button label="英语"></el-radio-button>
           </el-radio-group>
         </div>
+        
+        <div class="items" v-infinite-scroll="load" style="overflow:auto">
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
-              <el-image :src="item" class="image" fit="cover" @click="toDetail()"/>
+              <el-image :src="(`http://10.0.0.31:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
                <div class="data">
-              <span class="name">快乐的玛丽</span>
-              <span class="icon"><i class="el-icon-edit"></i>123</span>
+              <span class="name">{{item.title}}</span>
+              <span class="icon"><i class="el-icon-edit"></i>{{item.like_num}}</span>
                <span class="icon"><i class="el-icon-share"></i>2345</span>
             </div>
             </div>
           </el-card>
         </div>
+      </div>
       </div>
 
       <right-menu />
@@ -53,6 +56,7 @@
 // @ is an alias to /src
 
 import RightMenu from "../components/RightMenu.vue";
+import {mapState} from "vuex"
 
 export default {
   name: "Home",
@@ -60,23 +64,14 @@ export default {
     
     RightMenu,
   },
+  computed:mapState([
+        "books"
+    ]),
   data() {
     return {
-      books: [
-        require("../assets/books/image-12085380--square.jpg"),
-        require("../assets/books/image-12085381--square.jpg"),
-        require("../assets/books/image-12085382--square.jpg"),
-        require("../assets/books/image-12085389--square.jpg"),
-        require("../assets/books/image-12086904--square.jpg"),
-        require("../assets/books/image-12086905--square.jpg"),
-        require("../assets/books/image-12086906--square.jpg"),
-        require("../assets/books/image-12086907--square.jpg"),
-        require("../assets/books/image-12086908--square.jpg"),
-        require("../assets/books/image-12087548--square.jpg"),
-        require("../assets/books/image-12089476--square.jpg"),
-        require("../assets/books/image-12089477--square.jpg"),
-        require("../assets/books/image-12089478--square.jpg"),
-      ],
+      bookArry:[],
+     toolArry:[],
+     imgUrl:[],
       sortList: [
         {
           value: "default",
@@ -97,9 +92,59 @@ export default {
     };
   },
   methods: {
-    toDetail() {
-      this.$router.push("/original-books/original-bookdetails");
+    toDetail(id) {
+      this.$router.push({name:'original-bookdetails',params:{bookId:id}});
     },
+   async getBooks(){
+      try{
+        let res=await this.$http.get(`/book`)
+        this.toolArry=res.data.message
+        
+      }catch(err){
+        console.log(err)
+      }
+
+    },
+   async getImgUrl(){
+    for(var i=0;i<this.toolArry.length;i++){
+      //获取绘本图片ID
+      let tool=this.toolArry[i].content
+      //遍历绘本图片ID，替换成图片URL
+      for(var j=0;j<tool.length;j++){
+        try{
+          let res=await this.$http.get(`/ill/`+tool[j])
+          this.toolArry[i].content[j]=res.data.message.content
+        } catch(err){
+          console.log(err)
+        }
+
+      } 
+    }  
+   },
+   setBooks(){
+    this.$store.commit("addBooks",this.toolArry)
+    
+   },
+
+   async load(){
+      this.num++
+      try{
+         let res=await this.$http.get(`/ill/?sort_param=heat&sort_num=desc&page=`+this.num)
+         console.log(res.data.message)
+         this.illsArry=this.illsArry.concat(res.data.message)
+         console.log(this.illsArry)
+       } catch(err){
+         console.log(err)
+       }
+    }
+
+  },
+  async mounted(){
+    await this.getBooks();
+    await this.getImgUrl();
+   await this.setBooks();
+   console.log(this.books)
+    
   },
 };
 </script>
@@ -109,12 +154,17 @@ export default {
 }
 .content-left {
   width: 80vw;
-  padding: 0 7vw;
   height: 88vh;
-  display: flex;
-  flex-wrap: wrap;
   background-color: #f5f6fa;
   overflow: scroll;
+}
+.items{
+  width:100%;
+  padding: 0 7vw;
+  height:88vw;
+  margin-top:2vh;
+  display: flex;
+  flex-wrap: wrap;
 }
 .item {
   width: 20vw;

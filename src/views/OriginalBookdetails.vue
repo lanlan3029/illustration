@@ -4,17 +4,17 @@
     <div class="content">
       <div class="content-left">
         <div class="info">   
-        <el-avatar :src="details.author_avatar" :size="48" class="avatar"></el-avatar>
+        <el-avatar :src="authorDetails.avatar" :size="48" class="avatar"></el-avatar>
         <div class="text">
-          <div class="title"><span>{{details.title}}</span><el-tag size="mini" type="info">{{details.category}}</el-tag></div>
-          <div class="author" @click="toAuthor"><span>{{details.author_name}}</span><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></div>
+          <div class="title"><span>{{bookDetails.title}}</span><el-tag size="mini" type="info">{{bookDetails.category}}</el-tag></div>
+          <div class="author"><span @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></div>
           </div>
           </div>
     
          <div class="book">
-          <div class="desc">{{details.desc}}</div>
-        <div v-for="(item, index) in details.src" :key="index" class="item">
-        <el-image :src="item" style="width:984.3px;height:699px" fit="cover"></el-image>
+          <div class="desc">{{bookDetails.desc}}</div>
+        <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
+        <el-image :src="(`http://10.0.0.31:3000/`+item)" style="width:984.3px;height:699px" fit="cover"></el-image>
       </div>
          </div>
 
@@ -42,6 +42,9 @@
 
 
 import RightMenu from "../components/RightMenu.vue";
+
+import {mapState} from "vuex"
+
 export default {
   name: "Home",
   components: {
@@ -50,29 +53,56 @@ export default {
   },
   data(){
     return{
-       details:{id:1,title:"《沉香如屑》",category:"益智",desc:"什么烂电视呀明天是国庆肌肉国庆节啊哟房要放七天假怎么玩怎么玩怎么玩，到处查的那么严，怎么玩怎么玩",thumb:23,src:[require("../assets/books/image-12085380--square.jpg"),
-        require("../assets/books/image-12085381--square.jpg"),
-        require("../assets/books/image-12085382--square.jpg"),
-        require("../assets/books/image-12085389--square.jpg"),
-        require("../assets/books/image-12086904--square.jpg"),
-        require("../assets/books/image-12086905--square.jpg"),
-        require("../assets/books/image-12086906--square.jpg")],author_id:12,author_avatar:require("../assets/blush/cat.png"),author_name:"进击的大佬"}
-     
-    } 
+      id:this.$router.currentRoute.params.bookId,
+      authorId:'',
+      bookDetails:[],
+      authorDetails:[],
+    }
   },
+  computed:mapState([
+        "books"
+    ]),
+
   methods:{
    attention(){
     console.log("关注作者")
    },
+   getBookDetails(){
+    let tool=this.books.filter(item=>{return item._id==this.id})
+    
+    this.bookDetails=tool[0]
+    console.log(this.bookDetails)
+    
+   },
+   setId(){
+      
+      this.authorId=this.bookDetails.ownerid
+     },
+     async getAuthor(){
+       try{
+         let res=await this.$http.get(`/user/`+this.authorId)
+         this.authorDetails=res.data.message 
+       } catch(err){
+         console.log(err)
+       }
+     },
    likeit(){
     console.log("点赞")
    },
    collectit(){
     console.log("收藏")
-   }
+   },
+   toAuthor(id){
+      this.$router.push({name:'user-g',params:{authorId:id}});
+    }
   },
-  mounted(){
-  
+  async mounted(){
+    await this.getBookDetails();
+    await this.setId();
+    await this.getAuthor();
+   
+
+    
   }
 };
 </script>
@@ -158,7 +188,7 @@ export default {
     padding:60px 0;
 }
 .content-left .footer ul li{
- 
+ cursor:pointer;
   width:56px;
   height:56px;
  

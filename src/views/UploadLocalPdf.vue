@@ -23,17 +23,19 @@
   </el-form-item>
    <el-form-item label="类别">
     <el-select v-model="form.category" placeholder="请选择绘本类别">
-      <el-option label="情绪管理" value="shanghai"></el-option>
-      <el-option label="科普百科" value="beijing"></el-option>
-       <el-option label="认真学习" value="beijing"></el-option>
-        <el-option label="品格习惯" value="beijing"></el-option>
+      <el-option label="儿童读物" value="reading"></el-option>
+      <el-option label="习惯养成" value="habit"></el-option>
+       <el-option label="英语启蒙" value="english"></el-option>
+        <el-option label="数学启蒙" value="math"></el-option>
+        <el-option label="科普百科" value="knowledge"></el-option>
+        <el-option label="其他" value="others"></el-option>
     </el-select>
   </el-form-item>
   <el-form-item label="作品描述">
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn">上传</el-button>
+    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">上传</el-button>
   </el-form-item>
 
 </el-form>
@@ -47,6 +49,7 @@ export default {
    data() {
       return {
         fileList: [],
+        disabled:false,
         form: {
           name: '',
           category:'',
@@ -62,6 +65,8 @@ export default {
       },
     
       onSubmit() {
+        this.disabled = true;
+        this.$router.push('/user/upload/submit-res/')
         console.log('submit!');
       }
     }
