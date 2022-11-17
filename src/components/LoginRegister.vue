@@ -75,6 +75,8 @@ export default{
             console.log(response)
             this.closeMask();
             localStorage.setItem("token", response.data.message);
+            localStorage.setItem("id", response.data.user_id);
+
           } else {
               this.$message({
     message: '邮箱或密码错误',

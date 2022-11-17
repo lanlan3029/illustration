@@ -129,7 +129,7 @@ export default {
    async load(){
       this.num++
       try{
-         let res=await this.$http.get(`/ill/?sort_param=heat&sort_num=desc&page=`+this.num)
+         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
          console.log(res.data.message)
          this.illsArry=this.illsArry.concat(res.data.message)
          console.log(this.illsArry)
@@ -165,6 +165,7 @@ export default {
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
+  align-content:flex-start 
 }
 .item {
   width: 20vw;

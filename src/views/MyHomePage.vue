@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="left">
-      <el-backtop target=".page-component__scroll .el-scrollbar__wrap"></el-backtop>
+     
       <el-menu
         :default-active="activeIndex"
         class="el-menu-demo"
@@ -28,14 +28,14 @@
           <ul class="illu-items">
             <li
               class="illu-item"
-              v-for="(item, index) in pictures.slice(0, 4)"
+              v-for="(item, index) in illArr.slice(0, 4)"
               :key="index"
             >
               <el-image
-                :src="item.src"
+                :src="(`http://10.0.0.31:3000/`+item.content)"
                 style="width: 14vw; height: 9.85vw"
                 fit="contain"
-                @click="goIllusDetails"
+                @click="goIllusDetails(item._id)"
               ></el-image>
             </li>
           </ul>
@@ -51,13 +51,14 @@
           <ul class="books-items">
             <li
               class="books-items"
-              v-for="(item, index) in pictures.slice(4, 8)"
+              v-for="(item, index) in myBooks.slice(0, 4)"
               :key="index"
             >
               <el-image
-                :src="item.src"
+                :src="(`http://10.0.0.31:3000/`+item.content[0])"
                 style="width: 14vw; height: 9.85vw"
                 fit="contain"
+                @click="goBookDetails(item._id)"
               ></el-image>
             </li>
           </ul>
@@ -68,12 +69,12 @@
         <ul class="index2-items">
           <li
             class="index2-item"
-            v-for="(item, index) in pictures"
+            v-for="(item, index) in illArr"
             :key="index"
           >
             <div class="index2-avatar">
               <el-image
-                :src="item.src"
+                :src="(`http://10.0.0.31:3000/`+item.content)"
                 style="width: 250px; height: 176px"
                 fit="contain"
               ></el-image>
@@ -96,20 +97,21 @@
         <ul class="index2-items">
           <li
             class="index2-item"
-            v-for="(item, index) in books"
+            v-for="(item, index) in myBooks"
             :key="index"
           >
             <div class="index2-avatar">
               <el-image
-                :src="item.src"
+                :src="(`http://10.0.0.31:3000/`+item.content[0])"
                 style="width: 250px; height: 176px"
                 fit="contain"
+                @click="goBookDetails"
               ></el-image>
             </div>
    <el-descriptions class="margin-top" :column="2" :colon="false">
     <template slot="title">{{item.title}}</template>
     <template slot="extra">
-      <el-button size="small" @click="goEdition(item)">编辑</el-button>
+      <el-button size="small" @click="goBookEdition(item)">编辑</el-button>
     </template>
    <el-descriptions-item label="描述">kooriookami</el-descriptions-item>
     <el-descriptions-item></el-descriptions-item>
@@ -136,7 +138,7 @@
               :key="index"
             >
               <el-image
-                :src="item.src"
+                :src="(`http://10.0.0.31:3000/`+item.content)"
                 style="width: 14vw; height: 9.85vw"
                 fit="contain"
                 @click="goIllusDetails"
@@ -159,7 +161,7 @@
               :key="index"
             >
               <el-image
-                :src="item.src"
+                :src="(`http://10.0.0.31:3000/`+item.content)"
                 style="width: 14vw; height: 9.85vw"
                 fit="contain"
               ></el-image>
@@ -261,140 +263,16 @@
 </template>
 
 <script>
+import {mapState} from "vuex"
+
 export default {
   data() {
     return {
+      id:localStorage.getItem("id"),
       activeIndex: "1",
-      pictures: [
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background2.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/bike.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/cat.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/decoration.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/desk.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/flower.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people2.svg"),
-        },
-      ],
-      books: [
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background2.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/bike.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/cat.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/decoration.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/desk.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/flower.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people2.svg"),
-        },
-      ],
+      illArr:[],
+      
+      toolArr:[],
       focusList: [
         {
           id: 1,
@@ -527,6 +405,9 @@ export default {
       ],
     };
   },
+  computed:mapState([
+        "myBooks"
+    ]),
   methods: {
     handleSelect(key, keyPath) {
       this.activeIndex = key;
@@ -544,13 +425,19 @@ export default {
    goLocalPDF(){
        this.$router.push("/user/upload/upload-loacl-pdf");
    },
-    goIllusDetails() {
-      this.$router.push("/original-illustration/original-illusdetails");
+    goIllusDetails(id) {
+      this.$router.push({name:'user-illusdetails',params:{illId:id}});
+    },
+    goBookDetails(id){
+      this.$router.push({name:'user-bookdetails',params:{bookId:id}});
     },
     goEdition(item){
-        console.log(item)
-        this.$store.commit("editionItemFun",item)
-        this.$router.push("/user/upload/edition");
+        this.$store.commit(" editionIllusFun",item)
+        this.$router.push("/user/upload/editionillus");
+    },
+    goBookEdition(item){
+      this.$store.commit("editionBookFun",item)
+        this.$router.push("/user/upload/editionbook");
     },
     unFocus(){
         console.log("取关")
@@ -560,8 +447,56 @@ export default {
     },
     goMybooks(){
       this.activeIndex=3
-    }
+    },
+    //获取我的插画
+    async getIll(){
+      try{
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&`+this.id)
+          this.illArr=res.data.message
+          console.log(this.illArr)
+        } catch(err){
+          console.log(err)
+        }
+    },
+   // 获取我的绘本
+    async getBook(){
+      try{
+          let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&`+this.id)
+          this.toolArr=res.data.message
+          
+        } catch(err){
+          console.log(err)
+        }
+    },
+    //获取我的绘本的图片
+    async getImgUrl(){
+    for(var i=0;i<this.toolArr.length;i++){
+      //获取绘本图片ID
+      let tool=this.toolArr[i].content
+      //遍历绘本图片ID，替换成图片URL
+      for(var j=0;j<tool.length;j++){
+        try{
+          let res=await this.$http.get(`/ill/`+tool[j])
+          this.toolArr[i].content[j]=res.data.message.content
+        } catch(err){
+          console.log(err)
+        }
+
+      } 
+    }  
+   },
+   setBooks(){
+    this.$store.commit("addMyBooks",this.toolArr)
+    
+   },
   },
+  async mounted(){
+    await this.getIll();
+    await this.getBook();
+    await this.getImgUrl();
+    await this.setBooks();
+    
+  }
 };
 </script>
 

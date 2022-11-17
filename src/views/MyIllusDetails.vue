@@ -1,6 +1,5 @@
 <template>
-    
-    <div class="content">
+        <div class="content">
       <div class="top">
       <div class="content-left">
          <div class="info">   
@@ -17,11 +16,6 @@
           <el-image style="width: 73vw; height: 51.4vw" :src="`http://10.0.0.31:3000/`+illsDetails.content" fit="contain" /></div>
       </div>
          </div>
-
-
-     
-      
-
       <right-info />
       </div>
       <suggestion />

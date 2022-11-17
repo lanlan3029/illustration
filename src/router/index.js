@@ -107,10 +107,19 @@ const routes = [{
         }
     },
     {
-        path: '/user/upload/edition',
-        name: 'edition',
+        path: '/user/upload/editionillus',
+        name: 'edition-illus',
         component: () =>
-            import ( /* webpackChunkName: "upload-illustration" */ '../views/EditionWork.vue'),
+            import ( /* webpackChunkName: "edition-illus" */ '../views/EditionIll.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
+        path: '/user/upload/editionbook',
+        name: 'edition-book',
+        component: () =>
+            import ( /* webpackChunkName: "edition-book" */ '../views/EditionBook.vue'),
         meta: {
             requiresAuth: true
         }
@@ -167,12 +176,7 @@ const routes = [{
             import ( /* webpackChunkName: "user" */ '../views/UserG.vue'),
         props: true,
     },
-    {
-        path: '/test',
-        name: 'test',
-        component: () =>
-            import ( /* webpackChunkName: "test" */ '../views/test.vue'),
-    },
+
     {
         path: '/user/savedraft',
         name: 'savedraft',
@@ -181,6 +185,26 @@ const routes = [{
         meta: {
             requiresAuth: true
         }
+    },
+    {
+        path: '/user/book/:bookId',
+        name: 'user-bookdetails',
+        component: () =>
+            import ( /* webpackChunkName: "mybook-details" */ '../views/MyBookDetails.vue'),
+        meta: {
+            requiresAuth: true
+        },
+        props: true,
+    },
+    {
+        path: '/user/illustration/:illId',
+        name: 'user-illusdetails',
+        component: () =>
+            import ( /* webpackChunkName: "myillus-details" */ '../views/MyIllusDetails.vue'),
+        meta: {
+            requiresAuth: true
+        },
+        props: true,
     },
 
 

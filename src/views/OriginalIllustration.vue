@@ -125,6 +125,7 @@ export default {
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
+  align-content:flex-start 
 }
 .item {
   width: 20vw;

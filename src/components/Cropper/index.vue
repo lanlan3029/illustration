@@ -136,6 +136,7 @@ export default {
                 zoomOnWheel:true,
                 // 设置裁剪框为固定的宽高比
                 aspectRatio: 13 / 9,
+                cropBoxResizable:true,
                 // 手动显示裁剪框
                 // crop(event) {
                 //     console.log(event.detail.x);
@@ -172,10 +173,10 @@ export default {
         sureSave(){
           this.afterImg = this.myCropper
             .getCroppedCanvas({
-              fillColor:"#fff",
+              fillColor:"transparent",
               imageSmoothingQuality:"high"
             })
-            .toDataURL("image/jpeg")
+            .toDataURL("png")
           toast("编辑成功","success")
           this.$store.commit("setComponentImage",this.afterImg)
           this.$store.commit("changeCropper",false)

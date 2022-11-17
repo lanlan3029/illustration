@@ -3,7 +3,7 @@
 <div class="box">
 <el-form label-width="100px">
     <el-form-item label="作品">
-    <el-image :src="editionItem.src" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="(`http://10.0.0.31:3000/`+editionItem.content)" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
     <el-input v-model="editionItem.title"></el-input>
