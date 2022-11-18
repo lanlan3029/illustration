@@ -2,9 +2,9 @@
   <div class="container">
     
     <div class="box">
-      <div v-if="imgToPDF[0].length==0" class="backAdd" @click="handleBack"><i class="el-icon-document-add" ></i><span>点击添加图片</span></div>
-      <div v-else v-for="(item, index) in imgToPDF[0]" :key="index" class="item">
-        <el-image :src="item" style="width:984.3px;height:699px" fit="contain"></el-image>
+      <div v-if="imgToPDF.length==0" class="backAdd" @click="handleBack"><i class="el-icon-document-add" ></i><span>点击添加图片</span></div>
+      <div v-else v-for="(item, index) in imgToPDF" :key="index" class="item">
+        <el-image :src="(`http://10.0.0.31:3000/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
       </div>
     </div>
     <div class="details">
@@ -27,9 +27,9 @@
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
   <div class="btn">
-   <el-button @click="downPDF()" >下载PDF</el-button>
-    <el-button @click="submit()">发布作品</el-button>
-     <el-button @click="draft()">保存草稿</el-button>
+   <el-button @click="downPDF" >下载PDF</el-button>
+    <el-button @click="submit">发布作品</el-button>
+     <el-button @click="draft">保存草稿</el-button>
   </div>
 
       </el-form>
@@ -47,6 +47,8 @@ import { mapState } from "vuex";
 export default {
   data() {
     return {
+      disabled:false,
+      checkedId:[],
       form: {
           title: '',
           category: '',
@@ -56,12 +58,50 @@ export default {
     }
   },
   computed: mapState(["imgToPDF"]),
+  mounted(){
+     console.log(this.imgToPDF)
+  },
   methods: {
     handleBack(){
       this.$router.push('/user/upload/compose-illustration/');
     },
-    submit(){
-     this.$router.push('/user/upload/submit-res/');
+    getcheckedId(){
+      this.checkedId.length=0;
+      for(var i=0;i<this.imgToPDF.length;i++){
+      //获取绘本图片ID
+      let tool=this.imgToPDF[i]._id
+     
+      //将图片id添加到checkedId
+      this.checkedId.push(tool)
+      
+    }  
+    },
+    async submit(){
+     await this.getcheckedId()
+     console.log(this.checkedId)
+     //this.$router.push('/user/upload/submit-res/');
+     let formdata = new window.FormData()
+           formdata.append('content',this.checkedId)
+           formdata.append('title',this.form.title)
+           formdata.append('description',this.form.desc)
+           formdata.append('type',this.form.category)
+     this.$http
+       .post(`/book/`,formdata
+       ,{
+         headers:{
+           'Content-Type': 'multipart/form-data',
+           "Authorization":"Bearer "+localStorage.getItem("token")
+         }
+       })
+       .then((response) => {
+         if (response.data.desc === "success") {
+          this.$router.push('/user/upload/submit-res/')        
+         } else {
+            this.$router.push({path:'/errorpage'});   
+         }
+       })
+       .catch((error) => console.log(error));
+     
     },
     draft(){
        console.log("作品已保存")

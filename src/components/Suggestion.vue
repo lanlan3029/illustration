@@ -1,7 +1,7 @@
 <template>
    <div class="box">
           <div class="item" v-for="(item, index) in pictures" :key="index">
-              <el-image :src="item.src" :fit="cover" style="width:20vw; height: 14.08vw"  class="avatar" @click="toDetail()"/>   
+              <el-image :src="item.src" fit="cover" style="width:20vw; height: 14.08vw"  class="avatar" @click="toDetail()"/>   
         </div>
 
    </div>

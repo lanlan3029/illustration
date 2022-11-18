@@ -32,8 +32,9 @@ export default new Vuex.Store({
         ifCropper: false,
         //合成PDF
         imgToPDF: [],
+        isLogin: false,
         isMask: false,
-        isLoginBox: false,
+
         //creation页面要上传的图片
         imgUrl: '',
         editionIllus: {},
@@ -107,14 +108,16 @@ export default new Vuex.Store({
             }
         },
         addImages(state, item) {
-            state.imgToPDF.push(item)
+            state.imgToPDF = state.imgToPDF.concat(item)
         },
         showMask(state) {
             state.isMask = true
         },
+
         closeMask(state) {
             state.isMask = false
         },
+
         uploadIllustration(state, item) {
             state.imgUrl = item
         },
@@ -129,6 +132,9 @@ export default new Vuex.Store({
         },
         addMyBooks(state, items) {
             state.myBooks = items
+        },
+        hasLogin(state) {
+            state.isLogin = true
         }
 
     },

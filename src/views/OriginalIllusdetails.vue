@@ -4,10 +4,12 @@
       <div class="top">
       <div class="content-left">
          <div class="info">   
-        <el-avatar :src="details.author_avatar" :size="48" class="avatar"></el-avatar>
+        <el-avatar :src="authorDetails.avatar" :size="48" class="avatar"></el-avatar>
         <div class="text">
           <div class="title"><span>{{illsDetails.title}}</span></div>
-          <div class="author" ><span @click="toAuthor(illsDetails.ownerid)">{{authorDetails.name}}</span><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></div>
+          <div class="author" ><span @click="toAuthor(illsDetails.ownerid)">{{authorDetails.name}}</span>
+            <span v-if="!hasLogin"><el-button type="text" size="mini" @click="toLogin">关注</el-button></span>
+            <span v-if="hasLogin"><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></span></div>
           </div>
         </div>
 
@@ -34,7 +36,8 @@
 
 
 import RightInfo from "../components/RightInfo.vue";
-import Suggestion from "../components/Suggestion.vue"
+import Suggestion from "../components/Suggestion.vue";
+import {mapState} from 'vuex'
 export default {
   name: "Home",
   components: {
@@ -43,12 +46,15 @@ export default {
   },
   data(){
     return{
+     hasLogin:this.isLogin,
      id:this.$router.currentRoute.params.illId,
       illsDetails:[],
       authorDetails:[],
       authorId:'',
     }
   },
+  computed:mapState([
+    "editionIllus","isMask","isLogin"]),
   methods:{
     async getIllsDetails(){ 
       try{  
@@ -82,12 +88,17 @@ export default {
    },
     toAuthor(id){
       this.$router.push({name:'user-g',params:{authorId:id}});
+    },
+    toLogin(){
+      this.$store.commit("showMask",true)
+      this.$store.commit("showLoginBox",true)
     }
   },
   async mounted(){
      await this.getIllsDetails(); 
      await this.setId();
      await this.getAuthor();
+     console.log(this.isLogin)
   }
 
 };

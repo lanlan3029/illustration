@@ -39,6 +39,7 @@
 </template>
 
 <script>
+import {mapState} from 'vuex'
 
 export default{
     data(){
@@ -54,9 +55,12 @@ export default{
             }
         }
     },
+    computed:mapState([
+   "isLogin"]),
     methods:{
         closeMask(){
-            this.$store.commit("closeMask")          
+            this.$store.commit("closeMask") 
+             
         },
         countIn(){
           this.countLog=true;
@@ -72,10 +76,11 @@ export default{
         })
         .then((response) => {
           if (response.data.desc === "success") {
-            console.log(response)
             this.closeMask();
+            this.$store.commit("hasLogin")    
             localStorage.setItem("token", response.data.message);
             localStorage.setItem("id", response.data.user_id);
+           
 
           } else {
               this.$message({
@@ -83,7 +88,7 @@ export default{
     type: 'warning',
     offset:'180',
   })
-              console.log(localStorage.getItem("token"));
+              console.log("login");
           }
         })
         .catch((error) => console.log(error));

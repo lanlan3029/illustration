@@ -107,22 +107,24 @@ const routes = [{
         }
     },
     {
-        path: '/user/upload/editionillus',
+        path: '/user/upload/editionillus/:illId',
         name: 'edition-illus',
         component: () =>
             import ( /* webpackChunkName: "edition-illus" */ '../views/EditionIll.vue'),
         meta: {
             requiresAuth: true
-        }
+        },
+        props: true,
     },
     {
-        path: '/user/upload/editionbook',
+        path: '/user/upload/editionbook/:bookId',
         name: 'edition-book',
         component: () =>
             import ( /* webpackChunkName: "edition-book" */ '../views/EditionBook.vue'),
         meta: {
             requiresAuth: true
-        }
+        },
+        props: true,
     },
     {
         path: '/user/upload/upload-local-illustration',
@@ -222,7 +224,7 @@ router.beforeEach((to, from, next) => {
         const token = localStorage.getItem("token")
         if ((!token || token == "undefined") && (to.name == 'creation' || to.name == 'upload' || to.name == 'user')) {
             store.state.isMask = true
-            store.state.isLoginBox = true
+
         } else {
             next();
         }

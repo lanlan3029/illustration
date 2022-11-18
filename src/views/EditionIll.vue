@@ -3,13 +3,21 @@
 <div class="box">
 <el-form label-width="100px">
     <el-form-item label="作品">
-    <el-image :src="(`http://10.0.0.31:3000/`+editionItem.content)" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="(`http://10.0.0.31:3000/`+ editionIllus.content)" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
-    <el-input v-model="editionItem.title"></el-input>
+    <el-input v-model="form.name"></el-input>
+  </el-form-item>
+  <el-form-item label="类别">
+    <el-select v-model="form.category" placeholder="请选择图元类别">
+      <el-option label="节庆" value="shanghai"></el-option>
+      <el-option label="风景" value="beijing"></el-option>
+       <el-option label="日常" value="beijing"></el-option>
+        <el-option label="氛围" value="beijing"></el-option>
+    </el-select>
   </el-form-item>
   <el-form-item label="作品描述">
-    <el-input type="textarea" v-model="editionItem.desc"></el-input>
+    <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
     <el-button type="primary" @click="onSubmit" class="btn">上传</el-button>
@@ -30,18 +38,24 @@ import {mapState} from 'vuex'
 export default {
   data(){
     return{
+      form: {
+          name: this.editionIllus.title,
+          desc: this.editionIllus.description,
+          category:this.editionIllus.type
+        }
    
     }
   },
      computed:mapState([
-    "editionItem"
+    "editionIllus"
   ]),
   
   mounted(){
-   console.log(this.editionItem)
+   console.log(this.editionIllus)
   },
   methods:{
     onSubmit(){
+
       this.$router.push('/user/upload/compose-illustration/submit-res/')
     },
     deleteWork(){

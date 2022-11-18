@@ -2,7 +2,7 @@
     <div class="container">
         <div class="title">请按顺序选择要合成绘本的图片，第一页为封面。</div>
        <ul class="items">
-        <li v-for="(item, index) in pictures" :key="index" @click="handleAdd(item)"><el-image :src="item" style="width:13vw; height: 8vw" fit="contain"></el-image><span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
+        <li v-for="(item, index) in illusArr" :key="index" @click="handleAdd(item)"><el-image :src="(`http://10.0.0.31:3000/`+item.content)" style="width:13vw; height: 8vw" fit="contain"></el-image><span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
        </ul>
     <div class="btn">
      <el-button @click="toPDF" type="info" size="medium">预览</el-button></div>
@@ -16,52 +16,36 @@ import {mapState} from "vuex"
 export default {
      data() {
     return {
-        pictures:[
-        require("../assets/blush/background.svg"),
-        require("../assets/blush/background2.svg"),
-        require("../assets/blush/bike.svg"),
-        require("../assets/blush/cat.png"),
-        require("../assets/blush/decoration.png"),
-        require("../assets/blush/decoration.svg"),
-        require("../assets/blush/desk.svg"),
-        require("../assets/blush/flower.svg"),
-        require("../assets/blush/people.svg"),
-        require("../assets/blush/people2.svg"),
-         require("../assets/blush/background.svg"),
-        require("../assets/blush/background2.svg"),
-        require("../assets/blush/bike.svg"),
-        require("../assets/blush/cat.png"),
-        require("../assets/blush/decoration.png"),
-        require("../assets/blush/decoration.svg"),
-        require("../assets/blush/desk.svg"),
-        require("../assets/blush/flower.svg"),
-        require("../assets/blush/people.svg"),
-         require("../assets/blush/background.svg"),
-        require("../assets/blush/background2.svg"),
-        require("../assets/blush/bike.svg"),
-        require("../assets/blush/cat.png"),
-        require("../assets/blush/decoration.png"),
-        require("../assets/blush/decoration.svg"),
-        require("../assets/blush/desk.svg"),
-        require("../assets/blush/flower.svg"),
-        require("../assets/blush/people.svg"),
-      ],
-      checkedImage:[]
+      illusArr:[],
+      checkedImage:[],
+      checkedId:[],
     };
   },
     computed:mapState([
         "imgToPDF",      
     ]),
   methods:{
+    //获取我的插画
+    async getIll(){
+      try{
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&`+this.id)
+          this.illusArr=res.data.message
+        } catch(err){
+          console.log(err)
+        }
+    },
     handleAdd(item){
        this.checkedImage.push(item)
     },
     toPDF(){
-      console.log(this.checkedImage)
       this.$router.push('/user/upload/compose-illustration/topdf');
        this.$store.commit("addImages",this.checkedImage)
-       console.log(this.imgToPDF)
+       
     }
+
+  },
+  async mounted(){
+    await this.getIll(); 
   }
 }
 </script>

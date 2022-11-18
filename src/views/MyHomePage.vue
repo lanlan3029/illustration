@@ -33,7 +33,7 @@
             >
               <el-image
                 :src="(`http://10.0.0.31:3000/`+item.content)"
-                style="width: 14vw; height: 9.85vw"
+                style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
               ></el-image>
@@ -56,7 +56,7 @@
             >
               <el-image
                 :src="(`http://10.0.0.31:3000/`+item.content[0])"
-                style="width: 14vw; height: 9.85vw"
+                style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"
               ></el-image>
@@ -75,8 +75,9 @@
             <div class="index2-avatar">
               <el-image
                 :src="(`http://10.0.0.31:3000/`+item.content)"
-                style="width: 250px; height: 176px"
+                style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
+                @click="goIllusDetails(item._id)"
               ></el-image>
             </div>
    <el-descriptions class="margin-top" :column="2" :colon="false">
@@ -103,9 +104,9 @@
             <div class="index2-avatar">
               <el-image
                 :src="(`http://10.0.0.31:3000/`+item.content[0])"
-                style="width: 250px; height: 176px"
+                style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
-                @click="goBookDetails"
+                @click="goBookDetails(item._id)"
               ></el-image>
             </div>
    <el-descriptions class="margin-top" :column="2" :colon="false">
@@ -139,7 +140,7 @@
             >
               <el-image
                 :src="(`http://10.0.0.31:3000/`+item.content)"
-                style="width: 14vw; height: 9.85vw"
+                style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails"
               ></el-image>
@@ -162,7 +163,7 @@
             >
               <el-image
                 :src="(`http://10.0.0.31:3000/`+item.content)"
-                style="width: 14vw; height: 9.85vw"
+                style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
               ></el-image>
             </li>
@@ -432,8 +433,8 @@ export default {
       this.$router.push({name:'user-bookdetails',params:{bookId:id}});
     },
     goEdition(item){
-        this.$store.commit(" editionIllusFun",item)
-        this.$router.push("/user/upload/editionillus");
+        this.$store.commit("editionIllusFun",item)
+        this.$router.push({name:'edition-illus',params:item._id});
     },
     goBookEdition(item){
       this.$store.commit("editionBookFun",item)

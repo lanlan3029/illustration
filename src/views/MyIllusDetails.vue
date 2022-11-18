@@ -1,24 +1,17 @@
 <template>
         <div class="content">
+          <el-button class="btn" @click="goEdition(illsDetails._id)">编辑</el-button>
       <div class="top">
-      <div class="content-left">
-         <div class="info">   
-        <el-avatar :src="details.author_avatar" :size="48" class="avatar"></el-avatar>
-        <div class="text">
-          <div class="title"><span>{{illsDetails.title}}</span></div>
-          <div class="author" ><span @click="toAuthor(illsDetails.ownerid)">{{authorDetails.name}}</span><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></div>
-          </div>
-        </div>
-
+        
  <div class="book">
           <div class="desc">{{illsDetails.description}}</div>
           <div class="image">
           <el-image style="width: 73vw; height: 51.4vw" :src="`http://10.0.0.31:3000/`+illsDetails.content" fit="contain" /></div>
       </div>
          </div>
-      <right-info />
-      </div>
-      <suggestion />
+     
+    
+     
     </div>
 </template>
 
@@ -27,23 +20,26 @@
 
 
 
-import RightInfo from "../components/RightInfo.vue";
-import Suggestion from "../components/Suggestion.vue"
+//import RightInfo from "../components/RightInfo.vue";
+//import Suggestion from "../components/Suggestion.vue"
 export default {
   name: "Home",
   components: {
 
-    RightInfo,Suggestion
+   
   },
   data(){
     return{
      id:this.$router.currentRoute.params.illId,
       illsDetails:[],
-      authorDetails:[],
-      authorId:'',
+      
     }
   },
   methods:{
+    goEdition(id){
+        this.$store.commit("editionIllusFun",this.illsDetails)
+        this.$router.push({name:'edition-illus',params:id});
+    },
     async getIllsDetails(){ 
       try{  
         let res=await this.$http.get(`/ill/`+this.id)
@@ -53,35 +49,12 @@ export default {
       }
     
     },
-    setId(){
-      
-     this.authorId=this.illsDetails.ownerid
-    },
-    async getAuthor(){
-      try{
-        let res=await this.$http.get(`/user/`+this.authorId)
-        this.authorDetails=res.data.message 
-      } catch(err){
-        console.log(err)
-      }
-    },
-    attention(){
-    console.log("关注作者")
-   },
-   likeit(){
-    console.log("点赞")
-   },
-   collectit(){
-    console.log("收藏")
-   },
-    toAuthor(id){
-      this.$router.push({name:'user-g',params:{authorId:id}});
-    }
+    
+   
   },
   async mounted(){
      await this.getIllsDetails(); 
-     await this.setId();
-     await this.getAuthor();
+   
   }
 
 };
@@ -96,30 +69,15 @@ export default {
     overflow-y: scroll;
 }
 .top{
-  width:100vw;
+  width:984.3px;;
   min-height:90vh;
-  margin:0;
+  margin:auto;
   display: flex;
   justify-content: flex-start;
 }
-.content-left {
-  width: 80vw;
-  min-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  
-}
-.content-left .info {
-  display: flex;
-  flex-wrap: nowrap;
-   width:984.3px;
-  padding:16px;
-  color:#606266;
-  margin:auto;
- 
 
-}
-.content-left .book{
+
+.book{
   width: 984.3px;
   min-height: 200px;
   background-color: #fff;
@@ -127,7 +85,7 @@ export default {
   font-size:20px;
   font-weight: 600;
 }
-.content-left .book .desc{
+ .book .desc{
   width:100%;
   min-height:116px;
   padding:48px;
@@ -137,37 +95,17 @@ export default {
   color:#1c345e;
   
 }
-.content-left .info .avatar{
-  cursor: pointer;
-}
-.content-left .image{
+ 
+ .image{
   background-color: #fff;
   margin-top:8px;
   
 }
-.content-left .info .text{
-  font-size:16px;
-  margin-left:16px;
-  font-weight: bold;
-}
-.content-left .info .text .title{
-   font-weight:700;
-  user-select: none;
-  height:24px;
-  line-height: 24px;
-}
+ 
 
-.content-left .info .text .author{
-   font-size:14px;
-   font-weight:400;
-   cursor:pointer
-}
-.content-left .info .text .author span{
-  margin-right: 16px;
-}
-
-.el-descriptions-item__cell{
-  padding:16px;
-  font-size:18px;
+.btn{
+  position: fixed;
+  right:5vw;
+  bottom: 3vw;
 }
 </style>
