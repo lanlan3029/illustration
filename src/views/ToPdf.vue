@@ -28,8 +28,8 @@
   </el-form-item>
   <div class="btn">
    <el-button @click="downPDF" >下载PDF</el-button>
-    <el-button @click="submit">发布作品</el-button>
-     <el-button @click="draft">保存草稿</el-button>
+    <el-button @click="submit" type="primary">发布作品</el-button>
+    
   </div>
 
       </el-form>
@@ -59,14 +59,13 @@ export default {
   },
   computed: mapState(["imgToPDF"]),
   mounted(){
-     console.log(this.imgToPDF)
+     
   },
   methods: {
     handleBack(){
       this.$router.push('/user/upload/compose-illustration/');
     },
     getcheckedId(){
-      this.checkedId.length=0;
       for(var i=0;i<this.imgToPDF.length;i++){
       //获取绘本图片ID
       let tool=this.imgToPDF[i]._id
@@ -76,17 +75,12 @@ export default {
       
     }  
     },
+    //上传绘本
     async submit(){
      await this.getcheckedId()
-     console.log(this.checkedId)
      //this.$router.push('/user/upload/submit-res/');
-     let formdata = new window.FormData()
-           formdata.append('content',this.checkedId)
-           formdata.append('title',this.form.title)
-           formdata.append('description',this.form.desc)
-           formdata.append('type',this.form.category)
      this.$http
-       .post(`/book/`,formdata
+       .post(`/book/`,{content:this.checkedId,title:this.form.title,description:this.form.desc,type:this.form.category}
        ,{
          headers:{
            'Content-Type': 'multipart/form-data',
@@ -111,6 +105,7 @@ export default {
       this.$message("正在下载");
 
       let target = document.getElementsByClassName("box");
+      console.log(target)
      //打印区域
       html2Canvas(target[0], {
         dpi: 172,
@@ -166,11 +161,11 @@ export default {
 }
 .btn {
   width: 984.3px;
-height:80px;
-padding:20px 0;
+height:120px;
+padding:40px 0;
   margin:auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   
   
 }

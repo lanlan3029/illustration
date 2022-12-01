@@ -2,7 +2,9 @@
     <div class="container">
         <div class="title">请按顺序选择要合成绘本的图片，第一页为封面。</div>
        <ul class="items">
-        <li v-for="(item, index) in illusArr" :key="index" @click="handleAdd(item)"><el-image :src="(`http://10.0.0.31:3000/`+item.content)" style="width:13vw; height: 8vw" fit="contain"></el-image><span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
+        <li v-for="(item, index) in illusArr" :key="index" @click="handleAdd(item)">
+          <el-image :src="(`http://10.0.0.31:3000/`+item.content)" style="width:13vw; height: 8vw" fit="contain"></el-image>
+          <span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
        </ul>
     <div class="btn">
      <el-button @click="toPDF" type="info" size="medium">预览</el-button></div>
@@ -38,6 +40,7 @@ export default {
        this.checkedImage.push(item)
     },
     toPDF(){
+      this.$store.commit("removeImages")
       this.$router.push('/user/upload/compose-illustration/topdf');
        this.$store.commit("addImages",this.checkedImage)
        
@@ -95,7 +98,7 @@ export default {
     height:9.23vw;
     display: block;
     position: relative;
-    top:-9.33vw;
+    top:-9.43vw;
      border-radius: 4px;
      font-size:60px;
      text-align: center;

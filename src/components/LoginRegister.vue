@@ -49,14 +49,14 @@ export default{
                 name:"",
                 pwd:""
             },
+            userid:"",
             emailCount:{
                 emailName:"",
                 emailPwd:"",
             }
         }
     },
-    computed:mapState([
-   "isLogin"]),
+    computed:mapState([]),
     methods:{
         closeMask(){
             this.$store.commit("closeMask") 
@@ -68,6 +68,18 @@ export default{
         emailIn(){
           this.countLog=false; 
         },
+        //获取用户信息
+        async getUser(){
+       try{
+        let res= await this.$http.get(`/user/`+this.userid)
+        let toolUser=res.data.message;
+        this.$store.commit("setUserInfo",toolUser)
+       }catch(err){
+        this.$store.commit('showMask')     
+    }
+    },
+       
+        //登陆
         login(){
           this.$http
         .post(`/pb/login`, {
@@ -77,11 +89,12 @@ export default{
         .then((response) => {
           if (response.data.desc === "success") {
             this.closeMask();
-            this.$store.commit("hasLogin")    
+              
             localStorage.setItem("token", response.data.message);
             localStorage.setItem("id", response.data.user_id);
-           
-
+            this.$store.commit("hasLogin",true)  
+            this.userid=localStorage.getItem("id")
+            this.getUser(this.userid)
           } else {
               this.$message({
     message: '邮箱或密码错误',
@@ -92,10 +105,9 @@ export default{
           }
         })
         .catch((error) => console.log(error));
-          
-
-
         },
+
+        //注册
         register(){
           this.$http
         .post(`/pb/regist/`, {
@@ -124,9 +136,8 @@ export default{
         toregister(){
           this.countLog=false;
         }
-
-
-    }
+    },
+   
 }
 </script>
 

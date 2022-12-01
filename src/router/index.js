@@ -55,9 +55,7 @@ const routes = [{
         name: 'connection',
         component: () =>
             import ( /* webpackChunkName: "connection" */ '../views/Connection.vue'),
-        meta: {
-            requiresAuth: true
-        }
+
     },
 
     {
@@ -121,6 +119,16 @@ const routes = [{
         name: 'edition-book',
         component: () =>
             import ( /* webpackChunkName: "edition-book" */ '../views/EditionBook.vue'),
+        meta: {
+            requiresAuth: true
+        },
+        props: true,
+    },
+    {
+        path: '/user/upload/edition-success',
+        name: 'edition-success',
+        component: () =>
+            import ( /* webpackChunkName: "edition-success" */ '../views/EditionRes.vue'),
         meta: {
             requiresAuth: true
         },
@@ -222,9 +230,9 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
-        if ((!token || token == "undefined") && (to.name == 'creation' || to.name == 'upload' || to.name == 'user')) {
+        const cango = (to.name == 'Home' || to.name == 'original-books' || to.name == 'original-illustration' || to.name == 'connection')
+        if ((!token || token == "undefined") && (!cango)) {
             store.state.isMask = true
-
         } else {
             next();
         }

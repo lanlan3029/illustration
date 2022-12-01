@@ -1,7 +1,7 @@
 <template>
     <div class="container">
 <div class="box">
-<el-form label-width="100px">
+<el-form label-width="100px" ref="form" :model="form">
     <el-form-item label="作品">
     <el-image :src="(`http://10.0.0.31:3000/`+ editionIllus.content)" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
@@ -20,7 +20,7 @@
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn">上传</el-button>
+    <el-button type="primary" @click="onSubmit(editionIllus._id)" class="btn">上传</el-button>
     <el-button  @click="deleteWork" class="btn">删除</el-button>
   </el-form-item>
 </el-form>
@@ -39,9 +39,9 @@ export default {
   data(){
     return{
       form: {
-          name: this.editionIllus.title,
-          desc: this.editionIllus.description,
-          category:this.editionIllus.type
+          name:'',
+          desc:'',
+          category:'',
         }
    
     }
@@ -51,12 +51,24 @@ export default {
   ]),
   
   mounted(){
-   console.log(this.editionIllus)
+   this.form.name= this.editionIllus.title,
+   this.form.desc=this.editionIllus.description,
+   this.form.category=this.editionIllus.type
   },
   methods:{
-    onSubmit(){
-
-      this.$router.push('/user/upload/compose-illustration/submit-res/')
+    onSubmit(id){
+      this.$http.put(`/ill/`+id,
+      {title:this.form.name,description:this.form.desc,type:this.form.category},
+      {
+         headers:{
+           "Authorization":"Bearer "+localStorage.getItem("token")
+         }})
+      .then((response)=>{
+        if (response.data.desc === "success"){
+          this.$router.push('/user/upload/edition-success')
+        }
+      })
+      
     },
     deleteWork(){
         console.log("删除")
@@ -77,6 +89,8 @@ export default {
 }
 .box{
     width:60vw;
+    height:90vh;
+    overflow-y: scroll;
 }
 .box>>>.el-input__inner{
     box-shadow:none;

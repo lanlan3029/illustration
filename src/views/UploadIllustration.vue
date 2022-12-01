@@ -20,7 +20,7 @@
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn">上传</el-button>
+    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">上传</el-button>
   </el-form-item>
 </el-form>
 
@@ -41,8 +41,8 @@ export default {
           name: '',
           desc: '',
           category:'',
-          content:this.imgUrl
-        }
+        },
+        disabled:false,
     }
   },
      computed:mapState([
@@ -50,13 +50,32 @@ export default {
   ]),
   
   mounted(){
-   
   },
   methods:{
     onSubmit(){
-      console.log(this.imgUrl)
-      this.$router.push('/user/upload/compose-illustration/submit-res/')
-    },
+          this.disabled = true;
+           let formdata = new window.FormData()
+           formdata.append('picture',this.imgUrl)
+           formdata.append('title',this.form.name)
+           formdata.append('description',this.form.desc)
+           formdata.append('type',this.form.category)
+        this.$http
+       .post(`/ill/`,formdata
+       ,{
+         headers:{
+           'Content-Type': 'multipart/form-data',
+           "Authorization":"Bearer "+localStorage.getItem("token")
+         }
+       })
+       .then((response) => {
+         if (response.data.desc === "success") {
+          this.$router.push('/user/upload/submit-res/')        
+         } else {
+            this.$router.push({path:'/errorpage'});   
+         }
+       })
+       .catch((error) => console.log(error));
+   },
  
   }
 }

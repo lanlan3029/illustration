@@ -6,7 +6,7 @@
       <el-button class="btn" @click="gobookEdition(bookDetails._id)">编辑</el-button>
     
          <div class="book">
-          <div class="desc">{{bookDetails.description}}</div>
+          <div class="desc"><h2>《{{bookDetails.title}}》</h2>{{bookDetails.description}}</div>
         <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
         <el-image :src="(`http://10.0.0.31:3000/`+item)" style="width:984.3px;height:699px" fit="cover"></el-image>
       </div>

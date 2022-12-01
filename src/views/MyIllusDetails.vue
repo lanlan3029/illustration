@@ -4,9 +4,9 @@
       <div class="top">
         
  <div class="book">
-          <div class="desc">{{illsDetails.description}}</div>
+          <div class="desc"><h2>《{{illsDetails.title}}》</h2>{{illsDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 73vw; height: 51.4vw" :src="`http://10.0.0.31:3000/`+illsDetails.content" fit="contain" /></div>
+          <el-image style="width: 73vw; height: 51.4vw" :src="(`http://10.0.0.31:3000/`+illsDetails.content)" fit="contain" /></div>
       </div>
          </div>
      

@@ -4,8 +4,8 @@
         class="editor"
         :class="{edit:isEdit}"
         :style="{
-            width:changeStyleWithScale(canvasStyleData.width) + 'px',
-            height:changeStyleWithScale(canvasStyleData.height) + 'px',
+            width:changeStyleWithScale(canvasStyleData.width) + 'vw',
+            height:changeStyleWithScale(canvasStyleData.height) + 'vw',
         }"
     >
         <!-- 网格线 -->
@@ -129,7 +129,7 @@ export default {
     margin: auto;
     background-color: #fff;
     perspective: 100px;
-    /* width: 1200px; */
+    /* width: 984.3px; */
     /* height: 740px; */
 }
 .component{

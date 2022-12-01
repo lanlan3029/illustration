@@ -11,10 +11,10 @@
         <el-menu-item index="1">主页</el-menu-item>
         <el-menu-item index="2">我的插画</el-menu-item>
         <el-menu-item index="3">我的绘本</el-menu-item>
-        <el-menu-item index="4">我的收藏</el-menu-item>
-        <el-menu-item index="5">我的关注</el-menu-item>
-        <el-menu-item index="6">我的粉丝</el-menu-item>
-        <el-menu-item index="7">我的草稿</el-menu-item>
+        <el-menu-item index="4">已收藏插画</el-menu-item>
+        <el-menu-item index="5">已收藏绘本</el-menu-item>
+        <el-menu-item index="6">我的关注</el-menu-item>
+        <el-menu-item index="7">我的粉丝</el-menu-item>
       </el-menu>
 
       <div v-if="activeIndex == 1">
@@ -64,7 +64,7 @@
           </ul>
         </div>
       </div>
-
+<!-- 我的插画 -->
       <div v-if="activeIndex == 2" class="index2">
         <ul class="index2-items">
           <li
@@ -93,7 +93,7 @@
           </li>
         </ul>
       </div>
-
+<!-- 我的绘本 -->
       <div v-if="activeIndex == 3" class="index2">
         <ul class="index2-items">
           <li
@@ -123,90 +123,29 @@
         </ul>
       </div>
 
-<!-- 我的收藏页面：先返回四条数据，点击更多后加载所有收藏 -->
-      <div v-if="activeIndex == 4" class="index4">
-        <div class="illustration">
-          <div class="title">
-            <p>收藏插画</p>
-            <el-link :underline="false" @click="goCollectIllu"
-              >更多<i class="el-icon-d-arrow-right el-icon--right"></i>
-            </el-link>
-          </div>
-          <ul class="illu-items">
-            <li
-              class="illu-item"
-              v-for="(item, index) in pictures.slice(0, 5)"
-              :key="index"
-            >
-              <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content)"
-                style="width: 14vw; height: 9.85vw;cursor:pointer"
-                fit="contain"
-                @click="goIllusDetails"
-              ></el-image>
-            </li>
-          </ul>
-        </div>
-
-        <div class="books">
-          <div class="title">
-            <p>收藏绘本</p>
-            <el-link :underline="false" @click="goCollectbooks"
-              >更多<i class="el-icon-d-arrow-right el-icon--right"></i>
-            </el-link>
-          </div>
-          <ul class="books-items">
-            <li
-              class="books-items"
-              v-for="(item, index) in pictures.slice(4, 8)"
-              :key="index"
-            >
-              <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content)"
-                style="width: 14vw; height: 9.85vw;cursor:pointer"
-                fit="contain"
-              ></el-image>
-            </li>
-          </ul>
-        </div>
+<!-- 已收藏插画 -->
+      <div v-if="activeIndex == 4" class="index2">
+       <my-collection-ill/>
       </div>
 
+<!-- 已收藏绘本 -->
       <div v-if="activeIndex == 5" class="index5">
-            <div class="index5-focus" v-for="(item,index) in focusList" :key="index">    
-        <el-avatar :src="item.src" :size="120" class="avatar"></el-avatar>
-
-          <el-descriptions class="index5-info" :column="2" :colon="false">
-    <template slot="title">{{item.title}}</template>
-    <template slot="extra">
-      <el-button size="small" @click="unFocus(item)">取消关注</el-button>
-    </template>
-   <el-descriptions-item label="描述">kooriookami</el-descriptions-item>
-    <el-descriptions-item></el-descriptions-item>
-    <el-descriptions-item label="关注">1289</el-descriptions-item>
-     <el-descriptions-item label="粉丝">89</el-descriptions-item>
-  </el-descriptions> 
-          </div>
+       <my-collection-book />
       </div>
 
+<!-- 我的关注 -->
+      <div v-if="activeIndex == 6" class="index6">
+       <my-attention />    
+      </div>
 
-      <div v-if="activeIndex == 6" class="index5">
-            <div class="index5-focus" v-for="(item,index) in fansList" :key="index">    
-        <el-avatar :src="item.src" :size="120" class="avatar"></el-avatar>
-
-          <el-descriptions class="index5-info" :column="2" :colon="false">
-    <template slot="title">{{item.title}}</template>
-    
-   <el-descriptions-item label="描述">kooriookami</el-descriptions-item>
-    <el-descriptions-item></el-descriptions-item>
-    <el-descriptions-item label="关注">1289</el-descriptions-item>
-     <el-descriptions-item label="粉丝">89</el-descriptions-item>
-  </el-descriptions> 
-          </div>
+<!-- 我的粉丝 -->
+      <div v-if="activeIndex == 7" class="index7">
+       <my-fans />    
       </div>
 
 
 <!-- 我的草稿 -->
-          <div v-if="activeIndex == 7" class="index2">
+          <div v-if="activeIndex == 8" class="index2">
         <ul class="index2-items">
           <li
             class="index2-item"
@@ -265,8 +204,14 @@
 
 <script>
 import {mapState} from "vuex"
-
+import MyCollectionIll from '../components/MyCollectionIll.vue'
+import MyCollectionBook from '../components/MyCollectionBook.vue'
+import MyAttention from '../components/MyAttention.vue'
+import MyFans from '../components/MyFans.vue'
 export default {
+  components:{
+MyCollectionIll,MyCollectionBook,MyAttention,MyFans
+  },
   data() {
     return {
       id:localStorage.getItem("id"),
@@ -274,136 +219,7 @@ export default {
       illArr:[],
       
       toolArr:[],
-      focusList: [
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background2.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/bike.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/cat.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/decoration.png"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/desk.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/flower.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people.svg"),
-        },
-        {
-          id: 1,
-          title: "背景",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people2.svg"),
-        },
-      ],
-      fansList: [
-        {
-          id: 1,
-          title: "粉丝1",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background.svg"),
-        },
-        {
-          id: 1,
-          title: "粉丝2",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/background2.svg"),
-        },
-        {
-          id: 1,
-          title: "粉丝3",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/bike.svg"),
-        },
-        {
-          id: 1,
-          title: "粉丝4",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/cat.png"),
-        },
-        {
-          id: 1,
-          title: "粉丝5",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/decoration.png"),
-        },
-        {
-          id: 1,
-          title: "粉丝6",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/desk.svg"),
-        },
-        {
-          id: 1,
-          title: "粉丝7",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/flower.svg"),
-        },
-        {
-          id: 1,
-          title: "粉丝8",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people.svg"),
-        },
-        {
-          id: 1,
-          title: "粉丝9",
-          desc: "就是一个背景",
-          thumb: 23,
-          src: require("../assets/blush/people2.svg"),
-        },
-      ],
+     
     };
   },
   computed:mapState([
@@ -452,7 +268,7 @@ export default {
     //获取我的插画
     async getIll(){
       try{
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&`+this.id)
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id)
           this.illArr=res.data.message
           console.log(this.illArr)
         } catch(err){
@@ -462,7 +278,7 @@ export default {
    // 获取我的绘本
     async getBook(){
       try{
-          let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&`+this.id)
+          let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id)
           this.toolArr=res.data.message
           
         } catch(err){
@@ -487,16 +303,18 @@ export default {
     }  
    },
    setBooks(){
-    this.$store.commit("addMyBooks",this.toolArr)
-    
+    this.$store.commit("addMyBooks",this.toolArr)  
    },
+
+ 
+
   },
   async mounted(){
     await this.getIll();
     await this.getBook();
     await this.getImgUrl();
     await this.setBooks();
-    
+   
   }
 };
 </script>
@@ -513,7 +331,7 @@ export default {
 
 }
 .container .left {
-  width: 80vw;
+  width: calc(72vw - 8px);
   height: 90vh;
   margin-right: 8px;
   margin-left: 8vw;
@@ -652,8 +470,8 @@ align-items: center;
   width: 68vw;
 }
 .index2 .index2-items .index2-item {
-  height: 176px;
-  margin-bottom: 2vw;
+  height: 208px;
+  padding:16px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;

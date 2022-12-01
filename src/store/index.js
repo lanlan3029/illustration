@@ -15,8 +15,8 @@ export default new Vuex.Store({
         editMode: "edit",
         // 页面全局数据
         canvasStyleData: {
-            width: 1200,
-            height: 740,
+            width: 60,
+            height: 42.24,
             scale: 100
         },
         // 画布组件数据
@@ -32,6 +32,7 @@ export default new Vuex.Store({
         ifCropper: false,
         //合成PDF
         imgToPDF: [],
+        //是否登陆
         isLogin: false,
         isMask: false,
 
@@ -41,6 +42,15 @@ export default new Vuex.Store({
         editionBook: {},
         books: [],
         myBooks: [],
+        //收藏喜欢的数组
+        collectIllusArr: [],
+        collectBookArr: [],
+        likeIllusArr: [],
+        likeBookArr: [],
+        likeArr: [],
+        fansArr: [],
+        attentionArr: [],
+        userInfo: {},
     },
     mutations: {
         ...contextmenu.mutations,
@@ -110,6 +120,9 @@ export default new Vuex.Store({
         addImages(state, item) {
             state.imgToPDF = state.imgToPDF.concat(item)
         },
+        removeImages(state) {
+            state.imgToPDF = [];
+        },
         showMask(state) {
             state.isMask = true
         },
@@ -128,14 +141,37 @@ export default new Vuex.Store({
             state.editionBook = item
         },
         addBooks(state, items) {
-            state.books = items
+            state.books = state.books.concat(items)
         },
         addMyBooks(state, items) {
             state.myBooks = items
         },
-        hasLogin(state) {
-            state.isLogin = true
+        hasLogin(state, item) {
+            state.isLogin = item
+        },
+        //收藏喜欢的数据
+        collectIllus(state, items) {
+            state.collectIllusArr = state.collectIllusArr.concat(items)
+        },
+        likeIllus(state, items) {
+            state.likeIllusArr = state.likeIllusArr.concat(items)
+        },
+        collectBook(state, items) {
+            state.collectBookArr = state.collectBookArr.concat(items)
+        },
+        likeBook(state, items) {
+            state.likeBookArr = state.likeBookArr.concat(items)
+        },
+        myFans(state, items) {
+            state.fansArr = items
+        },
+        myAttention(state, items) {
+            state.attentionArr = state.attentionArr.concat(items)
+        },
+        setUserInfo(state, items) {
+            state.userInfo = items
         }
+
 
     },
     actions: {},

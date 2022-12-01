@@ -10,7 +10,9 @@
   :auto-upload="false"
   :on-change="fileChange"
   :on-preview="handlePictureCardPreview"
-  :on-remove="handleRemove">
+  :on-remove="handleRemove"
+  :class="objClass"
+  >
   <i class="el-icon-plus"></i>
 </el-upload>
 <el-dialog :visible.sync="dialogVisible">
@@ -55,11 +57,17 @@ export default {
           name: '',
           desc: '',
           category:''
-        }
+        },
+        objClass:{
+          uploadShow:true,
+          uploadHide:false
+        },
       };
     },
     methods: {
       handleRemove(file, fileList) {
+        this.objClass.uploadShow=true;
+            this.objClass.uploadHide=false;
         console.log(file, fileList);
       },
       handlePictureCardPreview(file) {
@@ -67,7 +75,8 @@ export default {
         this.dialogVisible = true;
       },
       fileChange(file){
-            
+        this.objClass.uploadHide=true;
+            this.objClass.uploadShow=false;
             this.fileStore=file.raw
             console.log(this.fileStore)
          },
@@ -119,4 +128,21 @@ export default {
 .btn{
   width:150px;
 }
+.uploadShow .el-upload {
+		width: 30rem !important;
+		height: 30rem !important;
+		line-height: 30rem !important;
+	}
+
+        /*当upLoadHide为true时，启用如下样式，即缩略图的样式，若为false则不启用该样式*/
+	.uploadHide .el-upload-list--picture-card .el-upload-list__item {
+		width: 30rem !important;
+		height: 30rem !important;
+		line-height: 30rem !important;
+	}
+
+        /*当upLoadHide为true时，启用如下样式，即上传框的样式，若为false则不启用该样式*/
+	/deep/.uploadHide .el-upload {
+		display: none;
+	}
 </style>

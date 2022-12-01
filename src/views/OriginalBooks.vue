@@ -31,15 +31,16 @@
           </el-radio-group>
         </div>
         
-        <div class="items" v-infinite-scroll="load" style="overflow:auto">
+        <div class="items" v-infinite-scroll="load">
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
               <el-image :src="(`http://10.0.0.31:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
                <div class="data">
               <span class="name">{{item.title}}</span>
-              <span class="icon"><i class="el-icon-edit"></i>{{item.like_num}}</span>
-               <span class="icon"><i class="el-icon-share"></i>2345</span>
+              <div class="icon">
+                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#c1b0ff" class="iconfont icon-aixin1"></i>{{item.like_num}}</span>
+                <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i>{{item.like_num}}</span></div>
             </div>
             </div>
           </el-card>
@@ -65,12 +66,15 @@ export default {
     RightMenu,
   },
   computed:mapState([
-        "books"
+        "books", "collectBookArr",
+        "likeBookArr"
     ]),
   data() {
     return {
+      userid:localStorage.getItem("id"),
       bookArry:[],
      toolArry:[],
+     num:1,
      imgUrl:[],
       sortList: [
         {
@@ -92,12 +96,16 @@ export default {
     };
   },
   methods: {
+    //去绘本详情页
     toDetail(id) {
       this.$router.push({name:'original-bookdetails',params:{bookId:id}});
     },
+    //获取后台返回的分页绘本数据（18）
    async getBooks(){
       try{
-        let res=await this.$http.get(`/book`)
+        let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=1`)
+       console.log("diyiye")
+        console.log(res.data.message)
         this.toolArry=res.data.message
         
       }catch(err){
@@ -114,6 +122,7 @@ export default {
         try{
           let res=await this.$http.get(`/ill/`+tool[j])
           this.toolArry[i].content[j]=res.data.message.content
+        
         } catch(err){
           console.log(err)
         }
@@ -130,13 +139,33 @@ export default {
       this.num++
       try{
          let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
-         console.log(res.data.message)
-         this.illsArry=this.illsArry.concat(res.data.message)
-         console.log(this.illsArry)
+         let arr=res.data.message
+        console.log(arr)
+        
        } catch(err){
          console.log(err)
        }
-    }
+    },
+
+    //点击喜欢绘本
+    likeBookFun(id) {
+      this.$http
+        .post(`/user/like/`+id,{ownerid:this.userid,type:"book",likeid:id}
+        ,{
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          console.log(response)
+          if (response.data.desc === "success") {
+              //把该插画ID添加到用户已收藏插画数组
+              this.$store.commit("likeBook",id)
+          } 
+        })
+        .catch((error) => console.log(error));
+    },
+
 
   },
   async mounted(){
@@ -156,16 +185,17 @@ export default {
   width: 80vw;
   height: 88vh;
   background-color: #f5f6fa;
-  overflow: scroll;
+  overflow-y: scroll;
 }
 .items{
   width:100%;
-  padding: 0 7vw;
+  padding: 0 6vw;
   height:88vw;
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
-  align-content:flex-start 
+  align-content:flex-start;
+  
 }
 .item {
   width: 20vw;
@@ -202,22 +232,24 @@ export default {
 justify-content: space-between;
 color:#606266;
 align-items: center;
+overflow: hidden;
   
 }
 .data .name{
   width:11vw;
-  display: inline-block;
- white-space:nowrap;
+  white-space:nowrap;
 overflow:hidden;
 text-overflow:ellipse;
 font-size:14px;
 font-weight: 500;
+
 }
 .data .icon{
-  width:3vw;
-  display: block;
-  font-size:12px;
-  overflow: hidden;
-  white-space:nowrap;
+  width:4vw;
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size:14px;
+  cursor:pointer;
 }
 </style>

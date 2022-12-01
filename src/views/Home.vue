@@ -4,7 +4,7 @@
 
   <div class="content">
     <div class="defaultPic">
-    <el-image :src="imgUrl" :fit="cover" style="width:68vw;height:86vh"/>
+    <el-image :src="imgUrl" fit="cover" style="width:68vw;height:86vh"/>
     </div>
 
     <right-menu />

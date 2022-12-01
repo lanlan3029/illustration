@@ -4,19 +4,18 @@
       <div class="top">
       <div class="content-left">
          <div class="info">   
-        <el-avatar :src="authorDetails.avatar" :size="48" class="avatar"></el-avatar>
+        <el-avatar :src="authorDetails.avatar" :size="40" class="avatar"></el-avatar>
         <div class="text">
-          <div class="title"><span>{{illsDetails.title}}</span></div>
-          <div class="author" ><span @click="toAuthor(illsDetails.ownerid)">{{authorDetails.name}}</span>
-            <span v-if="!hasLogin"><el-button type="text" size="mini" @click="toLogin">关注</el-button></span>
-            <span v-if="hasLogin"><el-button type="text" size="mini">关注</el-button><el-button type="text" size="mini">已关注</el-button></span></div>
+          <div class="title"><span>{{illusDetails.title}}</span></div>
+          <div class="author" ><span @click="toAuthor(illusDetails.ownerid)">{{authorDetails.name}}</span>
+            <span><el-button type="text" size="mini" v-if="attentionArr.includes(authorId)">已关注</el-button><el-button type="text" size="mini" v-else @click="newAttention(authorId)">关注</el-button></span></div>
           </div>
         </div>
 
  <div class="book">
-          <div class="desc">{{illsDetails.description}}</div>
+          <div class="desc">{{illusDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 73vw; height: 51.4vw" :src="`http://10.0.0.31:3000/`+illsDetails.content" fit="contain" /></div>
+          <el-image style="width: 984.3px; height: 692.9px" :src="`http://10.0.0.31:3000/`+illusDetails.content" fit="contain" /></div>
       </div>
          </div>
 
@@ -24,7 +23,16 @@
      
       
 
-      <right-info />
+   
+      <ul class="content-right">
+       <li><el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></li>
+       <li> <div v-if="likeIllusArr.includes(illusDetails._id)" class="item"><i  class="iconfont icon-aixin1" style="color:#c1b0ff"></i><span>{{illusDetails.like_num}}</span></div>
+                <div v-else class="item"><i class="iconfont icon-aixin" @click="likeIllusFun(illusDetails._id)" ></i><span>{{illusDetails.like_num}}</span></div></li>
+        <li>
+                <div v-if="collectIllusArr.includes(illusDetails._id)" class="item"><i class="iconfont icon-shoucang1" style="color:#c1b0ff"></i><span>{{illusDetails.collection_num}}</span></div>
+                <div v-else class="item"><i class="iconfont icon-shoucang" @click="collectIllusFun(illusDetails._id)" ></i><span>{{illusDetails.collection_num}}</span></div></li>
+       </ul>
+    
       </div>
       <suggestion />
     </div>
@@ -35,39 +43,75 @@
 
 
 
-import RightInfo from "../components/RightInfo.vue";
+//import RightInfo from "../components/RightInfo.vue";
 import Suggestion from "../components/Suggestion.vue";
 import {mapState} from 'vuex'
 export default {
   name: "Home",
   components: {
 
-    RightInfo,Suggestion
+   Suggestion
   },
   data(){
     return{
-     hasLogin:this.isLogin,
      id:this.$router.currentRoute.params.illId,
-      illsDetails:[],
+     userid:localStorage.getItem("id"),
+      illusDetails:[],
       authorDetails:[],
       authorId:'',
     }
   },
   computed:mapState([
-    "editionIllus","isMask","isLogin"]),
+    "collectIllusArr","likeIllusArr","attentionArr"]),
   methods:{
-    async getIllsDetails(){ 
+    async getIllusDetails(){ 
       try{  
         let res=await this.$http.get(`/ill/`+this.id)
-        this.illsDetails=res.data.message 
+        this.illusDetails=res.data.message 
       } catch(err){
         console.log(err)
       }
     
     },
+     //新增喜欢插画
+     likeIllusFun(id) {
+      this.$http
+        .post(`/user/like/`+id,{ownerid:this.userid,type:"illustration",likeid:id}
+        ,{
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          console.log(response)
+          if (response.data.desc === "success") {
+              //把该插画ID添加到用户已收藏插画数组
+              this.$store.commit("likeIllus",id)
+              
+          } 
+        })
+        .catch((error) => console.log(error));
+    },
+     //新增收藏插画
+     collectIllusFun(id) {
+      this.$http
+        .post(`/user/collect/`+id,{ownerid:this.userid,type:"illustration",collectid:id}
+        ,{
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          if (response.data.desc === "success") {
+              //把该插画ID添加到用户已收藏插画数组
+              this.$store.commit("collectIllus",id)
+          } 
+        })
+        .catch((error) => console.log(error));
+    },
     setId(){
       
-     this.authorId=this.illsDetails.ownerid
+     this.authorId=this.illusDetails.ownerid
     },
     async getAuthor(){
       try{
@@ -77,15 +121,25 @@ export default {
         console.log(err)
       }
     },
-    attention(){
-    console.log("关注作者")
+    //关注
+    newAttention(id){
+      this.$http
+        .post(`/user/fllow/`+id,{},
+        {
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          console.log(response)
+          if (response.data.desc === "success") {
+              //把该用户ID到用户已关注数组
+              this.$store.commit("myAttention",id)
+          } 
+        })
+        .catch((error) => console.log(error));
    },
-   likeit(){
-    console.log("点赞")
-   },
-   collectit(){
-    console.log("收藏")
-   },
+  
     toAuthor(id){
       this.$router.push({name:'user-g',params:{authorId:id}});
     },
@@ -95,10 +149,10 @@ export default {
     }
   },
   async mounted(){
-     await this.getIllsDetails(); 
+     await this.getIllusDetails(); 
      await this.setId();
      await this.getAuthor();
-     console.log(this.isLogin)
+     console.log(this.attentionArr)
   }
 
 };
@@ -126,6 +180,31 @@ export default {
   flex-direction: column;
   
 }
+.content-right{
+  width:40px;
+ height:70vh;
+ margin-left:40px;
+ margin-top:20vh;
+}
+.content-right li{
+  width:40px;
+  height:20vh;
+  display: flex;
+ flex-direction: column;
+ 
+        
+}
+.content-right li .item .iconfont{
+  font-size:40px;
+  text-align: center;
+  cursor:pointer;
+}
+.content-right li .item span{
+  font-size: 18px;
+  display: block;
+  text-align: center;
+  
+}
 .content-left .info {
   display: flex;
   flex-wrap: nowrap;
@@ -145,7 +224,7 @@ export default {
   font-weight: 600;
 }
 .content-left .book .desc{
-  width:100%;
+  width:888.3px;
   min-height:116px;
   padding:48px;
   font-size: 20;

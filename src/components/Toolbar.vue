@@ -33,7 +33,8 @@ import generateID from "@/utils/generateID"
 import {commonStyle,commonAttr} from "@/custom-component/component-list"
 export default {
     data(){
-        return{  
+        return{
+            id:localStorage.getItem('id'),  
             needToChange: [
                 'top',
                 'left',
@@ -110,10 +111,20 @@ export default {
        uploadIllu(){
         this.$emit('uploadIllustration')
        },
-       saveDraft(){
+    saveDraft(){
         this.draftArry=this.componentData
-        this.$router.push("/user/savedraft")
-        console.log(this.draftArry)
+       console.log(this.draftArry)
+        this.$http.post(`/ill/draft`,{content:this.draftArry},
+        {  headers: {
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            }} ).then((response) => {
+          if (response.data.desc === "success") {
+            this.$router.push("/user/savedraft");        
+          } else {
+             this.$router.push({path:'/errorpage'});   
+          }
+        })
+        .catch((error) => console.log(error));
        }
  
     }
@@ -122,8 +133,10 @@ export default {
 <style scoped>
 .toolbar{
     padding: 8px;
-   
+   margin-bottom: auto;
     display: flex;
+    width:60vw;
+    margin:auto;
     justify-content: space-between;
 }
 .left{

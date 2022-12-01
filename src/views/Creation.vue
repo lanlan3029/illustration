@@ -64,8 +64,10 @@ export default {
   name: 'Home',
   data(){
     return{
+      userId:localStorage.getItem("id"),
       activeName:"attr",
       cur:{},
+      draftArr:[],
     }
   },
   components: {
@@ -84,9 +86,27 @@ export default {
     "imgUrl"
   ]),
   mounted(){
-    
+    this.getCollectIll();
   },
   methods:{
+    //获取草稿
+    async getCollectIll(){
+      try{
+          let res=await this.$http.post(`/ill/draft/list`,{}, { headers: {
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            }}
+          )
+          this.draftArr=res.data.message.content
+          console.log(this.draftArr)
+          if(this.draftArr.length>0){
+            this.$store.commit('setComponentData',this.draftArr)
+          }
+         console.log(this.draftArr)
+        } catch(err){
+          console.log(err)
+        }
+    },
+
     handleMouseDown(){
       this.$store.commit('setClickComponentStatus',false)
     },
@@ -197,17 +217,18 @@ export default {
   }
   .center{
     background-color: #f5f5f5; 
-    width:71.5vw;
-    height:90vh;
-    padding:1vh 0.75vw;
-    margin:0 auto;
+    width:66vw;
+    height:88vh;
+  
+    
+    margin:auto;
     border-radius: 4px;
     overflow-y: scroll;
   }
   .content{
     margin:0 auto;
-    width: 984.3px;
-    height:699px;
+    width: 66vw;
+    height:43vw;
     overflow: hidden;
     z-index:100;
   }

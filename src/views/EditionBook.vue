@@ -7,13 +7,23 @@
     <el-image :src="(`http://10.0.0.31:3000/`+editionBook.content[0])" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
-    <el-input v-model="editionBook.title"></el-input>
+    <el-input v-model="form.title"></el-input>
+  </el-form-item>
+  <el-form-item label="类别">
+    <el-select v-model="form.category" placeholder="请选择绘本类别">
+      <el-option label="儿童读物" value="reading"></el-option>
+      <el-option label="习惯养成" value="habit"></el-option>
+       <el-option label="英语启蒙" value="english"></el-option>
+        <el-option label="数学启蒙" value="math"></el-option>
+        <el-option label="科普百科" value="knowledge"></el-option>
+        <el-option label="其他" value="others"></el-option>
+    </el-select>
   </el-form-item>
   <el-form-item label="作品描述">
-    <el-input type="textarea" v-model="editionBook.description"></el-input>
+    <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn">上传</el-button>
+    <el-button type="primary" @click="onSubmit(editionBook._id)" class="btn">上传</el-button>
     <el-button  @click="deleteWork" class="btn">删除</el-button>
   </el-form-item>
 </el-form>
@@ -31,7 +41,11 @@ import {mapState} from 'vuex'
 export default {
   data(){
     return{
-   
+      form: {
+          title:'',
+          desc:'',
+          category:''
+    },
     }
   },
      computed:mapState([
@@ -39,11 +53,23 @@ export default {
   ]),
   
   mounted(){
-   console.log(this.editionBook)
+   this.form.title=this.editionBook.title,
+   this.form.desc=this.editionBook.description,
+   this.form.category=this.editionBook.type
   },
   methods:{
-    onSubmit(){
-      this.$router.push('/user/upload/compose-illustration/submit-res/')
+    onSubmit(id){
+      this.$http.put(`/book/`+id,
+      {title:this.form.title,description:this.form.desc,type:this.form.category},
+      {
+         headers:{
+           "Authorization":"Bearer "+localStorage.getItem("token")
+         }})
+      .then((response)=>{
+        if (response.data.desc === "success"){
+          this.$router.push('/user/upload/edition-success')
+        }
+      })
     },
     deleteWork(){
         console.log("删除")
@@ -64,6 +90,8 @@ export default {
 }
 .box{
     width:60vw;
+    height: 90vh;
+    overflow-y: scroll;
 }
 .box>>>.el-input__inner{
     box-shadow:none;

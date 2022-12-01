@@ -1,80 +1,79 @@
 @font-face {
-    font-family: "iconfont";
-    /* Project id 3678405 */
-    src: url('iconfont.woff2?t=1668601661840') format('woff2'), url('iconfont.woff?t=1668601661840') format('woff'), url('iconfont.ttf?t=1668601661840') format('truetype');
+  font-family: "iconfont"; /* Project id 3678405 */
+  src: url('iconfont.woff2?t=1669604941363') format('woff2'),
+       url('iconfont.woff?t=1669604941363') format('woff'),
+       url('iconfont.ttf?t=1669604941363') format('truetype');
 }
 
 .iconfont {
-    font-family: "iconfont" !important;
-    font-style: normal;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .icon-aixin:before {
-    content: "\e8ab";
+  content: "\e8ab";
 }
 
 .icon-shoucang:before {
-    content: "\e8b9";
+  content: "\e8b9";
 }
 
 .icon-aixin1:before {
-    content: "\e8c3";
+  content: "\e8c3";
 }
 
 .icon-shoucang1:before {
-    content: "\e8c6";
-}
-
-.icon-shoucang-shoucang:before {
-    content: "\e607";
+  content: "\e8c6";
 }
 
 .icon-jimu2:before {
-    content: "\e60f";
+  content: "\e60f";
 }
 
 .icon-qichepiao:before {
-    content: "\e89d";
+  content: "\e89d";
 }
 
 .icon-ren1:before {
-    content: "\e6c5";
+  content: "\e6c5";
 }
 
 .icon-hua:before {
-    content: "\e62d";
+  content: "\e62d";
 }
 
 .icon-shafa1:before {
-    content: "\e724";
+  content: "\e724";
 }
 
 .icon-shiwu-2:before {
-    content: "\ebe6";
+  content: "\ebe6";
 }
 
 .icon-shu3:before {
-    content: "\e61c";
+  content: "\e61c";
 }
 
 .icon-dianzan_kuai:before {
-    content: "\ec8c";
+  content: "\ec8c";
 }
 
 .icon-tupian:before {
-    content: "\e67f";
+  content: "\e67f";
 }
 
 .icon-zhuangshipin:before {
-    content: "\e603";
+  content: "\e603";
 }
 
 .icon--panda:before {
-    content: "\e755";
+  content: "\e755";
 }
 
 .icon-other:before {
-    content: "\e637";
+  content: "\e637";
 }
+

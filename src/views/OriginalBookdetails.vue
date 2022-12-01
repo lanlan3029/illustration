@@ -25,8 +25,12 @@
        <li @click="attention"><el-tooltip class="item" effect="dark" content="关注作者" placement="top">
         <el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></el-tooltip>
         </li>
-        <li @click="likeit"><el-button type="primary" icon="iconfont icon-dianzan_kuai" circle></el-button></li>
-        <li @click="collectit"><el-button type="primary" icon="iconfont icon-shoucang-shoucang" circle></el-button></li>
+        <li> 
+          <span v-if="likeBookArr.includes(bookDetails._id)"><i  style="color:#c1b0ff" class="iconfont icon-aixin1"></i>{{bookDetails.like_num}}</span>
+                <span v-else><i class="iconfont icon-aixin" @click="likeBookFun(bookDetails._id)" ></i>{{bookDetails.like_num}}</span></li>
+        <li>
+                <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#c1b0ff" class="iconfont icon-shoucang1"></i>{{bookDetails.collection_num}}</span>
+                <span v-else><i class="iconfont icon-shoucang" @click="collectBookFun(bookDetails._id)" ></i>{{bookDetails.collection_num}}</span></li>
          
        </ul>
       </div>
@@ -53,6 +57,7 @@ export default {
   },
   data(){
     return{
+      userid:localStorage.getItem("id"),
       id:this.$router.currentRoute.params.bookId,
       authorId:'',
       bookDetails:[],
@@ -60,7 +65,9 @@ export default {
     }
   },
   computed:mapState([
-        "books"
+        "books",
+        "collectBookArr",
+        "likeBookArr",
     ]),
 
   methods:{
@@ -68,12 +75,48 @@ export default {
     console.log("关注作者")
    },
    getBookDetails(){
-    let tool=this.books.filter(item=>{return item._id==this.id})
-    
+    let tool=this.books.filter(item=>{return item._id==this.id}) 
     this.bookDetails=tool[0]
     console.log(this.bookDetails)
     
    },
+   //点击喜欢绘本
+   likeBookFun(id) {
+      this.$http
+        .post(`/user/like/`+id,{ownerid:this.userid,type:"book",likeid:id}
+        ,{
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          console.log(response)
+          if (response.data.desc === "success") {
+              //把该插画ID添加到用户已收藏插画数组
+              this.$store.commit("likeBook",id)
+          } 
+        })
+        .catch((error) => console.log(error));
+    },
+//点击收藏绘本
+collectBookFun(id) {
+      this.$http
+        .post(`/user/collect/`+id,{ownerid:this.userid,type:"book",id:id}
+        ,{
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          console.log(response)
+          if (response.data.desc === "success") {
+              //把该插画ID添加到用户已收藏插画数组
+              this.$store.commit("collectBook",id)
+          } 
+        })
+        .catch((error) => console.log(error));
+    },
+
    setId(){
       
       this.authorId=this.bookDetails.ownerid
@@ -97,6 +140,7 @@ export default {
     }
   },
   async mounted(){
+    console.log(this.books)
     await this.getBookDetails();
     await this.setId();
     await this.getAuthor();
@@ -117,7 +161,7 @@ export default {
   display: flex;
   flex-wrap: wrap;
   background-color: #f5f6fa;
-  overflow: scroll;
+  overflow-y: scroll;
 }
 .content-left .info {
   display: flex;
@@ -174,28 +218,34 @@ export default {
   height: 699px;
 }
 .content-left .footer{
-  width:984.3px;
+ width:100%;
   height:180px;
 
 }
 .content-left .footer ul{
   list-style: none;
      display: flex;
-    width:400px;
+    width:600px;
     justify-content: space-between;
     margin:auto;
-    align-items: center;
     padding:60px 0;
+   
 }
 .content-left .footer ul li{
  cursor:pointer;
   width:56px;
   height:56px;
- 
+  font-size:20px;
+  line-height: 56px;
+ text-align: center;
+}
+.content-left .footer ul li .iconfont{
+  font-size:28px;
+  cursor:pointer;
 }
 .content-left .footer ul li:active{
    animation:zoomOut;
-   animation-duration: 2s;
+   animation-duration: 1s;
 }
 
 </style>
