@@ -6,13 +6,14 @@
     <el-form-item label="头像">
       <div v-if="(form.avatar)" class="hasImg"><el-avatar  :size="120" :src="form.avatar"></el-avatar><span class="editIcon"><i class="el-icon-edit" @click="editAvatar"></i></span></div>
 <div v-else>      <el-upload
-      
-      action="http://10.0.0.31:3000/picture/"
+  ref="upload"
+      action="#"
       list-type="picture-card"
       :on-preview="handlePictureCardPreview"
       :auto-upload="false"
       :on-change="fileChange"
       :on-remove="handleRemove"
+      accept=".png, .jpg, .jpeg, .JPG, .JPEG"
       :class="objClass">
       <i class="el-icon-plus"></i>
     </el-upload>
@@ -74,7 +75,7 @@ export default {
           uploadShow:true,
           uploadHide:false
         },
-        fileStore:{}
+        imgBase64:''
 
       };
     },
@@ -93,36 +94,56 @@ export default {
       this.form.introduce=this.userInfo.introduce
       this.form.email=this.userInfo.email
       },
-      handleRemove(file, fileList) {
+      
+ 
+      handleRemove() {
             this.objClass.uploadShow=true;
             this.objClass.uploadHide=false;
-            console.log(file,fileList)
-            console.log(this.objClass.uploadHide)
+            
           },
           handlePictureCardPreview(file) {
+            console.log("handlePicturePreview")
             this.dialogImageUrl = file.url;
             this.dialogVisible = true;
           },
           fileChange(file){
-            this.objClass.uploadHide=true;
+          
+        const isLt2M = file.size / 1024 / 1024 < 2;
+       if (!isLt2M) {
+          this.$message.error('上传头像图片大小不能超过 2MB!');
+          this.$refs.upload.clearFiles()
+        }else{
+          this.objClass.uploadHide=true;
             this.objClass.uploadShow=false;
-             this.fileStore=file.raw
-             console.log(this.fileStore)
+          this.getBase64(file.raw).then(res=>{
+     this.imgBase64=res
+        })
              
+          }},
+
+          getBase64(file){
+             return new Promise(function(resolve,reject){
+              let reader=new FileReader();
+              let imgResult="";
+              reader.readAsDataURL(file);
+              reader.onload=function(){
+                imgResult=reader.result
+              };
+              reader.onerror=function(error){
+                reject(error)
+              };
+              reader.onloadend = function() {
+                        resolve(imgResult);
+                    };
+             })
           },
       //修改个人信息
       onSubmit() {
         this.disabled = true;
-            let formdata = new window.FormData()
-            formdata.append('avatar',this.form.avatar)
-            formdata.append('name',this.form.name)
-            formdata.append('gender',this.form.gender)
-            formdata.append('birthday',this.form.category)
-            formdata.append('birthday',this.form.category)
-            formdata.append('birthday',this.form.category)
-            console.log(formdata)
+          
          this.$http
-        .post(``,formdata
+        .put(`/user/`+this.userInfo._id,{avatar:this.imgBase64,name:this.form.name,gender:this.form.gender,
+          birthday:this.form.birthday,introduce:this.form.introduce,email:this.form.email}
         ,{
           headers:{
             'Content-Type': 'multipart/form-data',
@@ -131,7 +152,13 @@ export default {
         })
         .then((response) => {
           if (response.data.desc === "success") {
-            this.$router.push('/user/');        
+            this.$message({
+          message: '个人资料修改成功',
+          type: 'success'
+        });     
+            this.$router.push('/user/profile');  
+            this.userInfo.avatar=this.imgBase64
+             
           } else {
              this.$router.push({path:'/errorpage'});   
           }

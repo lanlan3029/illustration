@@ -5,14 +5,16 @@
     <el-form ref="form" :model="form" label-width="100px">
         <el-form-item label="上传图元">
         <el-upload
-      action="http://10.0.0.31:3000/picture/"
+      action="http://119.45.172.191:3000/picture/"
       list-type="picture-card"
       :on-preview="handlePictureCardPreview"
       :auto-upload="false"
       :on-change="fileChange"
       :on-remove="handleRemove"
+      accept=".png"
       :class="objClass">
       <i class="el-icon-plus"></i>
+      <div slot="tip" class="el-upload__tip">图元上传后为创作页面左侧的单个元素，只接受png格式的文件。</div>
     </el-upload>
     <el-dialog :visible.sync="dialogVisible">
       <img width="100%" :src="dialogImageUrl" alt="">

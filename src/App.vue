@@ -1,5 +1,5 @@
 <template>
-<div>
+<div id="app">
   <top-bar/>
   <login-register v-if="isMask" />
   <router-view />
@@ -9,6 +9,10 @@
 import {mapState} from "vuex"
 import TopBar from './components/TopBar.vue'
 import LoginRegister from "./components//LoginRegister.vue"
+
+document.oncontextmenu = function () {
+        return false;
+      };
 export default {
   components: {
     TopBar,LoginRegister
@@ -20,7 +24,10 @@ export default {
    computed:mapState([
         "isMask",      
     ]),
+    
   methods:{
+   
+   
 }
 }
 </script>

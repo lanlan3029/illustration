@@ -35,11 +35,11 @@
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
-              <el-image :src="(`http://10.0.0.31:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
+              <el-image :src="(`http://119.45.172.191:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">
-                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#c1b0ff" class="iconfont icon-aixin1"></i>{{item.like_num}}</span>
+                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#F489B5" class="iconfont icon-aixin1"></i>{{item.like_num}}</span>
                 <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i>{{item.like_num}}</span></div>
             </div>
             </div>
@@ -104,8 +104,6 @@ export default {
    async getBooks(){
       try{
         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=1`)
-       console.log("diyiye")
-        console.log(res.data.message)
         this.toolArry=res.data.message
         
       }catch(err){

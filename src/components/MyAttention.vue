@@ -1,7 +1,7 @@
 <template>
     <div>
    <div class="index5-focus" v-for="(item,index) in attentionDetails" :key="index">    
-        <el-avatar :src="item.src" :size="120" class="avatar"></el-avatar>
+        <el-avatar :src="item.avatar" :size="120" class="avatar"></el-avatar>
           <el-descriptions class="index5-info" :column="2" :colon="false">
     <template slot="title">{{item.name}}</template>
     <template slot="extra">
@@ -11,6 +11,7 @@
     <el-descriptions-item></el-descriptions-item>
    
      <el-descriptions-item label="粉丝">{{item.fans_num}}</el-descriptions-item>
+     <el-descriptions-item label="关注">{{item.attention_num}}</el-descriptions-item>
   </el-descriptions> 
           </div></div>
 </template>
@@ -25,12 +26,18 @@ export default {
      attentionDetails:[]
     }},
     computed:mapState(["attentionArr"]),
-    mounted(){
-      this.getAttention()
+
+    async mounted(){
+     await this.getAttention()
+      await this.completeFun()
     },
+
+  
    
 
     methods:{
+     
+   //获取关注的人的信息（不含这个人的粉丝数量）
       async getAttention(){
         console.log(this.attentionArr)
         for(var i=0;i<this.attentionArr.length;i++){
@@ -41,7 +48,27 @@ export default {
             console.log(err)
           }
         }
-        console.log(this.attentionDetails)
+       
+      },
+    //将粉丝数和关注数放到attentionDetails
+    async completeFun(){
+      for(var i=0;i<this.attentionDetails.length;i++){
+        try{
+          let resF=await this.$http.get(`/user/number/fllow`,{params:{id:this.attentionDetails[i]._id,sign:"item"}})
+          console.log(resF)
+          let resA=await this.$http.get(`/user/number/fllow`,{params:{id:this.attentionDetails[i]._id}})
+          console.log(resA)
+          if(resF.data.desc=="success"&resA.data.desc=="success"){
+            this.attentionDetails[i].fans_num=resF.data.message;
+        this.attentionDetails[i].attention_num=resA.data.message
+          }
+        
+      } catch(err){
+            console.log(err)
+          }
+      
+        }
+
       },
 
     }

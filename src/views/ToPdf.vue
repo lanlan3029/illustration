@@ -4,7 +4,7 @@
     <div class="box">
       <div v-if="imgToPDF.length==0" class="backAdd" @click="handleBack"><i class="el-icon-document-add" ></i><span>点击添加图片</span></div>
       <div v-else v-for="(item, index) in imgToPDF" :key="index" class="item">
-        <el-image :src="(`http://10.0.0.31:3000/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
+        <el-image :src="(`http://119.45.172.191:3000/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
       </div>
     </div>
     <div class="details">

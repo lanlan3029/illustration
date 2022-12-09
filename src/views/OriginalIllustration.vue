@@ -22,7 +22,7 @@
           <div class="item" v-for="item in illsArry" :key="item._id">
             <div>
               <el-image
-                :src="`http://10.0.0.31:3000/` + item.content"
+                :src="`http://119.45.172.191:3000/` + item.content"
                 class="image"
                 fit="cover"
                 @click="toDetail(item._id)"
@@ -30,7 +30,7 @@
               <div class="data">
                 <span class="name">{{ item.title }}</span>
                 <div class="icon"
-                  ><span v-if="likeIllusArr.includes(item._id)" ><i class="iconfont icon-aixin1" style="color:#c1b0ff"></i>{{ item.like_num }}</span>
+                  ><span v-if="likeIllusArr.includes(item._id)" ><i class="iconfont icon-aixin1" style="color:#F489B5"></i>{{ item.like_num }}</span>
                   <span v-else><i  class="iconfont icon-aixin" @click="likeIllusFun(item._id)"></i>{{ item.like_num }}</span></div
                 >
               </div>

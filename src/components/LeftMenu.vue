@@ -1,13 +1,22 @@
 <template>
    <div class="container">
     <div class="search">
-     <el-input  size="medium" prefix-icon="el-icon-search" placeholder="Enter something..." /></div>
-     <div class="classify">
-    <ul class="menu">
-        <li class="menu-item" v-for="(item,index) in icons" :key="index" @click="select(index)" @mouseover="select(index)" :class="{'active':index===selectIndex }"><i :class="item.icon"/></li>
+     <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @change="loadSearch(searchInput)"/></div>
+     <div v-if="(searchInput !='')" class="classify">
+        
+        <ul class="elements" v-infinite-scroll="load" v-if="(searchArr.length>0)">
+        <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
+            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image>
+        </li>
     </ul>
-    <ul class="elements">
-        <li class="element" v-for="(item,index) in choosenArr" :key="index" @click="handleImageChange(item)"><el-image fit="contain"  style="width:6vw; height:8vh" :src="item"></el-image></li>
+    <div v-else class="emptyResult"><el-empty description="换个关键词再试一下吧" :image-size="80"></el-empty></div>
+     </div>
+     <div v-else class="classify">
+    <ul class="menu">
+        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type)" @mouseover="select(item.id,item.type)" :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
+    </ul>
+    <ul class="elements" v-infinite-scroll="load">
+        <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])"><el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image></li>
 
     </ul></div>
     
@@ -32,10 +41,23 @@ export default {
     
     data(){
         return{
-          icons:[{icon:'iconfont icon-tupian'},{icon:'iconfont icon-ren1'},{icon:'iconfont icon--panda'},{icon:'iconfont icon-shu3'},{icon:'iconfont icon-shafa1'},{icon:'iconfont icon-qichepiao'},{icon:'iconfont icon-jimu2'},{icon:'iconfont icon-zhuangshipin'},{icon:'iconfont icon-shiwu-2'},{icon:'iconfont icon-other'}],
-          pictures:[[require("../assets/blush/background.svg")],[require("../assets/blush/background2.svg")],[require("../assets/blush/bike.svg")],[require("../assets/blush/cat.png")],[require("../assets/blush/decoration.png"),require("../assets/blush/decoration.svg")],[require("../assets/blush/desk.svg")],[require("../assets/blush/flower.svg")],[require("../assets/blush/people.svg"),require("../assets/blush/people2.svg")]],
+          icons:[{type:"scene",icon:'iconfont icon-tupian',id:0,num:0},
+          {type:"people",icon:'iconfont icon-ren1',id:1,num:0},
+          {type:"animal",icon:'iconfont icon--panda',id:2,num:0},
+          {type:"plant",icon:'iconfont icon-shu3',id:3,num:0},
+          {type:"food",icon:'iconfont icon-shiwu-2',id:4,num:0},
+          {type:"toy",icon:'iconfont icon-jimu2',id:5,num:0},
+          {type:"vehicle",icon:'iconfont icon-qichepiao',id:6,num:0},
+          {type:"decoration",icon:'iconfont icon-zhuangshipin',id:7,num:0},
+          {type:"furniture",icon:'iconfont icon-shafa1',id:8,num:0},
+          {type:"others",icon:'iconfont icon-other',id:9,num:0}],
           selectIndex:0,
-          choosenArr:[],
+          pictureArr:[],
+          num:1,
+          selectType:'',
+          searchInput:'',
+          searchArr:'',
+          searchPage:1
         }
     },
      computed:mapState([
@@ -47,13 +69,45 @@ export default {
          computedArr(i){
             this.choosenArr=this.pictures[i]
         },
-        select(index){
-           this.selectIndex=index
-           this.computedArr(index)
+        //请求数据库数据
+        async getPictures(type){
+            try{
+                let res=await this.$http .get(`/picture/?sort_param=heat&sort_num=desc&type=`+ type +`&page=1`)
+                this.pictureArr=res.data.message
+                console.log(this.pictureArr)
+            }
+        catch(error){
+            console.log(error)
+        }
         },
+        
+        //无限加载
+        async load() {
+      this.num++;
+      try {
+        let res = await this.$http.get(
+            `/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=`+this.num
+        );
+        this.pictureArr = this.pictureArr.concat(res.data.message);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+        //选择左侧类别
+        select(index,type){
+           this.selectIndex=index
+           this.selectType=type
+           this.pictureArr.length=0
+           this.num=1
+           this.getPictures(type)   
+        },
+      
+
+        //把小图片添加到中间面板
         handleImageChange(item){
                       let IMAGE=new Image()
-                      IMAGE.src=item
+                      IMAGE.src=('http://119.45.172.191:3000/'+item)
+                      console.log(IMAGE.src)
                       this.$store.commit("addComponent",{
                         component:{
                             ...commonAttr,
@@ -63,7 +117,7 @@ export default {
                             label:"图片",
                             icon:"",
                             // 图片路径
-                            propValue:item,
+                            propValue:('http://119.45.172.191:3000/'+item),
                             // 图片样式
                             style:{
                                 ...commonStyle,
@@ -74,6 +128,16 @@ export default {
                             }
                         }
                     })
+        },
+        async loadSearch(value){
+            try {
+        let res = await this.$http.get(
+            `/picture/?sort_param=heat&sort_num=desc&keyword=`+ value +`&page=1`
+        );
+        this.searchArr = this.searchArr.concat(res.data.message);
+      } catch (err) {
+        console.log(err);
+      }        
         }
 
 
@@ -89,7 +153,7 @@ export default {
 
 <style scoped>
 .container{
-    width:18.5vw;
+    width:19.5vw;
     height:90vh;
     
 }
@@ -101,16 +165,18 @@ export default {
 .classify{
     margin:0;
     padding:0;
-    width:18.5vw;
+    width:19.5vw;
     height:83vh;  
     display: flex;
     justify-content: space-between; 
+    overflow-y: scroll;
 }
 .container .classify .menu{
     width:4vw;
     height:84vh;
     list-style: none;
     display: block;
+    position: fixed;
 }
 
 .container .classify .menu li{
@@ -132,11 +198,15 @@ export default {
     background-color: #f5f6fa;
 }
 .elements{
-    width:14vw;
+    width:15vw;
     display: flex;
     background-color: #fff;
     list-style: none;;
     flex-wrap: wrap;
+    height:80vh;
+    align-content:flex-start;
+    position: relative;
+    left:4vw;
 }
 .element{
     width:6.5vw;
@@ -149,5 +219,11 @@ export default {
 }
 .element:hover{
     background-color:#fafafa ;
+}
+.emptyResult{
+    width:19.5vw;
+    display: flex;  
+    justify-content: center;
+    align-content: center;
 }
 </style>

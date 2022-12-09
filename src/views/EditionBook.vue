@@ -4,7 +4,7 @@
 <el-form label-width="100px">
     <el-form-item label="作品">
       <div></div>
-    <el-image :src="(`http://10.0.0.31:3000/`+editionBook.content[0])" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="(`http://119.45.172.191:3000/`+editionBook.content[0])" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
     <el-input v-model="form.title"></el-input>
@@ -24,7 +24,7 @@
   </el-form-item>
    <el-form-item>
     <el-button type="primary" @click="onSubmit(editionBook._id)" class="btn">上传</el-button>
-    <el-button  @click="deleteWork" class="btn">删除</el-button>
+    <el-button  @click="deleteBook(editionBook._id)" class="btn">删除</el-button>
   </el-form-item>
 </el-form>
 
@@ -71,9 +71,27 @@ export default {
         }
       })
     },
-    deleteWork(){
-        console.log("删除")
-    }
+     //删除绘本
+     deleteBook(id){
+      this.$http
+        .delete(`/book/`+id,
+        {
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        },
+    ).then((response) => {
+          if (response.data.desc === "success") {
+            this.$message({
+          message: '已删除',
+          type: 'success'
+        });
+        this.$router.push('/user')
+          } 
+        })
+        .catch((error) => console.log(error));
+   },
+ 
  
   }
 }

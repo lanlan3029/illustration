@@ -8,14 +8,16 @@
         <div class="text">
           <div class="title"><span>{{illusDetails.title}}</span></div>
           <div class="author" ><span @click="toAuthor(illusDetails.ownerid)">{{authorDetails.name}}</span>
-            <span><el-button type="text" size="mini" v-if="attentionArr.includes(authorId)">已关注</el-button><el-button type="text" size="mini" v-else @click="newAttention(authorId)">关注</el-button></span></div>
+            <span v-if="(authorDetails._id!=userid)">
+              <el-button type="text" size="mini" v-if="attentionArr.includes(authorDetails._id)" @click="cancelAttention(authorDetails._id)">已关注</el-button>
+              <el-button type="text" size="mini" v-else @click="newAttention(authorDetails._id)">关注</el-button></span></div>
           </div>
         </div>
 
  <div class="book">
           <div class="desc">{{illusDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 984.3px; height: 692.9px" :src="`http://10.0.0.31:3000/`+illusDetails.content" fit="contain" /></div>
+          <el-image style="width: 984.3px; height: 692.9px" :src="`http://119.45.172.191:3000/`+illusDetails.content" fit="contain" /></div>
       </div>
          </div>
 
@@ -26,10 +28,10 @@
    
       <ul class="content-right">
        <li><el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></li>
-       <li> <div v-if="likeIllusArr.includes(illusDetails._id)" class="item"><i  class="iconfont icon-aixin1" style="color:#c1b0ff"></i><span>{{illusDetails.like_num}}</span></div>
+       <li> <div v-if="likeIllusArr.includes(illusDetails._id)" class="item"><i  class="iconfont icon-aixin1" style="color:#F489B5"></i><span>{{illusDetails.like_num}}</span></div>
                 <div v-else class="item"><i class="iconfont icon-aixin" @click="likeIllusFun(illusDetails._id)" ></i><span>{{illusDetails.like_num}}</span></div></li>
         <li>
-                <div v-if="collectIllusArr.includes(illusDetails._id)" class="item"><i class="iconfont icon-shoucang1" style="color:#c1b0ff"></i><span>{{illusDetails.collection_num}}</span></div>
+                <div v-if="collectIllusArr.includes(illusDetails._id)" class="item"><i class="iconfont icon-shoucang1" style="color:#FFd301"></i><span>{{illusDetails.collection_num}}</span></div>
                 <div v-else class="item"><i class="iconfont icon-shoucang" @click="collectIllusFun(illusDetails._id)" ></i><span>{{illusDetails.collection_num}}</span></div></li>
        </ul>
     
@@ -46,6 +48,7 @@
 //import RightInfo from "../components/RightInfo.vue";
 import Suggestion from "../components/Suggestion.vue";
 import {mapState} from 'vuex'
+
 export default {
   name: "Home",
   components: {
@@ -58,11 +61,13 @@ export default {
      userid:localStorage.getItem("id"),
       illusDetails:[],
       authorDetails:[],
-      authorId:'',
+      authorId:'',   
     }
   },
+
   computed:mapState([
     "collectIllusArr","likeIllusArr","attentionArr"]),
+
   methods:{
     async getIllusDetails(){ 
       try{  
@@ -116,7 +121,8 @@ export default {
     async getAuthor(){
       try{
         let res=await this.$http.get(`/user/`+this.authorId)
-        this.authorDetails=res.data.message 
+        this.authorDetails=res.data.message
+       
       } catch(err){
         console.log(err)
       }
@@ -131,10 +137,30 @@ export default {
           }
         })
         .then((response) => {
-          console.log(response)
+          console.log(this.attentionArr)
           if (response.data.desc === "success") {
               //把该用户ID到用户已关注数组
               this.$store.commit("myAttention",id)
+          } 
+        })
+        .catch((error) => console.log(error));
+   },
+   //取消关注
+   cancelAttention(id){
+      this.$http
+        .delete(`/user/list/fllow?id=`+id,
+        {
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        },
+    )
+        .then((response) => {
+          console.log(this.attentionArr)
+          if (response.data.desc === "success") {
+              //把该用户ID到用户已关注数组
+              this.$store.commit("cancelAttention",id)
+              console.log(this.attentionArr)
           } 
         })
         .catch((error) => console.log(error));
@@ -153,6 +179,7 @@ export default {
      await this.setId();
      await this.getAuthor();
      console.log(this.attentionArr)
+     console.log(this.authorId)
   }
 
 };

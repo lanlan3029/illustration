@@ -9,11 +9,13 @@
     <el-input v-model="form.name"></el-input>
   </el-form-item>
   <el-form-item label="类别">
-    <el-select v-model="form.category" placeholder="请选择图元类别">
-      <el-option label="节庆" value="shanghai"></el-option>
-      <el-option label="风景" value="beijing"></el-option>
-       <el-option label="日常" value="beijing"></el-option>
-        <el-option label="氛围" value="beijing"></el-option>
+    <el-select v-model="form.category" placeholder="请选择插画类别">
+      <el-option label="生活日常" value="daily"></el-option>
+      <el-option label="欢庆节日" value="festival"></el-option>
+       <el-option label="校园生活" value="school"></el-option>
+        <el-option label="动物世界" value="animal"></el-option>
+        <el-option label="奇幻想象" value="fantasy"></el-option>
+        <el-option label="其他" value="others"></el-option>
     </el-select>
   </el-form-item>
   <el-form-item label="作品描述">
@@ -89,6 +91,7 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow-y: scroll;
 }
 .box{
     width:60vw;

@@ -3,7 +3,7 @@
         <div class="title">请按顺序选择要合成绘本的图片，第一页为封面。</div>
        <ul class="items">
         <li v-for="(item, index) in illusArr" :key="index" @click="handleAdd(item)">
-          <el-image :src="(`http://10.0.0.31:3000/`+item.content)" style="width:13vw; height: 8vw" fit="contain"></el-image>
+          <el-image :src="(`http://119.45.172.191:3000/`+item.content)" style="width:13vw; height: 8vw" fit="contain"></el-image>
           <span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
        </ul>
     <div class="btn">
@@ -21,6 +21,7 @@ export default {
       illusArr:[],
       checkedImage:[],
       checkedId:[],
+      userid:localStorage.getItem("id")
     };
   },
     computed:mapState([
@@ -30,7 +31,7 @@ export default {
     //获取我的插画
     async getIll(){
       try{
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&`+this.id)
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.userid)
           this.illusArr=res.data.message
         } catch(err){
           console.log(err)

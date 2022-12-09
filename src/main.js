@@ -17,7 +17,7 @@ Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.prototype.$http = axios
 
-axios.defaults.baseURL = 'http://10.0.0.31:3000'
+axios.defaults.baseURL = 'http://119.45.172.191:3000/'
 
 
 

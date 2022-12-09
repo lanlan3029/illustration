@@ -25,7 +25,7 @@
            >
                <Editor />
            </div>
-            <Toolbar @downLoad="downLoadImg" @uploadIllustration="uploadImg" />
+            <Toolbar @downLoad="downLoadImg" @uploadIllustration="uploadImg" :draftid="draftid"/>
            <Cropper v-if="ifCropper && curComponent != null" >
            </Cropper>
           
@@ -66,8 +66,8 @@ export default {
     return{
       userId:localStorage.getItem("id"),
       activeName:"attr",
-      cur:{},
       draftArr:[],
+      draftid:'',
     }
   },
   components: {
@@ -96,8 +96,8 @@ export default {
                 "Authorization": "Bearer " + localStorage.getItem("token")
             }}
           )
+          this.draftid=res.data.message._id
           this.draftArr=res.data.message.content
-          console.log(this.draftArr)
           if(this.draftArr.length>0){
             this.$store.commit('setComponentData',this.draftArr)
           }
@@ -184,12 +184,12 @@ export default {
       }).then((canvas) => {
       let url = canvas.toDataURL("image/jpeg");
        this.$store.commit('uploadIllustration', url)
+       console.log(url)
       this.$router.push('/user/upload/upload-illustration');
     })},
      uploadImg(){
          this.$store.commit('setCurComponent', {component:null})
-         setTimeout(this.getCanvas,500)
-      
+         setTimeout(this.getCanvas,500) 
        } 
     }
   }
@@ -205,7 +205,7 @@ export default {
   }
   .left{
     height: 90vh;
-    width: 18.5vw;
+    width: 19.5vw;
     left: 0;
     top: 0;
   }
@@ -217,10 +217,8 @@ export default {
   }
   .center{
     background-color: #f5f5f5; 
-    width:66vw;
-    height:88vh;
-  
-    
+    width:70.5vw;
+    height:88vh;  
     margin:auto;
     border-radius: 4px;
     overflow-y: scroll;

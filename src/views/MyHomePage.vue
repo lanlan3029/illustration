@@ -32,7 +32,7 @@
               :key="index"
             >
               <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content)"
+                :src="(`http://119.45.172.191:3000/`+item.content)"
                 style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
@@ -55,7 +55,7 @@
               :key="index"
             >
               <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content[0])"
+                :src="(`http://119.45.172.191:3000/`+item.content[0])"
                 style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"
@@ -74,21 +74,22 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content)"
+                :src="(`http://119.45.172.191:3000/`+item.content)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
               ></el-image>
             </div>
-   <el-descriptions class="margin-top" :column="2" :colon="false">
+   <el-descriptions :column="2" :colon="false">
     <template slot="title">{{item.title}}</template>
     <template slot="extra">
       <el-button size="small" @click="goEdition(item)">编辑</el-button>
     </template>
-   <el-descriptions-item label="描述">kooriookami</el-descriptions-item>
-   <el-descriptions-item></el-descriptions-item>
+   <el-descriptions-item span="2" label="描述">kooriookami</el-descriptions-item>
     <el-descriptions-item label="获赞">1289</el-descriptions-item>
     <el-descriptions-item label="收藏">89</el-descriptions-item>
+    <el-descriptions-item v-if="(item.status==0)" label="状态"><el-tag type="warning" size="mini">待审核</el-tag></el-descriptions-item>
+    <el-descriptions-item v-if="(item.status==1)" label="状态"><el-tag type="success" size="mini">审核通过</el-tag></el-descriptions-item>
   </el-descriptions> 
           </li>
         </ul>
@@ -103,21 +104,22 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content[0])"
+                :src="(`http://119.45.172.191:3000/`+item.content[0])"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"
               ></el-image>
             </div>
-   <el-descriptions class="margin-top" :column="2" :colon="false">
+   <el-descriptions :column="2" :colon="false">
     <template slot="title">{{item.title}}</template>
     <template slot="extra">
       <el-button size="small" @click="goBookEdition(item)">编辑</el-button>
     </template>
-   <el-descriptions-item label="描述">kooriookami</el-descriptions-item>
-    <el-descriptions-item></el-descriptions-item>
+   <el-descriptions-item span="2"  label="描述">kooriookami</el-descriptions-item>
     <el-descriptions-item label="获赞">1289</el-descriptions-item>
      <el-descriptions-item label="收藏">89</el-descriptions-item>
+     <el-descriptions-item v-if="(item.status==0)" label="状态"><el-tag type="warning" size="mini">待审核</el-tag></el-descriptions-item>
+    <el-descriptions-item v-if="(item.status==1)" label="状态"><el-tag type="success" size="mini">审核通过</el-tag></el-descriptions-item>
   </el-descriptions> 
           </li>
         </ul>
@@ -134,47 +136,14 @@
       </div>
 
 <!-- 我的关注 -->
-      <div v-if="activeIndex == 6" class="index6">
+      <div v-if="activeIndex == 6" class="index2">
        <my-attention />    
       </div>
 
 <!-- 我的粉丝 -->
-      <div v-if="activeIndex == 7" class="index7">
+      <div v-if="activeIndex == 7" class="index2">
        <my-fans />    
       </div>
-
-
-<!-- 我的草稿 -->
-          <div v-if="activeIndex == 8" class="index2">
-        <ul class="index2-items">
-          <li
-            class="index2-item"
-            v-for="(item, index) in pictures"
-            :key="index"
-          >
-            <div class="index2-avatar">
-              <el-image
-                :src="item.src"
-                style="width: 250px; height: 176px"
-                fit="contain"
-              ></el-image>
-            </div>
-   <el-descriptions class="margin-top" :column="2" :colon="false">
-    <template slot="title">{{item.title}}</template>
-    <template slot="extra">
-      <el-button size="small" @click="gocreate(item)">编辑</el-button>
-    </template>
-   <el-descriptions-item label="描述">kooriookami</el-descriptions-item>
-   <el-descriptions-item></el-descriptions-item>
-    <el-descriptions-item label="创建时间">2022年9月7日</el-descriptions-item>
-    
-  </el-descriptions> 
-          </li>
-        </ul>
-      </div>
-
-
-
 
     </div>
     <div class="right">
@@ -188,14 +157,15 @@
         <li @click="goCreation()">
           <i class="el-icon-edit"></i><span>创作插画</span>
         </li>
-        <li @click="goCompose()">
-          <i class="el-icon-document-add"></i><span>合成绘本</span>
-        </li>
         <li @click="goLocalIllus()">
-          <i class="el-icon-document-add"></i><span>上传本地插画</span>
+          <i class="el-icon-picture-outline"></i><span>上传本地插画</span>
         </li>
-        <li @click="goLocalPDF()">
-          <i class="el-icon-document-add"></i><span>上传PDF</span>
+        <li @click="goCompose()">
+          <i class="el-icon-reading"></i><span>合成绘本</span>
+        </li>
+       
+        <li @click="goHome()">
+          <i class="el-icon-house"></i><span>返回首页</span>
         </li>
       </ul>
     </div>
@@ -239,8 +209,8 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
    goLocalIllus(){
        this.$router.push("/user/upload/upload-local-illustration");
    },
-   goLocalPDF(){
-       this.$router.push("/user/upload/upload-loacl-pdf");
+   goHome(){
+       this.$router.push("/");
    },
     goIllusDetails(id) {
       this.$router.push({name:'user-illusdetails',params:{illId:id}});
@@ -255,9 +225,6 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     goBookEdition(item){
       this.$store.commit("editionBookFun",item)
         this.$router.push("/user/upload/editionbook");
-    },
-    unFocus(){
-        console.log("取关")
     },
     goMyIllu(){
       this.activeIndex=2
@@ -279,8 +246,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     async getBook(){
       try{
           let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id)
-          this.toolArr=res.data.message
-          
+          this.toolArr=res.data.message   
         } catch(err){
           console.log(err)
         }
@@ -325,7 +291,6 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
   background-color: #f5f6fa;
   color: #333;
   margin: 0;
-
   min-height: 90vh;
   display: flex;
 
@@ -335,7 +300,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
   height: 90vh;
   margin-right: 8px;
   margin-left: 8vw;
-  overflow-y: scroll;
+  
 }
 .el-menu.el-menu--horizontal {
   border: none;
@@ -343,36 +308,34 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
 }
 .container .left .illustration,
 .books {
-  width:72vw;
+  width:100%;
+  padding:2vw;
   min-height: 38vh;
   background-color: #fff;
   margin-top: 8px;
-  
   font-size: 18px;
   border-radius: 4px;
 }
 .container .left .illustration .title {
-  padding:2vw 2vw 1vw 2vw;
+  margin-bottom: 4vh;
   display: flex;
   justify-content: space-between;
 }
 .container .left .books .title {
-   padding:2vw 2vw 1vw 2vw;
   display: flex;
   justify-content: space-between;
+  margin-bottom: 4vh;
 }
 .container .left .illustration ul {
   list-style: none;
- 
   display: flex;
-  flex-wrap:wrap;
+  justify-content: space-between;
 }
 .container .left .illustration ul li {
   width: 14vw;
   height: 9.85vw;
   background-color: #f5f6fa;
   cursor: pointer;
- margin:1vw 2vw;
  border-radius: 4px;
 }
 .container .left .books ul {
@@ -386,7 +349,6 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
   height: 9.85vw;
   background-color: #f5f6fa;
   cursor: pointer;
-  margin:1vw 2vw;
   border-radius: 4px;
 }
 .container .right {
@@ -445,7 +407,7 @@ align-items: center;
   font-weight: 500;
 }
 .container .right .create li:first-child {
-  background-color: #e5defe;
+  background-color: #b8E2b1;
 }
 .container .right .create li span {
   margin-left: 8px;
@@ -456,14 +418,15 @@ align-items: center;
 /* 我的插画页面样式 */
 .index2 {
   width: 72vw;
-  height: 90vh;
+  height: calc(100vh - 140px);
   background-color: #fff;
   margin-top: 8px;
   padding: 2vw;
+  margin-bottom: 8px;
   font-size: 18px;
   border-radius: 4px;
   overflow-y: scroll;
-  
+  overflow-x: hidden;
 }
 .index2 .index2-items {
   list-style: none;

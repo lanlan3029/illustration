@@ -1,7 +1,7 @@
 <template>
    <div class="container">
      <ul >
-        <router-link to="/"><li><i class="el-icon-house" :size="30"/><span>首页</span></li></router-link>
+        <router-link to="/"><li><i class="el-icon-house" :size="30"/><span>首&nbsp;&nbsp;&nbsp;&nbsp;页</span></li></router-link>
         <router-link to="/creation"><li><i class="el-icon-edit-outline" :size="30"/><span>创作插画</span></li></router-link>
          <router-link to="/user/upload"><li><i class="el-icon-document-add" :size="30"/><span>上传作品</span></li></router-link>
          <router-link to="/original-illustration"><li><i class="el-icon-picture-outline" :size="30"/><span>原创插画</span></li></router-link> 
@@ -42,7 +42,7 @@ export default {
     height:15vh;
     line-height:15vh;
     color:#1c345e;
-    font-weight: 400;
+    font-weight: 500;
 
 }
 .container ul li span{

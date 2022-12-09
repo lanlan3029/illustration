@@ -1,11 +1,11 @@
 <template>
     <div class="container">
-     <router-link to="/"><el-avatar style="background-color: #e5defe" shape="square" size="large" >Logo</el-avatar></router-link>
+     <router-link to="/"><div class="logo"><el-image :src="logoUrl" fit="contain"></el-image></div></router-link>
 
          <input type="text" class="search" name="search" placeholder="请输入搜索内容">
 
         <div class="user" v-if="isLogin">
-            <el-avatar style="background-color: #e5defe" icon="ios-person" class="avatar" :src="userInfo.avatar"/>
+            <el-avatar style="background-color: #019AD8" icon="ios-person" class="avatar" :src="userInfo.avatar"/>
              
             <ul class="user-info">
                 <li @click="toMyHomePage">我的主页</li>
@@ -15,7 +15,7 @@
 
       </div> 
       <div v-else  @click="showMask">
-        <div style="background-color: #e5defe" class="loginBt">登陆</div>
+        <div style="background-color: #019ad8" class="loginBt">登陆</div>
       </div>
      
       
@@ -31,23 +31,25 @@ import {mapState} from "vuex"
 export default {
      data(){
         return{ 
+          logoUrl:require('../assets/logo/logo.png'),
             userid:localStorage.getItem("id"),
            
         }
     },
- mounted(){
-    this.tokenFail();
-    this.getUser();
-    this.getCollectionBook();
-            this.getLikeBook();
-            this.getCollectionIllus();
-            this.getLikeIllus();
-            this.getAttention();
-            
-    },
     computed:mapState([
-        "userInfo","isLogin"
+        "userInfo","isLogin","fansArr","attentionArr"
     ]),
+ async mounted(){
+    await this.tokenFail();
+    await this.getUser();
+    await this.getCollectionBook();
+    await this.getLikeBook();
+    await this.getCollectionIllus();
+    await this.getLikeIllus();
+    await this.getAttention();
+    await this.getFans();
+    },
+   
     methods:{
         showMask(){
            this.$store.commit("showMask")  
@@ -93,8 +95,7 @@ export default {
     }
     },
      //获取用户收藏的绘本
-     getCollectionBook(){
-       
+     getCollectionBook(){ 
       this.$http
         .get(`/user/list/collect`,
         {
@@ -111,7 +112,6 @@ export default {
                tool.push(arr[i].collectid)
             }
               this.$store.commit("collectBook",tool)
-              console.log(tool)
           } 
         })
         .catch((error) => console.log(error));
@@ -200,12 +200,36 @@ export default {
             let arr=response.data.message
             let tool=[]
             for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].fallowid)
+               tool.push(arr[i].fllowid)
             }
-              this.$store.commit("myAttention",tool)
-             
-
+              this.$store.commit("myAttention",tool)  
+              console.log(tool)   
           } 
+          
+        })
+        .catch((error) => console.log(error));
+        },
+
+         //获取粉丝
+         getFans(){
+          this.$http
+        .get(`/user/list/fllow`,
+        {params:{id:this.userid,sign:"item"},
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          if (response.data.desc === "success") {
+            let arr=response.data.message
+            let tool=[]
+            for(var i=0;i<arr.length;i++){
+               tool.push(arr[i].fllowid)
+            }
+              this.$store.commit("myFans",tool)
+              console.log(tool)
+          } 
+         
         })
         .catch((error) => console.log(error));
         },
@@ -217,35 +241,42 @@ export default {
 <style scoped>
 .container{
     width:100vw;
-    height:10vh;
-    padding:2vh 5vh;
+    height:72px;
+    padding:12px 4vh;
     border-bottom: 2px solid #f8f8f9;
     display: flex;
     justify-content: space-between;
     
 }
-
+.container .logo{
+     height:48px;
+     width:152px;
+}
+.container .logo .el-image{
+  height:48px;
+     width:152px;
+}
 .container .search{
     background-color: #f5f6fa;
     border:none;
     width:24vw;
-    height:6vh;
-    line-height:6vh;
+    height:48px;
+    line-height:48px;
     padding:0 3vh 0 5vh;
     border-radius:6vh;
     position: relative;
-    font-size:14px;
+    font-size:16px;
     left:-30vh;
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 4%);
 background-image: url('../assets/images/search.svg');
- background-position: 1.5vh 1.5vh;
-  background-size: 3vh;
+ background-position: 12px 12px;
+  background-size: 24px;
   background-repeat: no-repeat;
 }
 .avatar{
     cursor: pointer;
-    width:6vh;
-    height:6vh;
+    width:48px;
+    height:48px;
 }
 .user{
     width:6vw;
@@ -282,7 +313,7 @@ background-image: url('../assets/images/search.svg');
     
 }
 .user .user-info li:hover{
-    background-color: #e5defe ;
+    background-color: #FFE567;
 }
 .loginBt{
     width:48px;

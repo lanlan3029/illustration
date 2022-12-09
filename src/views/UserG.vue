@@ -48,7 +48,7 @@
               :key="index"
             >
               <el-image
-                :src="`http://10.0.0.31:3000/`+item.content"
+                :src="`http://119.45.172.191:3000/`+item.content"
                 style="width: 16vw; height: 11.26vw"
                 fit="cover"
                 @click="goIllusDetails(item._id)"
@@ -71,7 +71,7 @@
               :key="index"
             >
               <el-image
-                :src="`http://10.0.0.31:3000/`+item.content"
+                :src="`http://119.45.172.191:3000/`+item.content"
                 style="width: 16vw; height: 11.26vw"
                 fit="contain"
               ></el-image>
@@ -231,6 +231,7 @@ export default {
     width:50vw;
 }
 .container .left .info .info-center .username{
+  
     font-size: 28px;
     font-weight:500;
 }

@@ -1,7 +1,7 @@
 <template>
   <div>
- <div class="index5-focus" v-for="(item,index) in attentionDetails" :key="index">    
-      <el-avatar :src="item.src" :size="120" class="avatar"></el-avatar>
+ <div class="index5-focus" v-for="(item,index) in fansDetails" :key="index">    
+      <el-avatar :src="item.avatar" :size="120" class="avatar"></el-avatar>
         <el-descriptions class="index5-info" :column="2" :colon="false">
   <template slot="title">{{item.name}}</template>
   <template slot="extra">
@@ -25,24 +25,49 @@ export default {
    fansDetails:[]
   }},
   computed:mapState(["fansArr"]),
-  mounted(){
-    this.getFans()
+  async mounted(){
+   await this.getFans();
+   await this.completeFun();
   },
  
 
   methods:{
+ 
+
     async getFans(){
       console.log(this.fansArr)
       for(var i=0;i<this.fansArr.length;i++){
         try{
           let res=await this.$http.get(`/user/`+this.fansArr[i])
           this.fansDetails.push(res.data.message)
+          
+          console.lo
         } catch(err){
           console.log(err)
         }
       }
       console.log(this.attentionDetails)
     },
+        //将粉丝数和关注数放到fansDetails
+        async completeFun(){
+      for(var i=0;i<this.fansDetails.length;i++){
+        try{
+          let resF=await this.$http.get(`/user/number/fllow`,{params:{id:this.attentionDetails[i]._id,sign:"item"}})
+          console.log(resF)
+          let resA=await this.$http.get(`/user/number/fllow`,{params:{id:this.attentionDetails[i]._id}})
+          console.log(resA)
+          if(resF.data.desc=="success"&resA.data.desc=="success"){
+            this.fansDetails[i].fans_num=resF.data.message;
+        this.fansDetails[i].attention_num=resA.data.message
+          }
+        
+      } catch(err){
+            console.log(err)
+          }
+      
+        }
+
+      },
 
   }
 

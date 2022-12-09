@@ -3,17 +3,19 @@
 <div class="box">
 <el-form label-width="100px" ref="form" :model="form">
     <el-form-item label="作品">
-    <el-image :src="(`http://10.0.0.31:3000/`+ editionIllus.content)" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="(`http://119.45.172.191:3000/`+ editionIllus.content)" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
     <el-input v-model="form.name"></el-input>
   </el-form-item>
   <el-form-item label="类别">
-    <el-select v-model="form.category" placeholder="请选择图元类别">
-      <el-option label="节庆" value="shanghai"></el-option>
-      <el-option label="风景" value="beijing"></el-option>
-       <el-option label="日常" value="beijing"></el-option>
-        <el-option label="氛围" value="beijing"></el-option>
+    <el-select v-model="form.category" placeholder="请选择插画类别">
+      <el-option label="生活日常" value="daily"></el-option>
+      <el-option label="欢庆节日" value="festival"></el-option>
+       <el-option label="校园生活" value="school"></el-option>
+        <el-option label="动物世界" value="animal"></el-option>
+        <el-option label="奇幻想象" value="fantasy"></el-option>
+        <el-option label="其他" value="others"></el-option>
     </el-select>
   </el-form-item>
   <el-form-item label="作品描述">
@@ -21,7 +23,7 @@
   </el-form-item>
    <el-form-item>
     <el-button type="primary" @click="onSubmit(editionIllus._id)" class="btn">上传</el-button>
-    <el-button  @click="deleteWork" class="btn">删除</el-button>
+    <el-button  @click="deleteIll(editionIllus._id)" class="btn">删除</el-button>
   </el-form-item>
 </el-form>
 
@@ -70,9 +72,26 @@ export default {
       })
       
     },
-    deleteWork(){
-        console.log("删除")
-    }
+    //删除插画
+    deleteIll(id){
+      this.$http
+        .delete(`/ill/`+id,
+        {
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        },
+    ).then((response) => {
+          if (response.data.desc === "success") {
+            this.$message({
+          message: '已删除',
+          type: 'success'
+        });
+        this.$router.push('/user')
+          } 
+        })
+        .catch((error) => console.log(error));
+   },
  
   }
 }
@@ -86,11 +105,12 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow-y: scroll;
 }
 .box{
     width:60vw;
     height:90vh;
-    overflow-y: scroll;
+   
 }
 .box>>>.el-input__inner{
     box-shadow:none;

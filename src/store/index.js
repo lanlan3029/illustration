@@ -42,7 +42,7 @@ export default new Vuex.Store({
         editionBook: {},
         books: [],
         myBooks: [],
-        //收藏喜欢的数组
+        //收藏喜欢的id数组
         collectIllusArr: [],
         collectBookArr: [],
         likeIllusArr: [],
@@ -51,6 +51,8 @@ export default new Vuex.Store({
         fansArr: [],
         attentionArr: [],
         userInfo: {},
+        //收藏的绘本的全部信息
+        collectBookDetails: [],
     },
     mutations: {
         ...contextmenu.mutations,
@@ -159,14 +161,27 @@ export default new Vuex.Store({
         collectBook(state, items) {
             state.collectBookArr = state.collectBookArr.concat(items)
         },
+        getCollectBook(state, items) {
+            state.collectBookDetails = items
+        },
         likeBook(state, items) {
             state.likeBookArr = state.likeBookArr.concat(items)
         },
         myFans(state, items) {
-            state.fansArr = items
+            state.fansArr = state.fansArr.concat(items)
         },
         myAttention(state, items) {
             state.attentionArr = state.attentionArr.concat(items)
+        },
+        //取消关注
+        cancelAttention(state, item) {
+            let d = state.attentionArr.indexOf(item)
+            state.attentionArr.splice(d)
+        },
+        //取消收藏绘本
+        cancelCoBook(state, item) {
+            let d = state.collectBookArr.indexOf(item)
+            state.collectBookArr.splice(d)
         },
         setUserInfo(state, items) {
             state.userInfo = items

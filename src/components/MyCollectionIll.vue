@@ -8,10 +8,10 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`http://10.0.0.31:3000/`+item.content)"
+                :src="(`http://119.45.172.191:3000/`+item.content)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
-                @click="goIllusDetails(item._id)"
+                @click="toDetail(item._id)"
               ></el-image>
             </div>
    <el-descriptions class="margin-top" :column="2" :colon="false">
@@ -19,8 +19,7 @@
     <template slot="extra">
       <el-button size="small" @click="deleteCollectIllus(item)">取消收藏</el-button>
     </template>
-   <el-descriptions-item label="描述">{{item.description}}</el-descriptions-item>
-   <el-descriptions-item></el-descriptions-item>
+   <el-descriptions-item span="2" label="描述">{{item.description}}</el-descriptions-item> 
     <el-descriptions-item label="获赞">{{item.like_num}}</el-descriptions-item>
     <el-descriptions-item label="收藏">{{item.collection_num}}</el-descriptions-item>
   </el-descriptions> 
@@ -57,7 +56,12 @@ this.getCollectIllus()
           }
         }
       },
-
+      toDetail(id) {
+      this.$router.push({
+        name: "original-illusdetails",
+        params: { illId: id },
+      });
+    },
 
 
 

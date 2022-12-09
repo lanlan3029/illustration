@@ -8,7 +8,7 @@
         <ul class="title">
           <li @click="countIn" :class="[countLog ? 'curLogin' : '']">账号登陆</li>
           <el-divider direction="vertical"></el-divider>
-          <li  @click="emailIn" :class="[!countLog ? 'curLogin' : '']">邮箱登陆</li>
+          <li  @click="toregister" :class="[!countLog ? 'curLogin' : '']">注册</li>
         </ul>
 
          <div v-if="countLog" class="form">
@@ -18,7 +18,7 @@
             </div>
             <div class="logLine">
             <span>密 码</span>
-            <input v-model="count.pwd" type="text" name="password" class="input" placeholder="请输入密码" />
+            <input v-model="count.pwd" type="password" name="password" class="input" placeholder="请输入密码" />
             </div>
             <el-button @click="login" class="btn">登录</el-button>
             <div class="toregister" @click="toregister">没有账号？<span>注册</span></div>
@@ -29,8 +29,8 @@
             <span>邮 箱</span>
             <input v-model="emailCount.emailName" type="text" name="email" class="input" placeholder="请输入账号" /></div>
             <div class="logLine"><span>密 码</span>
-            <input v-model="emailCount.emailPwd" type="text" name="password" class="input" placeholder="请输入密码" /></div>
-            <el-button @click="register" class="btn">登录/注册</el-button>
+            <input v-model="emailCount.emailPwd" type="password" name="password" class="input" placeholder="请输入密码" /></div>
+            <el-button @click="register" class="btn">注册</el-button>
             <div class="toregister" @click="toregister">没有账号？<span @click="toregister">注册</span></div>
         </div>
       </div>
@@ -65,9 +65,7 @@ export default{
         countIn(){
           this.countLog=true;
         },
-        emailIn(){
-          this.countLog=false; 
-        },
+       
         //获取用户信息
         async getUser(){
        try{
@@ -124,7 +122,7 @@ export default{
   })
           } else {
               this.$message({
-    message: '邮箱地址不规范',
+    message: '出错啦，请再试一次',
     type: 'warning',
     offset:'180',
   })
@@ -133,6 +131,7 @@ export default{
         .catch((error) => console.log(error));
           
         },
+
         toregister(){
           this.countLog=false;
         }

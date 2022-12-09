@@ -11,6 +11,7 @@
   :on-change="fileChange"
   :on-preview="handlePictureCardPreview"
   :on-remove="handleRemove"
+  accept=".png, .jpg, .jpeg, .JPG, .JPEG"
   :class="objClass"
   >
   <i class="el-icon-plus"></i>
@@ -23,7 +24,7 @@
     <el-input v-model="form.name"></el-input>
   </el-form-item>
   <el-form-item label="类别"> 
-    <el-select v-model="form.category" placeholder="请选择图元类别">
+    <el-select v-model="form.category" placeholder="请选择插画类别">
       <el-option label="生活日常" value="daily"></el-option>
       <el-option label="欢庆节日" value="festival"></el-option>
        <el-option label="校园生活" value="school"></el-option>

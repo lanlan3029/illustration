@@ -7,9 +7,7 @@
         <el-avatar :src="authorDetails.avatar" :size="48" class="avatar"></el-avatar>
         <div class="text">
           <div class="title"><span>{{bookDetails.title}}</span><el-tag size="mini" type="info">{{bookDetails.category}}</el-tag></div>
-          <div class="author"><span @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span><span v-if="(authorDetails._id!=userid)">
-            <el-button type="text" size="mini" v-if="attentionArr.includes(authorDetails._id)" @click="cancelAttention(authorDetails._id)">已关注</el-button>
-            <el-button type="text" size="mini" v-else @click="newAttention(authorDetails._id)">关注</el-button>
+          <div class="author"><span @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span><span v-if="(authorDetails._id!=userid)"><el-button type="text" size="mini" v-if="attentionArr.includes(authorDetails._id)">已关注</el-button><el-button type="text" size="mini">关注</el-button>
             </span></div>
           </div>
           </div>
@@ -29,10 +27,10 @@
         <el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></el-tooltip>
         </li>
         <li> 
-          <span v-if="likeBookArr.includes(bookDetails._id)"><i  style="color:#F489B5" class="iconfont icon-aixin1"></i>{{bookDetails.like_num}}</span>
+          <span v-if="likeBookArr.includes(bookDetails._id)"><i  style="color:#c1b0ff" class="iconfont icon-aixin1"></i>{{bookDetails.like_num}}</span>
                 <span v-else><i class="iconfont icon-aixin" @click="likeBookFun(bookDetails._id)" ></i>{{bookDetails.like_num}}</span></li>
         <li>
-                <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#FFd301" class="iconfont icon-shoucang1"></i>{{bookDetails.collection_num}}</span>
+                <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#c1b0ff" class="iconfont icon-shoucang1"></i>{{bookDetails.collection_num}}</span>
                 <span v-else><i class="iconfont icon-shoucang" @click="collectBookFun(bookDetails._id)" ></i>{{bookDetails.collection_num}}</span></li>
          
        </ul>
@@ -68,7 +66,7 @@ export default {
     }
   },
   computed:mapState([
-        "books",
+        "collectBookDetails",
         "collectBookArr",
         "likeBookArr",
         "attentionArr",
@@ -79,48 +77,10 @@ export default {
     console.log("关注作者")
    },
    getBookDetails(){
-    let tool=this.books.filter(item=>{return item._id==this.id}) 
+    let tool=this.collectBookDetails.filter(item=>{return item._id==this.id}) 
     this.bookDetails=tool[0]
     console.log(this.bookDetails)
     
-   },
-    //关注
-    newAttention(id){
-      this.$http
-        .post(`/user/fllow/`+id,{},
-        {
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-        .then((response) => {
-          console.log(this.attentionArr)
-          if (response.data.desc === "success") {
-              //把该用户ID到用户已关注数组
-              this.$store.commit("myAttention",id)
-          } 
-        })
-        .catch((error) => console.log(error));
-   },
-    //取消关注
-    cancelAttention(id){
-      this.$http
-        .delete(`/user/list/fllow?id=`+id,
-        {
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        },
-    )
-        .then((response) => {
-          console.log(this.attentionArr)
-          if (response.data.desc === "success") {
-              //把该用户ID到用户已关注数组
-              this.$store.commit("cancelAttention",id)
-              console.log(this.attentionArr)
-          } 
-        })
-        .catch((error) => console.log(error));
    },
    //点击喜欢绘本
    likeBookFun(id) {
@@ -246,13 +206,11 @@ collectBookFun(id) {
   user-select: none;
   height:24px;
   line-height: 24px;
-  text-align: left;
 }
 
 .content-left .info .text .author{
    font-size:14px;
-   cursor:pointer;
-   text-align: left;
+   cursor:pointer
 }
 .content-left .info .text .author span{
   margin-right:16px;

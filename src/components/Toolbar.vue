@@ -13,7 +13,7 @@
             />
             <ComponentList />
              <label class="insert" @click="exportImg">保存图片到本地</label></div>
-              <label class="insert" @click="saveDraft">保存草稿</label>
+              <label class="insert" @click="saveDraft">保存草稿</label> <label class="insert" @click="deleteDraft">删除草稿</label>
               <label class="export" @click="uploadIllu">上传作品</label>
               
            
@@ -48,6 +48,9 @@ export default {
     },
     components:{
        ComponentList
+    },
+    props:{
+        draftid:{type:String,default:''}
     },
     computed:mapState([
         "componentData",
@@ -119,13 +122,27 @@ export default {
                 "Authorization": "Bearer " + localStorage.getItem("token")
             }} ).then((response) => {
           if (response.data.desc === "success") {
-            this.$router.push("/user/savedraft");        
+            this.$message('草稿已保存');     
+          } else {
+             this.$router.push({path:'/errorpage'});   
+          }
+        })
+        .catch((error) => console.log(error));
+       },
+       deleteDraft(){
+        this.$http.delete(`/ill/draft/`+this.draftid,{ headers: {
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            }}).then((response) => {
+          if (response.data.desc === "success") {
+            this.$store.commit('setComponentData',[])
+            this.$message('草稿已删除');        
           } else {
              this.$router.push({path:'/errorpage'});   
           }
         })
         .catch((error) => console.log(error));
        }
+       
  
     }
 }
@@ -184,7 +201,7 @@ export default {
     width: 56px;
     color:#fff;
     text-align: center;
-    background-color:#e5defe;
+    background-color:#71c563;
 }
 .export:hover{
     background-color: #a99bd6;

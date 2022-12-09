@@ -1,27 +1,26 @@
 <template>
     <div>
-          <ul class="index2-items">
-            <li
-              class="index2-item"
-              v-for="(item, index) in toolArr"
-              :key="index"
-            >
-              <div class="index2-avatar">
-                <el-image :src="(`http://10.0.0.31:3000/`+item.content[0])" fit="contain" @click="toDetail(item._id)"/>
-           
-              </div>
-     <el-descriptions class="margin-top" :column="2" :colon="false">
-      <template slot="title">{{item.title}}</template>
-      <template slot="extra">
-      <el-button size="small" @click="deleteCollectBook(item)">取消收藏</el-button>
+      <ul class="index2-items">
+          <li
+            class="index2-item"
+            v-for="(item, index) in collectBookDetails"
+            :key="index"
+          >
+            <div class="index2-avatar">
+              <el-image :src="(`http://119.45.172.191:3000/`+item.content[0])" class="image" fit="cover" @click="goBookDetails(item._id)"/>
+            </div>
+   <el-descriptions :column="2" :colon="false">
+    <template slot="title">{{item.title}}</template>
+    <template slot="extra">
+      <el-button size="small" @click="cancelCollectBook(item._id)">取消收藏</el-button>
     </template>
-     <el-descriptions-item label="描述">{{item.description}}</el-descriptions-item>
-     <el-descriptions-item></el-descriptions-item>
-      <el-descriptions-item label="获赞">{{item.like_num}}</el-descriptions-item>
-      <el-descriptions-item label="收藏">{{item.collection_num}}</el-descriptions-item>
-    </el-descriptions> 
-            </li>
-          </ul>
+   <el-descriptions-item span="2" label="描述">{{item.description}}</el-descriptions-item>
+   
+    <el-descriptions-item label="获赞">{{item.like_num}}</el-descriptions-item>
+     <el-descriptions-item label="收藏">{{item.collection_num}}</el-descriptions-item>
+  </el-descriptions> 
+          </li>
+        </ul>
         </div>
   </template>
   
@@ -32,13 +31,17 @@
       data(){
           return{
             id:localStorage.getItem("id"),
-            toolArr:[]
+            toolArr:[],
+            
           }
       },
-      computed:mapState(["collectBookArr"]),
+      computed:mapState(["collectBookArr","collectBookDetails"]),
+
   async mounted(){
   await this.getCollectBook();
   await this.getImgUrl();
+  await this.setBooks();
+  console.log(this.toolArr)
   
   },
       methods:{
@@ -58,18 +61,42 @@
     for(var i=0;i<this.toolArr.length;i++){
       //获取绘本图片ID
       let tool=this.toolArr[i].content
+     
       //遍历绘本图片ID，替换成图片URL
       for(var j=0;j<tool.length;j++){
         try{
           let res=await this.$http.get(`/ill/`+tool[j])
-          this.toolArr[i].content[j]=res.data.message.content
-        
+          this.toolArr[i].content[j]=res.data.message.content    
         } catch(err){
           console.log(err)
         }
       } 
-    }  console.log(this.toolArr)
+    } 
    },
+   setBooks(){
+this.$store.commit("getCollectBook",this.toolArr)
+   },
+
+cancelCollectBook(id){
+  this.$http
+        .delete(`/user/list/collect?id=`+id,
+        {
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        },
+    )
+        .then((response) => {
+          console.log(this.attentionArr)
+          if (response.data.desc === "success") {
+             window.location.reload()
+          } 
+        })
+        .catch((error) => console.log(error));
+},
+   goBookDetails(id){
+    this.$router.push({name:'collect-bookdetails',params:{bookId:id}});
+   }
 
       }
   }
@@ -100,6 +127,7 @@
   .index2-items .index2-item .index2-avatar .el-image{
     width: 250px;
     height: 176px;
+    cursor: pointer;
   }
 .index2-items .index2-item .index2-center {
     width: 500px;
