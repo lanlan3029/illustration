@@ -3,9 +3,9 @@
 <div class="box">
 
 <el-form ref="form" :model="form" label-width="100px">
-    <el-form-item label="上传作品">
+    <el-form-item label="上传插画">
     <el-upload
-  action="https://jsonplaceholder.typicode.com/posts/"
+  action="http://119.45.172.191:3000/picture/"
   list-type="picture-card"
   :auto-upload="false"
   :on-change="fileChange"
@@ -30,6 +30,9 @@
        <el-option label="校园生活" value="school"></el-option>
         <el-option label="动物世界" value="animal"></el-option>
         <el-option label="奇幻想象" value="fantasy"></el-option>
+        <el-option label="数学知识" value="math"></el-option> 
+        <el-option label="文学知识" value="literature"></el-option>
+        <el-option label="英语学习" value="english"></el-option>
         <el-option label="其他" value="others"></el-option>
     </el-select>
   </el-form-item>
@@ -82,7 +85,8 @@ export default {
             console.log(this.fileStore)
          },
          onSubmit(){
-          this.disabled = true;
+          if((this.fileStore!={})&(this.form.name!='')&(this.form.category!='')){
+            this.disabled = true;
            let formdata = new window.FormData()
            formdata.append('picture',this.fileStore)
            formdata.append('title',this.form.name)
@@ -105,6 +109,16 @@ export default {
          }
        })
        .catch((error) => console.log(error));
+          }else{
+              this.$message({
+          message: '插画、插画名称、类别不能为空',
+          type: 'warning',
+          offset:'300'
+        });
+            }
+
+
+         
    },
       }
     }

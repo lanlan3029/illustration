@@ -86,8 +86,8 @@
       <el-button size="small" @click="goEdition(item)">编辑</el-button>
     </template>
    <el-descriptions-item span="2" label="描述">kooriookami</el-descriptions-item>
-    <el-descriptions-item label="获赞">1289</el-descriptions-item>
-    <el-descriptions-item label="收藏">89</el-descriptions-item>
+    <el-descriptions-item label="获赞"></el-descriptions-item>
+    <el-descriptions-item label="收藏"></el-descriptions-item>
     <el-descriptions-item v-if="(item.status==0)" label="状态"><el-tag type="warning" size="mini">待审核</el-tag></el-descriptions-item>
     <el-descriptions-item v-if="(item.status==1)" label="状态"><el-tag type="success" size="mini">审核通过</el-tag></el-descriptions-item>
   </el-descriptions> 
@@ -224,7 +224,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     },
     goBookEdition(item){
       this.$store.commit("editionBookFun",item)
-        this.$router.push("/user/upload/editionbook");
+        this.$router.push({name:'edition-book',params:item._id});
     },
     goMyIllu(){
       this.activeIndex=2

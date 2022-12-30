@@ -285,7 +285,7 @@ background-image: url('../assets/images/search.svg');
 .user .user-info{
     display: none;
     position: absolute;
-    top:10vh;
+    top:72px;
     right:8px;
     padding:8px;
     list-style: none;

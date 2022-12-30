@@ -109,6 +109,7 @@ export default {
             reader.readAsDataURL(file)
         },      
        exportImg(){
+        this.$message("正在下载，请勿重复点击");
         this.$emit('downLoad')
        },
        uploadIllu(){

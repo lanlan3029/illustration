@@ -4,7 +4,7 @@
 
   <div class="content">
     <div class="defaultPic">
-    <el-image :src="imgUrl" fit="cover" style="width:68vw;height:86vh"/>
+    <el-image :src="imgUrl" fit="fill" style="width:122vh;height:86vh"/>
     </div>
 
     <right-menu />
@@ -28,7 +28,7 @@ export default {
   },
   data(){
     return{
-imgUrl:require('../assets/images/111.jpeg'),
+imgUrl:require('../assets/images/111.png'),
 
     }
     
@@ -46,10 +46,11 @@ methods:{
   margin-left: 8vw;
 }
 .defaultPic{
+  margin-top:2vh;
   width:72vw;
-    height:90vh;
+    height:calc(98vh-72px);
     background-color:#f5f6fa;
     border-radius: 8px;
-    padding:2vh 2vw;
+    padding:2vh;
 }
 </style>

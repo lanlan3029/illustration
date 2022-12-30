@@ -1,22 +1,23 @@
 <template>
    <div class="container">
     <div class="search">
-     <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @change="loadSearch(searchInput)"/></div>
+     <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @input="loadSearch(searchInput)"/></div>
      <div v-if="(searchInput !='')" class="classify">
         
-        <ul class="elements" v-infinite-scroll="load" v-if="(searchArr.length>0)">
+        <ul class="elements" v-infinite-scroll="searchLoad">
         <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
             <el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image>
         </li>
     </ul>
-    <div v-else class="emptyResult"><el-empty description="换个关键词再试一下吧" :image-size="80"></el-empty></div>
+    
      </div>
      <div v-else class="classify">
     <ul class="menu">
-        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type)" @mouseover="select(item.id,item.type)" :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
+        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type)"  :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
     </ul>
-    <ul class="elements" v-infinite-scroll="load">
-        <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])"><el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image></li>
+    <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled">
+        <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])">
+            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image></li>
 
     </ul></div>
     
@@ -41,7 +42,8 @@ export default {
     
     data(){
         return{
-          icons:[{type:"scene",icon:'iconfont icon-tupian',id:0,num:0},
+          icons:[
+            {type:"scene",icon:'iconfont icon-tupian',id:0,num:0},
           {type:"people",icon:'iconfont icon-ren1',id:1,num:0},
           {type:"animal",icon:'iconfont icon--panda',id:2,num:0},
           {type:"plant",icon:'iconfont icon-shu3',id:3,num:0},
@@ -54,10 +56,12 @@ export default {
           selectIndex:0,
           pictureArr:[],
           num:1,
+          searchNum:1,
           selectType:'',
           searchInput:'',
-          searchArr:'',
-          searchPage:1
+          searchArr:[],
+          searchPage:1,
+          scrollDisabled:false
         }
     },
      computed:mapState([
@@ -80,6 +84,8 @@ export default {
             console.log(error)
         }
         },
+
+
         
         //无限加载
         async load() {
@@ -88,7 +94,12 @@ export default {
         let res = await this.$http.get(
             `/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=`+this.num
         );
-        this.pictureArr = this.pictureArr.concat(res.data.message);
+        if(res.data.message!=[]){
+            this.pictureArr = this.pictureArr.concat(res.data.message);
+        }else{
+            this.scrollDisabled=true
+        }
+        
       } catch (err) {
         console.log(err);
       }
@@ -129,21 +140,44 @@ export default {
                         }
                     })
         },
+        //搜索关键字
         async loadSearch(value){
+            this.searchArr.length=0
             try {
         let res = await this.$http.get(
             `/picture/?sort_param=heat&sort_num=desc&keyword=`+ value +`&page=1`
         );
+        console.log(res)
         this.searchArr = this.searchArr.concat(res.data.message);
+       
       } catch (err) {
         console.log(err);
       }        
+        },
+//搜索结果加载
+        async searchLoad() {
+      this.searchNum++;
+      try {
+        let res = await this.$http.get(
+            `/picture/?sort_param=heat&sort_num=desc&keyword=`+ this.searchInput +`&page=`+this.searchNum
+        );
+        if(res.data.message!=[]){
+            this.pictureArr = this.pictureArr.concat(res.data.message);
+        }else{
+            this.scrollDisabled=true
         }
+        
+      } catch (err) {
+        console.log(err);
+      }
+    },
 
 
     },
     mounted(){
+        this.getPictures("scene")
         this.choosenArr=this.pictures[0]
+
     }
 
     
@@ -203,7 +237,7 @@ export default {
     background-color: #fff;
     list-style: none;;
     flex-wrap: wrap;
-    height:80vh;
+    height:81vh;
     align-content:flex-start;
     position: relative;
     left:4vw;
@@ -214,7 +248,7 @@ export default {
     background-color: #f5f6fa;
     border-radius: 4px;
     margin-right:0.5vw;
-    margin-bottom: 1vw;
+    margin-bottom: 1vh;
     cursor: pointer;
 }
 .element:hover{

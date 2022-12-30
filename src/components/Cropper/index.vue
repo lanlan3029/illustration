@@ -135,7 +135,7 @@ export default {
                 // 是否可以通过鼠标滚轮缩放图片 默认true
                 zoomOnWheel:true,
                 // 设置裁剪框为固定的宽高比
-                aspectRatio: 13 / 9,
+                
                 cropBoxResizable:true,
                 // 手动显示裁剪框
                 // crop(event) {

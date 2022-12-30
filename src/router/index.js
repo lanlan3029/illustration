@@ -223,13 +223,19 @@ const routes = [{
             import ( /* webpackChunkName: "book-details" */ '../views/MyCoBookDetails.vue'),
         props: true,
     },
+    {
+        path: "*",
+        name: 'NotFound',
+        component: () =>
+            import ( /* webpackChunkName: "notFound" */ '../views/NotFound.vue'),
+    },
 
 
 
 ]
 
 const router = new VueRouter({
-    mode: 'history',
+    mode: 'hash',
     base: process.env.BASE_URL,
     routes
 })
@@ -239,6 +245,7 @@ VueRouter.prototype.push = function push(location) {
     return originalPush.call(this, location).catch(err => err)
 }
 router.beforeEach((to, from, next) => {
+
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
         const cango = (to.name == 'Home' || to.name == 'original-books' || to.name == 'original-illustration' || to.name == 'connection')

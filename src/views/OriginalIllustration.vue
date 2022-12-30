@@ -170,6 +170,7 @@ export default {
   height: 14.08vw;
   border-radius: 4px;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+  background-color: #fff;
 }
 .text {
   margin-top: 1vh;
@@ -189,6 +190,7 @@ export default {
   text-overflow: ellipse;
   font-size: 14px;
   font-weight: 500;
+  text-align: left;
 }
 .data .icon {
   width: 4vw;

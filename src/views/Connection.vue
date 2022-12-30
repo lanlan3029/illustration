@@ -5,7 +5,7 @@
     <div class="left">
       <div class="code">
         <el-image
-      style="width: 300px; height: 400px"
+      style="width: 300px; height: 300px"
       :src="codepic"
       fit="fit" @click="toAnother(item.url)"></el-image>
       </div>
@@ -76,12 +76,12 @@ export default {
     height:90vh;
     background-color:#f5f6fa;
     border-radius: 8px;
-    padding:2vh 2vw;
+    padding:8vw 2vw;
     margin:auto;
 }
 .left .code{
    width:300px;
-   height:400px;
+   height:300px;
    margin:auto;
 
 }

@@ -55,7 +55,8 @@ export default {
   },
   methods:{
     onSubmit(){
-          this.disabled = true;
+      if((this.imgUrl!='')&(this.form.name!='')&(this.form.category!='')){      
+        this.disabled = true;
            let formdata = new window.FormData()
            formdata.append('picture',this.imgUrl)
            formdata.append('title',this.form.name)
@@ -77,6 +78,15 @@ export default {
          }
        })
        .catch((error) => console.log(error));
+      }else{
+              this.$message({
+          message: '插画、插画名称、类别不能为空',
+          type: 'warning',
+          offset:'300'
+        });
+            }
+         
+    
    },
  
   }

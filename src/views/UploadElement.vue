@@ -2,9 +2,10 @@
     <div class="container">
     <div class="box">
     
-    <el-form ref="form" :model="form" label-width="100px">
+    <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="上传图元">
         <el-upload
+        ref="element-upload"
       action="http://119.45.172.191:3000/picture/"
       list-type="picture-card"
       :on-preview="handlePictureCardPreview"
@@ -33,7 +34,7 @@
       <el-option label="玩具" value="toy"></el-option>
        <el-option label="交通工具" value="vehicle"></el-option>
         <el-option label="装饰" value="decoration"></el-option>
-        <el-option label="家具" value="furniture"></el-option>
+        <el-option label="家居" value="furniture"></el-option>
         <el-option label="其它" value="others"></el-option>
     </el-select>
   </el-form-item>
@@ -63,6 +64,14 @@
               desc: '',
               category:'',
             },
+            rules: {
+          name: [
+            { required: true, message: '请输入图元名称', trigger: 'blur' },
+          ],
+          category: [
+            { required: true, message: '请选择类别', trigger: 'blur' },
+          ],
+        },
             fileStore:{},
             objClass:{
           uploadShow:true,
@@ -80,20 +89,29 @@
             this.dialogImageUrl = file.url;
             this.dialogVisible = false;
           },
+  
           fileChange(file){
-            this.objClass.uploadHide=true;
+             const isLt2M = file.size / 1024 / 1024 < 1;
+        if (!isLt2M) {
+          this.$message.error('上传图片大小不能超过 1MB!');
+          this.$refs['element-upload'].clearFiles()
+        }else{
+          this.objClass.uploadHide=true;
             this.objClass.uploadShow=false;
              this.fileStore=file.raw
-             console.log(this.fileStore)
+        }
+        return isLt2M;
+
           },
           onSubmit(){
-            this.disabled = true;
+            if((this.fileStore!={})&(this.form.name!='')&(this.form.category!='')){
+              this.disabled = true;
             let formdata = new window.FormData()
             formdata.append('picture',this.fileStore)
             formdata.append('title',this.form.name)
             formdata.append('description',this.form.desc)
             formdata.append('type',this.form.category)
-            console.log(formdata)
+            console.log(formdata.title)
          this.$http
         .post(`/picture/`,formdata
         ,{
@@ -110,6 +128,14 @@
           }
         })
         .catch((error) => console.log(error));
+            }else{
+              this.$message({
+          message: '图元、图元名称、类别不能为空',
+          type: 'warning',
+          offset:'300'
+        });
+            }
+         
     },
         }
     }

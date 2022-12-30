@@ -6,11 +6,14 @@
       <div v-else v-for="(item, index) in imgToPDF" :key="index" class="item">
         <el-image :src="(`http://119.45.172.191:3000/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
       </div>
+      <div  class="item">
+        <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image>
+      </div>
     </div>
     <div class="details">
       <el-form ref="form" :model="form" label-width="80px">
   <el-form-item label="书名">
-    <el-input v-model="form.name"></el-input>
+    <el-input v-model="form.title"></el-input>
   </el-form-item>
    <el-form-item label="类别">
     <el-select v-model="form.category" placeholder="请选择绘本类别">
@@ -27,7 +30,7 @@
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
   <div class="btn">
-   <el-button @click="downPDF" >下载PDF</el-button>
+   <el-button @click="downPDF" :disabled="disabled">下载PDF</el-button>
     <el-button @click="submit" type="primary">发布作品</el-button>
     
   </div>
@@ -54,6 +57,7 @@ export default {
           category: '',
           desc:''
     },
+    codeImg:require('../assets/images/pdfCode.png'),
     pdfBase64:''
     }
   },
@@ -83,7 +87,6 @@ export default {
        .post(`/book/`,{content:this.checkedId,title:this.form.title,description:this.form.desc,type:this.form.category}
        ,{
          headers:{
-           'Content-Type': 'multipart/form-data',
            "Authorization":"Bearer "+localStorage.getItem("token")
          }
        })
@@ -102,7 +105,8 @@ export default {
     },
 
     downPDF() {
-      this.$message("正在下载");
+      this.disabled = true;
+      this.$message("正在下载，请勿重复点击");
 
       let target = document.getElementsByClassName("box");
       console.log(target)
