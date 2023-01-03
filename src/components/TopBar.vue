@@ -2,7 +2,7 @@
     <div class="container">
      <router-link to="/"><div class="logo"><el-image :src="logoUrl" fit="contain"></el-image></div></router-link>
 
-         <input type="text" class="search" name="search" placeholder="请输入搜索内容">
+         <input type="text" class="search" v-model="searchValue" name="search" autocomplete=off placeholder=" 请输入搜索内容" @keyup.enter="searchFun(searchValue)">
 
         <div class="user" v-if="isLogin">
             <el-avatar style="background-color: #019AD8" icon="ios-person" class="avatar" :src="userInfo.avatar"/>
@@ -33,11 +33,12 @@ export default {
         return{ 
           logoUrl:require('../assets/logo/logo.png'),
             userid:localStorage.getItem("id"),
+            searchValue:'',
            
         }
     },
     computed:mapState([
-        "userInfo","isLogin","fansArr","attentionArr"
+        "userInfo","isLogin","fansArr","attentionArr","searchArry"
     ]),
  async mounted(){
     await this.tokenFail();
@@ -67,7 +68,16 @@ export default {
             this.$store.commit("setUserInfo",null),
             this.$router.push('/')  
         },
-        
+        //搜索绘本
+        async searchFun(Value){
+          this.$store.commit("setSearchInput",this.searchValue)
+           this.$router.push({
+        name: "books",
+        query: { keyWord: Value },
+      });
+     
+
+        },
 
         tokenFail(){
       this.$http.post(`/user/iflogin`,{},

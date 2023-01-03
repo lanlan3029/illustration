@@ -30,8 +30,8 @@
               <div class="data">
                 <span class="name">{{ item.title }}</span>
                 <div class="icon"
-                  ><span v-if="likeIllusArr.includes(item._id)" ><i class="iconfont icon-aixin1" style="color:#F489B5"></i>{{ item.like_num }}</span>
-                  <span v-else><i  class="iconfont icon-aixin" @click="likeIllusFun(item._id)"></i>{{ item.like_num }}</span></div
+                  ><span v-if="likeIllusArr.includes(item._id)" ><i class="iconfont icon-aixin1" style="color:#F489B5"></i></span>
+                  <span v-else><i  class="iconfont icon-aixin" @click="likeIllusFun(item._id)"></i></span></div
                 >
               </div>
             </div>
@@ -86,7 +86,7 @@ export default {
   methods: {
     toDetail(id) {
       this.$router.push({
-        name: "original-illusdetails",
+        name: "illusdetails",
         params: { illId: id },
       });
     },

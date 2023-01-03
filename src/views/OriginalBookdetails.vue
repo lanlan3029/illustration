@@ -6,7 +6,7 @@
         <div class="info">   
         <el-avatar :src="authorDetails.avatar" :size="48" class="avatar"></el-avatar>
         <div class="text">
-          <div class="title"><span>{{bookDetails.title}}</span><el-tag size="mini" type="info">{{bookDetails.category}}</el-tag></div>
+          <div class="title"><span>{{bookDetails.title}}</span><el-tag size="mini">{{bookDetails.type}}</el-tag></div>
           <div class="author"><span @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span><span v-if="(authorDetails._id!=userid)">
             <el-button type="text" size="mini" v-if="attentionArr.includes(authorDetails._id)" @click="cancelAttention(authorDetails._id)">已关注</el-button>
             <el-button type="text" size="mini" v-else @click="newAttention(authorDetails._id)">关注</el-button>
@@ -15,7 +15,7 @@
           </div>
     
          <div class="book">
-          <div class="desc">{{bookDetails.desc}}</div>
+          <div class="desc">{{bookDetails.description}}</div>
         <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
         <el-image :src="(`http://119.45.172.191:3000/`+item)" style="width:984.3px;height:699px" fit="cover"></el-image>
       </div>
@@ -29,11 +29,11 @@
         <el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></el-tooltip>
         </li>
         <li> 
-          <span v-if="likeBookArr.includes(bookDetails._id)"><i  style="color:#F489B5" class="iconfont icon-aixin1"></i>{{bookDetails.like_num}}</span>
-                <span v-else><i class="iconfont icon-aixin" @click="likeBookFun(bookDetails._id)" ></i>{{bookDetails.like_num}}</span></li>
+          <span v-if="likeBookArr.includes(bookDetails._id)"><i  style="color:#F489B5" class="iconfont icon-aixin1"></i></span>
+                <span v-else><i class="iconfont icon-aixin" @click="likeBookFun(bookDetails._id)" ></i></span></li>
         <li>
-                <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#FFd301" class="iconfont icon-shoucang1"></i>{{bookDetails.collection_num}}</span>
-                <span v-else><i class="iconfont icon-shoucang" @click="collectBookFun(bookDetails._id)" ></i>{{bookDetails.collection_num}}</span></li>
+                <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#FFd301" class="iconfont icon-shoucang1"></i></span>
+                <span v-else><i class="iconfont icon-shoucang" @click="collectBookFun(bookDetails._id)" ></i></span></li>
          
        </ul>
       </div>

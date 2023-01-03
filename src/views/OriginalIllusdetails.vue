@@ -28,11 +28,11 @@
    
       <ul class="content-right">
        <li><el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></li>
-       <li> <div v-if="likeIllusArr.includes(illusDetails._id)" class="item"><i  class="iconfont icon-aixin1" style="color:#F489B5"></i><span>{{illusDetails.like_num}}</span></div>
-                <div v-else class="item"><i class="iconfont icon-aixin" @click="likeIllusFun(illusDetails._id)" ></i><span>{{illusDetails.like_num}}</span></div></li>
+       <li> <div v-if="likeIllusArr.includes(illusDetails._id)" class="item"><i  class="iconfont icon-aixin1" style="color:#F489B5"></i><span></span></div>
+                <div v-else class="item"><i class="iconfont icon-aixin" @click="likeIllusFun(illusDetails._id)" ></i><span></span></div></li>
         <li>
-                <div v-if="collectIllusArr.includes(illusDetails._id)" class="item"><i class="iconfont icon-shoucang1" style="color:#FFd301"></i><span>{{illusDetails.collection_num}}</span></div>
-                <div v-else class="item"><i class="iconfont icon-shoucang" @click="collectIllusFun(illusDetails._id)" ></i><span>{{illusDetails.collection_num}}</span></div></li>
+                <div v-if="collectIllusArr.includes(illusDetails._id)" class="item"><i class="iconfont icon-shoucang1" style="color:#FFd301"></i><span></span></div>
+                <div v-else class="item"><i class="iconfont icon-shoucang" @click="collectIllusFun(illusDetails._id)" ></i><span></span></div></li>
        </ul>
     
       </div>
@@ -238,7 +238,7 @@ export default {
    width:984.3px;
   padding:16px;
   color:#606266;
-  margin:auto;
+  margin:0 auto;
  
 
 }
@@ -247,6 +247,7 @@ export default {
   min-height: 200px;
   background-color: #fff;
   margin:auto;
+  margin-top: 0px;
   font-size:20px;
   font-weight: 600;
 }
@@ -272,6 +273,7 @@ export default {
   font-size:16px;
   margin-left:16px;
   font-weight: bold;
+  text-align: left;
 }
 .content-left .info .text .title{
    font-weight:700;

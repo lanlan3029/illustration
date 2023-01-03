@@ -53,6 +53,9 @@ export default new Vuex.Store({
         userInfo: {},
         //收藏的绘本的全部信息
         collectBookDetails: [],
+        //搜索关键字
+        searchInput: '',
+        searchArry: [],
     },
     mutations: {
         ...contextmenu.mutations,
@@ -145,6 +148,9 @@ export default new Vuex.Store({
         addBooks(state, items) {
             state.books = state.books.concat(items)
         },
+        removeBooks(state) {
+            state.books = []
+        },
         addMyBooks(state, items) {
             state.myBooks = items
         },
@@ -185,7 +191,14 @@ export default new Vuex.Store({
         },
         setUserInfo(state, items) {
             state.userInfo = items
+        },
+        setSearchInput(state, item) {
+            state.searchInput = item
+        },
+        searchedBooks(state, items) {
+            state.searchArry = state.searchArry.concat(items)
         }
+
 
 
     },

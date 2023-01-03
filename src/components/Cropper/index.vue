@@ -44,10 +44,10 @@
           <el-button icon="el-icon-bottom" @click="croppermove(0,-5)"/>
         </el-tooltip>
         <el-tooltip class="item" effect="dark" content="沿着x轴镜像图片" placement="top">
-          <el-button icon="el-icon-d-caret" @click="cropperScaleX"/>
+          <el-button icon="el-icon-caret-bottom" @click="cropperScaleX"/>
         </el-tooltip>
         <el-tooltip class="item" effect="dark" content="沿着y轴镜像图片" placement="top">
-          <el-button icon="el-icon-d-caret" @click="cropperScaleY"/>
+          <el-button icon="el-icon-caret-right" @click="cropperScaleY"/>
         </el-tooltip>
         <el-tooltip
           class="item"

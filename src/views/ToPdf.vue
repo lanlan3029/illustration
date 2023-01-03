@@ -146,7 +146,7 @@ export default {
           }
         }
         //保存到本地
-        pdf.save("content.pdf");
+        pdf.save("StoryTime.pdf");
         //上传至服务器
         this.pdfBase64 = pdf.output("dataurlstring");
         console.log(this.pdfBase64);

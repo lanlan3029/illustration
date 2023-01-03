@@ -10,7 +10,7 @@
       fit="fit" @click="toAnother(item.url)"></el-image>
       </div>
       <h2>关注公众号</h2>
-      <h2>投稿儿童故事&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;阅读原创绘本&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;发现有趣插画</h2>
+      <h2>投稿儿童故事&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;阅读原创绘本&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;获取育儿干货</h2>
     
     
     </div>
@@ -67,17 +67,19 @@ export default {
 <style scoped>
 
 .content{
+  margin-top:2vh;
+  height:calc(96vh - 72px);
   display: flex;
   width:100vw;
   justify-content: space-between;
 }
 .left{
-  width:60vw;
+  width:62vw;
     height:90vh;
     background-color:#f5f6fa;
     border-radius: 8px;
     padding:8vw 2vw;
-    margin:auto;
+    
 }
 .left .code{
    width:300px;
@@ -91,7 +93,7 @@ export default {
   margin-bottom: 48px;
 }
 .right{
-  width:35vw;
+  width:36vw;
   height:90vh;
   background-color:#f5f6fa;
 }

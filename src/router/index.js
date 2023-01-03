@@ -23,28 +23,28 @@ const routes = [{
         }
     },
     {
-        path: '/original-books',
-        name: 'original-books',
+        path: '/books/',
+        name: 'books',
         component: () =>
             import ( /* webpackChunkName: "original-books" */ '../views/OriginalBooks.vue'),
     },
     {
-        path: '/original-illustration',
-        name: 'original-illustration',
+        path: '/illustration',
+        name: 'illustration',
         component: () =>
             import ( /* webpackChunkName: "classic-books" */ '../views/OriginalIllustration.vue'),
     },
     {
-        path: '/original-books/:bookId',
-        name: 'original-bookdetails',
+        path: '/books/:bookId',
+        name: 'bookdetails',
         component: () =>
             import ( /* webpackChunkName: "book-details" */ '../views/OriginalBookdetails.vue'),
         props: true,
     },
 
     {
-        path: '/original-illustration/:illId',
-        name: 'original-illusdetails',
+        path: '/illustration/:illId',
+        name: 'illusdetails',
         component: () =>
             import ( /* webpackChunkName: "book-details" */ '../views/OriginalIllusdetails.vue'),
         props: true,
@@ -248,7 +248,7 @@ router.beforeEach((to, from, next) => {
 
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
-        const cango = (to.name == 'Home' || to.name == 'original-books' || to.name == 'original-illustration' || to.name == 'connection')
+        const cango = (to.name == 'Home' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')
         if ((!token || token == "undefined") && (!cango)) {
             store.state.isMask = true
         } else {

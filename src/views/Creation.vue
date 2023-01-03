@@ -177,7 +177,7 @@ export default {
       });
     },
     getCanvas(){
-        let target = document.getElementsByClassName("content");
+        let target = document.getElementsByClassName("StoryTime");
         html2Canvas(target[0], {
         dpi: 172,
         useCORS: true,

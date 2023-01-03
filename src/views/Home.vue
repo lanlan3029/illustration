@@ -4,7 +4,7 @@
 
   <div class="content">
     <div class="defaultPic">
-    <el-image :src="imgUrl" fit="fill" style="width:122vh;height:86vh"/>
+    <el-image :src="imgUrl" fit="fill" style="width:70vw;height:88vh"/>
     </div>
 
     <right-menu />
@@ -43,14 +43,15 @@ methods:{
 .content{
   display: flex;
   width:100vw;
-  margin-left: 8vw;
 }
 .defaultPic{
-  margin-top:2vh;
+  margin-left: 8vw;
+  margin-top:1vh;
   width:72vw;
     height:calc(98vh-72px);
     background-color:#f5f6fa;
     border-radius: 8px;
-    padding:2vh;
+    padding:1vh;
+    overflow: hidden;
 }
 </style>

@@ -164,11 +164,10 @@ export default{
   padding: 52px 65px 29px 92px;
   box-sizing: border-box;
   background-color: #fff;
-  background-image: url(https://s1.hdslb.com/bfs/seed/jinkela/short/mini-login/img/22_open.72c00877.png),
-    url(https://s1.hdslb.com/bfs/seed/jinkela/short/mini-login/img/33_open.43a09438.png);
-  background-position: 0 100%, 100% 100%;
+  background-image: url('../assets/images/login.png');
+  background-position: 100% 100%, 100% 100%;
   background-repeat: no-repeat, no-repeat;
-  background-size: 14%;
+  background-size: 100%;
   display: flex;
   justify-content: space-between;
   user-select: none;

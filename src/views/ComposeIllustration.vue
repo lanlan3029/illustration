@@ -21,7 +21,7 @@ export default {
       illusArr:[],
       checkedImage:[],
       checkedId:[],
-      userid:localStorage.getItem("id")
+      userid:localStorage.getItem("id"),
     };
   },
     computed:mapState([
@@ -41,6 +41,7 @@ export default {
        this.checkedImage.push(item)
     },
     toPDF(){
+      this.checkedImage.push()
       this.$store.commit("removeImages")
       this.$router.push('/user/upload/compose-illustration/topdf');
        this.$store.commit("addImages",this.checkedImage)

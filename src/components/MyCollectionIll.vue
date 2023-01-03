@@ -58,7 +58,7 @@ this.getCollectIllus()
       },
       toDetail(id) {
       this.$router.push({
-        name: "original-illusdetails",
+        name: "illusdetails",
         params: { illId: id },
       });
     },

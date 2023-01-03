@@ -31,10 +31,10 @@ export default {
 .container{
     width:100vw;
     height:90vh;
-    padding:10vw;      
+    padding:14vw;      
 }
 .upload{
-    width:80vw;
+    width:72vw;
     background-color: #fff;
     list-style: none;
     display: flex;

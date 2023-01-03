@@ -191,7 +191,7 @@ export default {
       this.activeIndex = 3;
     },
     goIllusDetails(id) {
-      this.$router.push({name:'original-illusdetails',params:{illId:id}});
+      this.$router.push({name:'illusdetails',params:{illId:id}});
     },
   },
 

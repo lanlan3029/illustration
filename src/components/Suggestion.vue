@@ -32,7 +32,7 @@ export default {
         toDetail(id){
      console.log("zou")
       this.$router.push({
-        name: "original-illusdetails",
+        name: "illusdetails",
         params: { illId: id },
       });
       window.location.reload()

@@ -11,16 +11,13 @@
           >
             <el-option
               v-for="item in sortList"
-              :value="item.value"
               :key="item.value"
-              >{{ item.label }}</el-option
+      :label="item.label"
+      :value="item.value"
+              ></el-option
             >
           </el-select>
-          <el-radio-group v-model="button1"  size="mini">
-            <el-radio-button label="不限"></el-radio-button>
-            <el-radio-button label="0-3岁"></el-radio-button>
-            <el-radio-button label="3-6岁"></el-radio-button>
-          </el-radio-group>
+         
           <el-radio-group v-model="button2"  size="mini">
             <el-radio-button label="不限"></el-radio-button>
             <el-radio-button label="百科"></el-radio-button>
@@ -30,8 +27,10 @@
             <el-radio-button label="英语"></el-radio-button>
           </el-radio-group>
         </div>
-        
-        <div class="items" v-infinite-scroll="load">
+
+  
+      <div v-if="(searchInput == '')" class="box">
+        <div class="items" >
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
@@ -39,12 +38,40 @@
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">
-                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#F489B5" class="iconfont icon-aixin1"></i>{{item.like_num}}</span>
-                <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i>{{item.like_num}}</span></div>
+                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#F489B5" class="iconfont icon-aixin1"></i></span>
+                <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i></span></div>
             </div>
             </div>
           </el-card>
         </div>
+      </div>
+      <el-button-group>
+  <el-button type="primary" icon="el-icon-arrow-left" @click="pageMinus()" v-if="(num>1)">上一页</el-button>
+  <el-button type="primary" @click="pageAdd()">下一页<i class="el-icon-arrow-right el-icon--right"></i></el-button>
+</el-button-group>
+    </div>
+      
+    <!-- 搜索绘本 -->
+    <div v-else  class="box">
+      <div class="items">
+        <div class="item" v-for="(item, index) in books" :key="index">
+          <el-card style="width: 20vw" >
+            <div>
+              <el-image :src="(`http://119.45.172.191:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
+               <div class="data">
+              <span class="name">{{item.title}}</span>
+              <div class="icon">
+                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#F489B5" class="iconfont icon-aixin1"></i></span>
+                <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i></span></div>
+            </div>
+            </div>
+          </el-card>
+        </div>
+        </div>
+        <el-button-group>
+  <el-button type="primary" icon="el-icon-arrow-left" @click="spageMinus()" v-if="(num>1)">上一页</el-button>
+  <el-button type="primary"  @click="spageAdd()">下一页<i class="el-icon-arrow-right el-icon--right"></i></el-button>
+</el-button-group>
       </div>
       </div>
 
@@ -67,7 +94,7 @@ export default {
   },
   computed:mapState([
         "books", "collectBookArr",
-        "likeBookArr"
+        "likeBookArr","searchInput","searchArry"
     ]),
   data() {
     return {
@@ -75,6 +102,7 @@ export default {
       bookArry:[],
      toolArry:[],
      num:1,
+     snum:1,
      imgUrl:[],
       sortList: [
         {
@@ -98,14 +126,23 @@ export default {
   methods: {
     //去绘本详情页
     toDetail(id) {
-      this.$router.push({name:'original-bookdetails',params:{bookId:id}});
+      this.$router.push({name:'bookdetails',params:{bookId:id}});
     },
     //获取后台返回的分页绘本数据（18）
    async getBooks(){
       try{
         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=1`)
-        this.toolArry=res.data.message
-        
+        this.toolArry=res.data.message   
+      }catch(err){
+        console.log(err)
+      }
+
+    },
+       //获取后台返回的搜索数据（18）
+   async getSearchBooks(){
+      try{
+        let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&keyword=`+ this.searchInput+`&page=1`)
+        this.toolArry=res.data.message   
       }catch(err){
         console.log(err)
       }
@@ -132,19 +169,53 @@ export default {
     this.$store.commit("addBooks",this.toolArry)
     
    },
-
-   async load(){
+  //下一页
+   async pageAdd(){
       this.num++
       try{
          let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
-         let arr=res.data.message
-        console.log(arr)
-        
+         this.toolArry=res.data.message
+        await this.getImgUrl();
+        await this.setBooks();   
        } catch(err){
          console.log(err)
        }
     },
-
+    //上一页
+    async pageMinus(){
+      this.num--
+      try{
+         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
+         this.toolArry=res.data.message
+        await this.getImgUrl();
+        await this.setBooks();   
+       } catch(err){
+         console.log(err)
+       }
+    },
+    //搜索结果的下一页
+    async spageAdd(){
+      this.snum++
+      try{
+         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.snum)
+         this.toolArry=res.data.message
+        await this.getImgUrl();
+        await this.setBooks();   
+       } catch(err){
+         console.log(err)
+       }
+    },
+    async spageMinus(){
+      this.snum--
+      try{
+         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.snum)
+         this.toolArry=res.data.message
+        await this.getImgUrl();
+        await this.setBooks();   
+       } catch(err){
+         console.log(err)
+       }
+    },
     //点击喜欢绘本
     likeBookFun(id) {
       this.$http
@@ -164,31 +235,86 @@ export default {
         .catch((error) => console.log(error));
     },
 
+    //搜索绘本
+    async searchFun(){
+      this.$store.commit("removeBooks")
+      console.log("zoul")
+      if(this.searchInput!= ''){
+        this.$router.push({
+        name: "books",
+        query: { keyWord: this.searchInput },
+      });
+        await this.getSearchBooks()
+        await this.getImgUrl()
+        await this.setBooks()
+      }else{
+        return
+      }
+    },
 
-  },
-  async mounted(){
-    await this.getBooks();
+    async getAllBooks(){
+      this.$store.commit("removeBooks")
+      if(this.searchInput==''){
+        this.$router.push({
+        name: "books"
+      });
+        await this.getBooks();
     await this.getImgUrl();
    await this.setBooks();
+      }else{
+        return
+      }
+    },
+    //跳转到books
+    async toBooks(){
+
+      if(this.searchInput==''){
+        this.$router.push({
+        name: "books"
+      });
+       
+    }
+
+
+  }},
+
+  watch :{
+'$route'(){
+ if(this.searchInput != ''){
+this.searchFun()
+ }else{
+   this.toBooks()
+   window.location.reload()
+ }
+}
+  },
+
+  async mounted(){
+    await this.searchFun()
+    await this.getAllBooks()
    console.log(this.books)
     
   },
+
 };
 </script>
 <style scoped>
 .content {
   display: flex;
+ 
 }
 .content-left {
+
   width: 80vw;
+  padding: 0 6vw;
   height: 88vh;
   background-color: #f5f6fa;
   overflow-y: scroll;
 }
 .items{
   width:100%;
-  padding: 0 6vw;
-  height:88vw;
+  
+  min-height:88vw;
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
@@ -205,7 +331,7 @@ export default {
 }
 .image {
   width: 17vw;
-  height: 10vw;
+  height: 11.968vw;
   border-radius: 4px;
   cursor: pointer;
 }
@@ -240,7 +366,7 @@ overflow:hidden;
 text-overflow:ellipse;
 font-size:14px;
 font-weight: 500;
-
+text-align: left;
 }
 .data .icon{
   width:4vw;
@@ -249,5 +375,9 @@ font-weight: 500;
   align-items: center;
   font-size:14px;
   cursor:pointer;
+}
+.box{
+ 
+  margin-bottom: 32px;
 }
 </style>
