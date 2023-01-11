@@ -3,7 +3,7 @@
 <div class="box">
 <el-form label-width="100px" ref="form" :model="form">
     <el-form-item label="作品">
-    <el-image :src="(`http://119.45.172.191:3000/`+ editionIllus.content)" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="(`https://kidstory.cc/`+ editionIllus.content)" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
     <el-input v-model="form.name"></el-input>

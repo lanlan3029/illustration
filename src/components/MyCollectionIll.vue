@@ -8,7 +8,7 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`http://119.45.172.191:3000/`+item.content)"
+                :src="(`https://kidstory.cc/`+item.content)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="toDetail(item._id)"

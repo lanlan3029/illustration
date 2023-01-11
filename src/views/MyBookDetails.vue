@@ -8,7 +8,7 @@
          <div class="book">
           <div class="desc"><h2>《{{bookDetails.title}}》</h2>{{bookDetails.description}}</div>
         <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
-        <el-image :src="(`http://119.45.172.191:3000/`+item)" style="width:984.3px;height:699px" fit="cover"></el-image>
+        <el-image :src="(`https://kidstory.cc/`+item)" style="width:984.3px;height:699px" fit="cover"></el-image>
       </div>
      
       </div>  

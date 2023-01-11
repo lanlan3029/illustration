@@ -32,7 +32,7 @@
               :key="index"
             >
               <el-image
-                :src="(`http://119.45.172.191:3000/`+item.content)"
+                :src="(`https://kidstory.cc/`+item.content)"
                 style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
@@ -55,7 +55,7 @@
               :key="index"
             >
               <el-image
-                :src="(`http://119.45.172.191:3000/`+item.content[0])"
+                :src="(`https://kidstory.cc/`+item.content[0])"
                 style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"
@@ -74,7 +74,7 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`http://119.45.172.191:3000/`+item.content)"
+                :src="(`https://kidstory.cc/`+item.content)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
@@ -104,7 +104,7 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`http://119.45.172.191:3000/`+item.content[0])"
+                :src="(`https://kidstory.cc/`+item.content[0])"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"

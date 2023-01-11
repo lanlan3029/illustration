@@ -4,7 +4,7 @@
 <el-form label-width="100px">
     <el-form-item label="作品">
       <div></div>
-    <el-image :src="(`http://119.45.172.191:3000/`+editionBook.content[0])" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="(`https://kidstory.cc/`+editionBook.content[0])" style="width:500px;height:352px" fit="contain"/>
   </el-form-item>
   <el-form-item label="作品名称">
     <el-input v-model="form.title"></el-input>

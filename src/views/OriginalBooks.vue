@@ -34,7 +34,7 @@
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
-              <el-image :src="(`http://119.45.172.191:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
+              <el-image :src="(`https://kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">
@@ -57,7 +57,7 @@
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
-              <el-image :src="(`http://119.45.172.191:3000/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
+              <el-image :src="(`https://kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">

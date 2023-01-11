@@ -6,7 +6,7 @@
         <el-form-item label="上传图元">
         <el-upload
         ref="element-upload"
-      action="http://119.45.172.191:3000/picture/"
+      action="https://kidstory.cc/picture/"
       list-type="picture-card"
       :on-preview="handlePictureCardPreview"
       :auto-upload="false"

@@ -7,7 +7,7 @@
             :key="index"
           >
             <div class="index2-avatar">
-              <el-image :src="(`http://119.45.172.191:3000/`+item.content[0])" class="image" fit="cover" @click="goBookDetails(item._id)"/>
+              <el-image :src="(`https://kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="goBookDetails(item._id)"/>
             </div>
    <el-descriptions :column="2" :colon="false">
     <template slot="title">{{item.title}}</template>

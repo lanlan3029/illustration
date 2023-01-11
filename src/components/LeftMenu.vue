@@ -6,7 +6,7 @@
         
         <ul class="elements" v-infinite-scroll="searchLoad">
         <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
-            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image>
+            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://kidstory.cc/`+ item.content"></el-image>
         </li>
     </ul>
     
@@ -17,7 +17,7 @@
     </ul>
     <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled">
         <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])">
-            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`http://119.45.172.191:3000/`+ item.content"></el-image></li>
+            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://kidstory.cc/`+ item.content"></el-image></li>
 
     </ul></div>
     
@@ -117,7 +117,7 @@ export default {
         //把小图片添加到中间面板
         handleImageChange(item){
                       let IMAGE=new Image()
-                      IMAGE.src=('http://119.45.172.191:3000/'+item)
+                      IMAGE.src=('https://kidstory.cc/'+item)
                       console.log(IMAGE.src)
                       this.$store.commit("addComponent",{
                         component:{
@@ -128,7 +128,7 @@ export default {
                             label:"图片",
                             icon:"",
                             // 图片路径
-                            propValue:('http://119.45.172.191:3000/'+item),
+                            propValue:('https://kidstory.cc/'+item),
                             // 图片样式
                             style:{
                                 ...commonStyle,
