@@ -324,7 +324,7 @@ this.searchFun()
 .item {
   width: 20vw;
   margin: 2vh 1vw;
-  height: 15vw;
+  min-height: 15vw;
   overflow: hidden;
   border-radius: 4px;
   user-select: none;
@@ -336,7 +336,7 @@ this.searchFun()
   cursor: pointer;
 }
 .text {
-  margin-top: 1vh;
+  margin:1vh 0;
 }
 .el-select {
   margin-top: 2vh;

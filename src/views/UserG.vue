@@ -20,11 +20,11 @@
            
             
             <el-descriptions-item label="关注">
-              22
+              
             </el-descriptions-item>
           
             <el-descriptions-item label="粉丝"
-              >183</el-descriptions-item
+              ></el-descriptions-item
             >
           </el-descriptions>
         </div>
@@ -231,7 +231,7 @@ export default {
     width:50vw;
 }
 .container .left .info .info-center .username{
-  
+  text-align: left;
     font-size: 28px;
     font-weight:500;
 }

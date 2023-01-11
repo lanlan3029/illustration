@@ -3,11 +3,10 @@
     <div class="box">
         <div class="close"><i class="el-icon-close"  @click="closeMask()"></i></div>
       <div class="left"></div>
-      <el-divider direction="vertical"></el-divider>
       <div class="right">
         <ul class="title">
           <li @click="countIn" :class="[countLog ? 'curLogin' : '']">账号登陆</li>
-          <el-divider direction="vertical"></el-divider>
+          <li><el-divider direction="vertical"></el-divider></li>
           <li  @click="toregister" :class="[!countLog ? 'curLogin' : '']">注册</li>
         </ul>
 
@@ -210,8 +209,8 @@ export default{
 .box .right .title li{
     font-size:18px;
     width:80px;
-    height:20px;
-    line-height: 20px;
+   height:20px;
+   line-height: 20px;
     text-align: center;
     cursor: pointer;
 }
