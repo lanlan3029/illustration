@@ -166,10 +166,10 @@ export default {
       a.click()
     },
     downLoadImg(){
-       this.$message("正在下载");
+       this.$message("正在下载,请勿重复点击");
       let target = document.getElementsByClassName("content");
         html2Canvas(target[0], {
-        dpi: 172,
+        dpi: 96,
         useCORS: true,
       }).then((canvas) => {
       let url = canvas.toDataURL("image/jpeg");
@@ -179,7 +179,7 @@ export default {
     getCanvas(){
         let target = document.getElementsByClassName("StoryTime");
         html2Canvas(target[0], {
-        dpi: 172,
+        dpi: 96,
         useCORS: true,
       }).then((canvas) => {
       let url = canvas.toDataURL("image/jpeg");
@@ -224,7 +224,7 @@ export default {
     overflow-y: scroll;
   }
   .content{
-    margin:0 auto;
+    margin:2vh auto;
     width: 66vw;
     height:43vw;
     overflow: hidden;
