@@ -3,19 +3,21 @@
   <top-bar/>
   <login-register v-if="isMask" />
   <router-view />
+  <the-footer/>
   </div>
 </template>
 <script>
 import {mapState} from "vuex"
 import TopBar from './components/TopBar.vue'
 import LoginRegister from "./components//LoginRegister.vue"
+import TheFooter from './components/TheFooter.vue'
 
 document.oncontextmenu = function () {
         return false;
       };
 export default {
   components: {
-    TopBar,LoginRegister
+    TopBar,LoginRegister,TheFooter
   },
   data(){
     return{

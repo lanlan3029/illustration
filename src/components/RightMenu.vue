@@ -24,7 +24,7 @@ export default {
 <style scoped>
 .container{
     width:20vw;
-    height:calc(100vh - 72px); 
+    height:calc(96vh - 72px); 
     font-size: 18px;
     letter-spacing: 4px;
     background-color: #fff;
@@ -35,14 +35,14 @@ export default {
     list-style:none;
 }
 .container ul a{
-    height:calc(16.67vh - 12px);
+    height:calc(16vh - 12px);
     text-decoration: none;
     
 }
 .container ul li{
     padding:0 2vw;
-    height:calc(16.67vh - 12px);
-    line-height:calc(16.67vh - 12px);
+    height:calc(16vh - 12px);
+    line-height:calc(16vh - 12px);
     color:#1c345e;
     font-weight: 500;
 

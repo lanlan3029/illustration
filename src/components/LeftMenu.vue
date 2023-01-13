@@ -207,15 +207,15 @@ export default {
 }
 .container .classify .menu{
     width:4vw;
-    height:84vh;
+    height:80vh;
     list-style: none;
     display: block;
     position: fixed;
 }
 
 .container .classify .menu li{
-    height:8.4vh;
-    line-height:8.4vh;
+    height:8vh;
+    line-height:8vh;
     cursor: pointer;
     font-size:24px; 
    text-align: center;
@@ -237,7 +237,7 @@ export default {
     background-color: #fff;
     list-style: none;;
     flex-wrap: wrap;
-    height:81vh;
+    height:80vh;
     align-content:flex-start;
     position: relative;
     left:4vw;
