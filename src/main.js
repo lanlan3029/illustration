@@ -17,7 +17,7 @@ Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.prototype.$http = axios
 
-axios.defaults.baseURL = 'https://kidstory.cc/'
+axios.defaults.baseURL = 'https://api.kidstory.cc/'
 
 new Vue({
     router,

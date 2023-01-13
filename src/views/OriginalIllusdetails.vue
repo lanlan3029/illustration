@@ -17,7 +17,7 @@
  <div class="book">
           <div class="desc">{{illusDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 984.3px; height: 692.9px" :src="`https://kidstory.cc/`+illusDetails.content" fit="contain" /></div>
+          <el-image style="width: 984.3px; height: 692.9px" :src="`https://api.kidstory.cc/`+illusDetails.content" fit="contain" /></div>
       </div>
          </div>
 

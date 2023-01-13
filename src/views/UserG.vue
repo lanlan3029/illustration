@@ -48,7 +48,7 @@
               :key="index"
             >
               <el-image
-                :src="`https://kidstory.cc/`+item.content"
+                :src="`https://api.kidstory.cc/`+item.content"
                 style="width: 16vw; height: 11.26vw"
                 fit="cover"
                 @click="goIllusDetails(item._id)"
@@ -71,7 +71,7 @@
               :key="index"
             >
               <el-image
-                :src="`https://kidstory.cc/`+item.content"
+                :src="`https://api.kidstory.cc/`+item.content"
                 style="width: 16vw; height: 11.26vw"
                 fit="contain"
               ></el-image>

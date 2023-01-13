@@ -22,7 +22,7 @@
           <div class="item" v-for="item in illsArry" :key="item._id">
             <div>
               <el-image
-                :src="`https://kidstory.cc/` + item.content"
+                :src="`https://api.kidstory.cc/` + item.content"
                 class="image"
                 fit="cover"
                 @click="toDetail(item._id)"
