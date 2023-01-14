@@ -148,10 +148,10 @@
     </div>
     <div class="right">
       <ul class="message">
-        <li>新增关注<span>12</span></li>
-        <li>新增赞数<span>122</span></li>
-        <li>总粉丝数<span>1224</span></li>
-        <li>总获赞数<span>17892</span></li>
+        <li>新增关注<span></span></li>
+        <li>新增赞数<span></span></li>
+        <li>总粉丝数<span></span></li>
+        <li>总获赞数<span></span></li>
       </ul>
       <ul class="create">
         <li @click="goCreation()">
