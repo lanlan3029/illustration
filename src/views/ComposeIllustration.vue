@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="title">请按顺序选择要合成绘本的图片，第一页为封面。</div>
-       <ul class="items">
+       <ul class="items" v-infinite-scroll="getMore">
         <li v-for="(item, index) in illusArr" :key="index" @click="handleAdd(item)">
           <el-image :src="(`https://api.kidstory.cc/`+item.content)" style="width:13vw; height: 8vw" fit="contain"></el-image>
           <span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
@@ -19,6 +19,7 @@ export default {
      data() {
     return {
       illusArr:[],
+      num:1,
       checkedImage:[],
       checkedId:[],
       userid:localStorage.getItem("id"),
@@ -31,7 +32,7 @@ export default {
     //获取我的插画
     async getIll(){
       try{
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.userid)
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.userid+`&page=1`)
           this.illusArr=res.data.message
         } catch(err){
           console.log(err)
@@ -46,6 +47,15 @@ export default {
       this.$router.push('/user/upload/compose-illustration/topdf');
        this.$store.commit("addImages",this.checkedImage)
        
+    },
+    async getMore(){
+      this.num++
+      try{
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.userid+`&page=`+this.num)
+          this.illusArr=this.illusArr.concat(res.data.message)
+        } catch(err){
+          console.log(err)
+        }
     }
 
   },
@@ -76,7 +86,7 @@ export default {
 }
 .container .items{
     width:90vw;
-    min-height:90vh;
+    height:90vh;
    margin-bottom: 14vh;
     display: flex;
     flex-wrap:wrap;

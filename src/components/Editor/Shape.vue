@@ -93,7 +93,7 @@ export default {
         getCursor(){
             
             const {angleToCursor,initialAngle,pointList,curComponent} = this
-            console.log(curComponent)
+           
             const rotate = mod360(curComponent.style.rotate) // 取余360
             const result = {}
             // 从上一个命中的角度的索引开始匹配下一个，降低时间复杂度

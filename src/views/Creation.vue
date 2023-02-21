@@ -60,6 +60,8 @@ import componentList from '@/custom-component/component-list' // 左侧列表数
 import {deepCopy} from "@/utils/utils"
 import generateID from "@/utils/generateID"
 import html2Canvas from "html2canvas";
+
+
 export default {
   name: 'Home',
   data(){
@@ -166,6 +168,11 @@ export default {
       a.click()
     },
     downLoadImg(){
+      this.$store.commit('setCurComponent',{
+          component:null,
+          index:null
+        });
+
        this.$message("正在下载,请勿重复点击");
       let target = document.getElementsByClassName("content");
         html2Canvas(target[0], {
@@ -176,8 +183,10 @@ export default {
       this.saveBase64(url)
       });
     },
+
     getCanvas(){
-        let target = document.getElementsByClassName("StoryTime");
+        let target = document.getElementsByClassName("content");
+        console.log(target)
         html2Canvas(target[0], {
         dpi: 96,
         useCORS: true,
@@ -187,9 +196,10 @@ export default {
        console.log(url)
       this.$router.push('/user/upload/upload-illustration');
     })},
-     uploadImg(){
-         this.$store.commit('setCurComponent', {component:null})
-         setTimeout(this.getCanvas,500) 
+
+    async uploadImg(){
+         this.$store.commit('setCurComponent', {component:null,index:null})  
+         await this.getCanvas()
        } 
     }
   }

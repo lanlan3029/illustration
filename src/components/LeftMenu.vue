@@ -4,7 +4,7 @@
      <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @input="loadSearch(searchInput)"/></div>
      <div v-if="(searchInput !='')" class="classify">
         
-        <ul class="elements" v-infinite-scroll="searchLoad">
+        <ul class="elements" v-infinite-scroll="searchLoad" >
         <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
             <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://api.kidstory.cc/`+ item.content"></el-image>
         </li>
@@ -53,11 +53,11 @@ export default {
           {type:"decoration",icon:'iconfont icon-zhuangshipin',id:7,num:0},
           {type:"furniture",icon:'iconfont icon-shafa1',id:8,num:0},
           {type:"others",icon:'iconfont icon-other',id:9,num:0}],
-          selectIndex:0,
           pictureArr:[],
           num:1,
           searchNum:1,
-          selectType:'',
+          selectType:'scene',
+          selectIndex:0,
           searchInput:'',
           searchArr:[],
           searchPage:1,
@@ -74,11 +74,11 @@ export default {
             this.choosenArr=this.pictures[i]
         },
         //请求数据库数据
-        async getPictures(type){
+        async getPictures(){
             try{
-                let res=await this.$http .get(`/picture/?sort_param=heat&sort_num=desc&type=`+ type +`&page=1`)
+                let res=await this.$http .get(`/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=1`)
                 this.pictureArr=res.data.message
-                console.log(this.pictureArr)
+               
             }
         catch(error){
             console.log(error)
@@ -110,15 +110,33 @@ export default {
            this.selectType=type
            this.pictureArr.length=0
            this.num=1
-           this.getPictures(type)   
+           this.getPictures()   
         },
+
+              //转Base64
+          getBase64(file){
+             return new Promise(function(resolve,reject){
+              let reader=new FileReader();
+              let imgResult="";
+              reader.readAsDataURL(file);
+              reader.onload=function(){
+                imgResult=reader.result
+              };
+              reader.onerror=function(error){
+                reject(error)
+              };
+              reader.onloadend = function() {
+                        resolve(imgResult);
+                    };
+             })
+          },
       
 
         //把小图片添加到中间面板
         handleImageChange(item){
                       let IMAGE=new Image()
                       IMAGE.src=('https://api.kidstory.cc/'+item)
-                      console.log(IMAGE.src)
+                   
                       this.$store.commit("addComponent",{
                         component:{
                             ...commonAttr,
@@ -147,7 +165,7 @@ export default {
         let res = await this.$http.get(
             `/picture/?sort_param=heat&sort_num=desc&keyword=`+ value +`&page=1`
         );
-        console.log(res)
+       
         this.searchArr = this.searchArr.concat(res.data.message);
        
       } catch (err) {
@@ -175,7 +193,7 @@ export default {
 
     },
     mounted(){
-        this.getPictures("scene")
+        this.getPictures()
         this.choosenArr=this.pictures[0]
 
     }
@@ -232,7 +250,7 @@ export default {
     background-color: #f5f6fa;
 }
 .elements{
-    width:15vw;
+    width:15.5vw;
     display: flex;
     background-color: #fff;
     list-style: none;;
@@ -241,6 +259,7 @@ export default {
     align-content:flex-start;
     position: relative;
     left:4vw;
+    overflow: auto;
 }
 .element{
     width:6.5vw;
