@@ -120,7 +120,7 @@ export default {
         })
              
           }},
-
+        //转Base64
           getBase64(file){
              return new Promise(function(resolve,reject){
               let reader=new FileReader();

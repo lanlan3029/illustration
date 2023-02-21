@@ -13,7 +13,7 @@
          <div v-if="countLog" class="form">
             <div class="logLine">
             <span>账 号</span>
-            <input v-model="count.name" type="text" name="email" class="input" placeholder="请输入账号/邮箱" />
+            <input v-model="count.name" type="text" name="email" class="input" placeholder="请输入邮箱" />
             </div>
             <div class="logLine">
             <span>密 码</span>
@@ -26,11 +26,11 @@
       <div v-if="!countLog" class="form">
            <div class="logLine">
             <span>邮 箱</span>
-            <input v-model="emailCount.emailName" type="text" name="email" class="input" placeholder="请输入账号" /></div>
+            <input v-model="emailCount.emailName" type="text" name="email" class="input" placeholder="请输入邮箱" /></div>
             <div class="logLine"><span>密 码</span>
             <input v-model="emailCount.emailPwd" type="password" name="password" class="input" placeholder="请输入密码" /></div>
             <el-button @click="register" class="btn">注册</el-button>
-            <div class="toregister" @click="toregister">没有账号？<span @click="toregister">注册</span></div>
+            
         </div>
       </div>
     </div>

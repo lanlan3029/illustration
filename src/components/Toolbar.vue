@@ -150,10 +150,11 @@ export default {
 <style scoped>
 .toolbar{
     padding: 8px;
-   margin-bottom: auto;
+   
     display: flex;
     width:60vw;
     margin:auto;
+    margin-bottom: 8vh;
     justify-content: space-between;
 }
 .left{
