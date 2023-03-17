@@ -28,7 +28,7 @@
           </el-radio-group>
         </div>
 
-  
+  <!-- 不搜索时显示全部绘本 -->
       <div v-if="(searchInput == '')" class="box">
         <div class="items" >
         <div class="item" v-for="(item, index) in books" :key="index">
@@ -51,7 +51,7 @@
 </el-button-group>
     </div>
       
-    <!-- 搜索绘本 -->
+    <!-- 搜索到的绘本 -->
     <div v-else  class="box">
       <div class="items">
         <div class="item" v-for="(item, index) in books" :key="index">
@@ -238,7 +238,6 @@ export default {
     //搜索绘本
     async searchFun(){
       this.$store.commit("removeBooks")
-      console.log("zoul")
       if(this.searchInput!= ''){
         this.$router.push({
         name: "books",
@@ -267,7 +266,6 @@ export default {
     },
     //跳转到books
     async toBooks(){
-
       if(this.searchInput==''){
         this.$router.push({
         name: "books"
@@ -290,9 +288,12 @@ this.searchFun()
   },
 
   async mounted(){
-    await this.searchFun()
-    await this.getAllBooks()
-   console.log(this.books)
+    if(this.searchInput){
+      await this.searchFun()
+    }else{
+      await this.getAllBooks()
+    }
+   
     
   },
 

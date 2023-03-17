@@ -16,9 +16,13 @@
     
          <div class="book">
           <div class="desc">{{bookDetails.description}}</div>
+          <div class="book-content">
         <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
-        <el-image :src="(`https://api.kidstory.cc/`+item)" style="width:984.3px;height:699px" fit="cover"></el-image>
+        <el-image :src="(`https://api.kidstory.cc/`+item)" style="width:984.3px;height:699px" fit="contain"></el-image>
       </div>
+      <div  class="item">
+      <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image></div>
+    </div>
          </div>
 
         
@@ -34,6 +38,10 @@
         <li>
                 <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#FFd301" class="iconfont icon-shoucang1"></i></span>
                 <span v-else><i class="iconfont icon-shoucang" @click="collectBookFun(bookDetails._id)" ></i></span></li>
+
+              <li>
+                <el-button @click="downPDF" :disabled="disabled">下载</el-button>
+              </li>
          
        </ul>
       </div>
@@ -49,7 +57,8 @@
 
 
 import RightMenu from "../components/RightMenu.vue";
-
+import html2Canvas from "html2canvas";
+import JsPDF from "jspdf";
 import {mapState} from "vuex"
 
 export default {
@@ -60,11 +69,13 @@ export default {
   },
   data(){
     return{
+      disabled:false,
       userid:localStorage.getItem("id"),
       id:this.$router.currentRoute.params.bookId,
       authorId:'',
       bookDetails:[],
       authorDetails:[],
+      codeImg:require('../assets/images/pdfCode.png'),
     }
   },
   computed:mapState([
@@ -179,7 +190,54 @@ collectBookFun(id) {
    },
    toAuthor(id){
       this.$router.push({name:'user-g',params:{authorId:id}});
-    }
+    },
+
+    downPDF() {
+      this.disabled = true;
+      this.$message("正在下载，请勿重复点击");
+
+      let target = document.getElementsByClassName("book-content");
+      console.log(target)
+     //打印区域
+      html2Canvas(target[0], {
+        dpi: 172,
+        useCORS: true,
+      }).then((canvas) => {
+        var contentWidth = canvas.width;
+        var contentHeight = canvas.height;
+      
+        //一页pdf显示html页面生成的canvas高度;
+        var pageHeight = (contentWidth / 984.3) * 699;
+        //未生成pdf的html页面高度
+        var leftHeight = contentHeight;
+        //pdf页面偏移
+        var position = 0;
+        //a4纸的尺寸[595.28,841.89]，html页面生成的canvas在pdf中图片的宽高
+        var imgWidth = 984.3;
+        var imgHeight = (984.3 / contentWidth) * contentHeight;
+        var pageData = canvas.toDataURL("image/jpeg");
+        var pdf = new JsPDF("l", "pt", [imgWidth,699]);
+      
+        //有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
+        //当内容未超过pdf一页显示的范围，无需分页
+        if (leftHeight < pageHeight) {
+          pdf.addImage(pageData, "JPEG", 0, 0, imgWidth, imgHeight);
+        } else {
+          while (leftHeight > 0) {
+            pdf.addImage(pageData, "JPEG", 0, position, imgWidth, imgHeight);
+            leftHeight -= pageHeight;
+            position -= 699;
+            //避免添加空白页
+            if (leftHeight > 0) {
+              pdf.addPage();
+            }
+          }
+        }
+        //保存到本地
+        pdf.save("StoryTime.pdf");
+      
+      });
+    },
   },
   async mounted(){
     console.log(this.books)
@@ -231,6 +289,14 @@ collectBookFun(id) {
   color:#1c345e;
   
 }
+.content-left .book.book-content{
+  width: 984.3px;
+  min-height: 200px;
+  background-color: #fff;
+  margin:auto;
+  font-size:20px;
+}
+
 .content-left .info .avatar{
   cursor: pointer;
 }

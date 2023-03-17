@@ -175,10 +175,13 @@ export default {
 
        this.$message("正在下载,请勿重复点击");
       let target = document.getElementsByClassName("content");
+      console.log(target)
+      console.time('html2canvas')
         html2Canvas(target[0], {
         dpi: 96,
         useCORS: true,
       }).then((canvas) => {
+        console.timeEnd('html2canvas')
       let url = canvas.toDataURL("image/jpeg");
       this.saveBase64(url)
       });

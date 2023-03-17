@@ -12,7 +12,7 @@
                 @change="handleFileChange"
             />
             <ComponentList />
-             <label class="insert" @click="exportImg">保存图片到本地</label></div>
+             <div class="insert" @click.prevent.stop="exportImg">保存图片到本地</div></div>
               <label class="insert" @click="saveDraft">保存草稿</label> <label class="insert" @click="deleteDraft">删除草稿</label>
               <label class="export" @click="uploadIllu">上传作品</label>
               
@@ -109,6 +109,7 @@ export default {
             reader.readAsDataURL(file)
         },      
        exportImg(){
+        console.log('download')
         this.$emit('downLoad')
        },
        uploadIllu(){

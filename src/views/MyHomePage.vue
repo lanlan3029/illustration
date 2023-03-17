@@ -149,7 +149,7 @@
     <div class="right">
       <ul class="message">
         <li>新增关注<span></span></li>
-        <li>新增赞数<span></span></li>
+        <li>新增喜欢<span></span></li>
         <li>总粉丝数<span></span></li>
         <li>总获赞数<span></span></li>
       </ul>
@@ -187,7 +187,6 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       id:localStorage.getItem("id"),
       activeIndex: "1",
       illArr:[],
-      
       toolArr:[],
      
     };
@@ -417,7 +416,7 @@ align-items: center;
 }
 /* 我的插画页面样式 */
 .index2 {
-  width: 72vw;
+  width: calc(72vw - 8px);;
   height: calc(100vh - 140px);
   background-color: #fff;
   margin-top: 8px;
