@@ -6,7 +6,7 @@
         
         <ul class="elements" v-infinite-scroll="searchLoad" >
         <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
-            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://api.kidstory.cc/`+ item.content"></el-image>
+            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://static.kidstory.cc/`+ item.content"></el-image>
         </li>
     </ul>
     
@@ -17,7 +17,7 @@
     </ul>
     <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled">
         <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])">
-            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://api.kidstory.cc/`+ item.content"></el-image></li>
+            <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://static.kidstory.cc/`+ item.content"></el-image></li>
 
     </ul></div>
     

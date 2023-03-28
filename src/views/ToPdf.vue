@@ -4,7 +4,7 @@
     <div class="box">
       <div v-if="imgToPDF.length==0" class="backAdd" @click="handleBack"><i class="el-icon-document-add" ></i><span>点击添加图片</span></div>
       <div v-else v-for="(item, index) in imgToPDF" :key="index" class="item">
-        <el-image :src="(`https://api.kidstory.cc/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
+        <el-image :src="(`https://static.kidstory.cc/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
       </div>
       <div  class="item">
         <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image>
