@@ -3,8 +3,8 @@
         <div
             v-for="(item, index) in componentList"
             :key="index"
-            class="list"
             draggable
+            class="list"
             :data-index="index"
         >
             <el-tooltip class="item" effect="dark" content="拖到想添加文字的位置吧" placement="top-start">
@@ -30,6 +30,8 @@ export default {
             // data
             // 一个 DOMString表示要添加到 drag object的数据。
             e.dataTransfer.setData("index",e.target.dataset.index)
+            console.log(e.target.dataset.index)
+            console.log(e.dataTransfer.setData)
             // index 0
         }
     },
