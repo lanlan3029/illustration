@@ -279,6 +279,7 @@ export default {
     left:-30vh;
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 4%);
 background-image: url('../assets/images/search.svg');
+cursor: text;
  background-position: 12px 12px;
   background-size: 24px;
   background-repeat: no-repeat;

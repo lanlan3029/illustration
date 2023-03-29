@@ -18,7 +18,7 @@
           <div class="desc">{{bookDetails.description}}</div>
           <div class="book-content">
         <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
-        <el-image :src="(`https://api.kidstory.cc/`+item)" style="width:984.3px;height:699px" fit="contain"></el-image>
+        <el-image :src="(`https://static.kidstory.cc/`+item)" style="width:984.3px;height:699px" fit="contain"></el-image>
       </div>
       <div  class="item">
       <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image></div>

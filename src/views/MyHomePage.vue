@@ -32,7 +32,7 @@
               :key="index"
             >
               <el-image
-                :src="(`https://api.kidstory.cc/`+item.content)"
+                :src="(`https://static.kidstory.cc/`+item.content)"
                 style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
@@ -55,7 +55,7 @@
               :key="index"
             >
               <el-image
-                :src="(`https://api.kidstory.cc/`+item.content[0])"
+                :src="(`https://static.kidstory.cc/`+item.content[0])"
                 style="width: 14vw; height: 9.85vw;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"
@@ -74,7 +74,7 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`https://api.kidstory.cc/`+item.content)"
+                :src="(`https://static.kidstory.cc/`+item.content)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="goIllusDetails(item._id)"
@@ -85,7 +85,7 @@
     <template slot="extra">
       <el-button size="small" @click="goEdition(item)">编辑</el-button>
     </template>
-   <el-descriptions-item span="2" label="描述">kooriookami</el-descriptions-item>
+   <el-descriptions-item span="2" label="描述">{{item.description}}</el-descriptions-item>
     <el-descriptions-item label="获赞"></el-descriptions-item>
     <el-descriptions-item label="收藏"></el-descriptions-item>
     <el-descriptions-item v-if="(item.status==0)" label="状态"><el-tag type="warning" size="mini">待审核</el-tag></el-descriptions-item>
@@ -104,7 +104,7 @@
           >
             <div class="index2-avatar">
               <el-image
-                :src="(`https://api.kidstory.cc/`+item.content[0])"
+                :src="(`https://static.kidstory.cc/`+item.content[0])"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="goBookDetails(item._id)"
@@ -115,9 +115,9 @@
     <template slot="extra">
       <el-button size="small" @click="goBookEdition(item)">编辑</el-button>
     </template>
-   <el-descriptions-item span="2"  label="描述">kooriookami</el-descriptions-item>
-    <el-descriptions-item label="获赞">1289</el-descriptions-item>
-     <el-descriptions-item label="收藏">89</el-descriptions-item>
+   <el-descriptions-item span="2"  label="描述">{{item.description}}</el-descriptions-item>
+    <el-descriptions-item label="获赞"></el-descriptions-item>
+     <el-descriptions-item label="收藏"></el-descriptions-item>
      <el-descriptions-item v-if="(item.status==0)" label="状态"><el-tag type="warning" size="mini">待审核</el-tag></el-descriptions-item>
     <el-descriptions-item v-if="(item.status==1)" label="状态"><el-tag type="success" size="mini">审核通过</el-tag></el-descriptions-item>
   </el-descriptions> 

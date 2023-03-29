@@ -6,7 +6,7 @@
  <div class="book">
           <div class="desc"><h2>《{{illsDetails.title}}》</h2>{{illsDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 73vw; height: 51.4vw" :src="(`https://api.kidstory.cc/`+illsDetails.content)" fit="contain" /></div>
+          <el-image style="width: 73vw; height: 51.4vw" :src="(`https://static.kidstory.cc/`+illsDetails.content)" fit="contain" /></div>
       </div>
          </div>
      

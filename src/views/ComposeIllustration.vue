@@ -3,7 +3,7 @@
         <div class="title">请按顺序选择要合成绘本的图片，第一页为封面。</div>
        <ul class="items" v-infinite-scroll="getMore">
         <li v-for="(item, index) in illusArr" :key="index" @click="handleAdd(item)">
-          <el-image :src="(`https://api.kidstory.cc/`+item.content)" style="width:12vw; height: 8.448vw" fit="contain"></el-image>
+          <el-image :src="(`https://static.kidstory.cc/`+item.content)" style="width:12vw; height: 8.448vw" fit="contain"></el-image>
           <span v-if="(checkedImage.includes(item))"><i class="el-icon-check"></i></span></li>
        </ul>
     <div class="btn">
