@@ -4,7 +4,7 @@
      <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @input="loadSearch(searchInput)"/></div>
      <div v-if="(searchInput !='')" class="classify">
         
-        <ul class="elements" v-infinite-scroll="searchLoad" >
+        <ul class="elements" v-infinite-scroll="searchLoad" infinite-scroll-disabled="scrollDisabled" :disabled="loading">
         <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
             <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://static.kidstory.cc/`+ item.content"></el-image>
         </li>
@@ -13,13 +13,16 @@
      </div>
      <div v-else class="classify">
     <ul class="menu">
-        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type)"  :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
+        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type,item.num)"  :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
     </ul>
-    <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled">
+    <div class="menu-right">
+        <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled">
         <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])">
             <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://static.kidstory.cc/`+ item.content"></el-image></li>
 
-    </ul></div>
+    </ul>
+    </div>
+</div>
     
     <class-chart />
     </div> 
@@ -43,25 +46,26 @@ export default {
     data(){
         return{
           icons:[
-            {type:"scene",icon:'iconfont icon-tupian',id:0,num:0},
-          {type:"people",icon:'iconfont icon-ren1',id:1,num:0},
-          {type:"animal",icon:'iconfont icon--panda',id:2,num:0},
-          {type:"plant",icon:'iconfont icon-shu3',id:3,num:0},
-          {type:"food",icon:'iconfont icon-shiwu-2',id:4,num:0},
-          {type:"toy",icon:'iconfont icon-jimu2',id:5,num:0},
-          {type:"vehicle",icon:'iconfont icon-qichepiao',id:6,num:0},
-          {type:"decoration",icon:'iconfont icon-zhuangshipin',id:7,num:0},
-          {type:"furniture",icon:'iconfont icon-shafa1',id:8,num:0},
-          {type:"others",icon:'iconfont icon-other',id:9,num:0}],
+            {type:"scene",icon:'iconfont icon-tupian',id:0,num:2},
+          {type:"people",icon:'iconfont icon-ren1',id:1,num:2},
+          {type:"animal",icon:'iconfont icon--panda',id:2,num:2},
+          {type:"plant",icon:'iconfont icon-shu3',id:3,num:2},
+          {type:"food",icon:'iconfont icon-shiwu-2',id:4,num:2},
+          {type:"toy",icon:'iconfont icon-jimu2',id:5,num:2},
+          {type:"vehicle",icon:'iconfont icon-qichepiao',id:6,num:2},
+          {type:"decoration",icon:'iconfont icon-zhuangshipin',id:7,num:2},
+          {type:"furniture",icon:'iconfont icon-shafa1',id:8,num:2},
+          {type:"others",icon:'iconfont icon-other',id:9,num:2}],
           pictureArr:[],
-          num:1,
+          num:2,
           searchNum:1,
           selectType:'scene',
           selectIndex:0,
           searchInput:'',
           searchArr:[],
           searchPage:1,
-          scrollDisabled:false
+          scrollDisabled:false,
+          loading:false
         }
     },
      computed:mapState([
@@ -70,9 +74,7 @@ export default {
         "curComponent"
     ]),
     methods:{
-         computedArr(i){
-            this.choosenArr=this.pictures[i]
-        },
+        
         //请求数据库数据
         async getPictures(){
             try{
@@ -85,33 +87,37 @@ export default {
         }
         },
 
-
-        
-        //无限加载
-        async load() {
-      this.num++;
-      try {
-        let res = await this.$http.get(
-            `/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=`+this.num
-        );
-        if(res.data.message!=[]){
-            this.pictureArr = this.pictureArr.concat(res.data.message);
-        }else{
-            this.scrollDisabled=true
-        }
-        
-      } catch (err) {
-        console.log(err);
-      }
-    },
-        //选择左侧类别
-        select(index,type){
+       //选择左侧类别
+       select(index,type,num){
+            this.scrollDisabled=false
            this.selectIndex=index
            this.selectType=type
            this.pictureArr.length=0
-           this.num=1
+           this.num=num
            this.getPictures()   
         },
+        
+        //无限加载
+        async load() {
+      if(!this.loading){
+        this.loading=true
+        try {
+        let res = await this.$http.get(
+            `/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=`+this.num);
+        if(res.data.message.length==0){ 
+            this.scrollDisabled=true   
+        }else{
+            this.pictureArr = this.pictureArr.concat(res.data.message);
+            this.num++
+            this.loading=false
+        }  
+      } catch (err) {
+        console.log(err);
+      }
+      }
+  
+    },
+ 
 
               //转Base64
           getBase64(file){
@@ -130,14 +136,22 @@ export default {
                     };
              })
           },
+
+          theImage(i){
+             let IMAGE=new Image()
+             IMAGE.src=('https://api.kidstory.cc/'+i)
+             return [IMAGE.width,IMAGE.height]
+          },
       
 
         //把小图片添加到中间面板
-        handleImageChange(item){
-                      let IMAGE=new Image()
-                      IMAGE.src=('https://api.kidstory.cc/'+item)
-                   
-                      this.$store.commit("addComponent",{
+       async handleImageChange(item){
+        console.log(this.componentData)
+           
+                      let IMAGE= new Image()
+                      const self=this
+                      IMAGE.onload=function(){
+                        self.$store.commit("addComponent",{
                         component:{
                             ...commonAttr,
                             id:generateID(),
@@ -157,6 +171,13 @@ export default {
                             }
                         }
                     })
+                      }
+                      
+                      IMAGE.src=('https://api.kidstory.cc/'+item)
+                    
+              
+                    
+                     
         },
         //搜索关键字
         async loadSearch(value){
@@ -165,7 +186,6 @@ export default {
         let res = await this.$http.get(
             `/picture/?sort_param=heat&sort_num=desc&keyword=`+ value +`&page=1`
         );
-       
         this.searchArr = this.searchArr.concat(res.data.message);
        
       } catch (err) {
@@ -194,8 +214,7 @@ export default {
     },
     mounted(){
         this.getPictures()
-        this.choosenArr=this.pictures[0]
-
+      
     }
 
     
@@ -249,18 +268,26 @@ export default {
 .active{
     background-color: #f5f6fa;
 }
+.menu-right{
+    height:80vh;
+    overflow-y: auto;
+    width:16vw;
+    position: relative;
+    left:4vw;
+
+}
 .elements{
     width:15.5vw;
     display: flex;
     background-color: #fff;
     list-style: none;;
     flex-wrap: wrap;
-    height:80vh;
+    height:81vh;
     align-content:flex-start;
-    position: relative;
-    left:4vw;
-    overflow: auto;
+   
+    
 }
+
 .element{
     width:6.5vw;
     height:8vh;

@@ -70,11 +70,16 @@ export default {
         },
         //搜索绘本
         async searchFun(Value){
-          this.$store.commit("setSearchInput",this.searchValue)
+          if(Value){
+            this.$store.commit("setSearchInput",this.searchValue)
            this.$router.push({
-        name: "books",
+        name: "search-books",
         query: { keyWord: Value },
       });
+          }else{
+            this.$router.push("/books")
+          }
+    
      
 
         },

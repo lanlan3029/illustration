@@ -108,14 +108,15 @@ export default {
 }
 .container .items li span{
     width:13vw;
-    height:9.23vw;
+    height:9.448vw;
     display: block;
     position: relative;
-    top:-9.43vw;
+    top:-10.448vw;
+    left:-0.5vw;
      border-radius: 4px;
      font-size:60px;
      text-align: center;
-     line-height: 9.23vw;
+     line-height: 9.448vw;
      color:#fff;
      background-color: rgba(0, 0, 0, 0.5);
 }

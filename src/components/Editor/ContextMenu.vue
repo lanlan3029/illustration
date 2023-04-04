@@ -65,7 +65,7 @@ export default {
 <style scoped>
 .contextmenu{
     position: absolute;
-    z-index: 1000;
+    z-index: 10000;
 }
 ul{
     border: 1px solid #e4e7ed;

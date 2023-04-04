@@ -1,8 +1,8 @@
 <template>
     <svg
         class="grid"
-        width="100%"
-        height="100%"
+        width="66vw"
+        height="43vw"
         xmlns="http://www.w3.org/2000/svg"
     >
         <defs>

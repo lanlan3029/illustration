@@ -98,12 +98,16 @@ export default {
                 "Authorization": "Bearer " + localStorage.getItem("token")
             }}
           )
-          this.draftid=res.data.message._id
+          console.log(res)
+          if(res.data.message){
+            this.draftid=res.data.message._id
           this.draftArr=res.data.message.content
           if(this.draftArr.length>0){
             this.$store.commit('setComponentData',this.draftArr)
           }
-         console.log(this.draftArr)
+          }
+         
+         
         } catch(err){
           console.log(err)
         }

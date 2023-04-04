@@ -13,7 +13,7 @@
         <!-- 页面组件列表展示 -->
         <Shape 
             v-for="(item,index) in componentData"
-            :key="item.id"
+            :key="index"
             :default-style="item.style"
             :style="getShapeStyle(item.style)"
             :active="item.id === (curComponent || {}).id"
@@ -69,6 +69,7 @@ export default {
             default:true
         }
     },
+ 
     // 把vuex中的值解剖开来
     computed:mapState([
         "canvasStyleData",

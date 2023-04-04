@@ -29,8 +29,9 @@
         </div>
 
   <!-- 不搜索时显示全部绘本 -->
-      <div v-if="(searchInput == '')" class="box">
-        <div class="items" >
+      <div  class="box">
+      <div v-if="loading" class="loading"><span class="text">故事正在加载</span><i class="el-icon-loading" :size="32" ></i></div>
+        <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled">
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
@@ -45,34 +46,12 @@
           </el-card>
         </div>
       </div>
-      <el-button-group>
-  <el-button type="primary" icon="el-icon-arrow-left" @click="pageMinus()" v-if="(num>1)">上一页</el-button>
-  <el-button type="primary" @click="pageAdd()">下一页<i class="el-icon-arrow-right el-icon--right"></i></el-button>
-</el-button-group>
+     
+      
+    
     </div>
       
-    <!-- 搜索到的绘本 -->
-    <div v-else  class="box">
-      <div class="items">
-        <div class="item" v-for="(item, index) in books" :key="index">
-          <el-card style="width: 20vw" >
-            <div>
-              <el-image :src="(`https://static.kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
-               <div class="data">
-              <span class="name">{{item.title}}</span>
-              <div class="icon">
-                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#F489B5" class="iconfont icon-aixin1"></i></span>
-                <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i></span></div>
-            </div>
-            </div>
-          </el-card>
-        </div>
-        </div>
-        <el-button-group>
-  <el-button type="primary" icon="el-icon-arrow-left" @click="spageMinus()" v-if="(num>1)">上一页</el-button>
-  <el-button type="primary"  @click="spageAdd()">下一页<i class="el-icon-arrow-right el-icon--right"></i></el-button>
-</el-button-group>
-      </div>
+ 
       </div>
 
       <right-menu />
@@ -94,7 +73,7 @@ export default {
   },
   computed:mapState([
         "books", "collectBookArr",
-        "likeBookArr","searchInput","searchArry"
+        "likeBookArr",
     ]),
   data() {
     return {
@@ -102,8 +81,10 @@ export default {
       bookArry:[],
      toolArry:[],
      num:1,
-     snum:1,
+    
      imgUrl:[],
+     loading:true,
+     scrollDisabled:false,
       sortList: [
         {
           value: "default",
@@ -128,26 +109,22 @@ export default {
     toDetail(id) {
       this.$router.push({name:'bookdetails',params:{bookId:id}});
     },
-    //获取后台返回的分页绘本数据（18）
+    //获取后台返回的绘本数据（18）
    async getBooks(){
       try{
         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=1`)
-        this.toolArry=res.data.message   
+        this.toolArry=res.data.message
       }catch(err){
+        this.loading=false 
         console.log(err)
+        this.$message({
+          message: '抱歉，出错了！',
+          type: 'error'
+        });
       }
 
     },
-       //获取后台返回的搜索数据（18）
-   async getSearchBooks(){
-      try{
-        let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&keyword=`+ this.searchInput+`&page=1`)
-        this.toolArry=res.data.message   
-      }catch(err){
-        console.log(err)
-      }
 
-    },
    async getImgUrl(){
     for(var i=0;i<this.toolArry.length;i++){
       //获取绘本图片ID
@@ -167,55 +144,28 @@ export default {
    },
    setBooks(){
     this.$store.commit("addBooks",this.toolArry)
-    
+    this.loading=false  
    },
   //下一页
-   async pageAdd(){
-      this.num++
+   async loadMore(){
+    if(this.scrollDisabled) return
       try{
          let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
-         this.toolArry=res.data.message
+         if(res.data.message.length == 0){
+          this.scrollDisabled=true      
+      }else{
+        this.toolArry=res.data.message
         await this.getImgUrl();
-        await this.setBooks();   
+        await this.setBooks(); 
+        this.num++
+        }  
        } catch(err){
          console.log(err)
        }
     },
-    //上一页
-    async pageMinus(){
-      this.num--
-      try{
-         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
-         this.toolArry=res.data.message
-        await this.getImgUrl();
-        await this.setBooks();   
-       } catch(err){
-         console.log(err)
-       }
-    },
-    //搜索结果的下一页
-    async spageAdd(){
-      this.snum++
-      try{
-         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.snum)
-         this.toolArry=res.data.message
-        await this.getImgUrl();
-        await this.setBooks();   
-       } catch(err){
-         console.log(err)
-       }
-    },
-    async spageMinus(){
-      this.snum--
-      try{
-         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.snum)
-         this.toolArry=res.data.message
-        await this.getImgUrl();
-        await this.setBooks();   
-       } catch(err){
-         console.log(err)
-       }
-    },
+
+ 
+
     //点击喜欢绘本
     likeBookFun(id) {
       this.$http
@@ -257,8 +207,11 @@ export default {
         this.$router.push({
         name: "books"
       });
+      //获取第一页的18本绘本
         await this.getBooks();
+    //获取图片
     await this.getImgUrl();
+    
    await this.setBooks();
       }else{
         return
@@ -276,25 +229,10 @@ export default {
 
   }},
 
-  watch :{
-'$route'(){
- if(this.searchInput != ''){
-this.searchFun()
- }else{
-   this.toBooks()
-   window.location.reload()
- }
-}
-  },
+
 
   async mounted(){
-    if(this.searchInput){
-      await this.searchFun()
-    }else{
-      await this.getAllBooks()
-    }
-   
-    
+      await this.getAllBooks()  
   },
 
 };
@@ -305,27 +243,24 @@ this.searchFun()
  
 }
 .content-left {
-
   width: 80vw;
-  padding: 0 6vw;
   height: 88vh;
+  overflow-y: auto;
   background-color: #f5f6fa;
-  overflow-y: scroll;
 }
 .items{
   width:100%;
-  
-  min-height:88vw;
+  height:108vw;
+  padding:0 6vw;
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
-  align-content:flex-start;
-  
+  align-content:flex-start;  
 }
 .item {
   width: 20vw;
-  margin: 2vh 1vw;
-  min-height: 15vw;
+  margin: 1vw 1vw;
+  height: 16vw;
   overflow: hidden;
   border-radius: 4px;
   user-select: none;
@@ -380,5 +315,15 @@ text-align: left;
 .box{
  
   margin-bottom: 32px;
+}
+.loading{
+  position: absolute;
+  top:50%;
+  left:40%;
+  color:#C0C4CC;
+  font-size:18px;
+}
+.loading .text{
+  display: block;
 }
 </style>

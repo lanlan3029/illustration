@@ -15,8 +15,8 @@ export default new Vuex.Store({
         editMode: "edit",
         // 页面全局数据
         canvasStyleData: {
-            width: 60,
-            height: 42.24,
+            width: 66,
+            height: 43,
             scale: 100
         },
         // 画布组件数据
