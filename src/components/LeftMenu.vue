@@ -2,21 +2,25 @@
    <div class="container">
     <div class="search">
      <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @input="loadSearch(searchInput)"/></div>
+   <!--  显示搜索结果 -->
      <div v-if="(searchInput !='')" class="classify">
-        
-        <ul class="elements" v-infinite-scroll="searchLoad" infinite-scroll-disabled="scrollDisabled" :disabled="loading">
+        <ul class="elements" v-infinite-scroll="searchLoad" infinite-scroll-disabled="searchScrollDisabled" :disabled="searchLoading">
         <li class="element" v-for="(item,index) in searchArr" :key="index" @click="handleImageChange(item.content[0])">
             <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://static.kidstory.cc/`+ item.content"></el-image>
         </li>
     </ul>
     
      </div>
+     <!-- 显示全部图元 -->
+     <!-- infinite-scroll-disabled是控制是否允许无限滚动加载数据，而:disabled是控制是否禁用当前组件。
+        在使用v-infinite-scroll指令时，如果infinite-scroll-disabled返回true，则该指令会被禁用，不再监听滚动事件。
+        而:disabled则是在元素上添加或移除disabled属性，从而控制该元素是否可以被交互。 -->
      <div v-else class="classify">
     <ul class="menu">
         <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type,item.num)"  :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
     </ul>
     <div class="menu-right">
-        <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled">
+        <ul class="elements" v-infinite-scroll="load" infinite-scroll-disabled="scrollDisabled" :disabled="loading">
         <li class="element" v-for="(item,index) in pictureArr" :key="index" @click="handleImageChange(item.content[0])">
             <el-image fit="contain"  style="width:6vw; height:8vh" :src="`https://static.kidstory.cc/`+ item.content"></el-image></li>
 
@@ -58,14 +62,16 @@ export default {
           {type:"others",icon:'iconfont icon-other',id:9,num:2}],
           pictureArr:[],
           num:2,
-          searchNum:1,
+          searchNum:2,
           selectType:'scene',
           selectIndex:0,
           searchInput:'',
           searchArr:[],
           searchPage:1,
           scrollDisabled:false,
-          loading:false
+          loading:false,
+          searchLoading:false,
+          searchScrollDisabled:false
         }
     },
      computed:mapState([
@@ -90,6 +96,7 @@ export default {
        //选择左侧类别
        select(index,type,num){
             this.scrollDisabled=false
+            this.loading=false
            this.selectIndex=index
            this.selectType=type
            this.pictureArr.length=0
@@ -117,6 +124,7 @@ export default {
       }
   
     },
+ 
  
 
               //转Base64
@@ -192,22 +200,29 @@ export default {
         console.log(err);
       }        
         },
-//搜索结果加载
+//搜索结果无限加载
         async searchLoad() {
-      this.searchNum++;
-      try {
-        let res = await this.$http.get(
-            `/picture/?sort_param=heat&sort_num=desc&keyword=`+ this.searchInput +`&page=`+this.searchNum
-        );
-        if(res.data.message!=[]){
-            this.pictureArr = this.pictureArr.concat(res.data.message);
-        }else{
-            this.scrollDisabled=true
-        }
-        
-      } catch (err) {
-        console.log(err);
+      if(!this.searchLoading){
+        this.searchLoading=true
+             try {
+                    let res = await this.$http.get(
+                        `/picture/?sort_param=heat&sort_num=desc&keyword=` + this.searchInput + `&page=` + this.searchNum
+                    );
+                    if (res.data.message.length == 0) {
+                        this.searchScrollDisabled = true
+
+                    } else {
+                        this.searchArr = this.searchArr.concat(res.data.message);
+                        console.log(this.searchArr)
+                        this.searchNum++;
+                        this.searchLoading = false
+                    }
+
+                } catch (err) {
+                    console.log(err);
+                }
       }
+
     },
 
 
@@ -215,8 +230,10 @@ export default {
     mounted(){
         this.getPictures()
       
-    }
-
+    },
+    beforeDestory(){
+       window.removeEventListener('scroll',this.load)
+    },
     
     
 }
@@ -284,8 +301,8 @@ export default {
     flex-wrap: wrap;
     height:81vh;
     align-content:flex-start;
-   
-    
+    position: absolute;
+    right:0px;  
 }
 
 .element{
