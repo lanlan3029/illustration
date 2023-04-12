@@ -258,6 +258,7 @@ export default {
     display: flex;
     justify-content: space-between; 
     overflow-y: scroll;
+    position: relative;
 }
 .container .classify .menu{
     width:4vw;
