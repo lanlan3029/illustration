@@ -24,6 +24,9 @@
    
       </ul>
 
+      <div class="statement">{{ this.statement }}</div>
+       <div class="statement">{{ this.statement2 }}</div>
+
     </div>
    
 
@@ -53,7 +56,10 @@ export default {
       url:"https://blush.design/zh-CN",
       src:require('../assets/logo/blush.svg')}
                ],
-               codepic:require('../assets/logo/code.jpg')
+      codepic:require('../assets/logo/code.jpg'),
+      statement:"声明：本站所用图元部分为二次创作。原图片来自(https://www.freepik.com/;https://fresh-folk.com/ )，并遵循其版权规定。任何对该图片的使用需要尊重其版权，并遵守原图片的使用协议。",
+      statement2:"本站所用绘本及其相关内容均为原作者所有，仅用于非商业目的。任何对本站所刊载内容的转载、复制、引用、摘编等行为均需获得原作者或本站授权，并注明出处。任何未经授权使用本站内容的行为均属于侵权，本站将依法追究法律责任。"
+
     }
     
   },
@@ -109,4 +115,10 @@ export default {
   text-align: center; 
 }
 
+.statement{
+  width:80%;
+  margin:auto;
+  font-size: 12px;
+  margin-top:24px;
+}
 </style>
