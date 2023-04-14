@@ -252,6 +252,13 @@ VueRouter.prototype.push = function push(location) {
 }
 router.beforeEach((to, from, next) => {
 
+    if (window._hmt) {
+        if (to.path) {
+            window._hmt.push(['_trackPageview', '/#' + to.fullPath])
+        }
+    }
+    
+
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
         const cango = (to.name == 'Home' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')
@@ -263,6 +270,7 @@ router.beforeEach((to, from, next) => {
     } else {
         next();
     }
+ 
 
 })
 

@@ -24,3 +24,13 @@ new Vue({
     store,
     render: h => h(App)
 }).$mount('#app')
+
+//百度统计
+var _hmt = _hmt || [];
+window._hmt = _hmt;
+(function () {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?0d659afc1e301d15807bbc3442ccbeae";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
