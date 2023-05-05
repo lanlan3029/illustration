@@ -75,26 +75,63 @@ export default {
       authorId:'',
       bookDetails:[],
       authorDetails:[],
+      //存放请求到的绘本原始数据
+
       codeImg:require('../assets/images/pdfCode.png'),
     }
   },
   computed:mapState([
-        "books",
         "collectBookArr",
         "likeBookArr",
         "attentionArr",
     ]),
 
   methods:{
+   //获取绘本详情
+      async getBooks() {
+      try {
+        let res = await this.$http.get(`/book/`+this.id)
+        console.log(res)
+        //对象数组，对象包含绘本的name\id\content\description等
+        this.bookDetails = res.data.message
+
+      } catch (err) {
+        this.loading = false
+        console.log(err)
+        this.$message({
+          message: '抱歉，出错了！',
+          type: 'error'
+        });
+      }
+
+    },
+    //获取绘本的每一张图片
+    async getImgUrl() {
+        //获取绘本图片ID
+        let tool = this.bookDetails.content
+        //遍历绘本图片ID，替换成图片URL
+        for (var i = 0; i < tool.length; i++) {
+          try {
+            let res = await this.$http.get(`/ill/` + tool[i])
+            this.bookDetails.content[i] = res.data.message.content
+          } catch (err) {
+            console.log(err)
+          }
+        }  
+       
+        
+    },
+
+
+
+
    attention(){
     console.log("关注作者")
    },
-   getBookDetails(){
-    let tool=this.books.filter(item=>{return item._id==this.id}) 
-    this.bookDetails=tool[0]
-    console.log(this.bookDetails)
-    
-   },
+   
+
+
+
     //关注
     newAttention(id){
       this.$http
@@ -171,9 +208,10 @@ collectBookFun(id) {
     },
 
    setId(){
-      
       this.authorId=this.bookDetails.ownerid
      },
+
+     //获取绘本作者
      async getAuthor(){
        try{
          let res=await this.$http.get(`/user/`+this.authorId)
@@ -240,12 +278,13 @@ collectBookFun(id) {
     },
   },
   async mounted(){
-    console.log(this.books)
-    await this.getBookDetails();
-    await this.setId();
-    await this.getAuthor();
    
-
+    await this.getBooks();
+    await this.getImgUrl();
+     await this.setId();
+    await this.getAuthor();
+   console.log(this.bookDetails)
+console.log(this.authorDetails)
     
   }
 };

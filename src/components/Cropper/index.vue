@@ -16,12 +16,7 @@
       }">
         <div class="preview before"></div>
         <div>预览图</div>
-        <el-form>
-            <el-form-item label="旋转">
-                <el-input v-model.number="formInline.inputRotate" @input="cropperRotateTo(formInline.inputRotate)" type="number"></el-input>
-            </el-form-item>
-            
-        </el-form>
+     
       </div>
      </div>
      <div class="footer-btn">

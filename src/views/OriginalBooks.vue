@@ -35,7 +35,7 @@
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
-              <el-image :src="(`https://static.kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
+              <el-image :src="(`https://static.kidstory.cc/`+item.cover)" class="image" fit="cover" @click="toDetail(item._id)"/>
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">
@@ -81,7 +81,6 @@ export default {
       bookArry:[],
      toolArry:[],
      num:1,
-    
      imgUrl:[],
      loading:true,
      scrollDisabled:false,
@@ -109,11 +108,14 @@ export default {
     toDetail(id) {
       this.$router.push({name:'bookdetails',params:{bookId:id}});
     },
+
     //获取后台返回的绘本数据（18）
    async getBooks(){
       try{
         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=1`)
+        //对象数组，对象包含绘本的name\id\content\description等
         this.toolArry=res.data.message
+        
       }catch(err){
         this.loading=false 
         console.log(err)
@@ -125,21 +127,21 @@ export default {
 
     },
 
+//获取绘本的封面图片
    async getImgUrl(){
     for(var i=0;i<this.toolArry.length;i++){
       //获取绘本图片ID
       let tool=this.toolArry[i].content
-      //遍历绘本图片ID，替换成图片URL
-      for(var j=0;j<tool.length;j++){
+    
         try{
-          let res=await this.$http.get(`/ill/`+tool[j])
-          this.toolArry[i].content[j]=res.data.message.content
+          let res=await this.$http.get(`/ill/`+tool[0])
+          this.toolArry[i].cover=res.data.message.content
         
         } catch(err){
           console.log(err)
         }
 
-      } 
+  
     }  
    },
    setBooks(){
