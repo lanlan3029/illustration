@@ -31,7 +31,7 @@
   <!-- 不搜索时显示全部绘本 -->
       <div  class="box">
       <div v-if="loading" class="loading"><span class="text">故事正在加载</span><i class="el-icon-loading" :size="32" ></i></div>
-        <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled">
+        <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
         <div class="item" v-for="(item, index) in books" :key="index">
           <el-card style="width: 20vw" >
             <div>
@@ -83,6 +83,7 @@ export default {
      num:1,
      imgUrl:[],
      loading:true,
+     loadControl:false,
      scrollDisabled:false,
       sortList: [
         {
@@ -150,20 +151,24 @@ export default {
    },
   //下一页
    async loadMore(){
-    if(this.scrollDisabled) return
-      try{
-         let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=`+this.num)
-         if(res.data.message.length == 0){
-          this.scrollDisabled=true      
-      }else{
-        this.toolArry=res.data.message
-        await this.getImgUrl();
-        await this.setBooks(); 
-        this.num++
-        }  
-       } catch(err){
-         console.log(err)
-       }
+    if(!this.loadControl) {
+      this.loadControl=true
+        try {
+          let res = await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=` + this.num)
+          if (res.data.message.length == 0) {
+            this.scrollDisabled = true
+          } else {
+            this.toolArry = res.data.message
+            await this.getImgUrl();
+            await this.setBooks();
+            this.num++
+            this.loadControl=false
+          }
+        } catch (err) {
+          console.log(err)
+        }
+    }
+  
     },
 
  

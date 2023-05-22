@@ -29,7 +29,7 @@ export default {
   },
   data(){
     return{
-imgUrl:require('../assets/images/111.png'),
+imgUrl:require('../assets/images/introduce.png'),
 
     }
     
