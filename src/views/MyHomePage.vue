@@ -494,4 +494,13 @@ align-items: center;
     width:55vw;
      
 }
+.el-descriptions-item__label {
+display: -webkit-box!important;
+
+-webkit-box-orient: vertical;
+
+-webkit-line-clamp: 2;
+overflow: hidden;
+
+}
 </style>

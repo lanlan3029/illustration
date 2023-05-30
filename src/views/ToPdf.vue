@@ -12,8 +12,9 @@
     </div>
     <div class="details">
       <el-form ref="form" :model="form" label-width="80px">
-  <el-form-item label="书名">
-    <el-input v-model="form.title"></el-input>
+  <el-form-item label="书名" >
+    <el-input v-model="form.title" maxlength="24"
+        show-word-limit></el-input>
   </el-form-item>
    <el-form-item label="类别">
     <el-select v-model="form.category" placeholder="请选择绘本类别">
@@ -27,7 +28,8 @@
   </el-form-item>
 
   <el-form-item label="介绍">
-    <el-input type="textarea" v-model="form.desc"></el-input>
+    <el-input type="textarea" v-model="form.desc"  :autosize="{ minRows: 2, maxRows: 4 }" maxlength="200"
+    show-word-limit></el-input>
   </el-form-item>
   <div class="btn">
    <el-button @click="downPDF" :disabled="disabled">下载PDF</el-button>
