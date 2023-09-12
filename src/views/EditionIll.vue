@@ -10,12 +10,15 @@
   </el-form-item>
   <el-form-item label="类别">
     <el-select v-model="form.category" placeholder="请选择插画类别">
-      <el-option label="生活日常" value="daily"></el-option>
-      <el-option label="欢庆节日" value="festival"></el-option>
-       <el-option label="校园生活" value="school"></el-option>
-        <el-option label="动物世界" value="animal"></el-option>
-        <el-option label="奇幻想象" value="fantasy"></el-option>
-        <el-option label="其他" value="others"></el-option>
+     <el-option label="生活日常" value="daily"></el-option>
+        <el-option label="欢庆节日" value="festival"></el-option>
+         <el-option label="校园生活" value="school"></el-option>
+          <el-option label="动物世界" value="animal"></el-option>
+          <el-option label="奇幻想象" value="fantasy"></el-option>
+          <el-option label="数学知识" value="math"></el-option> 
+          <el-option label="文学知识" value="literature"></el-option>
+          <el-option label="英语学习" value="english"></el-option>
+          <el-option label="其他" value="others"></el-option>
     </el-select>
   </el-form-item>
   <el-form-item label="作品描述">

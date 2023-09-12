@@ -93,6 +93,8 @@ export default {
            formdata.append('description',this.form.desc)
            formdata.append('type',this.form.category)
            console.log(formdata)
+           console.log(this.fileStore)
+
         this.$http
        .post(`/ill/`,formdata
        ,{
