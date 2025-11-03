@@ -6,26 +6,31 @@
             </div>
         </router-link>
 
-        <nav class="navigation">
-            <router-link to="/" class="nav-item" active-class="active">
+        <el-menu class="navigation" mode="horizontal" router :default-active="$route.fullPath">
+            <el-menu-item index="/">
                 <span>AI榜单</span>
-            </router-link>
-            <router-link to="/creation" class="nav-item" active-class="active">
-                <span>创作插画</span>
-            </router-link>
-            <router-link to="/user/upload" class="nav-item" active-class="active">
-                <span>上传作品</span>
-            </router-link>
-            <router-link to="/illustration" class="nav-item" active-class="active">
-                <span>原创插画</span>
-            </router-link>
-            <router-link to="/books" class="nav-item" active-class="active">
+            </el-menu-item>
+
+            <el-submenu index="/creation">
+                <template #title>
+                    <span>创作插画/绘本</span>
+                </template>
+                <el-menu-item index="/creation">创作插画</el-menu-item>
+                <el-menu-item index="/user/upload/compose-illustration">合成绘本</el-menu-item>
+            </el-submenu>
+
+            <el-menu-item index="/user/upload/upload-element">
+                <span>上传图元</span>
+            </el-menu-item>
+
+            <el-menu-item index="/books">
                 <span>原创绘本</span>
-            </router-link>
-            <router-link to="/connection" class="nav-item" active-class="active">
-                <span>联系我们</span>
-            </router-link>
-        </nav>
+            </el-menu-item>
+
+            <el-menu-item index="/connection">
+                <span>关于我们</span>
+            </el-menu-item>
+        </el-menu>
 
         <div class="right-section">
             <input type="text" class="search" v-model="searchValue" name="search" autocomplete=off placeholder="请输入搜索内容" @keyup.enter="searchFun(searchValue)">
