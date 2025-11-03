@@ -32,10 +32,23 @@
       <div  class="box">
       <div v-if="loading" class="loading"><span class="text">故事正在加载</span><i class="el-icon-loading" :size="32" ></i></div>
         <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
-        <div class="item" v-for="(item, index) in books" :key="index">
-          <el-card style="width: 20vw" >
+        <div class="item" v-for="(item, index) in books" :key="item._id || index">
+          <el-card class="card">
             <div>
-              <el-image :src="(`https://static.kidstory.cc/`+item.cover)" class="image" fit="cover" @click="toDetail(item._id)"/>
+              <el-image
+                :src="(`https://static.kidstory.cc/`+item.cover)"
+                class="image"
+                fit="cover"
+                lazy
+                @click="toDetail(item._id)"
+              >
+                <div slot="placeholder" class="img-placeholder">
+                  <i class="el-icon-picture-outline"></i>
+                </div>
+                <div slot="error" class="img-error">
+                  <i class="el-icon-picture-outline"></i>
+                </div>
+              </el-image>
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">
@@ -54,7 +67,6 @@
  
       </div>
 
-      <right-menu />
     </div>
   </div>
 </template>
@@ -62,14 +74,11 @@
 <script>
 // @ is an alias to /src
 
-import RightMenu from "../components/RightMenu.vue";
 import {mapState} from "vuex"
 
 export default {
   name: "Home",
   components: {
-    
-    RightMenu,
   },
   computed:mapState([
         "books", "collectBookArr",
@@ -130,20 +139,18 @@ export default {
 
 //获取绘本的封面图片
    async getImgUrl(){
-    for(var i=0;i<this.toolArry.length;i++){
-      //获取绘本图片ID
-      let tool=this.toolArry[i].content
-    
-        try{
-          let res=await this.$http.get(`/ill/`+tool[0])
-          this.toolArry[i].cover=res.data.message.content
-        
-        } catch(err){
-          console.log(err)
-        }
-
-  
-    }  
+    const promises = this.toolArry.map((book, idx) => {
+      const firstId = Array.isArray(book.content) ? book.content[0] : null;
+      if (!firstId) return Promise.resolve();
+      return this.$http.get(`/ill/` + firstId)
+        .then(res => {
+          this.toolArry[idx].cover = res.data.message.content;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    });
+    await Promise.all(promises);
    },
    setBooks(){
     this.$store.commit("addBooks",this.toolArry)
@@ -246,37 +253,53 @@ export default {
 </script>
 <style scoped>
 .content {
+  width:100vw;
+  background-color: #f5f6fa;
+  margin: auto;
   display: flex;
- 
+  justify-content: center;
 }
 .content-left {
-  width: 80vw;
+  width: 1200px;
+  max-width: 90vw;
   height: 88vh;
   overflow-y: auto;
-  background-color: #f5f6fa;
+  margin: 0 auto;
 }
 .items{
   width:100%;
-  height:108vw;
-  padding:0 6vw;
+  height:auto;
+  padding: 0 12px;
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
-  align-content:flex-start;  
+  align-content:flex-start;
+  gap: 24px; /* 列间距 */
 }
 .item {
-  width: 20vw;
-  margin: 1vw 1vw;
-  height: 16vw;
+  box-sizing: border-box;
+  flex: 0 0 calc((100% - 48px) / 3); /* 三列：两处gap共48px */
+  margin: 0; /* 通过 gap 控制间距 */
   overflow: hidden;
   border-radius: 4px;
   user-select: none;
 }
+.card{ width: 100%; }
 .image {
-  width: 17vw;
-  height: 11.968vw;
+  width: 100%;
+  aspect-ratio: 3 / 2; /* 稳定比例，避免高度不一致 */
+  object-fit: cover;
   border-radius: 4px;
   cursor: pointer;
+}
+.img-placeholder, .img-error{
+  width: 100%;
+  height: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f5f6fa;
+  color:#c0c4cc;
 }
 .text {
   margin:1vh 0;

@@ -1,28 +1,49 @@
 <template>
     <div class="container">
-     <router-link to="/"><div class="logo"><el-image :src="logoUrl" fit="contain"></el-image></div></router-link>
+        <router-link to="/" class="logo-link">
+            <div class="logo">
+                <el-image :src="logoUrl" fit="contain"></el-image>
+            </div>
+        </router-link>
 
-         <input type="text" class="search" v-model="searchValue" name="search" autocomplete=off placeholder=" 请输入搜索内容" @keyup.enter="searchFun(searchValue)">
+        <nav class="navigation">
+            <router-link to="/" class="nav-item" active-class="active">
+                <span>AI榜单</span>
+            </router-link>
+            <router-link to="/creation" class="nav-item" active-class="active">
+                <span>创作插画</span>
+            </router-link>
+            <router-link to="/user/upload" class="nav-item" active-class="active">
+                <span>上传作品</span>
+            </router-link>
+            <router-link to="/illustration" class="nav-item" active-class="active">
+                <span>原创插画</span>
+            </router-link>
+            <router-link to="/books" class="nav-item" active-class="active">
+                <span>原创绘本</span>
+            </router-link>
+            <router-link to="/connection" class="nav-item" active-class="active">
+                <span>联系我们</span>
+            </router-link>
+        </nav>
 
-        <div class="user" v-if="isLogin">
-            <el-avatar style="background-color: #019AD8" icon="ios-person" class="avatar" :src="userInfo.avatar"/>
-             
-            <ul class="user-info">
-                <li @click="toMyHomePage">我的主页</li>
-                  <li @click="toProfile">个人资料</li>
-                   <li @click="logout" >退出登陆</li>
-            </ul>
+        <div class="right-section">
+            <input type="text" class="search" v-model="searchValue" name="search" autocomplete=off placeholder="请输入搜索内容" @keyup.enter="searchFun(searchValue)">
 
-      </div> 
-      <div v-else  @click="showMask">
-        <div style="background-color: #019ad8" class="loginBt">登陆</div>
-      </div>
-     
-      
-      
-   
+            <div class="user" v-if="isLogin">
+                <el-avatar style="background-color: #019AD8" icon="ios-person" class="avatar" :src="userInfo.avatar"/>
+                 
+                <ul class="user-info">
+                    <li @click="toMyHomePage">我的主页</li>
+                    <li @click="toProfile">个人资料</li>
+                    <li @click="logout">退出登陆</li>
+                </ul>
+            </div> 
+            <div v-else @click="showMask">
+                <div class="loginBt">登陆</div>
+            </div>
+        </div>
     </div>
-
 </template>
 
 <script>
@@ -254,91 +275,220 @@ export default {
 </script>
 
 <style scoped>
-.container{
-    width:100vw;
-    height:72px;
-    padding:12px 4vh;
-    border-bottom: 2px solid #f8f8f9;
+.container {
+    width: 100vw;
+    height: 72px;
+    padding: 12px 40px;
+    border-bottom: 1px solid #e8e8e8;
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    
-}
-.container .logo{
-     height:48px;
-     width:152px;
-}
-.container .logo .el-image{
-  height:48px;
-     width:152px;
-}
-.container .search{
-    background-color: #f5f6fa;
-    border:none;
-    width:24vw;
-    height:48px;
-    line-height:48px;
-    padding:0 3vh 0 5vh;
-    border-radius:6vh;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     position: relative;
-    font-size:16px;
-    left:-30vh;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 4%);
-background-image: url('../assets/images/search.svg');
-cursor: text;
- background-position: 12px 12px;
-  background-size: 24px;
-  background-repeat: no-repeat;
-}
-.avatar{
-    cursor: pointer;
-    width:48px;
-    height:48px;
-}
-.user{
-    width:6vw;
-    height:10vh;
-}
-.user .user-info{
-    display: none;
-    position: absolute;
-    top:72px;
-    right:8px;
-    padding:8px;
-    list-style: none;
-    background-color: rgb(255, 255, 255);
-     box-shadow: 2px 2px 2px 2px rgb(0 0 0 / 10%);
-     width:196px;
-     height:178px;
-     transition: .3s;
-     border-radius: 4px;
-     z-index: 10000;
-}
-.user:hover .user-info{
-    display: block;
-}
-.user .user-info li{
-    width:180px;
-    height:54px;
-    line-height:54px;
-    text-align: center;
-    color:#1d1d1f;
-    font-size:14px;
-    cursor: pointer;
-    user-select: none;
-    border-radius: 8px;
-    
-}
-.user .user-info li:hover{
-    background-color: #FFE567;
-}
-.loginBt{
-    width:48px;
-    height:48px;
-    border-radius: 4px;
-    text-align: center;
-    line-height: 48px;
-    color:#fff;
-    cursor:pointer;
+    z-index: 1000;
 }
 
+.logo-link {
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.logo {
+    height: 48px;
+    width: 152px;
+    transition: opacity 0.3s;
+}
+
+.logo:hover {
+    opacity: 0.8;
+}
+
+.logo .el-image {
+    height: 48px;
+    width: 152px;
+}
+
+.navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+    margin: 0 40px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #1c345e;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-item:hover {
+    background-color: #f5f6fa;
+    color: #019AD8;
+}
+
+.nav-item.active {
+    background-color: #e6f7ff;
+    color: #019AD8;
+}
+
+
+.right-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.search {
+    background-color: #f5f6fa;
+    border: none;
+    width: 280px;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 16px 0 44px;
+    border-radius: 20px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    background-image: url('../assets/images/search.svg');
+    cursor: text;
+    background-position: 14px center;
+    background-size: 20px;
+    background-repeat: no-repeat;
+    outline: none;
+}
+
+.search:focus {
+    width: 320px;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #019AD8;
+}
+
+.avatar {
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    transition: transform 0.3s ease;
+}
+
+.avatar:hover {
+    transform: scale(1.05);
+}
+
+.user {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.user .user-info {
+    display: none;
+    position: absolute;
+    top: 52px;
+    right: 0;
+    padding: 8px;
+    list-style: none;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 140px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    z-index: 10000;
+    margin-top: 8px;
+}
+
+.user:hover .user-info {
+    display: block;
+}
+
+.user .user-info li {
+    width: 100%;
+    height: 44px;
+    line-height: 44px;
+    text-align: center;
+    color: #1d1d1f;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.user .user-info li:hover {
+    background-color: #f0f9ff;
+    color: #019AD8;
+}
+
+.loginBt {
+    width: 80px;
+    height: 40px;
+    border-radius: 20px;
+    text-align: center;
+    line-height: 40px;
+    color: #fff;
+    background-color: #019AD8;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(1, 154, 216, 0.2);
+}
+
+.loginBt:hover {
+    background-color: #0180b8;
+    box-shadow: 0 4px 8px rgba(1, 154, 216, 0.3);
+    transform: translateY(-1px);
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+    .navigation {
+        margin: 0 20px;
+    }
+    
+    .nav-item {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    .search {
+        width: 240px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .container {
+        padding: 12px 24px;
+    }
+    
+    .navigation {
+        gap: 4px;
+        margin: 0 12px;
+    }
+    
+    .nav-item span {
+        display: none;
+    }
+    
+    .nav-item {
+        padding: 8px;
+        min-width: 40px;
+        justify-content: center;
+    }
+    
+    .search {
+        width: 200px;
+    }
+}
 </style>

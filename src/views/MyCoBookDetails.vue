@@ -37,7 +37,6 @@
       </div>
       </div>
 
-      <right-menu />
     </div>
   
 </template>
@@ -46,15 +45,11 @@
 // @ is an alias to /src
 
 
-import RightMenu from "../components/RightMenu.vue";
-
 import {mapState} from "vuex"
 
 export default {
   name: "Home",
   components: {
-
-    RightMenu,
   },
   data(){
     return{
@@ -155,15 +150,17 @@ collectBookFun(id) {
 <style scoped>
 .content {
   display: flex;
+  justify-content: center;
 }
 .content-left {
-  width: 80vw;
-  
+  width: 1200px;
+  max-width: 90vw;
   height: 88vh;
   display: flex;
   flex-wrap: wrap;
   background-color: #f5f6fa;
   overflow-y: scroll;
+  margin: 0 auto;
 }
 .content-left .info {
   display: flex;

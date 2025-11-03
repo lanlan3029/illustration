@@ -198,14 +198,15 @@ export default {
   min-height:90vh;
   margin:0;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
 }
 .content-left {
-  width: 80vw;
+  width: 1200px;
+  max-width: 90vw;
   min-height: 90vh;
   display: flex;
   flex-direction: column;
-  
+  margin: 0 auto;
 }
 .content-right{
   width:40px;

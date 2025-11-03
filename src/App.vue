@@ -2,7 +2,9 @@
 <div id="app">
   <top-bar/>
   <login-register v-if="isMask" />
-  <router-view />
+  <main class="app-main">
+    <router-view />
+  </main>
   <the-footer/>
   </div>
 </template>
@@ -38,6 +40,10 @@ export default {
 
 
 <style >
+html, body{
+  height: 100%;
+  overflow-y: auto;
+}
 #app {
     font-family:
         "PingFang SC", "Lantinghei SC", "Microsoft YaHei", "HanHei SC", "Helvetica Neue", "Open Sans", Arial, "Hiragino Sans GB", 微软雅黑, STHeiti, "WenQuanYi Micro Hei", SimSun, sans-serif, HYWenHei-GEW ;
@@ -45,5 +51,14 @@ export default {
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-main{
+    flex: 1 0 auto; /* 让主体根据内容自然增长 */
+    width: 100%;
+    overflow: visible; /* 由页面整体滚动，避免表格被裁切 */
 }
 </style>

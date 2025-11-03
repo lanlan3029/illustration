@@ -51,7 +51,6 @@
         </div>
         </div>
   
-        <right-menu />
       </div>
     </div>
   </template>
@@ -59,14 +58,11 @@
   <script>
   // @ is an alias to /src
   
-  import RightMenu from "../components/RightMenu.vue";
   import {mapState} from "vuex"
   
   export default {
     name: "Home",
     components: {
-      
-      RightMenu,
     },
     computed:mapState([
            "collectBookArr",
@@ -208,14 +204,15 @@
   <style scoped>
   .content {
     display: flex;
-   
+    justify-content: center;
   }
   .content-left {
-    width: 80vw;
+    width: 1200px;
+    max-width: 90vw;
     padding: 0 6vw;
     height: 88vh;
     background-color: #f5f6fa;
-  
+    margin: 0 auto;
   }
   .items{
     width:100%;

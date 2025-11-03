@@ -39,7 +39,6 @@
         </div>
       </div>
 
-      <right-menu />
     </div>
   </div>
 </template>
@@ -47,13 +46,11 @@
 <script>
 // @ is an alias to /src
 
-import RightMenu from "../components/RightMenu.vue";
 import {mapState} from "vuex"
 
 export default {
   name: "Home",
   components: {
-    RightMenu,
   },
   data() {
     return {
@@ -140,34 +137,39 @@ export default {
 <style scoped>
 .content {
   display: flex;
+  justify-content: center;
 }
 .content-left {
-  width: 80vw;
+  width: 1200px;
+  max-width: 90vw;
   height: 88vh;
   background-color: #f5f6fa;
   overflow-y: scroll;
+  margin: 0 auto;
 }
 .items {
   width: 100%;
-  padding: 0 6vw;
-  height: 88vw;
+  padding: 0 12px;
+  height: auto;
   margin-top: 2vh;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
+  gap: 24px;
 }
 .item {
-  width: 20vw;
-  margin: 1vw;
-  height: 16vw;
+  box-sizing: border-box;
+  flex: 0 0 calc((100% - 48px) / 3); /* 三列布局 */
+  margin: 0;
   overflow: hidden;
   border-radius: 4px;
   user-select: none;
 }
 .image {
   cursor: pointer;
-  width: 20vw;
-  height: 14.08vw;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
   border-radius: 4px;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
   background-color: #fff;
@@ -183,7 +185,7 @@ export default {
   align-items: center;
 }
 .data .name {
-  width: 12vw;
+  max-width: 70%;
   display: inline-block;
   white-space: nowrap;
   overflow: hidden;

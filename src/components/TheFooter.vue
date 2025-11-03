@@ -1,10 +1,10 @@
 <template>
-  <div class="box">
-   <a href="https://beian.miit.gov.cn/#/Integrated/index" class="message">
-    <img src="../assets/images/record.png" />
-    &nbsp;&nbsp;鲁ICP备2023000705号-1
-   </a>
-  </div>
+  <footer class="box">
+    <a href="https://beian.miit.gov.cn/#/Integrated/index" class="message" target="_blank" rel="noopener">
+      <img src="../assets/images/record.png" alt="备案" />
+      <span>鲁ICP备2023000705号-1</span>
+    </a>
+  </footer>
 </template>
 
 <script>
@@ -13,24 +13,28 @@
 
 <style scoped>
 .box{
-    position: fixed;
-    bottom: 0px;
-    width:100vw;
-    height:4vh;
-    z-index:100;
-    background-color: #fff;
-   
+  width: 100%;
+  padding: 14px 16px;
+  background-color: #fff;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
 }
 
 .box a{
-  height:4vh;
-  line-height: 4vh;
-    text-decoration: none;
-    color:#1c345e;
-    font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color:#606266;
+  font-size: 13px;
 }
+
+.box a:hover{
+  color:#1f6fd4;
+}
+
 .box a img{
-  width:14px;
-  height:14px;
+  width: 14px;
+  height: 14px;
 }
 </style>
