@@ -5,7 +5,7 @@
   <main class="app-main">
     <router-view />
   </main>
-  <the-footer/>
+  <the-footer :class="{ 'fixed-footer': $route.path==='/' }"/>
   </div>
 </template>
 <script>
@@ -60,5 +60,14 @@ html, body{
     flex: 1 0 auto; /* 让主体根据内容自然增长 */
     width: 100%;
     overflow: visible; /* 由页面整体滚动，避免表格被裁切 */
+}
+
+/* 仅首页吸底显示页脚 */
+.fixed-footer{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
 }
 </style>

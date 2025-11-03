@@ -6,7 +6,15 @@
             </div>
         </router-link>
 
-        <el-menu class="navigation" mode="horizontal" router :default-active="$route.fullPath">
+        <el-menu
+            class="navigation"
+            mode="horizontal"
+            router
+            :default-active="$route.fullPath"
+            background-color="#545c64"
+            text-color="#fff"
+            active-text-color="#ffd04b"
+        >
             <el-menu-item index="/">
                 <span>AI榜单</span>
             </el-menu-item>
@@ -282,13 +290,13 @@ export default {
 <style scoped>
 .container {
     width: 100vw;
-    height: 72px;
+    height: 60px;
     padding: 12px 40px;
     border-bottom: 1px solid #e8e8e8;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: #fff;
+    background-color: #545c64;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     position: relative;
     z-index: 1000;

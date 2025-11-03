@@ -26,17 +26,21 @@
                 <el-table-column label="Logo" width="120" align="center" class-name="el-table-column--120">
                   <template #default="scope">
                     <a :href="scope.row.url" target="_blank" rel="noopener" class="logo-link">
-                      <img :src="scope.row.logo" :alt="scope.row.name" class="product-logo" @error="handleLogoError($event, scope.row.name)" />
+                      <img :src="scope.row.logo"
+                           :alt="scope.row.name"
+                           class="product-logo"
+                           :data-fallback-index="0"
+                           @error="handleLogoError($event, scope.row)" />
                     </a>
                   </template>
                 </el-table-column>
                 <el-table-column prop="category" label="分类" width="150" align="center" class-name="el-table-column--150" />
                 <el-table-column prop="purpose" label="用途" align="left" />
               </el-table>
-            </div>
+    </div>
           </el-tab-pane>
         </el-tabs>
-      </div>
+  </div>
     </section>
   </main>
 </template>
@@ -52,20 +56,43 @@ export default {
       activeTab: scenarios[0]?.name || 'scenario1'
     }
   },
-  methods:{
-    handleLogoError(e, name){
-      // 回退到简单的文字占位或默认图标
-      e.target.outerHTML = `<span class="logo-fallback" title="${name}">N/A</span>`
+methods:{
+    handleLogoError(e, row){
+      try{
+        const img = e.target
+        const currentIndex = parseInt(img.dataset.fallbackIndex || '0', 10)
+        const nextIndex = currentIndex + 1
+        const url = row && row.url ? row.url : ''
+        const hostname = (()=>{ try { return url ? new URL(url).hostname : '' } catch(_) { return '' } })()
+        const candidates = [
+          hostname ? `https://logo.clearbit.com/${hostname}` : '',
+          hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=128` : '',
+          require('@/assets/logo/logo.png')
+        ].filter(Boolean)
+
+        if (currentIndex < candidates.length){
+          img.dataset.fallbackIndex = String(nextIndex)
+          img.src = candidates[currentIndex]
+        } else {
+          // 最终回退为文本占位
+          const name = row && row.name ? row.name : 'N/A'
+          img.outerHTML = `<span class="logo-fallback" title="${name}">N/A</span>`
+        }
+      }catch(err){
+        console.error('handleLogoError failed', err)
+      }
     }
-  }
+}
 }
 </script>
 <style scoped>
 .main-content{
   width:100vw;
+  /* 仅扣除头部高度，底部留给页脚显示 */
   min-height: calc(100vh - 72px);
   background: #f7f8fa;
- 
+  /* 预留页脚高度，避免内容被盖住 */
+  padding-bottom: 56px;
 }
 
 .scenarios{
@@ -78,7 +105,19 @@ export default {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-  padding: 24px;max-height: calc(100vh - 160px); overflow-y: auto; -webkit-overflow-scrolling: touch; 
+  padding: 24px;
+  /* 使榜单在视口内滚动，不遮挡底部页脚
+     72px 头部 + 24px section 顶部内边距 + 24px 容器内边距 + 56px 预留页脚与间距 */
+  max-height: calc(100vh - 72px - 24px - 24px - 56px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 仅在 Home 页让全局页脚吸底且常显 */
+::v-deep footer.box{
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
 }
 
 .scenario-tabs ::v-deep .el-tabs__item{
@@ -100,7 +139,7 @@ export default {
   width: 56px;
   height: 56px;
   object-fit: contain;
-  border-radius: 8px;
+    border-radius: 8px;
   background: #fafafa;
   border: 1px solid #f0f0f0;
 }
