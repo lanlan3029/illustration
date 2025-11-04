@@ -16,7 +16,7 @@
               <p class="scenario-intro">
                 {{ scenario.intro }}
               </p>
-              <el-table :data="scenario.products" style="width: 100%" stripe border>
+              <el-table :data="scenario.products" style="width: 100%" stripe border height="800px">
                 <el-table-column prop="rank" label="排名" width="80" align="center" class-name="el-table-column--80">
                   <template #default="scope">
                     {{ scope.row.rank }}

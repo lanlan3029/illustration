@@ -11,7 +11,7 @@
 <script>
 import {mapState} from "vuex"
 import TopBar from './components/TopBar.vue'
-import LoginRegister from "./components//LoginRegister.vue"
+import LoginRegister from "./components/LoginRegister.vue"
 import TheFooter from './components/TheFooter.vue'
 
 document.oncontextmenu = function () {
