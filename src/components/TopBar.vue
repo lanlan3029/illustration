@@ -21,10 +21,12 @@
 
             <el-submenu index="/creation">
                 <template #title>
-                    <span>创作插画/绘本</span>
+                    <span>创作</span>
                 </template>
+                <el-menu-item index="/create-character">创作角色</el-menu-item>
                 <el-menu-item index="/creation">创作插画</el-menu-item>
                 <el-menu-item index="/user/upload/compose-illustration">合成绘本</el-menu-item>
+                
             </el-submenu>
 
             <el-menu-item index="/user/upload/upload-element">
@@ -136,11 +138,23 @@ export default {
 
    async getUser(){
        try{
-        let res= await this.$http.get(`/user/`+this.userid)
+        if (!this.userid) {
+            return; // 如果没有用户ID，直接返回
+        }
+        let res= await this.$http.get(`/user/`+this.userid, {
+            timeout: 10000 // 10秒超时
+        })
         let toolUser=res.data.message;
         this.$store.commit("setUserInfo",toolUser)
        }catch(err){
-        this.$store.commit('showMask')     
+        console.error('获取用户信息失败:', err);
+        // 只有非网络错误才显示登录框，避免后端服务不可用时强制弹出登录框
+        if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
+            // 网络错误或超时，不强制显示登录框，静默失败
+        } else if (err.response && err.response.status === 401) {
+            // 401未授权，显示登录框
+            this.$store.commit('showMask');
+        }
     }
     },
      //获取用户收藏的绘本
@@ -329,6 +343,22 @@ export default {
     flex: 1;
     justify-content: center;
     margin: 0 40px;
+    border-bottom: none;
+    height: 60px;
+}
+
+/* 确保 Element UI 菜单项垂直居中 */
+.navigation >>> .el-menu-item,
+.navigation >>> .el-submenu__title {
+    display: flex;
+    align-items: center;
+    height: 60px;
+    line-height: 60px;
+}
+
+.navigation >>> .el-submenu__title span {
+    display: flex;
+    align-items: center;
 }
 
 .nav-item {
@@ -503,5 +533,25 @@ export default {
     .search {
         width: 200px;
     }
+}
+</style>
+
+<style>
+/* 全局样式：调整 Element UI 子菜单下拉框宽度 */
+/* 因为下拉菜单可能附加到body，需要使用全局样式 */
+.el-menu--popup {
+    min-width: 150px !important;
+    max-width: 160px !important;
+    padding: 4px 0 !important;
+}
+
+.el-menu--popup .el-menu-item {
+    height: 40px !important;
+    line-height: 40px !important;
+    padding: 0 20px !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 </style>

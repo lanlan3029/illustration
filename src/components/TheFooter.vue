@@ -3,7 +3,7 @@
     <a href="https://beian.miit.gov.cn/#/Integrated/index" class="message" target="_blank" rel="noopener">
       <img src="../assets/images/record.png" alt="备案" />
       <span>鲁ICP备2023000705号-1</span>
-    </a>
+   </a>
   </footer>
 </template>
 
@@ -15,7 +15,7 @@
 .box{
   width: 100%;
   padding: 14px 16px;
-  background-color: #fff;
+    background-color: #fff;
   border-top: 1px solid #f0f0f0;
   text-align: center;
 }
@@ -24,7 +24,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  text-decoration: none;
+    text-decoration: none;
   color:#606266;
   font-size: 13px;
 }

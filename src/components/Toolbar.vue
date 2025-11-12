@@ -12,9 +12,16 @@
                 @change="handleFileChange"
             />
             <ComponentList />
-             <div class="insert" @click.prevent.stop="exportImg">保存图片到本地</div></div>
-              <label class="insert" @click="saveDraft">保存草稿</label> <label class="insert" @click="deleteDraft">删除草稿</label>
-              <label class="export" @click="uploadIllu">上传作品</label>
+            <label 
+              class="insert" 
+              :class="{ 'disabled': downloading }"
+              @click.prevent.stop="exportImg"
+              :style="downloading ? { cursor: 'not-allowed', opacity: 0.6 } : {}"
+            >下载图片</label>
+            </div>
+            <label class="insert" @click="saveDraft">保存草稿</label>
+            <label class="insert" @click="deleteDraft">删除草稿</label>
+            <label class="export" @click="uploadIllu">AI智能合成</label>
               
            
                           
@@ -50,7 +57,8 @@ export default {
        ComponentList
     },
     props:{
-        draftid:{type:String,default:''}
+        draftid:{type:String,default:''},
+        downloading:{type:Boolean,default:false}
     },
     computed:mapState([
         "componentData",
@@ -109,11 +117,16 @@ export default {
             reader.readAsDataURL(file)
         },      
        exportImg(){
+        // 如果正在下载，不执行
+        if (this.downloading) {
+          return;
+        }
         console.log('download')
         this.$emit('downLoad')
        },
        uploadIllu(){
-        this.$emit('uploadIllustration')
+        // 导出画布为base64并跳转到风格迁移页面
+        this.$emit('exportToStyleTransfer')
        },
     saveDraft(){
         this.draftArry=this.componentData
@@ -166,47 +179,69 @@ export default {
 
 
 .insert{
-    display: inline-block;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     white-space: nowrap;
     cursor: pointer;
     border: 1px solid #dcdfe6;
-    padding: 12px 2px;
+    padding: 6px 16px;
     font-size: 14px;
-    transition: .1s;
-    border-radius: 4px;
+    transition: all 0.3s ease;
+    border-radius: 6px;
     font-weight: 500;
-    height:14px;
-    min-width: 80px;
-    color:#1d1d1f;
+    min-height: 30px;
+    min-width: 100px;
+    color: #1d1d1f;
     text-align: center;
-   
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .insert:hover{
-    background-color: #ecf5ff;
-    color: #3a8ee6;
+    background-color: #f5f7fa;
+    color: #019AD8;
+    border-color: #019AD8;
+    box-shadow: 0 2px 4px rgba(1, 154, 216, 0.15);
+    transform: translateY(-1px);
 }
+
+.insert:active{
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
 .export{
-   display: inline-block;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     white-space: nowrap;
     cursor: pointer;
-    border: 1px solid #dcdfe6;
-    padding: 12px 20px;
+    border: 1px solid #71c563;
+    padding: 6px 16px;
     font-size: 14px;
     margin-left: 10px;
-    transition: .1s;
-    border-radius: 4px;
+    transition: all 0.3s ease;
+    border-radius: 6px;
     font-weight: 500;
-    height:14px;
-    width: 56px;
-    color:#fff;
+    min-height: 30px;
+    min-width: 100px;
+    color: #fff;
     text-align: center;
-    background-color:#71c563;
+    background-color: #71c563;
+    box-shadow: 0 1px 2px rgba(113, 197, 99, 0.2);
 }
+
 .export:hover{
-    background-color: #a99bd6;
+    background-color: #5fb34f;
+    border-color: #5fb34f;
+    box-shadow: 0 2px 6px rgba(113, 197, 99, 0.3);
+    transform: translateY(-1px);
+}
+
+.export:active{
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(113, 197, 99, 0.2);
 }
 
 </style>

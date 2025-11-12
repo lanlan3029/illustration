@@ -14,7 +14,7 @@
       :infinite-scroll-immediate="true"
     >
         <ul class="elements">
-          <li class="element" v-for="(item,index) in searchArr" :key="item._id || index" @click="handleImageChange(item.content[0])">
+          <li class="element" v-for="(item,index) in searchArr" :key="`search-${item._id || index}-${index}`" @click="handleImageChange(item.content[0])">
               <el-image
                 fit="cover"
                 style="width:6vw; height:8vh"
@@ -47,7 +47,7 @@
       :infinite-scroll-immediate="true"
     >
         <ul class="elements">
-        <li class="element" v-for="(item,index) in pictureArr" :key="item._id || index" @click="handleImageChange(item.content[0])">
+        <li class="element" v-for="(item,index) in pictureArr" :key="`${selectType}-${item._id || item.content || index}-${index}`" @click="handleImageChange(item.content[0])">
             <el-image
               fit="contain"
               style="width:6vw; height:8vh"
@@ -170,9 +170,18 @@ export default {
                 // if cached, use cache immediately
                 const cached = this.cacheMap[this.selectType]
                 if (cached && Array.isArray(cached.items)) {
-                  this.pictureArr = cached.items.slice()
+                  // 从缓存恢复时也进行去重，确保数据唯一
+                  const uniqueMap = new Map()
+                  cached.items.forEach(item => {
+                    const key = item._id || item.content || JSON.stringify(item)
+                    if (!uniqueMap.has(key)) {
+                      uniqueMap.set(key, item)
+                    }
+                  })
+                  this.pictureArr = Array.from(uniqueMap.values())
                   this.num = cached.nextPage || 2
                   this.scrollDisabled = !!cached.noMore
+                  this.loading = false
                   this.$nextTick(()=>{
                     this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
                   })
@@ -186,16 +195,25 @@ export default {
 
                 const list1 = r1.status === 'fulfilled' ? (r1.value.data.message || []) : []
                 const list2 = r2.status === 'fulfilled' ? (r2.value.data.message || []) : []
-                this.pictureArr = list1
-                // prepare cache
+                
+                // 去重：使用 _id 或 content 作为唯一标识
                 const combined = list1.concat(list2)
+                const uniqueMap = new Map()
+                combined.forEach(item => {
+                  const key = item._id || item.content || JSON.stringify(item)
+                  if (!uniqueMap.has(key)) {
+                    uniqueMap.set(key, item)
+                  }
+                })
+                const uniqueList = Array.from(uniqueMap.values())
+                
                 const noMore = list1.length === 0 && list2.length === 0
                 this.cacheMap[this.selectType] = {
-                  items: combined,
+                  items: uniqueList,
                   nextPage: 3,
                   noMore
                 }
-                this.pictureArr = combined.slice()
+                this.pictureArr = uniqueList.slice()
                 this.num = 3
                 this.scrollDisabled = noMore
                 this.scrollDisabled = false
@@ -249,15 +267,27 @@ export default {
         if(res.data.message.length==0){ 
             this.scrollDisabled=true   
         }else{
-            const newItems = res.data.message
-            this.pictureArr = this.pictureArr.concat(newItems);
-            this.num++
-            // update cache
-            const cached = this.cacheMap[this.selectType] || { items: [], nextPage: this.num, noMore: false }
-            cached.items = this.pictureArr.slice()
-            cached.nextPage = this.num
-            cached.noMore = false
-            this.cacheMap[this.selectType] = cached
+            const newItems = res.data.message || []
+            // 去重：检查新数据是否已存在
+            const existingIds = new Set(this.pictureArr.map(item => item._id || item.content || JSON.stringify(item)))
+            const uniqueNewItems = newItems.filter(item => {
+              const key = item._id || item.content || JSON.stringify(item)
+              return !existingIds.has(key)
+            })
+            
+            if (uniqueNewItems.length > 0) {
+              this.pictureArr = this.pictureArr.concat(uniqueNewItems)
+              this.num++
+              // update cache
+              const cached = this.cacheMap[this.selectType] || { items: [], nextPage: this.num, noMore: false }
+              cached.items = this.pictureArr.slice()
+              cached.nextPage = this.num
+              cached.noMore = false
+              this.cacheMap[this.selectType] = cached
+            } else {
+              // 如果没有新数据，说明已经加载完所有数据
+              this.scrollDisabled = true
+            }
             // 等待图片加载后检查滚动条
             setTimeout(() => {
               this.$nextTick(() => {
@@ -309,6 +339,28 @@ export default {
                       let IMAGE= new Image()
                       const self=this
                       IMAGE.onload=function(){
+                        // 检查图片尺寸，如果超过1200*900，按比例缩小到800*600以内
+                        let finalWidth = IMAGE.width
+                        let finalHeight = IMAGE.height
+                        const maxWidth = 1200
+                        const maxHeight = 900
+                        const targetWidth = 800
+                        const targetHeight = 600
+                        
+                        // 如果宽度或高度超过限制，需要缩小
+                        if (finalWidth > maxWidth || finalHeight > maxHeight) {
+                            // 计算缩放比例：取宽度比例和高度比例中的较大值
+                            const widthRatio = finalWidth / targetWidth
+                            const heightRatio = finalHeight / targetHeight
+                            const scaleRatio = Math.max(widthRatio, heightRatio)
+                            
+                            // 按比例缩小
+                            finalWidth = Math.round(finalWidth / scaleRatio)
+                            finalHeight = Math.round(finalHeight / scaleRatio)
+                            
+                            console.log(`图片尺寸 ${IMAGE.width}x${IMAGE.height} 超过限制，已缩小为 ${finalWidth}x${finalHeight}`)
+                        }
+                        
                         self.$store.commit("addComponent",{
                         component:{
                             ...commonAttr,
@@ -324,8 +376,8 @@ export default {
                                 ...commonStyle,
                                 top:0,
                                 left:0,
-                                width:IMAGE.width,
-                                height:IMAGE.height,
+                                width:finalWidth,
+                                height:finalHeight,
                             }
                         }
                     })

@@ -186,6 +186,24 @@ const routes = [{
         }
     },
     {
+        path: '/user/upload/style-transfer',
+        name: 'style-transfer',
+        component: () =>
+            import ( /* webpackChunkName: "style-transfer" */ '../views/StyleTransfer.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
+        path: '/create-character',
+        name: 'create-character',
+        component: () =>
+            import ( /* webpackChunkName: "create-character" */ '../views/CreateCharacter.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
         path: '/user-g/:authorId',
         name: 'user-g',
         component: () =>

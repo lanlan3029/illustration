@@ -121,6 +121,8 @@ export default new Vuex.Store({
             if (/\d/.test(index)) {
                 state.componentData.splice(index, 1)
             }
+            // 删除组件后，自动隐藏右键菜单
+            state.menuShow = false
         },
         addImages(state, item) {
             state.imgToPDF = state.imgToPDF.concat(item)

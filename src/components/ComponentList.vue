@@ -6,8 +6,9 @@
             draggable
             class="list"
             :data-index="index"
+            @click="handleClick(index)"
         >
-            <el-tooltip class="item" effect="dark" content="拖到想添加文字的位置吧" placement="top-start">
+            <el-tooltip class="item" effect="dark" content="点击添加到画布中心" placement="top-start">
             <label class="text">{{ item.label }}</label></el-tooltip>
         </div>
     </div>
@@ -15,11 +16,18 @@
 
 <script>
 import componentList from '@/custom-component/component-list'
+import {deepCopy} from "@/utils/utils"
+import generateID from "@/utils/generateID"
 
 export default {
     data() {
         return {
             componentList,
+        }
+    },
+    computed: {
+        editor() {
+            return this.$store.state.editor
         }
     },
     methods: {
@@ -33,6 +41,28 @@ export default {
             console.log(e.target.dataset.index)
             console.log(e.dataTransfer.setData)
             // index 0
+        },
+        handleClick(index) {
+            // 点击添加组件到画布中心
+            if (this.editor) {
+                const rectInfo = this.editor.getBoundingClientRect()
+                const component = deepCopy(componentList[index])
+                
+                // 计算画布中心位置（相对于画布本身，不是视口）
+                // 画布中心在画布坐标系中的位置
+                const centerX = rectInfo.width / 2
+                const centerY = rectInfo.height / 2
+                
+                // 设置组件位置（居中，减去组件宽度/高度的一半）
+                component.style.top = centerY - (component.style.height || 22) / 2
+                component.style.left = centerX - (component.style.width || 200) / 2
+                component.id = generateID()
+                
+                this.$store.commit("addComponent", {component})
+                this.$message.success('点击添加文字')
+            } else {
+                this.$message.warning('画布未初始化，请稍后再试')
+            }
         }
     },
 }
@@ -48,21 +78,37 @@ export default {
     cursor: grabbing;
 }
 .list .text{
-   display: inline-block;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     white-space: nowrap;
     cursor: pointer;
     border: 1px solid #dcdfe6;
-    padding: 12px 2px;
+    padding: 6px 16px;
     font-size: 14px;
     margin-left: 10px;
-    transition: .1s;
-    border-radius: 4px;
+    transition: all 0.3s ease;
+    border-radius: 6px;
     font-weight: 500;
-    height:14px;
-    width: 80px; 
-   color:#1d1d1f;
+    min-height: 30px;
+    min-width: 100px;
+    color: #1d1d1f;
    text-align: center;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.list .text:hover{
+    background-color: #f5f7fa;
+    color: #019AD8;
+    border-color: #019AD8;
+    box-shadow: 0 2px 4px rgba(1, 154, 216, 0.15);
+    transform: translateY(-1px);
+}
+
+.list .text:active{
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 

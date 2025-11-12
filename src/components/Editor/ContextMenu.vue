@@ -1,6 +1,10 @@
 <template>
     <div>
-        <div v-show="menuShow" class="contextmenu" :style="{top:menuTop+'px',left:menuLeft+'px'}">
+        <div 
+            v-show="menuShow" 
+            ref="contextMenu"
+            class="contextmenu" 
+            :style="menuStyle">
             <ul @mouseup="handleMouseUp">
                 <template v-if="curComponent">
                     <li @click="copy">复制</li>
@@ -26,17 +30,90 @@ export default {
     data(){
         return{
             copyData:null,
-            cur:{}
+            cur:{},
+            menuWidth: 120,
+            menuHeight: 200
         }
     },
-    computed:mapState([
+    computed:{
+        ...mapState([
         'menuTop',
         'menuLeft',
         'menuShow',
         'curComponent'
     ]),
+        menuStyle() {
+            if (!this.menuShow) {
+                return {};
+            }
+            
+            // 获取菜单实际尺寸（如果还没有测量，使用默认值）
+            const menuWidth = this.menuWidth;
+            const menuHeight = this.menuHeight;
+            // 获取视口尺寸
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // 初始位置就是鼠标位置（clientY/clientX已经是相对于视口的坐标）
+            let left = this.menuLeft;
+            let top = this.menuTop;
+            
+            // 边界检测：只在超出边界时才调整位置
+            // 如果超出右边界，向左调整（菜单左边缘对齐鼠标）
+            if (left + menuWidth > viewportWidth) {
+                left = Math.max(10, viewportWidth - menuWidth - 5);
+            }
+            // 如果超出左边界，向右调整
+            if (left < 5) {
+                left = 5;
+            }
+            
+            // 如果超出下边界，向上调整（菜单上边缘对齐鼠标）
+            if (top + menuHeight > viewportHeight) {
+                top = Math.max(5, viewportHeight - menuHeight - 5);
+            }
+            // 如果超出上边界，向下调整
+            if (top < 5) {
+                top = 5;
+            }
+            
+            return {
+                top: top + 'px',
+                left: left + 'px',
+                visibility: 'visible'
+            };
+        }
+    },
     mounted(){
         console.log(this.curComponent);
+    },
+    watch: {
+        menuShow(newVal) {
+            if (newVal) {
+                // 菜单显示时，在下一个tick更新尺寸并重新计算位置
+                this.$nextTick(() => {
+                    this.updateMenuSize();
+                    // 强制更新样式
+                    this.$forceUpdate();
+                });
+            }
+        },
+        menuLeft() {
+            // 当菜单位置改变时，如果菜单已显示，更新尺寸
+            if (this.menuShow) {
+                this.$nextTick(() => {
+                    this.updateMenuSize();
+                });
+            }
+        },
+        menuTop() {
+            // 当菜单位置改变时，如果菜单已显示，更新尺寸
+            if (this.menuShow) {
+                this.$nextTick(() => {
+                    this.updateMenuSize();
+                });
+            }
+        }
     },
     methods:{
         // 点击菜单时不取消当前组件的选中状态
@@ -58,23 +135,39 @@ export default {
         cropper(){
             this.$store.commit("changeCropper",true)
         },
-     
+        updateMenuSize() {
+            if (this.$refs.contextMenu) {
+                const rect = this.$refs.contextMenu.getBoundingClientRect();
+                this.menuWidth = rect.width || 120;
+                this.menuHeight = rect.height || 200;
+            }
+        }
     }
 }
 </script>
-<style scoped>
+<style>
+/* 不使用scoped，确保样式生效 */
 .contextmenu{
-    position: absolute;
-    z-index: 10000;
+    position: fixed;
+    z-index: 99999;
+    pointer-events: auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    max-width: none;
+    max-height: none;
 }
-ul{
+.contextmenu ul{
     border: 1px solid #e4e7ed;
     border-radius: 4px;
     background-color: #fff;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
     box-sizing: border-box;
-    margin: 5px 0;
+    margin: 0;
     padding: 6px 0;
+    list-style: none;
+    min-width: 120px;
+    overflow: visible;
 }
 
 li{

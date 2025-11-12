@@ -18,6 +18,8 @@ Vue.use(ElementUI)
 Vue.prototype.$http = axios
 
 axios.defaults.baseURL = 'https://api.kidstory.cc/'
+// 设置全局请求超时时间（30秒）
+axios.defaults.timeout = 30000
 
 new Vue({
     router,

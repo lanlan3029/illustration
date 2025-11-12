@@ -25,7 +25,8 @@
            >
                <Editor />
            </div>
-            <Toolbar @downLoad="downLoadImg" @uploadIllustration="uploadImg" :draftid="draftid"/>
+           <ContextMenu />
+            <Toolbar @downLoad="downLoadImg" @uploadIllustration="uploadImg" @exportToStyleTransfer="exportToStyleTransfer" :draftid="draftid" :downloading="downloading"/>
            <Cropper v-if="ifCropper && curComponent != null" >
            </Cropper>
           
@@ -52,7 +53,7 @@ import {mapState} from 'vuex'
 
 import Toolbar from '@/components/Toolbar'
 import Editor from '@/components/Editor/index'
-
+import ContextMenu from '@/components/Editor/ContextMenu'
 import Cropper from '@/components/Cropper/index'
 import AttrList from '@/components/AttrList'
 
@@ -70,6 +71,7 @@ export default {
       activeName:"attr",
       draftArr:[],
       draftid:'',
+      downloading: false, // 下载状态
     }
   },
   components: {
@@ -77,7 +79,8 @@ export default {
     Editor,
     AttrList,
     Cropper,
-    LeftMenu
+    LeftMenu,
+    ContextMenu
   },
   computed:mapState([
     'componentData',
@@ -131,20 +134,10 @@ export default {
     handleContextMenu(e){
       e.stopPropagation()
       e.preventDefault()
-      // 计算菜单相对于编辑器的位移
-      let target = e.target
-      let top = e.offsetY
-      let left = e.offsetX
-      // 判断是否是在svg上右击鼠标
-      while (target instanceof SVGElement) {
-          target = target.parentNode
-      }
-      // 判断是否右击在图片上
-      while (!target.className.includes('editor')) {
-          left += target.offsetLeft
-          top += target.offsetTop
-          target = target.parentNode
-      }
+      // 使用固定定位，计算相对于视口的坐标
+      // 这样可以确保菜单始终显示在最上层，不会被overflow:hidden裁剪
+      const top = e.clientY
+      const left = e.clientX
       this.$store.commit('showContextMenu', { top, left })
     },
     handleDrop(e){
@@ -171,34 +164,173 @@ export default {
       a.download=`${name}.png`
       a.click()
     },
-    downLoadImg(){
-      this.$store.commit('setCurComponent',{
-          component:null,
-          index:null
+    // 预加载所有图片，并将图片转换为base64缓存，避免html2canvas重新加载
+    async preloadImages(container) {
+      const images = container.querySelectorAll('img');
+      const imagePromises = Array.from(images).map(async (img) => {
+        // 如果图片已经加载完成
+        if (img.complete && img.naturalWidth > 0) {
+          // 如果图片还没有data-cached属性，将其转换为base64并缓存
+          if (!img.dataset.cached) {
+            try {
+              // 将图片转换为base64并存储在data属性中
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              ctx.drawImage(img, 0, 0);
+              const base64 = canvas.toDataURL('image/png');
+              img.dataset.cached = base64;
+              img.dataset.originalSrc = img.src;
+            } catch (e) {
+              // 如果转换失败（可能是跨域），标记为已处理
+              img.dataset.cached = 'skip';
+            }
+          }
+          return Promise.resolve();
+        }
+        // 否则等待图片加载
+        return new Promise((resolve) => {
+          if (img.src) {
+            img.onload = async () => {
+              // 图片加载完成后，转换为base64缓存
+              if (!img.dataset.cached) {
+                try {
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  canvas.width = img.naturalWidth;
+                  canvas.height = img.naturalHeight;
+                  ctx.drawImage(img, 0, 0);
+                  const base64 = canvas.toDataURL('image/png');
+                  img.dataset.cached = base64;
+                  img.dataset.originalSrc = img.src;
+                } catch (e) {
+                  img.dataset.cached = 'skip';
+                }
+              }
+              resolve();
+            };
+            img.onerror = () => resolve();
+            if (img.complete) {
+              resolve();
+            }
+          } else {
+            resolve();
+          }
         });
-
-       this.$message("正在下载,请勿重复点击");
-      let target = document.getElementsByClassName("content");
-      console.log(target)
-      console.time('html2canvas')
-        html2Canvas(target[0], {
-        dpi: 96,
-        useCORS: true,
-      }).then((canvas) => {
-        console.timeEnd('html2canvas')
-      let url = canvas.toDataURL("image/jpeg");
-      this.saveBase64(url)
       });
+      await Promise.all(imagePromises);
     },
 
-    getCanvas(){
+    async downLoadImg(){
+      // 如果正在下载，直接返回
+      if (this.downloading) {
+        return;
+      }
+      
+      // 设置下载状态为true，禁用按钮
+      this.downloading = true;
+      
+      try {
+        // 取消选中组件
+        this.$store.commit('setCurComponent',{
+            component:null,
+            index:null
+          });
+        // 隐藏右键菜单
+        this.$store.commit('hideContextMenu')
+
+        // 等待 DOM 更新完成，确保选中状态的旋转图标等元素已移除
+        await this.$nextTick()
+        // 再等待一小段时间，确保所有样式更新完成
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // 显示提示信息，持续1秒
+        this.$message({
+          message: "正在下载,请勿重复点击",
+          duration: 1000
+        });
+        
         let target = document.getElementsByClassName("content");
+        
+        // 预加载所有图片，确保图片已缓存，避免截图时重新加载
+        await this.preloadImages(target[0]);
+        
+        console.log(target)
+        console.time('html2canvas')
+        const canvas = await html2Canvas(target[0], {
+          dpi: 96,
+          useCORS: true,
+          allowTaint: false,
+          imageTimeout: 15000,
+          scale: 1,
+          logging: false,
+          removeContainer: true,
+          cacheBust: false,
+          // 在克隆DOM时，使用缓存的base64图片，避免重新加载
+          onclone: (clonedDoc) => {
+            const clonedImages = clonedDoc.querySelectorAll('img');
+            const originalImages = target[0].querySelectorAll('img');
+            clonedImages.forEach((clonedImg, index) => {
+              const originalImg = originalImages[index];
+              if (originalImg && originalImg.dataset.cached && originalImg.dataset.cached !== 'skip') {
+                // 使用缓存的base64数据，避免重新加载
+                clonedImg.src = originalImg.dataset.cached;
+              }
+            });
+          }
+        });
+        console.timeEnd('html2canvas')
+        let url = canvas.toDataURL("image/jpeg", 0.92);
+        this.saveBase64(url)
+      } catch (error) {
+        console.error('下载失败:', error);
+        this.$message.error('下载失败，请重试');
+      } finally {
+        // 下载完成，恢复按钮状态
+        this.downloading = false;
+      }
+    },
+
+    async getCanvas(){
+        // 取消选中组件
+        this.$store.commit('setCurComponent', {component:null,index:null})
+        // 隐藏右键菜单
+        this.$store.commit('hideContextMenu')
+        
+        // 等待 DOM 更新完成，确保选中状态的旋转图标等元素已移除
+        await this.$nextTick()
+        // 再等待一小段时间，确保所有样式更新完成
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        let target = document.getElementsByClassName("content");
+        
+        // 预加载所有图片，确保图片已缓存，避免截图时重新加载
+        await this.preloadImages(target[0]);
+        
         console.log(target)
         html2Canvas(target[0], {
         dpi: 96,
         useCORS: true,
+        allowTaint: false,
+        imageTimeout: 15000,
+        scale: 1,
+        logging: false,
+        removeContainer: true,
+        cacheBust: false,
+        // 在克隆DOM时，使用缓存的base64图片，避免重新加载
+        onclone: (clonedDoc) => {
+          const clonedImages = clonedDoc.querySelectorAll('img');
+          const originalImages = target[0].querySelectorAll('img');
+          clonedImages.forEach((clonedImg, index) => {
+            const originalImg = originalImages[index];
+            if (originalImg && originalImg.dataset.cached && originalImg.dataset.cached !== 'skip') {
+              clonedImg.src = originalImg.dataset.cached;
+            }
+          });
+        }
       }).then((canvas) => {
-      let url = canvas.toDataURL("image/jpeg");
+      let url = canvas.toDataURL("image/jpeg", 0.92);
        this.$store.commit('uploadIllustration', url)
        console.log(url)
       this.$router.push('/user/upload/upload-illustration');
@@ -207,7 +339,58 @@ export default {
     async uploadImg(){
          this.$store.commit('setCurComponent', {component:null,index:null})  
          await this.getCanvas()
-       } 
+       },
+    
+    async exportToStyleTransfer(){
+         // 取消选中组件
+         this.$store.commit('setCurComponent', {component:null,index:null})
+         // 隐藏右键菜单
+         this.$store.commit('hideContextMenu')
+         
+         // 等待 DOM 更新完成，确保选中状态的旋转图标等元素已移除
+         await this.$nextTick()
+         // 再等待一小段时间，确保所有样式更新完成
+         await new Promise(resolve => setTimeout(resolve, 100))
+         
+         // 导出画布为base64
+         let target = document.getElementsByClassName("content");
+         
+         // 预加载所有图片，确保图片已缓存，避免截图时重新加载
+         await this.preloadImages(target[0]);
+         
+         html2Canvas(target[0], {
+            dpi: 96,
+            useCORS: true,
+            allowTaint: false,
+            imageTimeout: 15000,
+            scale: 1,
+            logging: false,
+            removeContainer: true,
+            cacheBust: false,
+            // 在克隆DOM时，使用缓存的base64图片，避免重新加载
+            onclone: (clonedDoc) => {
+              const clonedImages = clonedDoc.querySelectorAll('img');
+              const originalImages = target[0].querySelectorAll('img');
+              clonedImages.forEach((clonedImg, index) => {
+                const originalImg = originalImages[index];
+                if (originalImg && originalImg.dataset.cached && originalImg.dataset.cached !== 'skip') {
+                  clonedImg.src = originalImg.dataset.cached;
+                }
+              });
+            }
+         }).then((canvas) => {
+            let base64Url = canvas.toDataURL("image/jpeg", 0.92);
+            
+            // 将base64存储到localStorage，供style_transfer页面使用
+            localStorage.setItem('styleTransferContentImage', base64Url);
+            
+            // 跳转到风格迁移页面
+            this.$router.push('/user/upload/style-transfer');
+         }).catch((error) => {
+            console.error('导出图片失败:', error);
+            this.$message.error('导出图片失败，请重试');
+         });
+       }
     }
   }
 </script>
@@ -242,8 +425,8 @@ export default {
   }
   .content{
     margin:2vh auto;
-    width: 66vw;
-    height:43vw;
+    width: 60vw;
+    height:45vw;
     overflow: hidden;
     z-index:100;
   }

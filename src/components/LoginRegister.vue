@@ -68,20 +68,43 @@ export default{
         //获取用户信息
         async getUser(){
        try{
-        let res= await this.$http.get(`/user/`+this.userid)
+        if (!this.userid) {
+            return; // 如果没有用户ID，直接返回
+        }
+        let res= await this.$http.get(`/user/`+this.userid, {
+            timeout: 10000 // 10秒超时
+        })
         let toolUser=res.data.message;
         this.$store.commit("setUserInfo",toolUser)
        }catch(err){
+        console.error('获取用户信息失败:', err);
+        // 只有网络错误或超时才显示登录框，其他错误不处理
+        if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
+            // 网络错误或超时，不强制显示登录框
+        } else {
         this.$store.commit('showMask')     
+        }
     }
     },
        
         //登陆
         login(){
+          // 表单验证
+          if (!this.count.name || !this.count.pwd) {
+              this.$message({
+                  message: '请输入邮箱和密码',
+                  type: 'warning',
+                  offset: '180',
+              });
+              return;
+          }
+
           this.$http
         .post(`/pb/login`, {
          email:this.count.name, 
           password: this.count.pwd,
+        }, {
+            timeout: 15000 // 15秒超时
         })
         .then((response) => {
           if (response.data.desc === "success") {
@@ -101,15 +124,42 @@ export default{
               console.log("login");
           }
         })
-        .catch((error) => console.log(error));
+        .catch((error) => {
+            console.error('登录错误:', error);
+            let errorMsg = '登录失败，请稍后重试';
+            if (error.code === 'ECONNABORTED') {
+                errorMsg = '请求超时，请检查网络连接';
+            } else if (error.code === 'ERR_NETWORK') {
+                errorMsg = '网络错误，请检查网络连接';
+            } else if (error.response) {
+                errorMsg = error.response.data?.message || '登录失败';
+            }
+            this.$message({
+                message: errorMsg,
+                type: 'error',
+                offset: '180',
+            });
+        });
         },
 
         //注册
         register(){
+          // 表单验证
+          if (!this.emailCount.emailName || !this.emailCount.emailPwd) {
+              this.$message({
+                  message: '请输入邮箱和密码',
+                  type: 'warning',
+                  offset: '180',
+              });
+              return;
+          }
+
           this.$http
         .post(`/pb/regist/`, {
          email:this.emailCount.emailName, 
           password: this.emailCount.emailPwd,
+        }, {
+            timeout: 15000 // 15秒超时
         })
         .then((response) => {
           if (response.data.desc === "success") {
@@ -121,13 +171,28 @@ export default{
   })
           } else {
               this.$message({
-    message: '出错啦，请再试一次',
+    message: response.data?.message || '出错啦，请再试一次',
     type: 'warning',
     offset:'180',
   })
           }
         })
-        .catch((error) => console.log(error));
+        .catch((error) => {
+            console.error('注册错误:', error);
+            let errorMsg = '注册失败，请稍后重试';
+            if (error.code === 'ECONNABORTED') {
+                errorMsg = '请求超时，请检查网络连接';
+            } else if (error.code === 'ERR_NETWORK') {
+                errorMsg = '网络错误，请检查网络连接';
+            } else if (error.response) {
+                errorMsg = error.response.data?.message || '注册失败';
+            }
+            this.$message({
+                message: errorMsg,
+                type: 'error',
+                offset: '180',
+            });
+        });
           
         },
 
@@ -255,5 +320,5 @@ display: flex;
 }
 .toregister span:hover{
   color:#4fa5d9;
-} 
+}
 </style>

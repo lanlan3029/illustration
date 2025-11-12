@@ -46,7 +46,6 @@
                 :element="item"
             />
         </Shape>
-        <ContextMenu/>
         
     </div>
 </template>
@@ -55,13 +54,12 @@
 import {mapState} from "vuex"
 import Shape from "./Shape.vue"
 import Grid from "./Grid.vue"
-import ContextMenu from './ContextMenu.vue'
 // 导入utils
 import {changeStyleWithScale} from '@/utils/translate'
 import { getStyle } from '@/utils/style'
 export default {
     components:{
-        Shape,Grid,ContextMenu
+        Shape,Grid
     },
     props:{
         isEdit:{

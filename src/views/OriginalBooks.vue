@@ -273,7 +273,7 @@ export default {
   margin-top:2vh;
   display: flex;
   flex-wrap: wrap;
-  align-content:flex-start;
+  align-content:flex-start;  
   gap: 24px; /* 列间距 */
 }
 .item {
