@@ -47,11 +47,11 @@
       :infinite-scroll-immediate="true"
     >
         <ul class="elements">
-        <li class="element" v-for="(item,index) in pictureArr" :key="`${selectType}-${item._id || item.content || index}-${index}`" @click="handleImageChange(item.content[0])">
+        <li class="element" v-for="(item,index) in pictureArr" :key="`${selectType}-${item._id || item.content || index}-${index}`" @click="handleImageChange(getImageContent(item))">
             <el-image
               fit="contain"
               style="width:6vw; height:8vh"
-              :src="`https://static.kidstory.cc/` + item.content"
+              :src="getImageSrc(item)"
               lazy
               :scroll-container="$refs.scrollContainer"
             >
@@ -86,20 +86,21 @@ export default {
     data(){
         return{
           icons:[
-            {type:"scene",icon:'iconfont icon-tupian',id:0,num:2},
-          {type:"people",icon:'iconfont icon-ren1',id:1,num:2},
-          {type:"animal",icon:'iconfont icon--panda',id:2,num:2},
-          {type:"plant",icon:'iconfont icon-shu3',id:3,num:2},
-          {type:"food",icon:'iconfont icon-shiwu-2',id:4,num:2},
-          {type:"toy",icon:'iconfont icon-jimu2',id:5,num:2},
-          {type:"vehicle",icon:'iconfont icon-qichepiao',id:6,num:2},
-          {type:"decoration",icon:'iconfont icon-zhuangshipin',id:7,num:2},
-          {type:"furniture",icon:'iconfont icon-shafa1',id:8,num:2},
-          {type:"others",icon:'iconfont icon-other',id:9,num:2}],
+          {type:"charcter",icon:'iconfont icon-ren1',id:0,num:2},
+            {type:"scene",icon:'iconfont icon-tupian',id:1,num:2},
+          {type:"people",icon:'iconfont icon-renti',id:2,num:2},
+          {type:"animal",icon:'iconfont icon--panda',id:3,num:2},
+          {type:"plant",icon:'iconfont icon-shu3',id:4,num:2},
+          {type:"food",icon:'iconfont icon-shiwu-2',id:5,num:2},
+          {type:"toy",icon:'iconfont icon-jimu2',id:6,num:2},
+          {type:"vehicle",icon:'iconfont icon-qichepiao',id:7,num:2},
+          {type:"decoration",icon:'iconfont icon-zhuangshipin',id:8,num:2},
+          {type:"furniture",icon:'iconfont icon-shafa1',id:9,num:2},
+          {type:"others",icon:'iconfont icon-other',id:10,num:2}],
           pictureArr:[],
           num:2,
           searchNum:2,
-          selectType:'scene',
+          selectType:'charcter',
           selectIndex:0,
           searchInput:'',
           searchArr:[],
@@ -167,6 +168,11 @@ export default {
         //请求数据库数据
         async getPictures(){
             try{
+                // 如果是"我的角色"类型，使用不同的API
+                if (this.selectType === 'charcter') {
+                    return await this.getMyCharacters()
+                }
+                
                 // if cached, use cache immediately
                 const cached = this.cacheMap[this.selectType]
                 if (cached && Array.isArray(cached.items)) {
@@ -233,6 +239,68 @@ export default {
                 console.log(error)
             }
         },
+        
+        // 获取"我的角色"
+        async getMyCharacters(){
+            try {
+                this.loading = true
+                const userId = localStorage.getItem('id')
+                if (!userId) {
+                    this.pictureArr = []
+                    this.scrollDisabled = true
+                    this.loading = false
+                    return
+                }
+                
+                const apiUrl = process.env.VUE_APP_API_BASE_URL 
+                    ? `${process.env.VUE_APP_API_BASE_URL}/character`
+                    : '/character';
+                
+                const response = await this.$http.get(apiUrl, {
+                    params: {
+                        user_id: userId
+                    },
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    }
+                });
+                
+                let characterList = []
+                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
+                    characterList = response.data.data || response.data.message || response.data.list || []
+                }
+                
+                // 将角色数据转换为图片格式，使用 image_url 或 character_image_url
+                const formattedList = characterList.map(char => {
+                    const imageUrl = char.image_url || char.character_image_url || ''
+                    return {
+                        _id: char.id || char._id,
+                        content: imageUrl,
+                        ...char
+                    }
+                })
+                
+                // 缓存数据
+                this.cacheMap[this.selectType] = {
+                    items: formattedList,
+                    nextPage: 2,
+                    noMore: true // 角色数据通常不需要分页
+                }
+                
+                this.pictureArr = formattedList.slice()
+                this.scrollDisabled = true // 角色数据不需要无限滚动
+                this.loading = false
+                
+                this.$nextTick(() => {
+                    this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
+                })
+            } catch (error) {
+                console.error('获取我的角色失败:', error)
+                this.pictureArr = []
+                this.scrollDisabled = true
+                this.loading = false
+            }
+        },
 
        //选择左侧类别
        select(index,type,num){
@@ -253,12 +321,19 @@ export default {
             // 加载第一页数据
             this.getPictures()
             
-            // 恢复监听，允许后续滚动加载
-            this.scrollDisabled = false
+            // 恢复监听，允许后续滚动加载（charcter类型会在getMyCharacters中设置为true）
+            if (type !== 'charcter') {
+                this.scrollDisabled = false
+            }
         },
         
         //无限加载
         async load() {
+      // 如果是"我的角色"类型，不需要无限滚动加载
+      if (this.selectType === 'charcter') {
+          return
+      }
+      
       if(!this.loading){
         this.loading=true
         try {
@@ -331,10 +406,50 @@ export default {
              return [IMAGE.width,IMAGE.height]
           },
       
+        // 获取图片显示URL
+        getImageSrc(item) {
+            if (!item) return ''
+            let content = item.content
+            // 如果content是数组，取第一个元素
+            if (Array.isArray(content)) {
+                content = content[0]
+            }
+            // 如果已经是完整URL，直接返回
+            if (typeof content === 'string' && (content.startsWith('http://') || content.startsWith('https://'))) {
+                return content
+            }
+            // 否则添加静态资源前缀
+            return `https://static.kidstory.cc/${content || ''}`
+        },
+        
+        // 获取图片内容（用于点击处理）
+        getImageContent(item) {
+            if (!item) return ''
+            let content = item.content
+            // 如果content是数组，取第一个元素
+            if (Array.isArray(content)) {
+                content = content[0]
+            }
+            return content || ''
+        },
 
         //把小图片添加到中间面板
        async handleImageChange(item){
         console.log(this.componentData)
+        
+        // 处理图片URL：如果是完整URL就直接使用，否则添加前缀
+        let imageUrl = item
+        if (typeof item === 'string') {
+            if (!item.startsWith('http://') && !item.startsWith('https://') && !item.startsWith('data:')) {
+                imageUrl = 'https://api.kidstory.cc/' + item
+            }
+        } else if (item && item.content) {
+            // 如果item是对象，取content字段
+            imageUrl = item.content
+            if (typeof imageUrl === 'string' && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
+                imageUrl = 'https://api.kidstory.cc/' + imageUrl
+            }
+        }
            
                       let IMAGE= new Image()
                       const self=this
@@ -370,7 +485,7 @@ export default {
                             label:"图片",
                             icon:"",
                             // 图片路径
-                            propValue:('https://api.kidstory.cc/'+item),
+                            propValue: imageUrl,
                             // 图片样式
                             style:{
                                 ...commonStyle,
@@ -383,7 +498,7 @@ export default {
                     })
                       }
                       
-                      IMAGE.src=('https://api.kidstory.cc/'+item)
+                      IMAGE.src = imageUrl
                     
               
                     
@@ -450,8 +565,8 @@ export default {
 
     },
     mounted(){
-        this.getPictures()
-      
+        // 默认选中第一个类别（charcter）并加载"我的角色"
+        this.select(0, 'charcter', 2)
     },
     beforeDestory(){
        window.removeEventListener('scroll',this.load)
@@ -491,8 +606,8 @@ export default {
 }
 
 .container .classify .menu li{
-    height:8vh;
-    line-height:8vh;
+    height:7vh;
+    line-height:7vh;
     cursor: pointer;
     font-size:24px; 
    text-align: center;

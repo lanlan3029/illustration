@@ -411,22 +411,22 @@ export default {
   }
   .right{
     height: 90vh;
-    width: 10vw;
+    width: 14vw;
     right: 0;
     top: 0;
   }
   .center{
     background-color: #f5f5f5; 
-    width:70.5vw;
+    width:66.5vw;
     height:88vh;  
     margin:auto;
     border-radius: 4px;
     overflow-y: scroll;
   }
   .content{
-    margin:2vh auto;
-    width: 60vw;
-    height:45vw;
+    margin:2vh auto 0 auto;
+    width: 56vw;
+    height:44vw;
     overflow: hidden;
     z-index:100;
   }

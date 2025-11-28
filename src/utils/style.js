@@ -22,6 +22,7 @@ export const styleData = [
     { key: 'borderRadius', label: '边框半径' },
     { key: 'fontSize', label: '字体大小' },
     { key: 'fontWeight', label: '字体粗细' },
+    { key: 'fontFamily', label: '字体' },
     { key: 'lineHeight', label: '行高' },
     { key: 'letterSpacing', label: '字间距' },
     { key: 'textAlign', label: '左右对齐' },

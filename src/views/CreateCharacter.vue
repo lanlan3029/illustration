@@ -4,11 +4,12 @@
             <!-- 左侧：上传照片、抠图结果和风格选择 -->
             <div class="left-panel">
                 <!-- 上传孩子照片 -->
-                <div class="panel-box">
-                    <el-card class="panel-card" shadow="hover">
-                        <div class="panel-content">
+            <div class="panel-box">
+                <el-card class="panel-card" shadow="hover">
+                    <div class="panel-content">
                             <!-- 步骤1：上传照片 -->
                             <div v-if="!photoPreviewUrl" class="upload-wrapper">
+                               
                                 <el-upload
                                     ref="photo-upload"
                                     class="upload-demo"
@@ -21,7 +22,7 @@
                                     :on-remove="handlePhotoRemove"
                                     :limit="1"
                                     accept="image/jpeg,image/jpg,image/png">
-                                    <div class="upload-step">1</div>
+                                    <div class="upload-step">1：上传照片</div>
                                   
                                     <div class="el-upload__text-secondary">
                                         将文件拖到此处，或<em>点击上传</em>
@@ -29,6 +30,8 @@
                                     <template #tip>
                                         <div class="el-upload__tip">
                                             支持 JPG、PNG 格式，建议大小不超过 5MB
+                                            <br />
+                                            为保证生成效果，请上传半身照，确保人物面部清晰完整。
                                         </div>
                                     </template>
                                 </el-upload>
@@ -37,15 +40,17 @@
                             <!-- 上传后的内容 -->
                             <div v-if="photoPreviewUrl" class="uploaded-content">
                                 <!-- 照片预览 -->
-                                <div class="photo-preview">
+                                <div class="photo-preview-wrapper">
                                     <div class="step-label">1：上传的照片</div>
-                                    <el-image 
-                                        :src="photoPreviewUrl" 
-                                        alt="上传照片" 
-                                        class="photo-image"
-                                        fit="contain"
-                                        :preview-src-list="[photoPreviewUrl]">
-                                    </el-image>
+                                    <div class="photo-preview">
+                                        <el-image 
+                                            :src="photoPreviewUrl" 
+                                            alt="上传照片" 
+                                            class="photo-image"
+                                            fit="contain"
+                                            :preview-src-list="[photoPreviewUrl]">
+                                        </el-image>
+                                    </div>
                                     <div class="step-actions">
                                         <el-button 
                                             icon="el-icon-refresh" 
@@ -59,7 +64,7 @@
 
 
                             
-                            </div>
+                        </div>
 
                                 <!-- 步骤2：角色信息输入 -->
                                 <div class="character-info-section">
@@ -72,7 +77,8 @@
                                                 clearable>
                                             </el-input>
                                         </el-form-item>
-                                        <el-form-item label="或提示词">
+                                       
+                                        <el-form-item label="角色描述">
                                             <el-input 
                                                 v-model="form.prompt" 
                                                 type="textarea"
@@ -83,29 +89,9 @@
                                         </el-form-item>
                                        
                                     </el-form>
-                                </div>
+            </div>
 
-                                <!-- 步骤3：风格选择 -->
-                                <div class="style-selection-section">
-                                    <div class="step-label">3：选择风格</div>
-                                
-                                    <div class="style-presets-container-horizontal" v-if="stylePresets && stylePresets.length > 0">
-                                        <div 
-                                            v-for="(preset, index) in stylePresets" 
-                                            :key="index"
-                                            class="style-preset-item-horizontal"
-                                            :class="{ 'selected': selectedStyleIndex === index }"
-                                            @click="selectStylePreset(preset, index)">
-                                            <div class="preset-image-wrapper-horizontal">
-                                                <img :src="preset.url" :alt="preset.name" class="preset-image-horizontal">
-                                            </div>
-                                            <div class="preset-overlay-horizontal">
-                                                <i class="el-icon-check" v-if="selectedStyleIndex === index"></i>
-                                            </div>
-                                            <div class="preset-name-horizontal">{{ preset.name }}</div>
-                                        </div>
-                                    </div>
-                                </div>
+                               
 
                                 <!-- 生成角色按钮 -->
                                 <div class="generate-actions">
@@ -125,11 +111,11 @@
                                         <i class="el-icon-refresh"></i>
                                         重置
                                     </el-button>
-                                </div>
                         </div>
-                    </el-card>
-                </div>
+                    </div>
+                </el-card>
             </div>
+                    </div>
 
             <!-- 右侧：生成的角色形象和风格选择（左右排列） -->
             <div class="right-panel">
@@ -141,38 +127,46 @@
                     
                         <div class="result-content">
                           
-                            <div v-if="!resultImageUrl && !processing" class="result-placeholder">
-                                <i class="el-icon-picture-outline"></i>
-                                <p>生成的角色形象将显示在这里</p>
-                            </div>
-                            <div v-if="processing" class="result-loading">
-                                <i class="el-icon-loading"></i>
-                                <p>正在生成中，请稍候...</p>
-                                <p class="loading-tip">AI正在对抠图结果进行风格迁移处理</p>
-                            </div>
-                            <div v-if="resultImageUrl && !processing" class="result-image-wrapper">
-                                <el-image 
-                                    :src="resultImageUrl" 
-                                    alt="生成的角色形象" 
-                                    class="result-image"
-                                    fit="contain"
-                                    :preview-src-list="[resultImageUrl]">
-                                </el-image>
-                                <div class="result-actions">
-                                    <el-button 
-                                        type="primary" 
-                                        @click="downloadResult" 
-                                        :loading="downloading">
-                                        <i class="el-icon-download"></i> 下载角色
-                                    </el-button>
-                                    <el-button 
+                        <div v-if="!resultImageUrl && !processing" class="result-placeholder">
+                            <i class="el-icon-picture-outline"></i>
+                            <p>生成的角色形象将显示在这里</p>
+                        </div>
+                        <div v-if="processing" class="result-loading">
+                            <i class="el-icon-loading"></i>
+                            <p>正在生成中，请稍候...</p>
+                           
+                        </div>
+                        <div v-if="resultImageUrl && !processing" class="result-image-wrapper">
+                            <el-image 
+                                :src="displayImageUrl" 
+                                alt="生成的角色形象" 
+                                class="result-image"
+                                fit="contain"
+                                :preview-src-list="[displayImageUrl]">
+                            </el-image>
+                            <div class="result-actions">
+                                <el-button 
+                                    type="primary" 
+                                    @click="collectCharacter">
+                                    <i class="el-icon-star-on"></i> 收集角色
+                                </el-button>
+                                <el-button 
+                                    @click="downloadResult" 
+                                    :loading="downloading">
+                                    <i class="el-icon-download"></i> 下载角色
+                                </el-button>
+                    <el-button 
+                                        @click="useInIllustration">
+                                        <i class="el-icon-edit"></i> 创作插画
+                    </el-button>
+                    <el-button 
                                         @click="useInCreation">
-                                        <i class="el-icon-edit"></i> 用于创作
-                                    </el-button>
+                                        <i class="el-icon-edit"></i> 创作组图
+                    </el-button>
                                 </div>
                             </div>
-                        </div>
-                    </el-card>
+                </div>
+            </el-card>
                 </div>
             </div>
         </div>
@@ -196,43 +190,23 @@ export default {
             segmentedImageUrl: null, // 抠图后的图片URL
             segmentedImageData: null, // 抠图后的图片数据（base64或File）
             
-            // 风格图片（预设）
-            selectedStyleIndex: null, // 当前选中的预设风格索引
-            selectedStylePreset: null, // 当前选中的风格预设
-            styleFile: null, // 当前选中的风格图片文件（用于预览）
-            referenceImageId: null, // 当前选中的参考图ID（1、2或3，发送给后台）
-            // 预设风格图片列表
-            stylePresets: [
-                {
-                    name: '参考图1',
-                    url: require('@/assets/images/reference1.jpg'), // 前端显示的图片
-                    id: 'reference1',
-                    preset: 'default'
-                },
-                {
-                    name: '参考图2',
-                    url: require('@/assets/images/reference2.jpg'), // 前端显示的图片
-                    id: 'reference2',
-                    preset: 'cartoon'
-                },
-                {
-                    name: '参考图3',
-                    url: require('@/assets/images/reference3.jpg'), // 前端显示的图片
-                    id: 'reference3',
-                    preset: 'watercolor'
-                }
-            ],
+            // 默认参考图（固定使用 r11.png）
+            defaultReferenceImage: require('@/assets/images/r11.png'),
+            
+            // 角色分类选项（中文）
+       
             
             // 表单数据
             form: {
                 character_name: '', // 角色名称
                 prompt: '', // 用户输入的自定义提示词
-                stylePreset: 'default' // 默认风格
+                character_type: '', // 角色类型
+               
             },
             
             // 默认的系统提示词（不显示给用户，会与用户输入的提示词拼接）
             // 图一：用户上传的图片，图二：参考图
-            defaultPrompt: '将图二的头部替换为图一，人物身体完整，图像风格保持不变，画面只保留人物，背景透明（删除背景）',
+            defaultPrompt: '将图二的头部替换为图一，“完整呈现角色从头到脚”，全身像，不要影子，图像风格保持不变，画面只保留人物，白色背景，大师级作品',
             
             // 处理状态
             processing: false, // 风格迁移处理中
@@ -241,16 +215,37 @@ export default {
             // 结果
             resultImageUrl: null,
             resultImageData: null,
+            savedCharacterId: null, // 已保存的角色ID，用于避免重复保存
             
             // API配置
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
         };
     },
+    mounted() {
+        // 页面加载时，从 localStorage 恢复角色信息
+        this.loadCharacterFromLocalStorage();
+    },
     computed: {
         canGenerate() {
-            // 需要：有上传的照片 + (角色名称或提示词) + 选择了风格 + 不在处理中
+            // 需要：有上传的照片 + (角色名称或提示词) + 不在处理中
             const hasCharacterInfo = !!(this.form.character_name || this.form.prompt);
-            return !!this.photoFile && hasCharacterInfo && this.selectedStyleIndex !== null && !this.processing;
+            return !!this.photoFile && hasCharacterInfo && !this.processing;
+        },
+        // 获取正确的图片显示URL
+        displayImageUrl() {
+            if (!this.resultImageUrl) {
+                return '';
+            }
+            // 如果是 base64 格式，直接返回
+            if (this.resultImageUrl.startsWith('data:')) {
+                return this.resultImageUrl;
+            }
+            // 如果是完整的 URL，直接返回
+            if (this.resultImageUrl.startsWith('http://') || this.resultImageUrl.startsWith('https://')) {
+                return this.resultImageUrl;
+            }
+            // 如果是相对路径，添加前缀
+            return `https://static.kidstory.cc/${this.resultImageUrl}`;
         }
     },
     methods: {
@@ -504,34 +499,7 @@ export default {
                 }
             } catch (error) {
                 console.error('转换图片URL为Base64失败:', error);
-                throw new Error('转换参考图为Base64失败');
-            }
-        },
-        
-        // 选择预设风格图片
-        async selectStylePreset(preset, index) {
-            try {
-                this.selectedStyleIndex = index;
-                this.selectedStylePreset = preset;
-                this.form.stylePreset = preset.preset || 'default';
-                
-                // 从本地资源URL获取图片并转换为File对象（用于预览）
-                // require() 返回的路径会被webpack处理，可以直接fetch
-                const response = await fetch(preset.url);
-                const blob = await response.blob();
-                const file = new File([blob], `${preset.id}.png`, { type: 'image/png' });
-                
-                this.styleFile = file;
-                
-                // 设置参考图ID（1、2或3，对应参考图1、2、3）
-                // 确保是数字类型，不是字符串
-                this.referenceImageId = Number(index + 1); // index从0开始，所以+1得到1、2、3
-                
-                console.log('参考图ID已设置:', this.referenceImageId);
-                
-            } catch (error) {
-                console.error('加载预设风格图片失败:', error);
-                this.$message.error('加载风格图片失败，请重试');
+              
             }
         },
         
@@ -542,8 +510,6 @@ export default {
                     this.$message.warning('请先上传照片');
                 } else if (!this.form.character_name && !this.form.prompt) {
                     this.$message.warning('请填写角色名称或提示词');
-                } else if (this.selectedStyleIndex === null) {
-                    this.$message.warning('请先选择风格参考图');
                 }
                 return;
             }
@@ -551,6 +517,9 @@ export default {
             this.processing = true;
             this.resultImageUrl = null;
             this.resultImageData = null;
+            this.savedCharacterId = null; // 重置已保存的角色ID
+            // 清理旧的角色数据
+            this.clearCharacterFromLocalStorage();
             
             try {
                 // 构建请求参数（JSON格式）
@@ -566,7 +535,7 @@ export default {
                 if (this.form.prompt && this.form.prompt.trim()) {
                     // 如果用户输入了提示词，将默认提示词和用户提示词拼接
                     finalPrompt = `${this.defaultPrompt} ${this.form.prompt.trim()}`;
-                } else {
+                    } else {
                     // 如果用户没有输入提示词，只使用默认提示词
                     finalPrompt = this.defaultPrompt;
                 }
@@ -582,26 +551,8 @@ export default {
                
                 const userImageBase64 = await this.fileToBase64(this.photoFile, true);
                 
-                // 将选中的参考图转换为Base64（压缩以减小文件大小）
-                // 前端显示的是 reference1.jpg, reference2.jpg, reference3.jpg
-                // 但发送到后端需要使用 r11.png, r22.png, r33.png
-                if (this.selectedStyleIndex === null) {
-                    throw new Error('请先选择风格参考图');
-                }
-                
-                // 根据选中的索引，确定对应的后端图片路径
-                const backendImageMap = {
-                    0: require('@/assets/images/r11.png'), // 参考图1 -> r11.png
-                    1: require('@/assets/images/r22.png'), // 参考图2 -> r22.png
-                    2: require('@/assets/images/r33.png')  // 参考图3 -> r33.png
-                };
-                
-                const backendImageUrl = backendImageMap[this.selectedStyleIndex];
-                if (!backendImageUrl) {
-                    throw new Error('无效的参考图索引');
-                }
-                
-                const presetImageBase64 = await this.imageUrlToBase64(backendImageUrl, true);
+                // 使用默认参考图 r11.png
+                const presetImageBase64 = await this.imageUrlToBase64(this.defaultReferenceImage, true);
                 
                 // 组合两张图片，传递给后端
                 requestData.image = [
@@ -615,7 +566,7 @@ export default {
                 }
                 
                 // 可选：图片尺寸
-                requestData.size = '1024x1024';
+                requestData.size = '1280x960';
                 
                 // 调用创建角色API
                 const apiUrl = this.apiBaseUrl 
@@ -642,13 +593,16 @@ export default {
                     // 成功响应
                     const result = responseData.message;
                     
-                    // 保存角色信息
+                    // 保存角色信息（包括base64数据，用于后续导入到创作组图）
                     this.resultImageData = {
                         character_name: result.character_name,
                         character_type: result.character_type,
                         prompt: result.prompt,
-                        size: result.size,
-                        full_response: result.full_response
+                        size: '1280x960',
+                        full_response: result.full_response,
+                        // 保存base64数据，优先使用 character_image_base64
+                        character_image_base64: result.character_image_base64 || result.image_base64 || null,
+                        image_base64: result.image_base64 || result.character_image_base64 || null
                     };
                     
                     // 显示成功消息
@@ -681,28 +635,54 @@ export default {
                         }
                     }
                     
-                    // 如果还是没有图片URL，尝试从 full_response.data 中获取
-                    if (!this.resultImageUrl && result.full_response && result.full_response.data && result.full_response.data.length > 0) {
-                        this.resultImageUrl = result.full_response.data[0].url;
+                    // 如果还是没有图片URL，尝试从 full_response 中获取
+                    if (!this.resultImageUrl && result.full_response) {
+                        // 检查 full_response.data 数组
+                        if (result.full_response.data && Array.isArray(result.full_response.data) && result.full_response.data.length > 0) {
+                            this.resultImageUrl = result.full_response.data[0].url || result.full_response.data[0].ResultUrl || '';
+                        }
+                        // 检查 full_response 的直接属性
+                        if (!this.resultImageUrl) {
+                            this.resultImageUrl = result.full_response.result_url || result.full_response.ResultUrl || result.full_response.url || '';
+                        }
+                    }
+                    
+                    // 尝试从其他字段获取
+                    if (!this.resultImageUrl) {
+                        this.resultImageUrl = result.character_image_oss_url || result.result_url || result.ResultUrl || '';
+                    }
+                    
+                    // 保存完整的结果数据，包括 full_response，供保存时使用
+                    if (result.full_response) {
+                        this.resultImageData.full_response = result.full_response;
+                    }
+                    
+                    // 如果 resultImageUrl 是外部URL，也保存到 resultImageData 中
+                    if (this.resultImageUrl && !this.resultImageUrl.startsWith('data:')) {
+                        this.resultImageData.image_url = this.resultImageUrl;
+                        this.resultImageData.character_image_url = this.resultImageUrl;
                     }
                     
                     if (!this.resultImageUrl) {
                         console.warn('未找到图片URL，但角色创建成功');
                     }
+                    
+                    // 保存角色信息到 localStorage，以便页面切换后恢复
+                    this.saveCharacterToLocalStorage();
                 } else if (responseData.statuscode === 'lackOfParameters' || responseData.code !== 0) {
                     // 参数缺失错误或其他错误
                     const errorMsg = responseData.message || responseData.desc || '创作失败，请重试';
                     throw new Error(errorMsg);
                 } else {
                     // 其他错误响应
-                    const errorMsg = responseData.message || responseData.desc || '创作失败，请重试';
+                    const errorMsg = responseData.message || responseData.desc || '创建失败，请重试';
                     throw new Error(errorMsg);
                 }
             } catch (error) {
-                console.error('创作角色失败:', error);
+                console.error('创建角色失败:', error);
                 
                 // 处理特定错误
-                let errorMessage = '创作角色失败，请重试';
+                let errorMessage = '创建角色失败，请重试';
                 
                 if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
                     errorMessage = '请求超时，请检查网络连接或稍后重试';
@@ -728,6 +708,205 @@ export default {
             }
         },
         
+        // 将base64转换为File对象
+        base64ToFile(base64String, filename = 'image.png') {
+            try {
+                // 处理data URI格式
+                let base64Data = base64String;
+                let mimeType = 'image/png';
+                
+                if (base64String.startsWith('data:')) {
+                    const parts = base64String.split(',');
+                    base64Data = parts[1];
+                    const mimeMatch = parts[0].match(/data:([^;]+)/);
+                    if (mimeMatch && mimeMatch[1]) {
+                        mimeType = mimeMatch[1];
+                    }
+                }
+                
+                // 将base64转换为二进制
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                
+                // 创建File对象
+                return new File([byteArray], filename, { type: mimeType });
+            } catch (error) {
+                console.error('Base64转File失败:', error);
+                throw error;
+            }
+        },
+        
+        // 图像分割：抠图只保留主体
+        // 支持角色相关参数：character_id, character_name, character_type, description, tags, is_public
+        async segmentImage(imageUrl, characterParams = {}) {
+            const token = localStorage.getItem('token') || '';
+            
+            let response;
+            
+            // 构建角色相关参数
+            const params = {};
+            if (characterParams.character_id) {
+                params.character_id = characterParams.character_id;
+            }
+            if (characterParams.character_name) {
+                params.character_name = characterParams.character_name;
+            }
+            if (characterParams.character_type) {
+                params.character_type = characterParams.character_type;
+            }
+            if (characterParams.description) {
+                params.description = characterParams.description;
+            }
+            if (characterParams.tags && Array.isArray(characterParams.tags)) {
+                params.tags = characterParams.tags;
+            }
+            if (characterParams.is_public !== undefined) {
+                params.is_public = characterParams.is_public;
+            }
+            
+            // 判断是base64、URL还是File
+            if (imageUrl.startsWith('data:')) {
+                // Base64格式：优先使用文件上传方式，失败则使用JSON方式
+                try {
+                    const file = this.base64ToFile(imageUrl, 'character.png');
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    // 添加角色相关参数到 FormData
+                    Object.keys(params).forEach(key => {
+                        if (Array.isArray(params[key])) {
+                            params[key].forEach((item, index) => {
+                                formData.append(`${key}[${index}]`, item);
+                            });
+                        } else {
+                            formData.append(key, params[key]);
+                        }
+                    });
+                    
+                    response = await this.$http.post('/image-segmentation/general', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                } catch (fileError) {
+                    // 如果File转换失败，使用JSON方式发送base64
+                    console.warn('File转换失败，使用JSON方式发送base64:', fileError);
+                    
+                    // 提取base64数据（去掉data:image/xxx;base64,前缀）
+                    let base64Data = imageUrl;
+                    if (imageUrl.includes(',')) {
+                        base64Data = imageUrl.split(',')[1];
+                    }
+                    
+                    response = await this.$http.post('/image-segmentation/general', {
+                        image_base64: base64Data,
+                        ...params
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                }
+            } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+                // URL格式：使用JSON方式
+                response = await this.$http.post('/image-segmentation/general', {
+                    image_url: imageUrl,
+                    ...params
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+            } else {
+                // 相对路径，转换为完整URL
+                const fullUrl = `https://static.kidstory.cc/${imageUrl}`;
+                response = await this.$http.post('/image-segmentation/general', {
+                    image_url: fullUrl,
+                    ...params
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+            }
+            
+            if (response.data && response.data.code === 0) {
+                const message = response.data.message || {};
+                
+                // 新接口返回格式：imageURL 或 foreground_image
+                const imageURL = message.imageURL || message.foreground_image || message.image_url;
+                
+                if (imageURL) {
+                    // 如果是完整的URL，直接返回
+                    if (imageURL.startsWith('http://') || imageURL.startsWith('https://')) {
+                        return imageURL;
+                    }
+                    // 如果是base64，转换为data URI格式
+                    if (imageURL.startsWith('data:')) {
+                        return imageURL;
+                    }
+                    // 如果是相对路径，拼接完整URL
+                    if (!imageURL.startsWith('/')) {
+                        return `https://static.kidstory.cc/${imageURL}`;
+                    }
+                    return `https://static.kidstory.cc${imageURL}`;
+                } else {
+                    throw new Error(response.data?.message || '未获取到分割后的图片');
+                }
+            } else {
+                throw new Error(response.data?.message || '图像分割失败');
+            }
+        },
+        
+        // 收集角色：跳转到上传页面确认信息后保存
+        async collectCharacter() {
+            if (!this.resultImageUrl) {
+                this.$message.warning('没有可收集的角色图片');
+                return;
+            }
+            
+            try {
+                // 获取当前的角色数据
+                const result = this.resultImageData || {};
+                const characterName = this.form.character_name || result.character_name || '';
+                const characterType = this.form.character_type || result.character_type || '';
+                const description = this.form.prompt || result.prompt || result.description || '';
+                
+                // 先进行图像分割（不传递角色参数，因为会在上传页面确认后再创建/更新角色）
+                const segmentedImageUrl = await this.segmentImage(this.resultImageUrl);
+                
+                // 将角色数据存储到 localStorage，供 UploadElement.vue 使用
+                const characterDataForUpload = {
+                    mode: 'character', // 标识这是角色模式
+                    image_url: segmentedImageUrl, // 使用分割后的图片
+                    character_name: characterName,
+                    character_type: characterType,
+                    description: description,
+                    full_response: result.full_response,
+                    resultImageData: this.resultImageData,
+                    segmentedImageUrl: segmentedImageUrl // 保存分割后的图片URL
+                };
+                localStorage.setItem('pendingCharacterData', JSON.stringify(characterDataForUpload));
+                
+                // 跳转到上传页面
+                this.$router.push({
+                    path: '/user/upload/upload-element',
+                    query: { mode: 'character' }
+                });
+            } catch (error) {
+                console.error('收集角色失败:', error);
+                this.$message.error('收集角色失败: ' + (error.message || '请重试'));
+            }
+        },
+        
         // 下载结果
         async downloadResult() {
             if (!this.resultImageUrl) {
@@ -740,27 +919,58 @@ export default {
                 // 如果结果是base64格式，需要特殊处理
                 if (this.resultImageUrl.startsWith('data:')) {
                     // 从base64创建Blob
-                    const base64Data = this.resultImageUrl.split(',')[1];
+                    const parts = this.resultImageUrl.split(',');
+                    const base64Data = parts[1];
+                    
+                    // 从data URI中提取MIME类型
+                    let mimeType = 'image/jpeg'; // 默认值
+                    let fileExtension = 'jpg'; // 默认扩展名
+                    
+                    if (parts[0]) {
+                        const mimeMatch = parts[0].match(/data:([^;]+)/);
+                        if (mimeMatch && mimeMatch[1]) {
+                            mimeType = mimeMatch[1];
+                            // 根据MIME类型确定文件扩展名
+                            if (mimeType.includes('png')) {
+                                fileExtension = 'png';
+                            } else if (mimeType.includes('gif')) {
+                                fileExtension = 'gif';
+                            } else if (mimeType.includes('webp')) {
+                                fileExtension = 'webp';
+                            } else {
+                                fileExtension = 'jpg';
+                            }
+                        }
+                    }
+                    
                     const byteCharacters = atob(base64Data);
                     const byteNumbers = new Array(byteCharacters.length);
                     for (let i = 0; i < byteCharacters.length; i++) {
                         byteNumbers[i] = byteCharacters.charCodeAt(i);
                     }
                     const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                    const blob = new Blob([byteArray], { type: mimeType });
                     
                     const url = window.URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = `character_${Date.now()}.jpg`;
+                    link.download = `character_${Date.now()}.${fileExtension}`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
                 } else {
+                    // 处理URL下载
+                    // 如果resultImageUrl是相对路径，需要拼接完整URL
+                    let imageUrl = this.resultImageUrl;
+                    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
+                        // 相对路径，拼接完整URL
+                        imageUrl = `https://static.kidstory.cc/${imageUrl}`;
+                    }
+                    
                     // 普通URL下载，处理跨域问题
                     try {
-                        const response = await fetch(this.resultImageUrl, {
+                        const response = await fetch(imageUrl, {
                             mode: 'cors',
                             credentials: 'omit'
                         });
@@ -770,10 +980,22 @@ export default {
                         }
                         
                         const blob = await response.blob();
+                        
+                        // 从响应头或blob中获取MIME类型
+                        const contentType = response.headers.get('content-type') || blob.type || 'image/jpeg';
+                        let fileExtension = 'jpg';
+                        if (contentType.includes('png')) {
+                            fileExtension = 'png';
+                        } else if (contentType.includes('gif')) {
+                            fileExtension = 'gif';
+                        } else if (contentType.includes('webp')) {
+                            fileExtension = 'webp';
+                        }
+                        
                         const url = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `character_${Date.now()}.jpg`;
+                        link.download = `character_${Date.now()}.${fileExtension}`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -782,7 +1004,7 @@ export default {
                         // 如果fetch失败（可能是CORS问题），尝试直接打开链接
                         console.warn('Fetch失败，尝试直接下载:', fetchError);
                         const link = document.createElement('a');
-                        link.href = this.resultImageUrl;
+                        link.href = imageUrl;
                         link.download = `character_${Date.now()}.jpg`;
                         link.target = '_blank'; // 对于跨域URL，在新窗口打开
                         link.rel = 'noopener noreferrer';
@@ -801,19 +1023,402 @@ export default {
             }
         },
         
-        // 用于创作
-        useInCreation() {
+        // 用于创作插画
+        async useInIllustration() {
             if (!this.resultImageUrl) {
                 this.$message.warning('没有可用的角色图片');
                 return;
             }
             
-            // 将角色图片存储到localStorage，供创作页面使用
-            localStorage.setItem('characterImage', this.resultImageUrl);
-            this.$message.success('角色图片已保存，可在创作页面使用');
+            try {
+                this.$message.info('正在处理角色图片...');
+                
+                // 获取角色信息
+                const result = this.resultImageData || {};
+                const characterName = this.form.character_name || result.character_name || '未命名角色';
+                const characterType = this.form.character_type || result.character_type || '通用';
+                const description = this.form.prompt || result.prompt || result.description || '';
+                
+                let characterId = this.savedCharacterId;
+                
+                // 如果角色还未保存，先创建角色（使用占位图或原图）
+                if (!characterId) {
+                    try {
+                        const token = localStorage.getItem('token') || '';
+                        const createResponse = await this.$http.post('/character', {
+                            character_name: characterName,
+                            character_type: characterType,
+                            description: description,
+                            image_url: this.resultImageUrl, // 先使用原图作为占位
+                            is_public: 1
+                        }, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            }
+                        });
+                        
+                        if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
+                            const characterData = createResponse.data.data || createResponse.data.message || createResponse.data;
+                            characterId = characterData.id || characterData._id || createResponse.data.id;
+                            if (characterId) {
+                                this.savedCharacterId = characterId;
+                                localStorage.setItem('lastCharacterId', String(characterId));
+                            }
+                        } else {
+                            throw new Error(createResponse.data?.message || '创建角色失败');
+                        }
+                    } catch (error) {
+                        console.error('创建角色失败:', error);
+                        this.$message.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                        return;
+                    }
+                }
+                
+                // 调用图像分割接口，传递角色ID和相关参数（会更新该角色）
+                const characterParams = {
+                    character_name: characterName,
+                    character_type: characterType,
+                    description: description,
+                    is_public: 1
+                };
+                if (characterId) {
+                    characterParams.character_id = characterId;
+                }
+                
+                const segmentedImageUrl = await this.segmentImage(this.resultImageUrl, characterParams);
+                
+                // 保存分割后的图片到localStorage
+                localStorage.setItem('characterImage', segmentedImageUrl);
+                
+                // 提示角色已保存
+                this.$message.success('角色已保存到"我的角色"');
+                
+                // 跳转到创作插画页面
+                this.$router.push('/creation');
+            } catch (error) {
+                console.error('创作插画失败:', error);
+                this.$message.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
+            }
+        },
+        
+        // 用于创作组图
+        async useInCreation() {
+            if (!this.resultImageUrl) {
+                this.$message.warning('没有可用的角色图片');
+                return;
+            }
             
-            // 跳转到创作页面
-            this.$router.push('/creation');
+            try {
+                this.$message.info('正在处理角色图片...');
+                
+                // 获取角色信息
+                const result = this.resultImageData || {};
+                const characterName = this.form.character_name || result.character_name || '未命名角色';
+                const characterType = this.form.character_type || result.character_type || '通用';
+                const description = this.form.prompt || result.prompt || result.description || '';
+                
+                let characterId = this.savedCharacterId;
+                
+                // 如果角色还未保存，先创建角色（使用占位图或原图）
+                if (!characterId) {
+                    try {
+                        const token = localStorage.getItem('token') || '';
+                        const createResponse = await this.$http.post('/character', {
+                            character_name: characterName,
+                            character_type: characterType,
+                            description: description,
+                            image_url: this.resultImageUrl, // 先使用原图作为占位
+                            is_public: 1
+                        }, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            }
+                        });
+                        
+                        if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
+                            const characterData = createResponse.data.data || createResponse.data.message || createResponse.data;
+                            characterId = characterData.id || characterData._id || createResponse.data.id;
+                            if (characterId) {
+                                this.savedCharacterId = characterId;
+                                localStorage.setItem('lastCharacterId', String(characterId));
+                            }
+                        } else {
+                            throw new Error(createResponse.data?.message || '创建角色失败');
+                        }
+                    } catch (error) {
+                        console.error('创建角色失败:', error);
+                        this.$message.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                        return;
+                    }
+                }
+                
+                // 调用图像分割接口，传递角色ID和相关参数（会更新该角色）
+                const characterParams = {
+                    character_name: characterName,
+                    character_type: characterType,
+                    description: description,
+                    is_public: 1
+                };
+                if (characterId) {
+                    characterParams.character_id = characterId;
+                }
+                
+                const segmentedImageUrl = await this.segmentImage(this.resultImageUrl, characterParams);
+                
+                // 保存分割后的图片到localStorage
+                localStorage.setItem('characterImage', segmentedImageUrl);
+                
+                // 提示角色已保存
+                this.$message.success('角色已保存到"我的角色"');
+                
+                // 跳转到创作组图页面
+                this.$router.push('/create-group-images');
+            } catch (error) {
+                console.error('创作组图失败:', error);
+                this.$message.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
+            }
+        },
+        
+        // 保存角色到后台
+        async saveCharacter(result) {
+            try {
+                // 获取图片URL，优先使用外部URL（API要求必需参数）
+                let imageUrl = result.image_url || result.character_image_url || this.resultImageUrl || '';
+                
+                // 如果 image_url 是 base64，尝试从多个地方获取外部URL
+                if (!imageUrl || imageUrl.startsWith('data:')) {
+                    // 1. 尝试从 result.full_response 中获取
+                    if (result.full_response) {
+                        // 检查 full_response.data 数组
+                        if (result.full_response.data && Array.isArray(result.full_response.data) && result.full_response.data.length > 0) {
+                            imageUrl = result.full_response.data[0].url || result.full_response.data[0].ResultUrl || '';
+                        }
+                        // 检查 full_response 的直接属性
+                        if (!imageUrl || imageUrl.startsWith('data:')) {
+                            imageUrl = result.full_response.result_url || result.full_response.ResultUrl || result.full_response.url || '';
+                        }
+                    }
+                    
+                    // 2. 尝试从 resultImageData.full_response 中获取
+                    if ((!imageUrl || imageUrl.startsWith('data:')) && this.resultImageData && this.resultImageData.full_response) {
+                        if (this.resultImageData.full_response.data && Array.isArray(this.resultImageData.full_response.data) && this.resultImageData.full_response.data.length > 0) {
+                            imageUrl = this.resultImageData.full_response.data[0].url || this.resultImageData.full_response.data[0].ResultUrl || '';
+                        }
+                        if (!imageUrl || imageUrl.startsWith('data:')) {
+                            imageUrl = this.resultImageData.full_response.result_url || this.resultImageData.full_response.ResultUrl || this.resultImageData.full_response.url || '';
+                        }
+                    }
+                    
+                    // 3. 尝试从 result 的其他字段获取
+                    if (!imageUrl || imageUrl.startsWith('data:')) {
+                        imageUrl = result.character_image_oss_url || result.result_url || result.ResultUrl || '';
+                    }
+                }
+                
+                // 如果还是没有外部URL，尝试使用 base64（某些后端可能支持）
+                // 但优先记录警告
+                if (!imageUrl || imageUrl.startsWith('data:')) {
+                    console.warn('未找到外部URL，尝试使用base64格式保存');
+                    // 如果确实只有 base64，使用 base64
+                    if (this.resultImageUrl && this.resultImageUrl.startsWith('data:')) {
+                        imageUrl = this.resultImageUrl;
+                    } else if (result.character_image_base64 || result.image_base64) {
+                        imageUrl = result.character_image_base64 || result.image_base64;
+                        if (!imageUrl.startsWith('data:')) {
+                            imageUrl = `data:image/jpeg;base64,${imageUrl}`;
+                        }
+                    }
+                }
+                
+                // 验证必需参数
+                if (!imageUrl) {
+                    console.error('保存角色失败：无法获取图片URL');
+                    console.error('result:', result);
+                    console.error('resultImageData:', this.resultImageData);
+                    console.error('resultImageUrl:', this.resultImageUrl);
+                    throw new Error('无法获取角色图片URL，请确保图片已成功生成');
+                }
+                
+                // 检查是否是 base64 格式
+                const isBase64 = imageUrl.startsWith('data:');
+                if (isBase64) {
+                    console.warn('保存角色：使用 base64 格式的图片URL（后端可能不支持）');
+                    console.warn('imageUrl 长度:', imageUrl.length);
+                } else {
+                    console.log('保存角色：使用外部URL:', imageUrl.substring(0, 100) + '...');
+                }
+                
+                const characterName = result.character_name || this.form.character_name;
+                if (!characterName) {
+                    throw new Error('角色名称不能为空');
+                }
+                
+                // 构建请求数据（符合API规范）
+                const saveData = {
+                    // 必需参数
+                    character_name: characterName,
+                    image_url: imageUrl,
+                    
+                    // 可选参数
+                    character_type: result.character_type || this.form.character_type || undefined,
+                    description: result.character_description || result.description || undefined,
+                    prompt: result.prompt || this.form.prompt || undefined,
+                    tags: result.tags || [],
+                    is_public: result.is_public !== undefined ? result.is_public : 1 // 默认公开
+                };
+                
+                // 注意：不保存 reference_image 信息
+                
+                // 移除 undefined 的字段
+                Object.keys(saveData).forEach(key => {
+                    if (saveData[key] === undefined) {
+                        delete saveData[key];
+                    }
+                });
+                
+                // 注意：如果后端路径不同，请修改这里的路径
+                // 当前使用的路径：/character
+                // 如果后端返回404，可能需要使用其他路径，如：
+                // - /create-character/save
+                // - /user/character
+                // - /api/character
+                const apiUrl = this.apiBaseUrl 
+                    ? `${this.apiBaseUrl}/character`
+                    : '/character';
+                
+                console.log('保存角色请求URL:', apiUrl);
+                console.log('保存角色请求数据:', {
+                    ...saveData,
+                    image_url: isBase64 ? `[Base64, 长度: ${imageUrl.length}]` : saveData.image_url
+                });
+                
+                const response = await this.$http.post(apiUrl, saveData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                    }
+                });
+                
+                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
+                    // 保存角色ID，用于后续保存组图
+                    const savedCharacter = response.data.data || response.data.message || response.data;
+                    const characterId = savedCharacter.id || savedCharacter._id || response.data.id;
+                    
+                    if (characterId) {
+                        localStorage.setItem('lastCharacterId', String(characterId));
+                        // 记录已保存的角色ID，避免重复保存
+                        this.savedCharacterId = characterId;
+                        console.log('角色保存成功，ID:', characterId);
+                    }
+                    
+                    // 如果后端返回了保存后的角色信息（包括 image_url），使用后端返回的URL
+                    if (savedCharacter.image_url && !savedCharacter.image_url.startsWith('data:')) {
+                        console.log('使用后端返回的图片URL:', savedCharacter.image_url.substring(0, 100) + '...');
+                        // 更新 resultImageData 和 resultImageUrl，确保后续使用正确的URL
+                        if (this.resultImageData) {
+                            this.resultImageData.image_url = savedCharacter.image_url;
+                            this.resultImageData.character_image_url = savedCharacter.image_url;
+                        }
+                        this.resultImageUrl = savedCharacter.image_url;
+                    }
+                    
+                    return true; // 保存成功，返回 true
+                } else {
+                    throw new Error(response.data?.message || '保存角色失败');
+                }
+            } catch (error) {
+                console.error('保存角色失败:', error);
+                
+                
+            }
+        },
+        
+        // 保存角色信息到 localStorage
+        saveCharacterToLocalStorage() {
+            try {
+                const characterData = {
+                    resultImageUrl: this.resultImageUrl,
+                    resultImageData: this.resultImageData,
+                    savedCharacterId: this.savedCharacterId, // 保存已保存的角色ID
+                    form: {
+                        character_name: this.form.character_name,
+                        prompt: this.form.prompt,
+                        character_type: this.form.character_type
+                    },
+                    timestamp: Date.now() // 添加时间戳，用于判断数据是否过期
+                };
+                localStorage.setItem('createCharacter_data', JSON.stringify(characterData));
+            } catch (error) {
+                console.error('保存角色信息到 localStorage 失败:', error);
+            }
+        },
+        
+        // 从 localStorage 恢复角色信息
+        loadCharacterFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('createCharacter_data');
+                if (savedData) {
+                    const characterData = JSON.parse(savedData);
+                    
+                    // 检查数据是否过期（24小时内有效）
+                    const now = Date.now();
+                    const dataAge = now - (characterData.timestamp || 0);
+                    const maxAge = 24 * 60 * 60 * 1000; // 24小时
+                    
+                    if (dataAge < maxAge && characterData.resultImageUrl) {
+                        // 恢复角色信息
+                        this.resultImageUrl = characterData.resultImageUrl;
+                        this.resultImageData = characterData.resultImageData || null;
+                        
+                        // 恢复表单数据（如果存在）
+                        if (characterData.form) {
+                            if (characterData.form.character_name) {
+                                this.form.character_name = characterData.form.character_name;
+                            }
+                            if (characterData.form.prompt) {
+                                this.form.prompt = characterData.form.prompt;
+                            }
+                            if (characterData.form.character_type) {
+                                this.form.character_type = characterData.form.character_type;
+                            }
+                        }
+                        
+                        // 恢复已保存的角色ID，避免重复保存
+                        // 优先使用 localStorage 中保存的 savedCharacterId
+                        if (characterData.savedCharacterId) {
+                            this.savedCharacterId = characterData.savedCharacterId;
+                            console.log('已恢复已保存的角色ID:', characterData.savedCharacterId);
+                        } else {
+                            // 如果没有，检查 lastCharacterId（向后兼容）
+                            const lastCharacterId = localStorage.getItem('lastCharacterId');
+                            if (lastCharacterId) {
+                                this.savedCharacterId = lastCharacterId;
+                                console.log('已恢复已保存的角色ID (从lastCharacterId):', lastCharacterId);
+                            }
+                        }
+                        
+                        console.log('已从 localStorage 恢复角色信息');
+                    } else {
+                        // 数据过期，清理
+                        localStorage.removeItem('createCharacter_data');
+                    }
+                }
+            } catch (error) {
+                console.error('从 localStorage 恢复角色信息失败:', error);
+                // 如果解析失败，清理损坏的数据
+                localStorage.removeItem('createCharacter_data');
+            }
+        },
+        
+        // 清理 localStorage 中的角色信息
+        clearCharacterFromLocalStorage() {
+            try {
+                localStorage.removeItem('createCharacter_data');
+            } catch (error) {
+                console.error('清理 localStorage 中的角色信息失败:', error);
+            }
         },
         
         // 重置
@@ -821,18 +1426,18 @@ export default {
             this.handlePhotoRemove();
             this.segmentedImageUrl = null;
             this.segmentedImageData = null;
-            this.selectedStyleIndex = null;
-            this.selectedStylePreset = null;
-            this.styleFile = null;
-            this.referenceImageId = null;
             this.form.character_name = '';
             this.form.prompt = '';
             this.form.character_type = '';
             this.form.stylePreset = 'default';
             this.resultImageUrl = null;
             this.resultImageData = null;
+            this.savedCharacterId = null; // 重置已保存的角色ID
             this.processing = false;
             this.segmenting = false;
+            
+            // 清理 localStorage
+            this.clearCharacterFromLocalStorage();
         }
     }
 };
@@ -1136,10 +1741,20 @@ export default {
     display: block !important;
 }
 
+.save-success-message {
+    margin: 16px 0;
+    width: 100%;
+}
+
+.save-success-message >>> .el-alert {
+    padding: 12px 16px;
+}
+
 .result-actions {
     display: flex;
     gap: 12px;
     justify-content: center;
+    margin-top: 16px;
 }
 
 .upload-item {
@@ -1191,8 +1806,18 @@ export default {
     display: inline-block;
 }
 
-.photo-preview {
+.photo-preview-wrapper {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.photo-preview {
+    width: 400px;
+    height: 240px;
     border: 1px solid #e4e7ed;
     border-radius: 8px;
     padding: 12px;
@@ -1200,14 +1825,17 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     box-sizing: border-box;
+    flex-shrink: 0;
+    margin: 0 auto;
 }
 
 .segmented-preview {
     width: 100%;
     border: 1px solid #e4e7ed;
     border-radius: 8px;
-    padding: 12px;
+  
     background-color: #fafafa;
     display: flex;
     flex-direction: column;
@@ -1217,41 +1845,44 @@ export default {
 
 .photo-image,
 .segmented-image {
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: 400px !important;
+    width: 376px !important;
+    height: 216px !important;
+    max-width: 376px !important;
+    max-height: 216px !important;
+    min-width: 376px !important;
+    min-height: 216px !important;
     display: block;
-    flex-shrink: 1;
-    min-height: 0;
+    flex-shrink: 0;
     box-sizing: border-box;
     border-radius: 6px;
+    overflow: hidden;
 }
 
 .photo-image >>> .el-image,
 .segmented-image >>> .el-image {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: 400px !important;
+    width: 376px !important;
+    height: 216px !important;
+    max-width: 376px !important;
+    max-height: 216px !important;
     display: block !important;
 }
 
 .photo-image >>> .el-image__inner,
 .segmented-image >>> .el-image__inner {
-    max-width: 100% !important;
-    max-height: 400px !important;
-    width: auto !important;
-    height: auto !important;
+    width: 376px !important;
+    height: 216px !important;
+    max-width: 376px !important;
+    max-height: 216px !important;
     object-fit: contain !important;
     display: block !important;
 }
 
 .photo-image >>> img,
 .segmented-image >>> img {
-    max-width: 100% !important;
-    max-height: 400px !important;
-    width: auto !important;
-    height: auto !important;
+    width: 376px !important;
+    height: 216px !important;
+    max-width: 376px !important;
+    max-height: 216px !important;
     object-fit: contain !important;
     display: block !important;
 }
@@ -1259,6 +1890,7 @@ export default {
 .step-actions {
     display: flex;
     gap: 12px;
+    margin-bottom: 12px;
     justify-content: center;
     flex-shrink: 0;
 }
@@ -1278,7 +1910,7 @@ export default {
 }
 
 .style-selection-section {
-    width: 100%;
+    width: 400px;
     flex-shrink: 0;
     display: block;
     margin-top: 20px;
@@ -1286,6 +1918,10 @@ export default {
     background-color: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e4e7ed;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
 }
 
 .uploaded-content {
@@ -1293,25 +1929,10 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    min-height: 0;
-    flex: 1;
+    flex-shrink: 0;
 }
 
-.photo-preview {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.photo-image {
-    width: 100%;
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    overflow: hidden;
-}
+/* 重复定义已删除，使用上面的统一样式 */
 
 .step-actions {
     width: 100%;
@@ -1321,13 +1942,17 @@ export default {
 }
 
 .character-info-section {
-    width: 100%;
+    width: 400px;
     flex-shrink: 0;
     display: block;
     padding: 20px;
     background-color: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e4e7ed;
+    margin-top: 24px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
 }
 
 .character-info-section >>> .el-form-item {
@@ -1363,6 +1988,7 @@ export default {
     justify-content: center;
     gap: 12px;
     flex-shrink: 0;
+    min-height: 240px;
 }
 
 .upload-header {
@@ -1406,8 +2032,13 @@ export default {
 }
 
 .upload-demo >>> .el-upload-dragger {
-    width: 100%;
-    padding-top: 75%; /* 4:3 宽高比 (3/4 = 0.75) */
+    width: 400px !important;
+    height: 240px !important;
+    min-width: 400px !important;
+    min-height: 240px !important;
+    max-width: 400px !important;
+    max-height: 240px !important;
+    padding-top: 0 !important;
     position: relative;
     border: 1px dashed #d9d9d9;
     border-radius: 6px;
@@ -1416,6 +2047,7 @@ export default {
     background-color: #fafafa;
     transition: all 0.3s;
     box-sizing: border-box;
+    margin: 0 auto;
 }
 
 .upload-demo >>> .el-upload-dragger > * {

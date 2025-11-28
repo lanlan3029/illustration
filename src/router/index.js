@@ -63,6 +63,12 @@ const routes = [{
             import ( /* webpackChunkName: "connection" */ '../views/Connection.vue'),
 
     },
+    {
+        path: '/utility-tools',
+        name: 'utility-tools',
+        component: () =>
+            import ( /* webpackChunkName: "utility-tools" */ '../views/UtilityTools.vue'),
+    },
 
     {
         path: '/user',
@@ -141,10 +147,10 @@ const routes = [{
         props: true,
     },
     {
-        path: '/user/upload/upload-local-illustration',
+        path: '/user/upload/upload-local-book',
         name: 'upload-local-illustration',
         component: () =>
-            import ( /* webpackChunkName: "upload-illustration" */ '../views/UploadLocalIllu.vue'),
+            import ( /* webpackChunkName: "upload-illustration" */ '../views/UploadLocalBook.vue'),
         meta: {
             requiresAuth: true
         }
@@ -202,6 +208,25 @@ const routes = [{
         meta: {
             requiresAuth: true
         }
+    },
+    {
+        path: '/create-group-images',
+        name: 'create-group-images',
+        component: () =>
+            import ( /* webpackChunkName: "create-group-images" */ '../views/CreateGroupImages.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
+        path: '/character-group-images/:characterId',
+        name: 'character-group-images',
+        component: () =>
+            import ( /* webpackChunkName: "character-group-images" */ '../views/CharacterGroupImages.vue'),
+        meta: {
+            requiresAuth: true
+        },
+        props: true
     },
     {
         path: '/user-g/:authorId',

@@ -1,10 +1,10 @@
 <template>
     <div class="container">
     <ul class="upload">
-        <router-link to="/user/upload/upload-element"><li style="background-color:rgba(113,197,99,0.6)" ><i class="el-icon-apple"></i><span>上传图元</span></li></router-link>
-       <router-link to="/user/upload/upload-local-illustration"><li style="background-color:rgba(255,211,1,0.6)"><i class="el-icon-picture-outline"></i><span>上传插画</span></li></router-link>
+        <router-link to="/user/upload/upload-illustration"><li style="background-color:rgba(113,197,99,0.6)" ><i class="el-icon-picture-outline"></i><span>上传插画</span></li></router-link>
+       <router-link to="/user/upload/upload-local-illustration"><li style="background-color:rgba(255,211,1,0.6)"><i class="el-icon-reading"></i><span>上传绘本</span></li></router-link>
        <router-link to="/user/upload/compose-illustration"><li style="background-color:rgba(244,137,181,0.6)"><i class="el-icon-document-add"></i><span>合成绘本</span></li></router-link>
-       <router-link to="/user/upload/style-transfer"><li style="background-color:rgba(147,112,219,0.6)"><i class="el-icon-magic-stick"></i><span>风格迁移</span></li></router-link>
+     
        
     </ul> 
     </div>

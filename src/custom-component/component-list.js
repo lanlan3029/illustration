@@ -21,13 +21,14 @@ const list = [{
     icon: 'wenben',
     style: {
         width: 200,
-        height: 22,
-        fontSize: 14,
-        fontWeight: 500,
+        height: 32,
+        fontSize: 28,
+        fontWeight: 700,
+        fontFamily: 'Microsoft YaHei, sans-serif', // 默认字体（微软雅黑，清晰易读，适合儿童）
         lineHeight: '',
         letterSpacing: 0,
         textAlign: '',
-        color: '',
+        color: '#000000', // 默认黑色
     },
 }, ]
 

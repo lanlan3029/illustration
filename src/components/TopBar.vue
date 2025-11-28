@@ -1,11 +1,4 @@
 <template>
-    <div class="container">
-        <router-link to="/" class="logo-link">
-            <div class="logo">
-                <el-image :src="logoUrl" fit="contain"></el-image>
-            </div>
-        </router-link>
-
         <el-menu
             class="navigation"
             mode="horizontal"
@@ -14,9 +7,16 @@
             background-color="#545c64"
             text-color="#fff"
             active-text-color="#ffd04b"
+            :ellipsis="false"
         >
+            <!-- Logo 居左 -->
+            <el-menu-item index="logo" class="logo-item" @click="$router.push('/')">
+                <el-image :src="logoUrl" fit="contain" class="logo-image"></el-image>
+            </el-menu-item>
+
+            <!-- 中间菜单项 -->
             <el-menu-item index="/">
-                <span>AI榜单</span>
+                <span>AI插画</span>
             </el-menu-item>
 
             <el-submenu index="/creation">
@@ -24,41 +24,63 @@
                     <span>创作</span>
                 </template>
                 <el-menu-item index="/create-character">创作角色</el-menu-item>
+                <el-menu-item index="/create-group-images">创作组图</el-menu-item>
                 <el-menu-item index="/creation">创作插画</el-menu-item>
                 <el-menu-item index="/user/upload/compose-illustration">合成绘本</el-menu-item>
-                
             </el-submenu>
 
-            <el-menu-item index="/user/upload/upload-element">
-                <span>上传图元</span>
+            <el-menu-item index="/user/upload">
+                <span>上传</span>
             </el-menu-item>
 
             <el-menu-item index="/books">
                 <span>原创绘本</span>
             </el-menu-item>
 
+            <el-menu-item index="/utility-tools">
+                <span>实用工具</span>
+            </el-menu-item>
+
+            <el-menu-item index="/website-recommed">
+                <span>网站推荐</span>
+            </el-menu-item>
+
             <el-menu-item index="/connection">
                 <span>关于我们</span>
             </el-menu-item>
-        </el-menu>
 
-        <div class="right-section">
-            <input type="text" class="search" v-model="searchValue" name="search" autocomplete=off placeholder="请输入搜索内容" @keyup.enter="searchFun(searchValue)">
+           
+            <el-menu-item index="search" class="search-item">
+                <div class="search-wrapper">
+                    <i class="el-icon-search search-icon"></i>
+                    <input 
+                        type="text" 
+                        class="search" 
+                        v-model="searchValue" 
+                        name="search" 
+                        autocomplete="off" 
+                        placeholder="请输入搜索内容" 
+                        @keyup.enter="searchFun(searchValue)"
+                        @click.stop
+                    >
+                </div>
+            </el-menu-item>
 
-            <div class="user" v-if="isLogin">
-                <el-avatar style="background-color: #019AD8" icon="ios-person" class="avatar" :src="userInfo.avatar"/>
-                 
-                <ul class="user-info">
-                    <li @click="toMyHomePage">我的主页</li>
-                    <li @click="toProfile">个人资料</li>
-                    <li @click="logout">退出登陆</li>
-                </ul>
-            </div> 
-            <div v-else @click="showMask">
+            <!-- 用户登录/头像 -->
+            <el-menu-item v-if="!isLogin" class="login-item" @click="showMask">
                 <div class="loginBt">登陆</div>
-            </div>
-        </div>
-    </div>
+            </el-menu-item>
+
+            <el-submenu v-else index="user-menu" class="user-menu-item">
+                <template #title>
+                    <el-avatar :src="userInfo.avatar" :size="40"/>
+                </template>
+                <el-menu-item index="user-home" @click="toMyHomePage">我的主页</el-menu-item>
+                <el-menu-item index="user-profile" @click="toProfile">个人资料</el-menu-item>
+                <el-menu-item index="user-logout" @click="logout">退出登陆</el-menu-item>
+            </el-submenu>
+        </el-menu>
+  
 </template>
 
 <script>
@@ -302,256 +324,345 @@ export default {
 </script>
 
 <style scoped>
-.container {
-    width: 100vw;
-    height: 60px;
-    padding: 12px 40px;
-    border-bottom: 1px solid #e8e8e8;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: #545c64;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    position: relative;
-    z-index: 1000;
+/* 菜单高度 */
+.el-menu--horizontal {
+  --el-menu-horizontal-height: 60px;
+  display: flex;
+  align-items: center !important;
+  justify-content: space-between;
+  padding: 0 80px;
+
+  overflow: visible !important;
+  position: relative;
+  box-sizing: border-box !important;
 }
 
-.logo-link {
-    text-decoration: none;
-    flex-shrink: 0;
+/* Logo和中间菜单项容器 */
+.el-menu--horizontal > .el-menu-item:first-child,
+.el-menu--horizontal > .el-menu-item:nth-child(n+2):not(.search-item):not(.login-item),
+.el-menu--horizontal > .el-submenu:nth-child(n):not(.user-menu-item) {
+  order: 1;
 }
 
-.logo {
-    height: 48px;
-    width: 152px;
-    transition: opacity 0.3s;
+/* 搜索、登录、用户菜单居右 */
+.el-menu--horizontal > .el-menu-item.search-item {
+  order: 2;
+  margin-left: 100px !important;
 }
 
-.logo:hover {
-    opacity: 0.8;
+.el-menu--horizontal > .el-menu-item.login-item,
+.el-menu--horizontal > .el-submenu.user-menu-item {
+  order: 2;
+  margin-left: auto;
 }
 
-.logo .el-image {
-    height: 48px;
-    width: 152px;
+.navigation >>> .el-submenu {
+  min-width: 120px;  /* 或其他值 */
+}
+/* 搜索框样式 */
+.search-item {
+  position: relative;
+  margin-right: 10px;
 }
 
-.navigation {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    justify-content: center;
-    margin: 0 40px;
-    border-bottom: none;
-    height: 60px;
+/* 搜索框菜单项垂直居中 */
+.navigation >>> .el-menu-item.search-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* 确保 Element UI 菜单项垂直居中 */
-.navigation >>> .el-menu-item,
-.navigation >>> .el-submenu__title {
-    display: flex;
-    align-items: center;
-    height: 60px;
-    line-height: 60px;
+/* 搜索框选中时不改变背景色 */
+.navigation >>> .el-menu-item.search-item.is-active,
+.navigation >>> .el-menu-item.search-item:hover {
+  background-color: transparent !important;
 }
 
-.navigation >>> .el-submenu__title span {
-    display: flex;
-    align-items: center;
+/* 搜索框容器 */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
-.nav-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 16px;
-    text-decoration: none;
-    color: #1c345e;
-    font-size: 15px;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    white-space: nowrap;
+/* 搜索图标样式 - 居左，垂直居中 */
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.nav-item:hover {
-    background-color: #f5f6fa;
-    color: #019AD8;
+/* Logo 样式 */
+.navigation >>> .el-menu-item.logo-item {
+  cursor: pointer;
+  
 }
 
-.nav-item.active {
-    background-color: #e6f7ff;
-    color: #019AD8;
+.navigation >>> .el-menu-item.logo-item.is-active,
+.navigation >>> .el-menu-item.logo-item:hover {
+  background-color: transparent !important;
 }
 
-
-.right-section {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-shrink: 0;
+.logo-image {
+  height: 36px;
+  width: auto;
+  max-width: 120px;
+  transition: opacity 0.3s;
 }
 
+.logo-image:hover {
+  opacity: 0.8;
+}
 .search {
-    background-color: #f5f6fa;
-    border: none;
-    width: 280px;
-    height: 40px;
-    line-height: 40px;
-    padding: 0 16px 0 44px;
-    border-radius: 20px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-    background-image: url('../assets/images/search.svg');
-    cursor: text;
-    background-position: 14px center;
-    background-size: 20px;
-    background-repeat: no-repeat;
-    outline: none;
+  width: 200px;
+  height: 32px;
+  padding: 0 15px 0 40px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.search::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .search:focus {
-    width: 320px;
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #019AD8;
+  width: 240px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
-.avatar {
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    transition: transform 0.3s ease;
+/* 登录按钮菜单项垂直居中 */
+.navigation >>> .el-menu-item.login-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.avatar:hover {
-    transform: scale(1.05);
+/* 登录按钮样式优化 - 简洁美观 */
+.login-item .loginBt {
+  padding: 8px 20px;
+  height: 36px;
+  line-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 18px;
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
-.user {
-    position: relative;
-    display: flex;
-    align-items: center;
+.login-item:hover .loginBt {
+  background-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.user .user-info {
-    display: none;
-    position: absolute;
-    top: 52px;
-    right: 0;
-    padding: 8px;
-    list-style: none;
-    background-color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    width: 140px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    z-index: 10000;
-    margin-top: 8px;
+/* 登录按钮选中时不改变背景色 */
+.navigation >>> .el-menu-item.login-item.is-active,
+.navigation >>> .el-menu-item.login-item:hover {
+  background-color: transparent !important;
 }
 
-.user:hover .user-info {
-    display: block;
+/* 用户菜单样式优化 */
+.user-menu-item {
+  margin-left: 10px;
 }
 
-.user .user-info li {
-    width: 100%;
-    height: 44px;
-    line-height: 44px;
-    text-align: center;
-    color: #1d1d1f;
-    font-size: 14px;
-    cursor: pointer;
-    user-select: none;
-    border-radius: 6px;
-    transition: background-color 0.2s ease;
+/* 确保菜单容器固定高度，子菜单不影响高度 */
+.navigation {
+  height: 60px !important;
+  overflow: visible !important;
+  position: relative;
 }
 
-.user .user-info li:hover {
-    background-color: #f0f9ff;
-    color: #019AD8;
+.navigation >>> .el-menu--horizontal {
+  height: 60px !important;
+  max-height: 60px !important;
+  overflow: visible !important;
 }
 
-.loginBt {
-    width: 80px;
-    height: 40px;
-    border-radius: 20px;
-    text-align: center;
-    line-height: 40px;
-    color: #fff;
-    background-color: #019AD8;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(1, 154, 216, 0.2);
+/* 确保所有菜单项和子菜单标题高度固定且对齐 */
+.navigation >>> .el-menu-item:not(.search-item),
+.navigation >>> .el-submenu__title {
+  height: 60px !important;
+  line-height: 60px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
 }
 
-.loginBt:hover {
-    background-color: #0180b8;
-    box-shadow: 0 4px 8px rgba(1, 154, 216, 0.3);
-    transform: translateY(-1px);
+/* search-item 单独设置，允许自定义 margin */
+.navigation >>> .el-menu-item.search-item {
+  height: 60px !important;
+  line-height: 60px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  vertical-align: top !important;
+  box-sizing: border-box !important;
 }
 
-/* 响应式设计 */
-@media (max-width: 1400px) {
-    .navigation {
-        margin: 0 20px;
-    }
-    
-    .nav-item {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-    
-    .search {
-        width: 240px;
-    }
+/* 确保菜单项内容垂直居中 */
+.navigation >>> .el-menu-item > *,
+.navigation >>> .el-submenu__title > * {
+  vertical-align: middle !important;
 }
 
-@media (max-width: 1200px) {
-    .container {
-        padding: 12px 24px;
-    }
-    
-    .navigation {
-        gap: 4px;
-        margin: 0 12px;
-    }
-    
-    .nav-item span {
-        display: none;
-    }
-    
-    .nav-item {
-        padding: 8px;
-        min-width: 40px;
-        justify-content: center;
-    }
-    
-    .search {
-        width: 200px;
-    }
+/* 确保子菜单标题内的内容对齐 */
+.navigation >>> .el-submenu__title {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 确保子菜单弹出层不影响菜单高度 */
+.navigation >>> .el-submenu__popper {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+.navigation >>> .el-menu--popup {
+  position: absolute !important;
+}
+
+.user-menu-item .el-avatar {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.user-menu-item:hover .el-avatar {
+  transform: scale(1.1);
+}
+
+/* 用户菜单选中时不改变背景色 */
+.navigation >>> .el-submenu.user-menu-item.is-active .el-submenu__title,
+.navigation >>> .el-submenu.user-menu-item .el-submenu__title:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 增大 menu-item 的宽度 */
+.navigation >>> .el-menu-item:not(.logo-item):not(.search-item):not(.login-item) {
+  padding: 0 24px !important;
+  min-width: 120px;
+}
+
+
+
+/* 移除所有菜单项的底部边框 */
+.navigation >>> .el-menu-item,
+.navigation >>> .el-submenu__title {
+  border-bottom: none !important;
+}
+
+/* 移除选中菜单项的底部边框和伪元素 */
+.navigation >>> .el-menu-item.is-active {
+  border-bottom: none !important;
+}
+
+.navigation >>> .el-menu-item.is-active::after,
+.navigation >>> .el-menu-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* 移除子菜单标题的底部边框 */
+.navigation >>> .el-submenu.is-active .el-submenu__title,
+.navigation >>> .el-submenu .el-submenu__title {
+  border-bottom: none !important;
+}
+
+.navigation >>> .el-submenu .el-submenu__title::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* 修复子菜单选中时的背景高度和颜色 */
+.navigation >>> .el-submenu.is-active .el-submenu__title {
+  height: 60px !important;
+  line-height: 60px !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.navigation >>> .el-submenu .el-submenu__title:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  height: 60px !important;
+  line-height: 60px !important;
 }
 </style>
 
 <style>
-/* 全局样式：调整 Element UI 子菜单下拉框宽度 */
-/* 因为下拉菜单可能附加到body，需要使用全局样式 */
-.el-menu--popup {
-    min-width: 150px !important;
-    max-width: 160px !important;
-    padding: 4px 0 !important;
+/* 全局样式：移除所有菜单项的底部边框 */
+.el-menu--horizontal > .el-menu-item {
+  border-bottom: none !important;
 }
 
-.el-menu--popup .el-menu-item {
-    height: 40px !important;
-    line-height: 40px !important;
-    padding: 0 20px !important;
-    font-size: 14px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+.el-menu--horizontal > .el-menu-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+.el-menu--horizontal > .el-menu-item.is-active {
+  border-bottom: none !important;
+}
+
+.el-menu--horizontal > .el-menu-item.is-active::after {
+  display: none !important;
+  content: none !important;
+}
+
+.el-menu--horizontal > .el-submenu .el-submenu__title {
+  border-bottom: none !important;
+}
+
+.el-menu--horizontal > .el-submenu .el-submenu__title::after {
+  display: none !important;
+  content: none !important;
+}
+
+.el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
+  border-bottom: none !important;
+  height: 60px !important;
+  line-height: 60px !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.el-menu--horizontal > .el-submenu.is-active .el-submenu__title::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* 确保子菜单标题没有白色背景 */
+.el-menu--horizontal > .el-submenu .el-submenu__title {
+  background-color: transparent !important;
+}
+
+.el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.el-menu--horizontal > .el-submenu .el-submenu__title:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 </style>

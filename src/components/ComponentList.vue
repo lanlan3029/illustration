@@ -59,7 +59,7 @@ export default {
                 component.id = generateID()
                 
                 this.$store.commit("addComponent", {component})
-                this.$message.success('点击添加文字')
+                
             } else {
                 this.$message.warning('画布未初始化，请稍后再试')
             }

@@ -6,6 +6,13 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "10178793",
+      "name": "人体",
+      "font_class": "renti",
+      "unicode": "e7e2",
+      "unicode_decimal": 59362
+    },
+    {
       "icon_id": "1630789",
       "name": "镜像1",
       "font_class": "jingxiang",

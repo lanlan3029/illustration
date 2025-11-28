@@ -18,10 +18,47 @@
           <div class="desc">{{bookDetails.description}}</div>
           <div class="book-content">
         <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
-        <el-image :src="(`https://static.kidstory.cc/`+item)" style="width:984.3px;height:699px" fit="contain"></el-image>
+        <!-- 如果图片URL还没准备好（还是ID），显示加载中 -->
+        <div v-if="isImageId(item)" class="image-loading">
+          <i class="el-icon-loading"></i>
+          <p>页面加载中...</p>
+        </div>
+        <!-- 如果图片URL已准备好，显示图片 -->
+        <el-image 
+          v-else
+          :src="getImageUrl(item)" 
+          style="width:984.3px;height:699px" 
+          fit="contain"
+          @load="handleImageLoad(index)"
+          @error="handleImageError(index)">
+          <template slot="placeholder">
+            <div class="image-loading">
+              <i class="el-icon-loading"></i>
+              <p>页面加载中...</p>
+            </div>
+          </template>
+          <template slot="error">
+            <div class="image-error">
+              <i class="el-icon-picture-outline"></i>
+              <p>图片加载失败</p>
+            </div>
+          </template>
+        </el-image>
       </div>
       <div  class="item">
-      <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image></div>
+      <el-image 
+        :src="codeImg" 
+        style="width:984.3px; height:699px" 
+        fit="contain"
+        @load="handleCodeImageLoad">
+        <template slot="placeholder">
+          <div class="image-loading">
+            <i class="el-icon-loading"></i>
+            <p>页面加载中...</p>
+          </div>
+        </template>
+      </el-image>
+      </div>
     </div>
          </div>
 
@@ -72,8 +109,9 @@ export default {
       bookDetails:[],
       authorDetails:[],
       //存放请求到的绘本原始数据
-
       codeImg:require('../assets/images/pdfCode.png'),
+      loadingImages: true, // 图片加载状态
+      imageLoadStatus: {}, // 每张图片的加载状态
     }
   },
   computed:mapState([
@@ -105,17 +143,97 @@ export default {
     async getImgUrl() {
         //获取绘本图片ID
         let tool = this.bookDetails.content
+        if (!tool || !Array.isArray(tool)) {
+          return
+        }
+        
+        //初始化图片加载状态
+        this.imageLoadStatus = {}
+        for (let j = 0; j < tool.length; j++) {
+          this.imageLoadStatus[j] = 'loading'
+        }
+        this.loadingImages = true
+        
         //遍历绘本图片ID，替换成图片URL
-        for (var i = 0; i < tool.length; i++) {
-          try {
-            let res = await this.$http.get(`/ill/` + tool[i])
-            this.bookDetails.content[i] = res.data.message.content
+        for (let i = 0; i < tool.length; i++) {
+          const item = tool[i]
+          
+          // 检查是否已经是URL格式，如果是则保持loading状态，等待图片加载
+          if (typeof item === 'string' && (item.startsWith('http://') || item.startsWith('https://'))) {
+            // 已经是URL，保持loading状态，等待@load事件触发
+            continue
+          }
+          
+          // 如果是图片ID（字符串且不包含/），需要获取URL
+          if (typeof item === 'string' && !item.includes('/') && !item.includes('upload')) {
+            try {
+              let res = await this.$http.get(`/ill/` + item)
+              if (res.data && res.data.message && res.data.message.content) {
+                this.$set(this.bookDetails.content, i, res.data.message.content)
+              }
           } catch (err) {
             console.log(err)
+              this.imageLoadStatus[i] = 'error'
           }
         }  
-       
-        
+        }  
+    },
+    
+    // 判断是否是图片ID（需要转换为URL）
+    isImageId(item) {
+      if (!item) return true
+      // 如果是字符串且不包含/和upload，且不是完整URL，则认为是ID
+      if (typeof item === 'string') {
+        // 如果是完整URL，不是ID
+        if (item.startsWith('http://') || item.startsWith('https://')) {
+          return false
+        }
+        // 如果包含/或upload，可能是相对路径，不是ID
+        if (item.includes('/') || item.includes('upload')) {
+          return false
+        }
+        // 否则认为是ID
+        return true
+      }
+      return false
+    },
+    
+    // 获取图片URL（处理完整URL和相对路径）
+    getImageUrl(url) {
+      if (!url) return ''
+      // 如果已经是完整URL，直接返回
+      if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+        return url
+      }
+      // 否则添加静态资源前缀
+      return `https://static.kidstory.cc/${url}`
+    },
+    
+    // 图片加载成功
+    handleImageLoad(index) {
+      this.imageLoadStatus[index] = 'loaded'
+      this.checkAllImagesLoaded()
+    },
+    
+    // 图片加载失败
+    handleImageError(index) {
+      this.imageLoadStatus[index] = 'error'
+      this.checkAllImagesLoaded()
+    },
+    
+    // 二维码图片加载成功
+    handleCodeImageLoad() {
+      // 二维码图片加载完成不影响整体加载状态
+    },
+    
+    // 检查所有图片是否加载完成
+    checkAllImagesLoaded() {
+      const allLoaded = Object.values(this.imageLoadStatus).every(status => 
+        status === 'loaded' || status === 'error'
+      )
+      if (allLoaded) {
+        this.loadingImages = false
+      }
     },
 
 
@@ -393,6 +511,61 @@ console.log(this.authorDetails)
 .content-left .footer ul li:active{
    animation:zoomOut;
    animation-duration: 1s;
+}
+
+/* 图片加载中样式 */
+.image-loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f6fa;
+  color: #909399;
+}
+
+.image-loading i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  animation: rotating 2s linear infinite;
+}
+
+.image-loading p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 图片加载失败样式 */
+.image-error {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f6fa;
+  color: #c0c4cc;
+}
+
+.image-error i {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.image-error p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 旋转动画 */
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 </style>
