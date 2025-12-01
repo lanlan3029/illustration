@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3678405 */
-  src: url('iconfont.woff2?t=1763605597706') format('woff2'),
-       url('iconfont.woff?t=1763605597706') format('woff'),
-       url('iconfont.ttf?t=1763605597706') format('truetype');
+  src: url('iconfont.woff2?t=1764570290559') format('woff2'),
+       url('iconfont.woff?t=1764570290559') format('woff'),
+       url('iconfont.ttf?t=1764570290559') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,30 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-lianxiwomen1:before {
+  content: "\e631";
+}
+
+.icon-tuichudenglu-:before {
+  content: "\e6de";
+}
+
+.icon-zhanghu:before {
+  content: "\e632";
+}
+
+.icon-dingyue:before {
+  content: "\e63d";
+}
+
+.icon-a-collection:before {
+  content: "\e63a";
+}
+
+.icon-dianshu:before {
+  content: "\ea2b";
 }
 
 .icon-renti:before {

@@ -6,6 +6,48 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "6196265",
+      "name": "联系我们",
+      "font_class": "lianxiwomen1",
+      "unicode": "e631",
+      "unicode_decimal": 58929
+    },
+    {
+      "icon_id": "4814450",
+      "name": "退出登录",
+      "font_class": "tuichudenglu-",
+      "unicode": "e6de",
+      "unicode_decimal": 59102
+    },
+    {
+      "icon_id": "1263328",
+      "name": "账户",
+      "font_class": "zhanghu",
+      "unicode": "e632",
+      "unicode_decimal": 58930
+    },
+    {
+      "icon_id": "17600397",
+      "name": "订阅",
+      "font_class": "dingyue",
+      "unicode": "e63d",
+      "unicode_decimal": 58941
+    },
+    {
+      "icon_id": "41795279",
+      "name": "作品集",
+      "font_class": "a-collection",
+      "unicode": "e63a",
+      "unicode_decimal": 58938
+    },
+    {
+      "icon_id": "45561937",
+      "name": "点数",
+      "font_class": "dianshu",
+      "unicode": "ea2b",
+      "unicode_decimal": 59947
+    },
+    {
       "icon_id": "10178793",
       "name": "人体",
       "font_class": "renti",

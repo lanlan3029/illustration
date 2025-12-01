@@ -49,6 +49,7 @@
                         <div v-else-if="groupImages.length === 0" class="result-placeholder">
                             <i class="el-icon-picture-outline"></i>
                             <p>该角色还没有组图</p>
+                            <el-link type="primary" @click="goCreateGroupImages">创建组图</el-link>
                         </div>
                         <div v-else class="group-images-list">
                             <div 
@@ -131,6 +132,35 @@ export default {
         }
     },
     methods: {
+        // 跳转到创作组图页面
+        goCreateGroupImages() {
+            // 获取当前角色ID
+            const characterId = this.characterId || this.$route.params.characterId || localStorage.getItem('viewCharacterId');
+            if (!characterId) {
+                this.$message.warning('未找到角色ID');
+                return;
+            }
+            
+            // 如果有角色信息，保存到localStorage
+            if (this.character) {
+                const characterData = {
+                    id: characterId,
+                    image_url: this.character.image_url,
+                    character_name: this.character.character_name,
+                    character_type: this.character.character_type,
+                    description: this.character.description
+                };
+                localStorage.setItem('selectedCharacterForGroupImages', JSON.stringify(characterData));
+            }
+            
+            // 保存角色ID到localStorage，供创作组图页面使用
+            localStorage.setItem('lastCharacterId', String(characterId));
+            localStorage.setItem('viewCharacterId', String(characterId));
+            
+            // 跳转到创作组图页面
+            this.$router.push('/create-group-images');
+        },
+        
         async loadData() {
             const characterId = this.characterId || this.$route.params.characterId || localStorage.getItem('viewCharacterId');
             if (!characterId) {
@@ -173,9 +203,10 @@ export default {
             }
         },
         
-        // 获取组图列表
+        // 获取组图列表（通过 characterGroupImage 模型的 character_id 字段查询）
         async getGroupImages(characterId) {
             try {
+                // 使用角色组图接口，后端会通过 characterGroupImage 模型的 character_id 字段查询
                 const apiUrl = this.apiBaseUrl 
                     ? `${this.apiBaseUrl}/character/${characterId}/group-images`
                     : `/character/${characterId}/group-images`;
@@ -187,11 +218,67 @@ export default {
                 });
                 
                 if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-                    this.groupImages = response.data.data || response.data.message || response.data.list || [];
+                    // 获取组图数据（从 characterGroupImage 模型返回的数据）
+                    let groupImagesData = response.data.data || response.data.message || response.data.list || [];
+                    
+                    // 确保每个组图对象都有 image_urls 数组
+                    this.groupImages = groupImagesData.map(group => {
+                        // 如果组图对象中已经有 image_urls，直接使用
+                        if (group.image_urls && Array.isArray(group.image_urls) && group.image_urls.length > 0) {
+                            return {
+                                ...group,
+                                image_urls: group.image_urls,
+                                image_ids: group.image_ids || group.image_ids || []
+                            };
+                        }
+                        
+                        // 如果组图对象中有 images 字段，转换为 image_urls
+                        if (group.images && Array.isArray(group.images) && group.images.length > 0) {
+                            return {
+                                ...group,
+                                image_urls: group.images,
+                                image_ids: group.image_ids || []
+                            };
+                        }
+                        
+                        // 如果组图对象中有单个 image_url，转换为数组
+                        if (group.image_url) {
+                            return {
+                                ...group,
+                                image_urls: [group.image_url],
+                                image_ids: group.image_id ? [group.image_id] : []
+                            };
+                        }
+                        
+                        // 如果组图对象中有 content 字段（可能是数组或单个值）
+                        if (group.content) {
+                            const contentArray = Array.isArray(group.content) ? group.content : [group.content];
+                            return {
+                                ...group,
+                                image_urls: contentArray,
+                                image_ids: group.image_ids || []
+                            };
+                        }
+                        
+                        // 默认返回空数组
+                        return {
+                            ...group,
+                            image_urls: [],
+                            image_ids: []
+                        };
+                    }).filter(group => group.image_urls.length > 0); // 过滤掉没有图片的组图
+                    
+                    console.log('获取到的组图数据:', this.groupImages);
+                    console.log('原始响应数据:', response.data);
+                } else {
+                    console.warn('获取组图列表响应格式异常:', response.data);
+                    this.groupImages = [];
                 }
             } catch (error) {
                 console.error('获取组图列表失败:', error);
+                console.error('错误详情:', error.response?.data);
                 this.$message.error('获取组图列表失败');
+                this.groupImages = [];
             }
         },
         
@@ -484,6 +571,10 @@ export default {
 
 .card-image {
     width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
     height: 200px;
     overflow: hidden;
     border-radius: 4px;
@@ -494,6 +585,9 @@ export default {
 }
 
 .cover-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     width: 100%;
     height: 100%;
     object-fit: cover;

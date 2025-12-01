@@ -229,6 +229,15 @@ const routes = [{
         props: true
     },
     {
+        path: '/member/recharge',
+        name: 'member-recharge',
+        component: () =>
+            import ( /* webpackChunkName: "member-recharge" */ '../views/MemberRecharge.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
         path: '/user-g/:authorId',
         name: 'user-g',
         component: () =>

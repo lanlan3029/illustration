@@ -1,4 +1,5 @@
 <template>
+  <div>
         <el-menu
             class="navigation"
             mode="horizontal"
@@ -41,13 +42,9 @@
                 <span>实用工具</span>
             </el-menu-item>
 
-            <el-menu-item index="/website-recommed">
-                <span>网站推荐</span>
-            </el-menu-item>
+         
 
-            <el-menu-item index="/connection">
-                <span>关于我们</span>
-            </el-menu-item>
+      
 
            
             <el-menu-item index="search" class="search-item">
@@ -71,16 +68,49 @@
                 <div class="loginBt">登陆</div>
             </el-menu-item>
 
-            <el-submenu v-else index="user-menu" class="user-menu-item">
+            <el-submenu v-else index="user-menu" class="user-menu-item" :show-timeout="0" :hide-timeout="0">
                 <template #title>
-                    <el-avatar :src="userInfo.avatar" :size="40"/>
+                    <div class="user-header-wrapper">
+                        <!-- 积分和Pro显示框 -->
+                        <div class="points-pro-box" >
+                            <div class="points-section">
+                                <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
+                                <span class="points-value">{{ userPoints || 0 }}</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="pro-section">
+                                <span class="pro-text">Pro</span>
+                            </div>
+                        </div>
+                        <!-- 用户头像 -->
+                        <el-avatar :src="userInfo.avatar" :size="40"/>
+                    </div>
                 </template>
-                <el-menu-item index="user-home" @click="toMyHomePage">我的主页</el-menu-item>
-                <el-menu-item index="user-profile" @click="toProfile">个人资料</el-menu-item>
-                <el-menu-item index="user-logout" @click="logout">退出登陆</el-menu-item>
+                    <el-menu-item index="user-home" @click="toMyHomePage">
+                    <i class="iconfont icon-a-collection"></i>
+                    <span>我的创作</span>
+                </el-menu-item>
+                <el-menu-item index="user-profile" @click="toProfile">
+                    <i class="iconfont icon-zhanghu"></i>
+                    <span>账户设置</span>
+                </el-menu-item>
+                <el-menu-item index="member-recharge" @click="toMemberRecharge">
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>订阅管理</span>
+                </el-menu-item>
+                <el-menu-item index="user-logout" @click="logout">
+                    <i class="iconfont icon-tuichudenglu-"></i>
+                    <span>退出登陆</span>
+                </el-menu-item>
+                <el-menu-item index="contact-us" @click="contactUs">
+                    <i class="iconfont icon-lianxiwomen1"></i>
+                    <span>联系我们</span>
+                </el-menu-item>
             </el-submenu>
         </el-menu>
-  
+
+      
+  </div>
 </template>
 
 <script>
@@ -92,7 +122,8 @@ export default {
           logoUrl:require('../assets/logo/logo.png'),
             userid:localStorage.getItem("id"),
             searchValue:'',
-           
+            userPoints: 0, // 用户积分
+            showMemberDialog: false, // 是否显示会员信息对话框
         }
     },
     computed:mapState([
@@ -118,6 +149,19 @@ export default {
         },
         toProfile(){
             this.$router.push("/user/profile")
+        },
+        toMemberRecharge(){
+            this.$router.push("/member/recharge")
+        },
+        contactUs(){
+            // 联系我们功能，可以跳转到联系页面或显示联系方式
+            this.$message.info('请联系客服：support@kidstory.cc');
+        },
+      
+        goToRecharge(){
+            // 跳转到充值页面
+            this.showMemberDialog = false;
+            this.$router.push('/member/recharge');
         },
         logout(){
             localStorage.removeItem("id"),
@@ -168,6 +212,8 @@ export default {
         })
         let toolUser=res.data.message;
         this.$store.commit("setUserInfo",toolUser)
+        // 获取用户积分
+        this.userPoints = toolUser.points || toolUser.credits || 0;
        }catch(err){
         console.error('获取用户信息失败:', err);
         // 只有非网络错误才显示登录框，避免后端服务不可用时强制弹出登录框
@@ -339,7 +385,7 @@ export default {
 
 /* Logo和中间菜单项容器 */
 .el-menu--horizontal > .el-menu-item:first-child,
-.el-menu--horizontal > .el-menu-item:nth-child(n+2):not(.search-item):not(.login-item),
+.el-menu--horizontal > .el-menu-item:nth-child(n+2):not(.search-item):not(.login-item):not(.points-pro-item),
 .el-menu--horizontal > .el-submenu:nth-child(n):not(.user-menu-item) {
   order: 1;
 }
@@ -350,10 +396,15 @@ export default {
   margin-left: 100px !important;
 }
 
-.el-menu--horizontal > .el-menu-item.login-item,
+.el-menu--horizontal > .el-menu-item.login-item {
+  order: 2;
+  margin-left: auto;
+}
+
 .el-menu--horizontal > .el-submenu.user-menu-item {
   order: 2;
   margin-left: auto;
+  margin-right: 0;
 }
 
 .navigation >>> .el-submenu {
@@ -469,7 +520,6 @@ export default {
 }
 
 .login-item:hover .loginBt {
-  background-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -477,6 +527,12 @@ export default {
 /* 登录按钮选中时不改变背景色 */
 .navigation >>> .el-menu-item.login-item.is-active,
 .navigation >>> .el-menu-item.login-item:hover {
+  background-color: transparent !important;
+}
+
+/* 更具体的选择器，确保覆盖所有情况 */
+.el-menu--horizontal > .el-menu-item.login-item.is-active,
+.el-menu--horizontal > .el-menu-item.login-item:hover {
   background-color: transparent !important;
 }
 
@@ -499,17 +555,24 @@ export default {
 }
 
 /* 确保所有菜单项和子菜单标题高度固定且对齐 */
-.navigation >>> .el-menu-item:not(.search-item),
+.navigation >>> .el-menu-item:not(.search-item):not(.login-item),
 .navigation >>> .el-submenu__title {
   height: 60px !important;
   line-height: 60px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 0 !important;
+  padding: 0 20px !important;
   margin: 0 !important;
-  vertical-align: top !important;
+  vertical-align: middle !important;
   box-sizing: border-box !important;
+}
+
+/* 确保子菜单标题内的文字垂直居中 */
+.navigation >>> .el-submenu__title > span {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  line-height: normal !important;
 }
 
 /* search-item 单独设置，允许自定义 margin */
@@ -556,10 +619,311 @@ export default {
   transform: scale(1.1);
 }
 
+/* 用户头部包装器 - 包含积分框和头像 */
+.user-header-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 用户头部包装器 - 包含积分框和头像 */
+.user-header-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 积分和Pro显示框样式 */
+.points-pro-box {
+  cursor: default !important;
+  pointer-events: auto !important;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 8px;
+}
+
+.points-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.points-icon-small {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.points-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.pro-section {
+  display: flex;
+  align-items: center;
+}
+
+.pro-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffd04b;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+/* 会员信息对话框样式 */
+.member-info-content {
+  padding: 20px 0;
+}
+
+.member-info-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 20px;
+}
+
+.member-avatar {
+  flex-shrink: 0;
+}
+
+.member-basic-info {
+  flex: 1;
+}
+
+.member-basic-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  color: #303133;
+}
+
+.member-badge {
+  display: inline-block;
+}
+
+.pro-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #ffd04b 0%, #ffb347 100%);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.member-points-info {
+  margin-bottom: 20px;
+}
+
+.points-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.points-icon-large {
+  width: 48px;
+  height: 48px;
+}
+
+.points-details {
+  flex: 1;
+}
+
+.points-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.points-number {
+  font-size: 32px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.points-tip {
+  font-size: 14px;
+  color: #606266;
+  text-align: center;
+}
+
+.points-tip img {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.member-actions {
+  margin-top: 20px;
+}
+
+/* 会员信息对话框样式 */
+.member-info-content {
+  padding: 20px 0;
+}
+
+.member-info-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 20px;
+}
+
+.member-avatar {
+  flex-shrink: 0;
+}
+
+.member-basic-info {
+  flex: 1;
+}
+
+.member-basic-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  color: #303133;
+}
+
+.member-badge {
+  display: inline-block;
+}
+
+.pro-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #ffd04b 0%, #ffb347 100%);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.member-points-info {
+  margin-bottom: 20px;
+}
+
+.points-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.points-icon-large {
+  width: 48px;
+  height: 48px;
+}
+
+.points-details {
+  flex: 1;
+}
+
+.points-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.points-number {
+  font-size: 32px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.points-tip {
+  font-size: 14px;
+  color: #606266;
+  text-align: center;
+}
+
+.points-tip img {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.member-actions {
+  margin-top: 20px;
+}
+
 /* 用户菜单选中时不改变背景色 */
 .navigation >>> .el-submenu.user-menu-item.is-active .el-submenu__title,
 .navigation >>> .el-submenu.user-menu-item .el-submenu__title:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: transparent !important;
+}
+
+/* 用户菜单下拉项样式：图标和文字间距、大小 */
+.navigation >>> .el-menu--popup .el-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 20px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
+.navigation >>> .el-menu--popup .el-menu-item i.iconfont {
+  font-size: 16px !important;
+  margin-right: 12px !important;
+  width: 16px !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  color: ffffff !important; /* 图标颜色，可以根据需要修改 */
+}
+
+/* 更具体的选择器，确保样式生效 */
+.navigation >>> .el-menu--popup .el-menu-item > i.iconfont {
+  margin-right: 12px !important;
+  color: #ffffff !important; /* 图标颜色 */
+}
+
+/* 全局样式，确保覆盖 Element UI 默认样式 */
+.el-menu--popup .el-menu-item i.iconfont {
+  margin-right: 12px !important;
+  color: #ffffff !important; /* 图标颜色 */
+}
+
+.navigation >>> .el-menu--popup .el-menu-item span {
+  font-size: 14px !important;
+  flex: 1 !important;
+}
+
+/* 使用 gap 属性来设置间距（如果 flexbox 支持） */
+.navigation >>> .el-menu--popup .el-menu-item {
+  gap: 12px !important;
+}
+
+/* 如果 gap 不支持，使用更强制的方式 */
+.navigation >>> .el-menu--popup .el-menu-item i + span {
+  margin-left: 12px !important;
 }
 
 /* 增大 menu-item 的宽度 */
@@ -641,11 +1005,30 @@ export default {
   content: none !important;
 }
 
+/* 确保子菜单标题没有白色背景 */
+.el-menu--horizontal > .el-submenu .el-submenu__title {
+  background-color: transparent !important;
+  padding: 0 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 .el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
   border-bottom: none !important;
   height: 60px !important;
   line-height: 60px !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
+  padding: 0 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 用户菜单选中时不显示背景色 */
+.el-menu--horizontal > .el-submenu.user-menu-item.is-active .el-submenu__title,
+.el-menu--horizontal > .el-submenu.user-menu-item .el-submenu__title:hover {
+  background-color: transparent !important;
 }
 
 .el-menu--horizontal > .el-submenu.is-active .el-submenu__title::after {
@@ -653,16 +1036,47 @@ export default {
   content: none !important;
 }
 
-/* 确保子菜单标题没有白色背景 */
-.el-menu--horizontal > .el-submenu .el-submenu__title {
-  background-color: transparent !important;
-}
-
-.el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
 .el-menu--horizontal > .el-submenu .el-submenu__title:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
+  height: 60px !important;
+  line-height: 60px !important;
+}
+
+/* 当子菜单项被选中时，父菜单的样式 */
+.el-menu--horizontal > .el-submenu.is-opened .el-submenu__title,
+.el-menu--horizontal > .el-submenu.is-opened.is-active .el-submenu__title {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  height: 60px !important;
+  line-height: 60px !important;
+  padding: 0 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-bottom: none !important;
+}
+
+/* 确保子菜单标题内的文字垂直居中 */
+.el-menu--horizontal > .el-submenu .el-submenu__title > span {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  line-height: normal !important;
+}
+
+/* 覆盖 Element UI 可能添加的白色背景 */
+.el-menu--horizontal > .el-submenu.is-opened .el-submenu__title,
+.el-menu--horizontal > .el-submenu.is-active.is-opened .el-submenu__title {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 用户菜单下拉项图标间距 - 全局样式，确保覆盖 Element UI 默认样式 */
+.el-menu--popup .el-menu-item i.iconfont {
+  margin-right: 12px !important;
+  color: #ffffff !important; /* 图标颜色 */
+}
+
+.el-menu--popup .el-menu-item > i.iconfont {
+  margin-right: 12px !important;
+  color: #ffffff !important; /* 图标颜色 */
 }
 </style>

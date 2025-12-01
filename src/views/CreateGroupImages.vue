@@ -114,19 +114,19 @@
                         <span>生成结果</span>
                     </div>
                     <div class="result-content">
-                        <div v-if="!resultImages.length && !processing" class="result-placeholder">
+                        <div v-if="!filteredResultImages.length && !processing" class="result-placeholder">
                             <i class="el-icon-picture-outline"></i>
-                            <p>生成的组图将显示在这里</p>
+                            <p>开始创建组图吧！</p>
                         </div>
                         <div v-if="processing" class="result-loading">
                             <i class="el-icon-loading"></i>
                             <p>正在生成中，请稍候...</p>
                         </div>
-                        <el-scrollbar v-if="resultImages.length > 0 && !processing" class="result-scrollbar">
+                        <el-scrollbar v-if="filteredResultImages.length > 0 && !processing" class="result-scrollbar">
                             <div class="result-images">
                                 <el-card 
-                                v-for="(image, index) in resultImages" 
-                                :key="index"
+                                v-for="(image, index) in filteredResultImages" 
+                                :key="`image-${index}`"
                                     class="content-card"
                                     shadow="hover">
                                     <div class="card-image">
@@ -134,7 +134,7 @@
                                     :src="image" 
                                             fit="cover"
                                             class="cover-image"
-                                    :preview-src-list="resultImages">
+                                    :preview-src-list="filteredResultImages">
                                             <div slot="error" class="image-slot">
                                                 <i class="el-icon-picture-outline"></i>
                                             </div>
@@ -144,13 +144,11 @@
                                         <h3 class="card-title"> 第 {{ index + 1 }} 张</h3>
                                         <div class="card-actions">
                                             <el-button 
-                                                v-if="!collectedImages.includes(index)"
                                                 type="primary" 
                                                 size="small" 
                                                 @click="collectIllustration(image, index)">
                                                 收集插画
                                             </el-button>
-                                            <span v-else class="collected-text">已添加到我的插画</span>
                         </div>
                     </div>
                 </el-card>
@@ -183,9 +181,6 @@ export default {
             // 生成结果
             resultImages: [],
             
-            // 已收集的图片索引（用于跟踪哪些图片已经保存）
-            collectedImages: [],
-            
             // API配置
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
         };
@@ -200,6 +195,10 @@ export default {
             const characterImage = localStorage.getItem('characterImage');
             console.log('检查是否有角色图片:', characterImage ? '存在' : '不存在');
             return !!characterImage;
+        },
+        // 过滤掉已收集的插画（现在直接从resultImages中删除，所以直接返回resultImages）
+        filteredResultImages() {
+            return this.resultImages || [];
         }
     },
     mounted() {
@@ -272,6 +271,9 @@ export default {
                 if (images && images.length > 0) {
                     localStorage.setItem('groupImages', JSON.stringify(images));
                     console.log('组图已保存到localStorage，共', images.length, '张');
+                } else {
+                    // 如果没有图片，清除localStorage
+                    localStorage.removeItem('groupImages');
                 }
             } catch (error) {
                 console.error('保存组图到localStorage失败:', error);
@@ -291,6 +293,103 @@ export default {
                 }
             } catch (error) {
                 console.error('从localStorage恢复组图失败:', error);
+            }
+        },
+        
+        // 检查用户积分是否足够
+        async checkUserPoints() {
+            try {
+                const userId = localStorage.getItem('id');
+                const token = localStorage.getItem('token');
+                
+                if (!userId || !token) {
+                    return false;
+                }
+                
+                // 计算需要的积分（每个prompt生成一张图片，每张2积分）
+                const validPrompts = this.prompts.filter(p => p && p.trim());
+                const requiredPoints = validPrompts.length * 2;
+                
+                // 获取用户积分
+                const response = await this.$http.get(`/user/${userId}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
+                    const userData = response.data.data || response.data.message || response.data;
+                    const userPoints = userData.points || userData.credits || 0;
+                    
+                    if (userPoints < requiredPoints) {
+                        this.$message.warning(`积分不足！需要 ${requiredPoints} 积分，当前只有 ${userPoints} 积分`);
+                        return false;
+                    }
+                    
+                    return true;
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('检查积分失败:', error);
+                this.$message.error('检查积分失败，请稍后重试');
+                return false;
+            }
+        },
+        
+        // 扣除积分
+        async deductPoints(points) {
+            try {
+                const userId = localStorage.getItem('id');
+                const token = localStorage.getItem('token');
+                
+                if (!userId || !token) {
+                    return;
+                }
+                
+                // 调用后端接口扣除积分
+                const response = await this.$http.post('/payment/deduct-points', {
+                    user_id: userId,
+                    points: points,
+                    reason: '生成图片'
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
+                    const userData = response.data.data || response.data.message || response.data;
+                    const remainingPoints = userData.points || userData.credits || 0;
+                    this.$message.success(`已扣除 ${points} 积分，剩余 ${remainingPoints} 积分`);
+                    
+                    // 更新store中的用户信息
+                    if (this.$store.state.userInfo) {
+                        this.$store.commit('setUserInfo', { ...this.$store.state.userInfo, points: remainingPoints });
+                    }
+                } else {
+                    console.warn('扣除积分失败:', response.data?.message);
+                }
+            } catch (error) {
+                console.error('扣除积分失败:', error);
+                // 扣除失败不影响主流程，只记录错误
+            }
+        },
+        
+        // 从resultImages和localStorage中删除已收集的插画
+        removeCollectedImageFromLocalStorage(index) {
+            try {
+                // 从resultImages中删除对应索引的图片
+                if (index >= 0 && index < this.resultImages.length) {
+                    // 使用splice删除，确保响应式更新
+                    this.resultImages.splice(index, 1);
+                    // 更新localStorage（保存剩余的图片）
+                    this.saveGroupImagesToLocalStorage(this.resultImages);
+                    console.log('已从localStorage删除收集的插画，剩余', this.resultImages.length, '张');
+                }
+            } catch (error) {
+                console.error('从localStorage删除已收集插画失败:', error);
             }
         },
         
@@ -368,9 +467,16 @@ export default {
                 return;
             }
             
+            // 检查用户积分
+            const hasEnoughPoints = await this.checkUserPoints();
+            if (!hasEnoughPoints) {
+                this.$message.warning('积分不足，请先充值！');
+                this.$router.push('/member/recharge');
+                return;
+            }
+            
             this.processing = true;
             this.resultImages = [];
-            this.collectedImages = []; // 清空已收集状态
             
             try {
                 // 过滤掉空的prompt，并在每个prompt前拼接前缀
@@ -761,6 +867,9 @@ export default {
                     pictureValue = `https://static.kidstory.cc/${imageUrl}`;
                 }
                 
+                // 获取角色ID
+                const characterId = localStorage.getItem('lastCharacterId') || localStorage.getItem('viewCharacterId');
+                
                 // 构建请求数据
                 // 后端支持三种方式：
                 // 1. 文件上传（FormData）- picture 字段为 File 对象
@@ -770,8 +879,16 @@ export default {
                     picture: pictureValue, // 使用 picture 字段，支持 URL 或 base64
                     title: `组图插画 - 第 ${index + 1} 张`,
                     description: `从组图创作中收集的第 ${index + 1} 张插画`,
-                    type: 'others' // 默认类别为"其他"
+                    type: 'others', // 默认类别为"其他"
+                    character_id: characterId || undefined // 直接关联角色ID
                 };
+                
+                // 移除 undefined 的字段
+                Object.keys(requestData).forEach(key => {
+                    if (requestData[key] === undefined) {
+                        delete requestData[key];
+                    }
+                });
                 
                 // 获取token
                 const token = localStorage.getItem('token') || '';
@@ -791,18 +908,12 @@ export default {
                 
                 // 检查响应
                 if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-                    // 获取保存的插画ID
-                    const illustrationId = response.data.message?.id || response.data.message?._id || response.data.id || response.data.message;
+                    // 从resultImages和localStorage中删除已收集的插画
+                    this.removeCollectedImageFromLocalStorage(index);
                     
-                    // 标记为已收集
-                    if (!this.collectedImages.includes(index)) {
-                        this.collectedImages.push(index);
-                    }
-                    
-                    // 将插画ID添加到角色组图数组中
-                    if (illustrationId) {
-                        await this.addIllustrationToCharacterGroup(illustrationId);
-                    }
+                    // 立即触发视图更新
+                    await this.$nextTick();
+                    this.$forceUpdate();
                     
                     this.$message.success(`第 ${index + 1} 张插画已保存到"我的插画"`);
                 } else {
@@ -815,82 +926,10 @@ export default {
             }
         },
         
-        // 将插画ID添加到角色组图数组中
-        async addIllustrationToCharacterGroup(illustrationId) {
-            try {
-                // 获取角色ID
-                const characterId = localStorage.getItem('lastCharacterId') || localStorage.getItem('viewCharacterId');
-                if (!characterId) {
-                    console.warn('未找到角色ID，无法将插画添加到角色组图');
-                    return;
-                }
-                
-                // 调用后端接口，将插画ID添加到角色的组图数组中
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/character/${characterId}/group-images`
-                    : `/character/${characterId}/group-images`;
-                
-                const response = await this.$http.post(apiUrl, {
-                    illustration_id: illustrationId
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    }
-                });
-                
-                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-                    console.log('插画已添加到角色组图');
-                } else {
-                    console.warn('添加插画到角色组图失败:', response.data?.message);
-                }
-            } catch (error) {
-                console.error('添加插画到角色组图失败:', error);
-                // 失败不影响主流程，只记录错误
-            }
-        },
         
-        // 保存组图到后台（保留方法，但不再自动调用）
-        async saveGroupImage(prompts, imageUrls) {
-            try {
-                // 获取角色ID（从localStorage或从最近保存的角色获取）
-                const characterId = localStorage.getItem('lastCharacterId');
-                if (!characterId) {
-                    console.warn('未找到角色ID，无法保存组图');
-                    return;
-                }
-                
-                // 合并所有prompts为combined_prompt
-                const combinedPrompt = prompts.join('；');
-                
-                const saveData = {
-                    character_id: characterId,
-                    title: `组图 - ${new Date().toLocaleString()}`,
-                    prompts: prompts,
-                    image_urls: imageUrls,
-                    combined_prompt: combinedPrompt
-                };
-                
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/character/group-image`
-                    : '/character/group-image';
-                
-                const response = await this.$http.post(apiUrl, saveData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    }
-                });
-                
-                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-                    console.log('组图保存成功');
-                }
-            } catch (error) {
-                console.error('保存组图失败:', error);
-                // 保存失败不影响主流程，只记录错误
-            }
-        }
     }
+      
+      
 };
 </script>
 
@@ -1131,16 +1170,21 @@ export default {
 /* 卡片图片区域 */
 .card-image {
     width: 100%;
-    height: 200px;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
+    position: relative;
     border-radius: 4px 4px 0 0;
     background-color: #f5f6fa;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .cover-image {
     width: 100%;
     height: 100%;
+    object-fit: cover;
 }
 
 .image-slot {
