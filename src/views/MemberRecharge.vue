@@ -2,27 +2,54 @@
   <div class="member-recharge-container">
  
 
-    <div class="content-wrapper">
-      <!-- 当前积分信息 -->
-      <el-card class="points-card" shadow="hover">
-        <div class="points-info">
-          <div class="points-icon">
-            <i class="el-icon-coin"></i>
-          </div>
-          <div class="points-details">
-            <h3>当前积分</h3>
-            <p class="points-value">
-              {{ userPoints || 0 }}
-              <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
-            </p>
-            <p class="points-tip">生成一次图片消耗 2 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></p>
-          </div>
-        </div>
-      </el-card>
+   
 
-      <!-- 主要内容区域：充值套餐和说明左右排列 -->
+      <!-- 主要内容区域：左侧（当前积分+说明）和右侧（充值套餐） -->
       <div class="main-content">
-        <!-- 左侧：充值套餐 -->
+        <!-- 左侧容器：当前积分和积分使用说明 -->
+        <div class="left-section">
+          <el-card class="points-card" shadow="hover">
+            <div class="points-info">
+              <div class="points-icon">
+                <i class="el-icon-coin"></i>
+              </div>
+              <div class="points-details">
+                <h3>当前积分</h3>
+                <p class="points-value">
+                  {{ userPoints || 0 }}
+                  <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
+                </p>
+                <p class="points-tip">生成一次图片消耗 2 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></p>
+              </div>
+            </div>
+          </el-card>
+
+          <el-card class="info-card" shadow="hover">
+            <div slot="header" class="card-header">
+              <span>积分使用说明</span>
+            </div>
+            <ul class="info-list">
+              <li>
+                <i class="el-icon-info"></i>
+                <span>充值 9.9 元可获得 100 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></span>
+              </li>
+              <li>
+                <i class="el-icon-info"></i>
+                <span>生成一次图片消耗 2 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></span>
+              </li>
+              <li>
+                <i class="el-icon-info"></i>
+                <span><img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /> 永久有效，不会过期</span>
+              </li>
+              <li>
+                <i class="el-icon-info"></i>
+                <span>如有问题，请联系客服</span>
+              </li>
+            </ul>
+          </el-card>
+        </div>
+
+        <!-- 右侧：充值套餐 -->
         <el-card class="recharge-card" shadow="hover">
           <div slot="header" class="card-header">
             <span>充值套餐</span>
@@ -34,12 +61,15 @@
               @click="selectPackage('basic')">
               <div class="package-header">
                 <h3>基础套餐</h3>
-                <div class="package-price">¥9.9</div>
+                
               </div>
               <div class="package-content">
-                <div class="package-points">
-                  <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
-                  <span>100</span>
+                <div class="package-top-row">
+                  <div class="package-points">
+                    <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
+                    <span>100</span>
+                  </div>
+                  <div class="package-price">¥9.9</div>
                 </div>
                 <div class="package-desc">可生成 50 张图片</div>
               </div>
@@ -60,7 +90,7 @@
                 <div class="payment-radio">
                   <i class="el-icon-check" v-if="paymentMethod === 'alipay'"></i>
                 </div>
-                <i class="el-icon-wallet"></i>
+                <img src="@/assets/logo/alipay.png" alt="支付宝" class="payment-logo" />
                 <span>支付宝</span>
               </div>
               <div 
@@ -70,7 +100,7 @@
                 <div class="payment-radio">
                   <i class="el-icon-check" v-if="paymentMethod === 'wxpay'"></i>
                 </div>
-                <i class="el-icon-wallet"></i>
+                <img src="@/assets/logo/wepay.png" alt="微信支付" class="payment-logo" />
                 <span>微信支付</span>
               </div>
             </div>
@@ -92,29 +122,7 @@
         </el-card>
 
         <!-- 右侧：积分使用说明 -->
-        <el-card class="info-card" shadow="hover">
-          <div slot="header" class="card-header">
-            <span>积分使用说明</span>
-          </div>
-          <ul class="info-list">
-            <li>
-              <i class="el-icon-info"></i>
-              <span>充值 9.9 元可获得 100 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></span>
-            </li>
-            <li>
-              <i class="el-icon-info"></i>
-              <span>生成一次图片消耗 2 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></span>
-            </li>
-            <li>
-              <i class="el-icon-info"></i>
-              <span><img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /> 永久有效，不会过期</span>
-            </li>
-            <li>
-              <i class="el-icon-info"></i>
-              <span>如有问题，请联系客服</span>
-            </li>
-          </ul>
-        </el-card>
+       
       </div>
 
       <!-- 二维码支付弹窗 -->
@@ -136,7 +144,7 @@
           <el-button @click="cancelPayment">取消支付</el-button>
         </div>
       </el-dialog>
-    </div>
+    
   </div>
 </template>
 
@@ -148,7 +156,7 @@ export default {
   data() {
     return {
       selectedPackage: 'basic', // 当前选中的套餐
-      paymentMethod: 'alipay', // 支付方式：alipay 或 wechat
+      paymentMethod: 'alipay', // 支付方式：alipay 或 wepay
       processing: false, // 是否正在处理
       userPoints: 0, // 用户当前积分
       currentOrderNo: null, // 当前订单号
@@ -228,7 +236,7 @@ export default {
         const orderData = {
           amount: 9.9, // 充值金额
           points: 100, // 充值积分
-          payment_type: this.paymentMethod === 'alipay' ? 'alipay' : 'wechat' // 支付方式：alipay 或 wechat
+          payment_type: this.paymentMethod === 'alipay' ? 'alipay' : 'wepay' // 支付方式：alipay 或 wepay
         };
 
         const apiUrl = this.apiBaseUrl 
@@ -327,7 +335,7 @@ export default {
     detectDevice() {
       const ua = navigator.userAgent.toLowerCase();
       if (ua.includes('micromessenger')) {
-        return 'wechat'; // 微信内浏览器
+        return 'wepay'; // 微信内浏览器
       } else if (ua.includes('alipay')) {
         return 'alipay'; // 支付宝客户端
       } else if (ua.includes('qq/')) {
@@ -424,7 +432,7 @@ export default {
 .member-recharge-container {
   min-height: calc(100vh - 72px);
   padding: 40px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
 }
 
 .header {
@@ -451,22 +459,32 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: calc(100vh - 200px); /* 确保有足够高度用于垂直居中 */
+  justify-content: center; /* 垂直居中 */
+  align-items: center; /* 水平居中 */
 }
 
 .main-content {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  align-items: stretch; /* 使子元素高度相同 */
+  width: 60%;
+  margin: 0 auto; /* 水平居中 */
+}
+
+.main-content .left-section {
+  flex: 1; /* 宽度比为 1 */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .main-content .recharge-card {
-  flex: 1;
+  flex: 3; /* 宽度比为 3 */
   min-width: 0;
-}
-
-.main-content .info-card {
-  flex: 0 0 300px;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .points-card {
@@ -502,6 +520,7 @@ export default {
   height: 16px;
   vertical-align: middle;
   margin: 0 2px;
+  display: inline-block;
 }
 
 .points-details h3 {
@@ -596,6 +615,13 @@ export default {
   color: #303133;
 }
 
+.package-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .package-points img {
   width: 24px;
   height: 24px;
@@ -637,6 +663,7 @@ export default {
 .payment-methods {
   display: flex;
   gap: 20px;
+  justify-content: center; /* 水平居中 */
 }
 
 .payment-method-item {
@@ -687,6 +714,13 @@ export default {
 .payment-method-item i.el-icon-wallet {
   color: #606266;
   font-size: 18px;
+}
+
+.payment-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 /* 二维码支付弹窗 */
@@ -769,6 +803,12 @@ export default {
 .info-list li i {
   color: #409eff;
   font-size: 16px;
+}
+
+.info-list li span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* 响应式设计 */

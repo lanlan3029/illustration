@@ -128,6 +128,9 @@ export default {
     margin: auto;
     background-color: #fff;
     perspective: 100px;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: hidden;
     /* width: 984.3px; */
     /* height: 740px; */
 }

@@ -19,9 +19,10 @@
               :style="downloading ? { cursor: 'not-allowed', opacity: 0.6 } : {}"
             >下载图片</label>
             </div>
-            <label class="insert" @click="saveDraft">保存草稿</label>
-            <label class="insert" @click="deleteDraft">删除草稿</label>
-            <label class="export" @click="uploadIllu">AI智能合成</label>
+       
+            <label class="insert" @click="saveToMyIll">保存</label>
+            <label class="insert" @click="deleteDraft">清空</label>
+            <label class="export" @click="AICompose">AI智能合成</label>
               
            
                           
@@ -32,6 +33,7 @@
 import {mapState} from "vuex"
 
 import toast from '@/utils/toast'
+import html2Canvas from "html2canvas"
 
 import ComponentList from '@/components/ComponentList' // 左侧列表组件
 // 导入generateID
@@ -66,7 +68,6 @@ export default {
         "curComponent"
     ]),
     created(){
-       
     },
     methods:{
         // 点击导入图片
@@ -124,40 +125,309 @@ export default {
         console.log('download')
         this.$emit('downLoad')
        },
-       uploadIllu(){
-        // 导出画布为base64并跳转到风格迁移页面
-        this.$emit('exportToStyleTransfer')
+    
+       async AICompose(){
+        // 调用火山引擎的生图接口进行AI智能合成
+        try {
+            // 取消选中组件
+            this.$store.commit('setCurComponent', {component:null,index:null});
+            // 隐藏右键菜单
+            this.$store.commit('hideContextMenu');
+            
+            // 等待 DOM 更新完成
+            await this.$nextTick();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // 获取画布元素
+            let target = document.getElementsByClassName("content");
+            if (!target || !target[0]) {
+                this.$message.warning('未找到画布内容，请先添加元素到画布');
+                return;
+            }
+            
+            // 显示加载提示
+            const loading = this.$message({
+                message: '正在获取画布内容...',
+                type: 'info',
+                duration: 0
+            });
+            
+            // 预加载所有图片，确保图片已缓存
+            await this.preloadImages(target[0]);
+            
+            // 使用html2canvas将画布转换为图片
+            const canvas = await html2Canvas(target[0], {
+                dpi: 96,
+                useCORS: true,
+                allowTaint: false,
+                imageTimeout: 15000,
+                scale: 2,
+                logging: false,
+                removeContainer: true,
+                cacheBust: false,
+                onclone: (clonedDoc) => {
+                    const clonedImages = clonedDoc.querySelectorAll('img');
+                    const originalImages = target[0].querySelectorAll('img');
+                    clonedImages.forEach((clonedImg, index) => {
+                        const originalImg = originalImages[index];
+                        if (originalImg && originalImg.dataset.cached && originalImg.dataset.cached !== 'skip') {
+                            clonedImg.src = originalImg.dataset.cached;
+                        }
+                    });
+                }
+            });
+            
+            // 将canvas转换为base64
+            const canvasBase64 = canvas.toDataURL("image/jpeg", 0.92);
+            
+            // 提示词
+            const prompt = "高清修复，4K 分辨率，绘图精细度 30，保留各图元原始特征；统一风格：儿童彩铅插画风格，色调柔和清新；智能优化：边缘过渡自然，消除拼接痕迹，比例协调，画面整体统一；negative prompt: 元素错位，边缘生硬，风格割裂，拼接痕迹明显，比例失衡";
+            
+            // 更新加载提示
+            loading.message = 'AI智能合成中，请稍候...';
+            
+            // 构建请求数据
+            const requestData = {
+                prompt: prompt,
+                image: canvasBase64, // 画布图片的base64
+                size: '1280x960' // 图片尺寸
+            };
+            
+            // 调用火山引擎生图接口（通过后端）
+            const apiUrl = this.apiBaseUrl 
+                    ? `${this.apiBaseUrl}/create-character`
+                    : '/create-character';
+            
+            const response = await this.$http.post(apiUrl, requestData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                },
+                timeout: 180000 // 3分钟超时
+            });
+            
+            // 关闭加载提示
+            loading.close();
+            
+            // 处理响应
+            const responseData = response.data;
+            
+            // 检查成功响应：code === 0 或 desc === 'success' 或 statuscode === 'success'
+            const isSuccess = (responseData.code === 0 || responseData.code === '0') 
+                || responseData.desc === 'success' 
+                || responseData.statuscode === 'success';
+            
+            if (isSuccess) {
+                // 提取图片URL或base64
+                const result = responseData.message || responseData.data || responseData;
+                let imageUrl = null;
+                
+                if (result.image_url) {
+                    imageUrl = result.image_url;
+                } else if (result.image) {
+                    imageUrl = result.image;
+                } else if (result.url) {
+                    imageUrl = result.url;
+                } else if (result.result_url) {
+                    imageUrl = result.result_url;
+                } else if (typeof result === 'string') {
+                    // 可能是base64或URL
+                    imageUrl = result;
+                }
+                
+                if (imageUrl) {
+                    // 将生成的图片添加到画布中
+                    const img = new Image();
+                    img.onload = () => {
+                        // 将图片数据传输到vuex中
+                        this.$store.commit("addComponent", {
+                            component: {
+                                ...commonAttr,
+                                id: generateID(),
+                                component: "Picture",
+                                label: "AI合成图片",
+                                icon: "",
+                                propValue: imageUrl,
+                                style: {
+                                    ...commonStyle,
+                                    top: 0,
+                                    left: 0,
+                                    width: img.width,
+                                    height: img.height,
+                                }
+                            }
+                        });
+                        this.$message.success('AI智能合成成功！图片已添加到画布');
+                    };
+                    img.onerror = () => {
+                        this.$message.error('图片加载失败，请检查图片数据');
+                    };
+                    img.src = imageUrl;
+                } else {
+                    throw new Error('响应中未找到图片数据');
+                }
+            } else {
+                const errorMsg = responseData.message || responseData.desc || responseData.error || 'AI智能合成失败，请重试';
+                throw new Error(errorMsg);
+            }
+        } catch (error) {
+            console.error('AI智能合成失败:', error);
+            const errorMessage = error.response?.data?.message || error.response?.data?.desc || error.message || 'AI智能合成失败，请重试';
+            this.$message.error(errorMessage);
+        }
        },
-    saveDraft(){
-        this.draftArry=this.componentData
-       console.log(this.draftArry)
-        this.$http.post(`/ill/draft`,{content:this.draftArry},
-        {  headers: {
-                "Authorization": "Bearer " + localStorage.getItem("token")
-            }} ).then((response) => {
-          if (response.data.desc === "success") {
-            this.$message('草稿已保存');     
-          } else {
-             this.$router.push({path:'/errorpage'});   
-          }
-        })
-        .catch((error) => console.log(error));
+       
+       // 预加载所有图片，并将图片转换为base64缓存
+       async preloadImages(container) {
+           const images = container.querySelectorAll('img');
+           const imagePromises = Array.from(images).map(async (img) => {
+               if (img.complete && img.naturalWidth > 0) {
+                   if (!img.dataset.cached) {
+                       try {
+                           const canvas = document.createElement('canvas');
+                           const ctx = canvas.getContext('2d');
+                           canvas.width = img.naturalWidth;
+                           canvas.height = img.naturalHeight;
+                           ctx.drawImage(img, 0, 0);
+                           const base64 = canvas.toDataURL('image/png');
+                           img.dataset.cached = base64;
+                           img.dataset.originalSrc = img.src;
+                       } catch (e) {
+                           img.dataset.cached = 'skip';
+                       }
+                   }
+                   return Promise.resolve();
+               }
+               return new Promise((resolve) => {
+                   img.onload = async () => {
+                       if (!img.dataset.cached) {
+                           try {
+                               const canvas = document.createElement('canvas');
+                               const ctx = canvas.getContext('2d');
+                               canvas.width = img.naturalWidth;
+                               canvas.height = img.naturalHeight;
+                               ctx.drawImage(img, 0, 0);
+                               const base64 = canvas.toDataURL('image/png');
+                               img.dataset.cached = base64;
+                               img.dataset.originalSrc = img.src;
+                           } catch (e) {
+                               img.dataset.cached = 'skip';
+                           }
+                       }
+                       resolve();
+                   };
+                   img.onerror = () => resolve();
+                   if (img.complete) {
+                       resolve();
+                   }
+               });
+           });
+           await Promise.all(imagePromises);
+       },
+    
+       
+       // 保存画布图片到"我的插画"
+       async saveToMyIll(){
+           try {
+               // 取消选中组件
+               this.$store.commit('setCurComponent', {component:null,index:null});
+               // 隐藏右键菜单
+               this.$store.commit('hideContextMenu');
+               
+               // 等待 DOM 更新完成
+               await this.$nextTick();
+               await new Promise(resolve => setTimeout(resolve, 100));
+               
+               // 获取画布元素
+               let target = document.getElementsByClassName("content");
+               if (!target || !target[0]) {
+                   this.$message.warning('未找到画布内容，请先添加元素到画布');
+                   return;
+               }
+               
+               // 显示加载提示
+               const loading = this.$message({
+                   message: '正在保存画布图片...',
+                   type: 'info',
+                   duration: 0
+               });
+               
+               // 预加载所有图片，确保图片已缓存
+               await this.preloadImages(target[0]);
+               
+               // 使用html2canvas将画布转换为图片
+               const canvas = await html2Canvas(target[0], {
+                   dpi: 96,
+                   useCORS: true,
+                   allowTaint: false,
+                   imageTimeout: 15000,
+                   scale: 2,
+                   logging: false,
+                   removeContainer: true,
+                   cacheBust: false,
+                   onclone: (clonedDoc) => {
+                       const clonedImages = clonedDoc.querySelectorAll('img');
+                       const originalImages = target[0].querySelectorAll('img');
+                       clonedImages.forEach((clonedImg, index) => {
+                           const originalImg = originalImages[index];
+                           if (originalImg && originalImg.dataset.cached && originalImg.dataset.cached !== 'skip') {
+                               clonedImg.src = originalImg.dataset.cached;
+                           }
+                       });
+                   }
+               });
+               
+               // 将canvas转换为base64
+               const canvasBase64 = canvas.toDataURL("image/jpeg", 0.92);
+               
+               // 获取token
+               const token = localStorage.getItem('token') || '';
+               if (!token) {
+                   loading.close();
+                   this.$message.warning('请先登录');
+                   return;
+               }
+               
+               // 构建请求数据
+               const requestData = {
+                   picture: canvasBase64, // base64 格式的图片
+                   title: '创作插画',
+                   description: '从画布保存的插画',
+                   type: 'others' // 默认类别为"其他"
+               };
+               
+               // 调用保存插画接口
+               const response = await this.$http.post('/ill/', requestData, {
+                   headers: {
+                       'Content-Type': 'application/json',
+                       'Authorization': 'Bearer ' + token
+                   }
+               });
+               
+               // 关闭加载提示
+               loading.close();
+               
+               // 检查响应
+               if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
+                   this.$message.success('已保存到"我的插画"');
+               } else {
+                   throw new Error(response.data?.message || '保存失败');
+               }
+           } catch (error) {
+               console.error('保存画布图片失败:', error);
+               const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
+               this.$message.error(`保存失败: ${errorMessage}`);
+           }
        },
        deleteDraft(){
-        this.$http.delete(`/ill/draft/`+this.draftid,{ headers: {
-                "Authorization": "Bearer " + localStorage.getItem("token")
-            }}).then((response) => {
-          if (response.data.desc === "success") {
-            this.$store.commit('setComponentData',[])
-            this.$message('草稿已删除');        
-          } else {
-             this.$router.push({path:'/errorpage'});   
-          }
-        })
-        .catch((error) => console.log(error));
+        // 清空画布中的所有图元
+        this.$store.commit('setComponentData', []);
+        // 取消选中组件
+        this.$store.commit('setCurComponent', {component: null, index: null});
+        // 隐藏右键菜单
+        this.$store.commit('hideContextMenu');
+        this.$message.success('画布已清空');
        }
-       
- 
     }
 }
 </script>
@@ -166,7 +436,7 @@ export default {
     padding: 8px;
     display: flex;
     width:60vw;
-    margin: -16px auto 0 auto;
+    margin: 16px auto 0 auto;
     justify-content: space-between;
 }
 .left{
@@ -174,7 +444,6 @@ export default {
     display: flex;
     justify-content: space-between;
 }
-
 
 .insert{
     display: inline-flex;

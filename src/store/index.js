@@ -15,8 +15,8 @@ export default new Vuex.Store({
         editMode: "edit",
         // 页面全局数据
         canvasStyleData: {
-            width: 56,
-            height: 42,
+            width: 42,  // 4:3 比例，高度固定为 31.5vw
+            height: 31.5,  // 固定高度
             scale: 100
         },
         // 画布组件数据

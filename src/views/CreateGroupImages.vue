@@ -83,9 +83,9 @@
                                     v-model="prompts[index]"
                                     type="textarea"
                                     :rows="3"
-                                    :placeholder="`请描述第 ${index + 1} 页的画面内容`"
+                                    placeholder="将人物的动物、衣服、表情改为······"
                                     class="prompt-input"
-                                    maxlength="500"
+                                    maxlength="200"
                                     show-word-limit>
                                 </el-input>
                                 </div>
@@ -298,6 +298,8 @@ export default {
         
         // 检查用户积分是否足够
         async checkUserPoints() {
+      
+            
             try {
                 const userId = localStorage.getItem('id');
                 const token = localStorage.getItem('token');
@@ -339,6 +341,17 @@ export default {
         
         // 扣除积分
         async deductPoints(points) {
+            // 开发阶段不扣积分
+            // 判断开发环境：NODE_ENV 不是 production，或者 hostname 是 localhost
+            const isDevelopment = process.env.NODE_ENV !== 'production' || 
+                                  window.location.hostname === 'localhost' || 
+                                  window.location.hostname === '127.0.0.1';
+            
+            if (isDevelopment) {
+                console.log(`开发阶段：跳过扣除 ${points} 积分`);
+                return;
+            }
+            
             try {
                 const userId = localStorage.getItem('id');
                 const token = localStorage.getItem('token');
@@ -954,7 +967,7 @@ export default {
 }
 
 .right-panel {
-    flex: 0 0 60%;
+    flex: 0 0 calc(60% - 20px);
     min-width: 0;
 }
 

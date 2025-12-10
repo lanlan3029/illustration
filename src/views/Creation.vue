@@ -15,8 +15,25 @@
            @dragover是拖拽元素到某个地方
            @dragstart是拖拽哪一个元素：在ComponentList.vue中
           -->
+           <div class="aspect-ratio-selector-top">
+             <span class="aspect-label">画布比例：</span>
+             <el-select 
+               v-model="selectedAspectRatio" 
+               @change="handleAspectRatioChange"
+               size="small"
+               style="width: 100px;"
+             >
+               <el-option label="4:3" value="4:3"></el-option>
+               <el-option label="1:1" value="1:1"></el-option>
+               <el-option label="3:4" value="3:4"></el-option>
+               <el-option label="9:16" value="9:16"></el-option>
+               <el-option label="16:9" value="16:9"></el-option>
+             </el-select>
+           </div>
+           <div class="center-content-wrapper">
            <div
                class="content"
+                   :style="contentStyle"
                @drop="handleDrop"
                @dragover="handleDragOver"
                @mousedown="handleMouseDown"
@@ -24,9 +41,10 @@
                @contextmenu="handleContextMenu"
            >
                <Editor />
+               </div>
+               <Toolbar @downLoad="downLoadImg" @uploadIllustration="uploadImg" @exportToStyleTransfer="exportToStyleTransfer" :draftid="draftid" :downloading="downloading"/>
            </div>
            <ContextMenu />
-            <Toolbar @downLoad="downLoadImg" @uploadIllustration="uploadImg" @exportToStyleTransfer="exportToStyleTransfer" :draftid="draftid" :downloading="downloading"/>
            <Cropper v-if="ifCropper && curComponent != null" >
            </Cropper>
           
@@ -72,6 +90,7 @@ export default {
       draftArr:[],
       draftid:'',
       downloading: false, // 下载状态
+      selectedAspectRatio: '4:3' // 默认宽高比
     }
   },
   components: {
@@ -82,16 +101,32 @@ export default {
     LeftMenu,
     ContextMenu
   },
-  computed:mapState([
+  computed:{
+    ...mapState([
     'componentData',
     'curComponent',
     'isClickComponent',
     'editor',
     "ifCropper",
-    "imgUrl"
+      "imgUrl",
+      "canvasStyleData"
   ]),
+    // 动态计算内容容器样式
+    contentStyle() {
+      const canvasWidth = this.canvasStyleData?.width || 42;
+      const canvasHeight = this.canvasStyleData?.height || 31.5;
+      // 给容器留一些边距，高度稍微大一点
+      const contentHeight = canvasHeight + 2;
+      return {
+        width: canvasWidth + 'vw',
+        height: contentHeight + 'vw'
+      };
+    }
+  },
   mounted(){
     this.getCollectIll();
+    // 根据当前画布尺寸计算宽高比
+    this.calculateCurrentAspectRatio();
   },
   methods:{
     //获取草稿
@@ -263,7 +298,7 @@ export default {
           useCORS: true,
           allowTaint: false,
           imageTimeout: 15000,
-          scale: 1,
+          scale: 2,
           logging: false,
           removeContainer: true,
           cacheBust: false,
@@ -314,7 +349,7 @@ export default {
         useCORS: true,
         allowTaint: false,
         imageTimeout: 15000,
-        scale: 1,
+        scale: 2,
         logging: false,
         removeContainer: true,
         cacheBust: false,
@@ -363,7 +398,7 @@ export default {
             useCORS: true,
             allowTaint: false,
             imageTimeout: 15000,
-            scale: 1,
+            scale: 2,
             logging: false,
             removeContainer: true,
             cacheBust: false,
@@ -389,6 +424,76 @@ export default {
          }).catch((error) => {
             console.error('导出图片失败:', error);
             this.$message.error('导出图片失败，请重试');
+         });
+       },
+       
+       // 计算当前画布的宽高比
+       calculateCurrentAspectRatio() {
+           const width = this.canvasStyleData.width || 48;
+           const height = this.canvasStyleData.height || 36;
+           const ratio = width / height;
+           
+           // 根据比例匹配最接近的选项（允许一定误差）
+           const ratios = {
+               '4:3': 4/3,      // 48/36 = 1.333...
+               '1:1': 1,        // 36/36 = 1
+               '3:4': 3/4,      // 27/36 = 0.75
+               '9:16': 9/16,    // 20.25/36 = 0.5625
+               '16:9': 16/9     // 64/36 = 1.777...
+           };
+           
+           let closestRatio = '4:3';
+           let minDiff = Math.abs(ratio - ratios['4:3']);
+           
+           Object.keys(ratios).forEach(key => {
+               const diff = Math.abs(ratio - ratios[key]);
+               if (diff < minDiff) {
+                   minDiff = diff;
+                   closestRatio = key;
+               }
+           });
+           
+           this.selectedAspectRatio = closestRatio;
+       },
+       
+       // 处理宽高比变化
+       handleAspectRatioChange(value) {
+           // 固定高度为 36vw
+           const fixedHeight = 36;
+           let width;
+           
+           // 根据选择的宽高比计算宽度
+           // 宽高比格式为 width:height，所以 width = height * (width/height)
+           switch(value) {
+               case '4:3':
+                   // 4:3 表示宽:高 = 4:3，所以 width = height * 4/3
+                   width = fixedHeight * 4 / 3; // 36 * 4/3 = 48vw
+                   break;
+               case '1:1':
+                   // 1:1 表示宽:高 = 1:1，所以 width = height
+                   width = fixedHeight; // 36vw
+                   break;
+               case '3:4':
+                   // 3:4 表示宽:高 = 3:4，所以 width = height * 3/4
+                   width = fixedHeight * 3 / 4; // 36 * 3/4 = 27vw
+                   break;
+               case '9:16':
+                   // 9:16 表示宽:高 = 9:16，所以 width = height * 9/16
+                   width = fixedHeight * 9 / 16; // 36 * 9/16 = 20.25vw
+                   break;
+               case '16:9':
+                   // 16:9 表示宽:高 = 16:9，所以 width = height * 16/9
+                   width = fixedHeight * 16 / 9; // 36 * 16/9 = 64vw
+                   break;
+               default:
+                   width = fixedHeight * 4 / 3; // 默认 4:3
+           }
+           
+           // 更新画布尺寸
+           this.$store.commit('setCanvasStyle', {
+               ...this.canvasStyleData,
+               width: width,
+               height: fixedHeight
          });
        }
     }
@@ -421,14 +526,47 @@ export default {
     height:88vh;  
     margin:auto;
     border-radius: 4px;
-    overflow-y: scroll;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .aspect-ratio-selector-top{
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 200;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 6px 16px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .aspect-label {
+    font-size: 14px;
+    color: #606266;
+    white-space: nowrap;
+  }
+  .center-content-wrapper{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 100%;
+    margin-top: 32px; /* 为顶部的比例选择器留出空间 */
   }
   .content{
-    margin:2vh auto 0 auto;
+    position: relative;
+    margin: 0 auto;
     width: 56vw;
-    height:44vw;
+    /* height 由 contentStyle 动态设置 */
     overflow: hidden;
     z-index:100;
+    flex-shrink: 0; /* 防止被压缩 */
   }
   .placeholder{
     text-align: center;

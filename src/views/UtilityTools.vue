@@ -29,13 +29,23 @@
                 </el-upload>
               </div>
               <!-- 有图片时显示原图 -->
-              <el-image 
-                v-else
-                :src="originalImageUrl" 
-                fit="contain" 
-                class="preview-image"
-                :preview-src-list="[originalImageUrl]"
-              ></el-image>
+              <div v-else class="preview-container">
+                <el-image 
+                  :src="originalImageUrl" 
+                  fit="contain" 
+                  class="preview-image"
+                  :preview-src-list="[originalImageUrl]"
+                ></el-image>
+                <el-button 
+                  type="danger" 
+                  icon="el-icon-delete" 
+                  circle 
+                  size="small"
+                  class="delete-btn"
+                  @click="handleDeleteOriginal"
+                  title="删除图片"
+                ></el-button>
+              </div>
             </div>
             <el-button 
               v-if="originalImageUrl"
@@ -191,24 +201,104 @@ export default {
     },
     
     // 从localStorage恢复
-    loadFromLocalStorage() {
+    async loadFromLocalStorage() {
       try {
         const saved = localStorage.getItem('utilityTools_segmentation');
         if (saved) {
           const data = JSON.parse(saved);
+          let hasError = false;
+          
+          // 验证原图路径
           if (data.originalImageUrl) {
-            this.originalImageUrl = data.originalImageUrl;
+            const isValid = await this.validateImageUrl(data.originalImageUrl);
+            if (isValid) {
+              this.originalImageUrl = data.originalImageUrl;
+            } else {
+              console.warn('原图路径无效，已清空');
+              hasError = true;
+            }
           }
+          
+          // 验证分割后图片路径
           if (data.segmentedImageUrl) {
-            this.segmentedImageUrl = data.segmentedImageUrl;
+            const isValid = await this.validateImageUrl(data.segmentedImageUrl);
+            if (isValid) {
+              this.segmentedImageUrl = data.segmentedImageUrl;
+            } else {
+              console.warn('分割后图片路径无效，已清空');
+              hasError = true;
+            }
           }
+          
           if (data.segmentedImageId) {
             this.segmentedImageId = data.segmentedImageId;
+          }
+          
+          // 如果图片路径错误，清空所有数据
+          if (hasError) {
+            this.originalImageUrl = '';
+            this.segmentedImageUrl = '';
+            this.segmentedImageId = null;
+            this.originalFile = null;
+            this.saveToLocalStorage();
           }
         }
       } catch (error) {
         console.error('从localStorage恢复失败:', error);
+        // 恢复失败时清空数据
+        this.originalImageUrl = '';
+        this.segmentedImageUrl = '';
+        this.segmentedImageId = null;
+        this.originalFile = null;
+        this.saveToLocalStorage();
       }
+    },
+    
+    // 验证图片URL是否有效
+    validateImageUrl(url) {
+      return new Promise((resolve) => {
+        if (!url) {
+          resolve(false);
+          return;
+        }
+        
+        // 如果是base64，直接返回true
+        if (url.startsWith('data:')) {
+          resolve(true);
+          return;
+        }
+        
+        // 对于HTTP/HTTPS URL，尝试加载图片验证
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+        
+        // 设置超时，5秒后如果还没加载完成，认为无效
+        setTimeout(() => {
+          if (!img.complete) {
+            resolve(false);
+          }
+        }, 5000);
+      });
+    },
+    
+    // 删除原图
+    handleDeleteOriginal() {
+      this.$confirm('确定要删除原图吗？删除后需要重新上传。', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.originalFile = null;
+        this.originalImageUrl = '';
+        this.segmentedImageUrl = '';
+        this.segmentedImageId = null;
+        this.saveToLocalStorage();
+        this.$message.success('已删除原图');
+      }).catch(() => {
+        // 用户取消删除
+      });
     },
     
     // 清除分割结果
@@ -325,12 +415,35 @@ export default {
             throw new Error('未获取到分割后的图片，请检查响应数据');
           }
         } else {
-          throw new Error(response.data?.message || response.data?.desc || '图像分割失败');
+          // 检查是否是文件内容错误
+          const errorMsg = response.data?.message || response.data?.desc || '';
+          if (errorMsg.includes('InvalidFile.Content') || errorMsg.includes('阿里云API错误: InvalidFile.Content')) {
+            this.$message({
+              message: '上传文件不规范，请上传 单人、完整、清晰 的图片；视频首帧需包含 清晰、完整、占比较大 的人体（部分模型要求全身）。',
+              type: 'error',
+              duration: 6000,
+              showClose: true
+            });
+            this.processing = false;
+            return;
+          }
+          throw new Error(errorMsg || '图像分割失败');
         }
       } catch (error) {
         console.error('图像分割失败:', error);
-        const errorMessage = error.response?.data?.message || error.message || '图像分割失败，请重试';
-        this.$message.error(errorMessage);
+        const errorMessage = error.response?.data?.message || error.message || '';
+        
+        // 检查是否是文件内容错误
+        if (errorMessage.includes('InvalidFile.Content') || errorMessage.includes('阿里云API错误: InvalidFile.Content')) {
+          this.$message({
+            message: '上传文件不规范，请上传 单人、完整、清晰 的图片；视频首帧需包含 清晰、完整、占比较大 的人体（部分模型要求全身）。',
+            type: 'error',
+            duration: 6000,
+            showClose: true
+          });
+        } else {
+          this.$message.error(errorMessage || '图像分割失败，请重试');
+        }
       } finally {
         this.processing = false;
       }
@@ -684,10 +797,26 @@ export default {
   padding: 20px;
 }
 
+.preview-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .preview-image {
   max-width: 100%;
   max-height: 500px;
   border-radius: 4px;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .placeholder {

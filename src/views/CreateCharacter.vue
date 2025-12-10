@@ -1464,6 +1464,7 @@ export default {
     flex-shrink: 1;
     min-height: 0;
     height: 100%;
+    padding-right: 24px;
 }
 
 /* 左侧面板：上传照片和抠图结果 */

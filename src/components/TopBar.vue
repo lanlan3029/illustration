@@ -83,7 +83,7 @@
                             </div>
                         </div>
                         <!-- 用户头像 -->
-                        <el-avatar :src="userInfo.avatar" :size="40"/>
+                    <el-avatar :src="userInfo.avatar" :size="40"/>
                     </div>
                 </template>
                     <el-menu-item index="user-home" @click="toMyHomePage">
@@ -108,7 +108,7 @@
                 </el-menu-item>
             </el-submenu>
         </el-menu>
-
+  
       
   </div>
 </template>

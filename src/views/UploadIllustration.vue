@@ -5,7 +5,7 @@
     <el-form-item label="上传作品">
       <!-- 如果有从store来的图片，显示它 -->
       <div v-if="imgUrl && !localFile" class="image-preview">
-        <el-image :src="imgUrl" style="width:500px;height:352px" fit="contain"/>
+    <el-image :src="imgUrl" style="width:500px;height:352px" fit="contain"/>
         <el-button 
           type="text" 
           icon="el-icon-close" 
@@ -133,13 +133,13 @@ export default {
           // 使用store中的图片（可能是base64或URL）
           this.uploadStoreImage();
         }
-      } else {
-        this.$message({
+         } else {
+              this.$message({
           message: '插画、插画名称、类别不能为空',
           type: 'warning',
           offset:'300'
         });
-      }
+            }
    },
    
    // 上传本地文件
