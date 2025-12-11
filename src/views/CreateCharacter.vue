@@ -1446,7 +1446,7 @@ export default {
 <style scoped>
 .container {
     width: 100%;
-    height: calc(100vh - 60px - 51.5px); /* 72px顶部栏 + 50px footer高度（14px*2 padding + 23px内容） */
+    height: calc(100vh - 50px - 40px); /* 72px顶部栏 + 50px footer高度（14px*2 padding + 23px内容） */
     min-height: calc(100vh - 60px - 51.5px);
     padding: 24px;
     box-sizing: border-box;

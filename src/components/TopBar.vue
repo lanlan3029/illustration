@@ -1,115 +1,110 @@
 <template>
-  <div>
-        <el-menu
-            class="navigation"
-            mode="horizontal"
-            router
-            :default-active="$route.fullPath"
-            background-color="#545c64"
-            text-color="#fff"
-            active-text-color="#ffd04b"
-            :ellipsis="false"
-        >
-            <!-- Logo 居左 -->
-            <el-menu-item index="logo" class="logo-item" @click="$router.push('/')">
-                <el-image :src="logoUrl" fit="contain" class="logo-image"></el-image>
-            </el-menu-item>
+  <div class="navigation-wrap">
+    <nav class="navbar start-header" :class="{ 'scroll-on': isScrolled }">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <!-- Logo -->
+          <a class="navbar-brand" @click.prevent="$router.push('/')">
+            <img :src="logoUrl" alt="Logo" />
+          </a>
+        </div>
 
-            <!-- 中间菜单项 -->
-            <el-menu-item index="/">
-                <span>AI插画</span>
-            </el-menu-item>
+        <ul class="navbar-nav">
+          <!-- 菜单项 -->
+          <li class="nav-item" :class="{ 'active': $route.path === '/' }">
+            <router-link to="/" class="nav-link" @click.native="closeSubmenu">AI插画</router-link>
+          </li>
 
-            <el-submenu index="/creation">
-                <template #title>
-                    <span>创作</span>
-                </template>
-                <el-menu-item index="/create-character">创作角色</el-menu-item>
-                <el-menu-item index="/create-group-images">创作组图</el-menu-item>
-                <el-menu-item index="/creation">创作插画</el-menu-item>
-                <el-menu-item index="/user/upload/compose-illustration">合成绘本</el-menu-item>
-            </el-submenu>
+          <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation' }">
+            <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('creation')">
+              创作
+            </a>
+            <ul class="dropdown-menu">
+              <li><router-link to="/create-character" class="dropdown-item" @click.native="closeSubmenu">创作角色</router-link></li>
+              <li><router-link to="/create-group-images" class="dropdown-item" @click.native="closeSubmenu">创作组图</router-link></li>
+              <li><router-link to="/creation" class="dropdown-item" @click.native="closeSubmenu">创作插画</router-link></li>
+              <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click.native="closeSubmenu">合成绘本</router-link></li>
+            </ul>
+          </li>
 
-            <el-menu-item index="/user/upload">
-                <span>上传</span>
-            </el-menu-item>
+          <li class="nav-item" :class="{ 'active': $route.path === '/user/upload' }">
+            <router-link to="/user/upload" class="nav-link" @click.native="closeSubmenu">上传</router-link>
+          </li>
 
-            <el-menu-item index="/books">
-                <span>原创绘本</span>
-            </el-menu-item>
+          <li class="nav-item" :class="{ 'active': $route.path === '/books' }">
+            <router-link to="/books" class="nav-link" @click.native="closeSubmenu">原创绘本</router-link>
+          </li>
 
-            <el-menu-item index="/utility-tools">
-                <span>实用工具</span>
-            </el-menu-item>
+          <li class="nav-item" :class="{ 'active': $route.path === '/utility-tools' }">
+            <router-link to="/utility-tools" class="nav-link" @click.native="closeSubmenu">实用工具</router-link>
+          </li>
 
-         
+          <!-- 搜索框 -->
+          <li class="nav-item search-item">
+            <div class="search-wrapper">
+              <i class="el-icon-search search-icon"></i>
+              <input 
+                type="text" 
+                class="search" 
+                v-model="searchValue" 
+                name="search" 
+                autocomplete="off" 
+                placeholder="请输入搜索内容" 
+                @keyup.enter="searchFun(searchValue)"
+                @click.stop
+              >
+            </div>
+          </li>
 
-      
+          <!-- 用户登录/头像 -->
+          <li v-if="!isLogin" class="nav-item">
+            <a @click.prevent="showMask" class="nav-link">登陆</a>
+          </li>
 
-           
-            <el-menu-item index="search" class="search-item">
-                <div class="search-wrapper">
-                    <i class="el-icon-search search-icon"></i>
-                    <input 
-                        type="text" 
-                        class="search" 
-                        v-model="searchValue" 
-                        name="search" 
-                        autocomplete="off" 
-                        placeholder="请输入搜索内容" 
-                        @keyup.enter="searchFun(searchValue)"
-                        @click.stop
-                    >
+          <li v-else class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'user' }">
+            <a class="nav-link dropdown-toggle user-menu-trigger" href="#" @click.prevent="toggleSubmenu('user')">
+              <div class="user-header-wrapper">
+                <!-- 积分和Pro显示框 -->
+                <div class="points-pro-box" @click.stop="showMemberDialog = true">
+                  <div class="points-section">
+                    <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
+                    <span class="points-value">{{ userPoints || 0 }}</span>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="pro-section">
+                    <span class="pro-text">Pro</span>
+                  </div>
                 </div>
-            </el-menu-item>
-
-            <!-- 用户登录/头像 -->
-            <el-menu-item v-if="!isLogin" class="login-item" @click="showMask">
-                <div class="loginBt">登陆</div>
-            </el-menu-item>
-
-            <el-submenu v-else index="user-menu" class="user-menu-item" :show-timeout="0" :hide-timeout="0">
-                <template #title>
-                    <div class="user-header-wrapper">
-                        <!-- 积分和Pro显示框 -->
-                        <div class="points-pro-box" >
-                            <div class="points-section">
-                                <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
-                                <span class="points-value">{{ userPoints || 0 }}</span>
-                            </div>
-                            <div class="divider"></div>
-                            <div class="pro-section">
-                                <span class="pro-text">Pro</span>
-                            </div>
-                        </div>
-                        <!-- 用户头像 -->
-                    <el-avatar :src="userInfo.avatar" :size="40"/>
-                    </div>
-                </template>
-                    <el-menu-item index="user-home" @click="toMyHomePage">
-                    <i class="iconfont icon-a-collection"></i>
-                    <span>我的创作</span>
-                </el-menu-item>
-                <el-menu-item index="user-profile" @click="toProfile">
-                    <i class="iconfont icon-zhanghu"></i>
-                    <span>账户设置</span>
-                </el-menu-item>
-                <el-menu-item index="member-recharge" @click="toMemberRecharge">
-                    <i class="iconfont icon-dingyue"></i>
-                    <span>订阅管理</span>
-                </el-menu-item>
-                <el-menu-item index="user-logout" @click="logout">
-                    <i class="iconfont icon-tuichudenglu-"></i>
-                    <span>退出登陆</span>
-                </el-menu-item>
-                <el-menu-item index="contact-us" @click="contactUs">
-                    <i class="iconfont icon-lianxiwomen1"></i>
-                    <span>联系我们</span>
-                </el-menu-item>
-            </el-submenu>
-        </el-menu>
-  
-      
+                <!-- 用户头像 -->
+                <img :src="userInfo && userInfo.avatar" :alt="userInfo && userInfo.name" class="user-avatar" />
+              </div>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a @click.prevent="toMyHomePage(); closeSubmenu();" class="dropdown-item">
+                <i class="iconfont icon-a-collection"></i>
+                <span>我的创作</span>
+              </a></li>
+              <li><a @click.prevent="toProfile(); closeSubmenu();" class="dropdown-item">
+                <i class="iconfont icon-zhanghu"></i>
+                <span>账户设置</span>
+              </a></li>
+              <li><a @click.prevent="toMemberRecharge(); closeSubmenu();" class="dropdown-item">
+                <i class="iconfont icon-dingyue"></i>
+                <span>订阅管理</span>
+              </a></li>
+              <li><a @click.prevent="logout(); closeSubmenu();" class="dropdown-item">
+                <i class="iconfont icon-tuichudenglu-"></i>
+                <span>退出登陆</span>
+              </a></li>
+              <li><a @click.prevent="contactUs(); closeSubmenu();" class="dropdown-item">
+                <i class="iconfont icon-lianxiwomen1"></i>
+                <span>联系我们</span>
+              </a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </nav>
   </div>
 </template>
 
@@ -117,30 +112,69 @@
 import {mapState} from "vuex"
 
 export default {
-     data(){
+    data(){
         return{ 
           logoUrl:require('../assets/logo/logo.png'),
             userid:localStorage.getItem("id"),
             searchValue:'',
             userPoints: 0, // 用户积分
             showMemberDialog: false, // 是否显示会员信息对话框
+            activeSubmenu: null, // 当前激活的子菜单
+            isScrolled: false, // 是否已滚动
         }
     },
-    computed:mapState([
-        "userInfo","isLogin","fansArr","attentionArr","searchArry"
-    ]),
- async mounted(){
-    await this.tokenFail();
-    await this.getUser();
-    await this.getCollectionBook();
-    await this.getLikeBook();
-    await this.getCollectionIllus();
-    await this.getLikeIllus();
-    await this.getAttention();
-    await this.getFans();
+    computed:{
+        ...mapState([
+            "userInfo","isLogin","fansArr","attentionArr","searchArry"
+        ])
+    },
+    async mounted(){
+        await this.tokenFail();
+        await this.getUser();
+        await this.getCollectionBook();
+        await this.getLikeBook();
+        await this.getCollectionIllus();
+        await this.getLikeIllus();
+        await this.getAttention();
+        await this.getFans();
+        
+        // 点击外部关闭子菜单
+        document.addEventListener('click', this.handleClickOutside);
+        
+        // 监听滚动事件
+        window.addEventListener('scroll', this.handleScroll);
+        this.handleScroll(); // 初始化检查
+        
+        // 监听路由变化，关闭下拉菜单
+        this.$watch('$route', () => {
+            this.closeSubmenu();
+        });
+    },
+    beforeDestroy() {
+        document.removeEventListener('click', this.handleClickOutside);
+        window.removeEventListener('scroll', this.handleScroll);
     },
    
     methods:{
+        handleScroll() {
+            this.isScrolled = window.scrollY > 50;
+        },
+        toggleSubmenu(menuName) {
+            // 如果点击的是当前已打开的菜单，则关闭；否则关闭其他菜单并打开当前菜单
+            if (this.activeSubmenu === menuName) {
+                this.activeSubmenu = null;
+            } else {
+                this.activeSubmenu = menuName;
+            }
+        },
+        closeSubmenu() {
+            this.activeSubmenu = null;
+        },
+        handleClickOutside(event) {
+            if (!this.$el.contains(event.target)) {
+                this.closeSubmenu();
+            }
+        },
         showMask(){
            this.$store.commit("showMask")  
         },
@@ -181,9 +215,6 @@ export default {
           }else{
             this.$router.push("/books")
           }
-    
-     
-
         },
 
         tokenFail(){
@@ -370,713 +401,343 @@ export default {
 </script>
 
 <style scoped>
-/* 菜单高度 */
-.el-menu--horizontal {
-  --el-menu-horizontal-height: 60px;
-  display: flex;
-  align-items: center !important;
-  justify-content: space-between;
-  padding: 0 80px;
-
-  overflow: visible !important;
-  position: relative;
-  box-sizing: border-box !important;
+/* 导航栏包装器 - 固定定位 */
+.navigation-wrap {
+	position: fixed;
+	width: 100%;
+	top: 0;
+	left: 0;
+	z-index: 1000;
+	-webkit-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
 }
 
-/* Logo和中间菜单项容器 */
-.el-menu--horizontal > .el-menu-item:first-child,
-.el-menu--horizontal > .el-menu-item:nth-child(n+2):not(.search-item):not(.login-item):not(.points-pro-item),
-.el-menu--horizontal > .el-submenu:nth-child(n):not(.user-menu-item) {
-  order: 1;
+/* 导航栏主体 */
+.start-header {
+	opacity: 1;
+	transform: translateY(0);
+	padding: 20px 0;
+	box-shadow: 0 10px 30px 0 rgba(138, 155, 165, 0.15);
+	-webkit-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
+	background-color: #fff;
 }
 
-/* 搜索、登录、用户菜单居右 */
-.el-menu--horizontal > .el-menu-item.search-item {
-  order: 2;
-  margin-left: 100px !important;
+.start-header.scroll-on {
+	box-shadow: 0 5px 10px 0 rgba(138, 155, 165, 0.15);
+	padding: 10px 0;
+	-webkit-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
 }
 
-.el-menu--horizontal > .el-menu-item.login-item {
-  order: 2;
-  margin-left: auto;
+.start-header.scroll-on .navbar-brand img {
+	height: 24px;
+	-webkit-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
 }
 
-.el-menu--horizontal > .el-submenu.user-menu-item {
-  order: 2;
-  margin-left: auto;
-  margin-right: 0;
+.navbar {
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 }
 
-.navigation >>> .el-submenu {
-  min-width: 120px;  /* 或其他值 */
+.container-fluid {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 30px;
 }
+
+.navbar-header {
+	display: flex;
+	align-items: center;
+}
+
+.navbar-brand {
+	cursor: pointer;
+	padding: 0;
+	margin-right: 30px;
+}
+
+.navbar-brand img {
+	height: 28px;
+	width: auto;
+	display: block;
+	filter: brightness(0) saturate(100%) invert(40%) sepia(60%) saturate(2000%) hue-rotate(250deg) brightness(0.9) contrast(1.2);
+	-webkit-transition: all 0.3s ease-out;
+	transition: all 0.3s ease-out;
+}
+
+.navbar-nav {
+	display: flex;
+	align-items: center;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	gap: 30px;
+}
+
+.nav-item {
+	position: relative;
+	transition: all 200ms linear;
+}
+
+.nav-link {
+	color: #212121 !important;
+	font-weight: 500;
+	transition: all 200ms linear;
+	position: relative;
+	padding: 5px 15px !important;
+	display: inline-block;
+	text-decoration: none;
+}
+
+.nav-item:hover .nav-link {
+	color: #8167a9 !important;
+}
+
+.nav-item.active .nav-link {
+	color: #777 !important;
+}
+
+.nav-item:after {
+	display: none;
+}
+
+/* 下拉菜单 */
+.nav-item .dropdown-menu {
+	transform: translate3d(0, 10px, 0);
+	visibility: hidden;
+	opacity: 0;
+	max-height: 0;
+	display: block;
+	padding: 0;
+	margin: 0;
+	transition: all 200ms linear;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	min-width: 180px;
+	z-index: 1000;
+}
+
+.nav-item.show .dropdown-menu {
+	opacity: 1;
+	visibility: visible;
+	max-height: 999px;
+	transform: translate3d(0, 0px, 0);
+}
+
+.dropdown-menu {
+	padding: 10px !important;
+	margin: 0;
+	font-size: 13px;
+	letter-spacing: 1px;
+	color: #212121;
+	background-color: #fcfaff;
+	border: none;
+	border-radius: 3px;
+	box-shadow: 0 5px 10px 0 rgba(138, 155, 165, 0.15);
+	transition: all 200ms linear;
+	list-style: none;
+}
+
+.dropdown-toggle::after {
+	display: none;
+}
+
+.dropdown-item {
+	padding: 3px 15px;
+	color: #212121;
+	border-radius: 2px;
+	transition: all 200ms linear;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+	color: #fff;
+	background-color: rgba(129, 103, 169, 0.6);
+}
+
+.dropdown-item i {
+	font-size: 16px;
+}
+
 /* 搜索框样式 */
 .search-item {
-  position: relative;
-  margin-right: 10px;
+	margin-left: auto;
+	margin-right: 15px;
 }
 
-/* 搜索框菜单项垂直居中 */
-.navigation >>> .el-menu-item.search-item {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* 搜索框选中时不改变背景色 */
-.navigation >>> .el-menu-item.search-item.is-active,
-.navigation >>> .el-menu-item.search-item:hover {
-  background-color: transparent !important;
-}
-
-/* 搜索框容器 */
 .search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
+	display: flex;
+	align-items: center;
+	position: relative;
+	background-color: #f5f5f5;
+	border-radius: 4px;
+	padding: 8px 12px;
+	width: 250px;
+	border: 1px solid #e0e0e0;
 }
 
-/* 搜索图标样式 - 居左，垂直居中 */
 .search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 16px;
-  pointer-events: none;
-  z-index: 1;
+	color: #212121;
+	margin-right: 8px;
+	font-size: 16px;
 }
 
-/* Logo 样式 */
-.navigation >>> .el-menu-item.logo-item {
-  cursor: pointer;
-  
-}
-
-.navigation >>> .el-menu-item.logo-item.is-active,
-.navigation >>> .el-menu-item.logo-item:hover {
-  background-color: transparent !important;
-}
-
-.logo-image {
-  height: 36px;
-  width: auto;
-  max-width: 120px;
-  transition: opacity 0.3s;
-}
-
-.logo-image:hover {
-  opacity: 0.8;
-}
 .search {
-  width: 200px;
-  height: 32px;
-  padding: 0 15px 0 40px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.search::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+	background: transparent !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+	color: #212121;
+	font-size: 14px;
+	width: 100%;
+	padding: 0;
+	margin: 0;
 }
 
 .search:focus {
-  width: 240px;
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.5);
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
 }
 
-/* 登录按钮菜单项垂直居中 */
-.navigation >>> .el-menu-item.login-item {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+.search::placeholder {
+	color: #999;
 }
 
-/* 登录按钮样式优化 - 简洁美观 */
-.login-item .loginBt {
-  padding: 8px 20px;
-  height: 36px;
-  line-height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 18px;
-  color: #fff;
-  background-color: rgba(255, 255, 255, 0.15);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+
+
+/* 用户菜单样式 */
+.user-menu-trigger {
+	padding: 5px 10px !important;
 }
 
-.login-item:hover .loginBt {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* 登录按钮选中时不改变背景色 */
-.navigation >>> .el-menu-item.login-item.is-active,
-.navigation >>> .el-menu-item.login-item:hover {
-  background-color: transparent !important;
-}
-
-/* 更具体的选择器，确保覆盖所有情况 */
-.el-menu--horizontal > .el-menu-item.login-item.is-active,
-.el-menu--horizontal > .el-menu-item.login-item:hover {
-  background-color: transparent !important;
-}
-
-/* 用户菜单样式优化 */
-.user-menu-item {
-  margin-left: 10px;
-}
-
-/* 确保菜单容器固定高度，子菜单不影响高度 */
-.navigation {
-  height: 60px !important;
-  overflow: visible !important;
-  position: relative;
-}
-
-.navigation >>> .el-menu--horizontal {
-  height: 60px !important;
-  max-height: 60px !important;
-  overflow: visible !important;
-}
-
-/* 确保所有菜单项和子菜单标题高度固定且对齐 */
-.navigation >>> .el-menu-item:not(.search-item):not(.login-item),
-.navigation >>> .el-submenu__title {
-  height: 60px !important;
-  line-height: 60px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 20px !important;
-  margin: 0 !important;
-  vertical-align: middle !important;
-  box-sizing: border-box !important;
-}
-
-/* 确保子菜单标题内的文字垂直居中 */
-.navigation >>> .el-submenu__title > span {
-  display: inline-block !important;
-  vertical-align: middle !important;
-  line-height: normal !important;
-}
-
-/* search-item 单独设置，允许自定义 margin */
-.navigation >>> .el-menu-item.search-item {
-  height: 60px !important;
-  line-height: 60px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  vertical-align: top !important;
-  box-sizing: border-box !important;
-}
-
-/* 确保菜单项内容垂直居中 */
-.navigation >>> .el-menu-item > *,
-.navigation >>> .el-submenu__title > * {
-  vertical-align: middle !important;
-}
-
-/* 确保子菜单标题内的内容对齐 */
-.navigation >>> .el-submenu__title {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* 确保子菜单弹出层不影响菜单高度 */
-.navigation >>> .el-submenu__popper {
-  z-index: 9999 !important;
-  position: absolute !important;
-}
-
-.navigation >>> .el-menu--popup {
-  position: absolute !important;
-}
-
-.user-menu-item .el-avatar {
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.user-menu-item:hover .el-avatar {
-  transform: scale(1.1);
-}
-
-/* 用户头部包装器 - 包含积分框和头像 */
 .user-header-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 }
 
-/* 用户头部包装器 - 包含积分框和头像 */
-.user-header-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 积分和Pro显示框样式 */
+/* 积分和Pro显示框 */
 .points-pro-box {
-  cursor: default !important;
-  pointer-events: auto !important;
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  gap: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	background-color: #f5f5f5;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background-color 0.3s;
+	border: 1px solid #e0e0e0;
+}
+
+.points-pro-box:hover {
+	background-color: #eeeeee;
 }
 
 .points-section {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
 
 .points-icon-small {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
+	width: 16px;
+	height: 16px;
 }
 
 .points-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  line-height: 1;
+	color: #212121;
+	font-size: 14px;
+	font-weight: 500;
 }
 
 .divider {
-  width: 1px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.3);
+	width: 1px;
+	height: 16px;
+	background-color: #e0e0e0;
 }
 
 .pro-section {
-  display: flex;
-  align-items: center;
+	display: flex;
+	align-items: center;
 }
 
 .pro-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffd04b;
-  line-height: 1;
-  letter-spacing: 0.5px;
-}
-
-/* 会员信息对话框样式 */
-.member-info-content {
-  padding: 20px 0;
-}
-
-.member-info-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 20px;
-}
-
-.member-avatar {
-  flex-shrink: 0;
-}
-
-.member-basic-info {
-  flex: 1;
-}
-
-.member-basic-info h3 {
-  margin: 0 0 10px 0;
-  font-size: 20px;
-  color: #303133;
-}
-
-.member-badge {
-  display: inline-block;
-}
-
-.pro-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  background: linear-gradient(135deg, #ffd04b 0%, #ffb347 100%);
-  color: #fff;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.member-points-info {
-  margin-bottom: 20px;
-}
-
-.points-display {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.points-icon-large {
-  width: 48px;
-  height: 48px;
-}
-
-.points-details {
-  flex: 1;
-}
-
-.points-label {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.points-number {
-  font-size: 32px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.points-tip {
-  font-size: 14px;
-  color: #606266;
-  text-align: center;
-}
-
-.points-tip img {
-  width: 14px;
-  height: 14px;
-  vertical-align: middle;
-  margin: 0 2px;
-}
-
-.member-actions {
-  margin-top: 20px;
-}
-
-/* 会员信息对话框样式 */
-.member-info-content {
-  padding: 20px 0;
-}
-
-.member-info-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 20px;
-}
-
-.member-avatar {
-  flex-shrink: 0;
-}
-
-.member-basic-info {
-  flex: 1;
-}
-
-.member-basic-info h3 {
-  margin: 0 0 10px 0;
-  font-size: 20px;
-  color: #303133;
-}
-
-.member-badge {
-  display: inline-block;
-}
-
-.pro-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  background: linear-gradient(135deg, #ffd04b 0%, #ffb347 100%);
-  color: #fff;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.member-points-info {
-  margin-bottom: 20px;
-}
-
-.points-display {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.points-icon-large {
-  width: 48px;
-  height: 48px;
-}
-
-.points-details {
-  flex: 1;
-}
-
-.points-label {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.points-number {
-  font-size: 32px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.points-tip {
-  font-size: 14px;
-  color: #606266;
-  text-align: center;
-}
-
-.points-tip img {
-  width: 14px;
-  height: 14px;
-  vertical-align: middle;
-  margin: 0 2px;
-}
-
-.member-actions {
-  margin-top: 20px;
-}
-
-/* 用户菜单选中时不改变背景色 */
-.navigation >>> .el-submenu.user-menu-item.is-active .el-submenu__title,
-.navigation >>> .el-submenu.user-menu-item .el-submenu__title:hover {
-  background-color: transparent !important;
-}
-
-/* 用户菜单下拉项样式：图标和文字间距、大小 */
-.navigation >>> .el-menu--popup .el-menu-item {
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 20px !important;
-  height: 40px !important;
-  line-height: 40px !important;
-}
-
-.navigation >>> .el-menu--popup .el-menu-item i.iconfont {
-  font-size: 16px !important;
-  margin-right: 12px !important;
-  width: 16px !important;
-  text-align: center !important;
-  flex-shrink: 0 !important;
-  display: inline-block !important;
-  color: ffffff !important; /* 图标颜色，可以根据需要修改 */
-}
-
-/* 更具体的选择器，确保样式生效 */
-.navigation >>> .el-menu--popup .el-menu-item > i.iconfont {
-  margin-right: 12px !important;
-  color: #ffffff !important; /* 图标颜色 */
-}
-
-/* 全局样式，确保覆盖 Element UI 默认样式 */
-.el-menu--popup .el-menu-item i.iconfont {
-  margin-right: 12px !important;
-  color: #ffffff !important; /* 图标颜色 */
-}
-
-.navigation >>> .el-menu--popup .el-menu-item span {
-  font-size: 14px !important;
-  flex: 1 !important;
-}
-
-/* 使用 gap 属性来设置间距（如果 flexbox 支持） */
-.navigation >>> .el-menu--popup .el-menu-item {
-  gap: 12px !important;
-}
-
-/* 如果 gap 不支持，使用更强制的方式 */
-.navigation >>> .el-menu--popup .el-menu-item i + span {
-  margin-left: 12px !important;
-}
-
-/* 增大 menu-item 的宽度 */
-.navigation >>> .el-menu-item:not(.logo-item):not(.search-item):not(.login-item) {
-  padding: 0 24px !important;
-  min-width: 120px;
-}
-
-
-
-/* 移除所有菜单项的底部边框 */
-.navigation >>> .el-menu-item,
-.navigation >>> .el-submenu__title {
-  border-bottom: none !important;
-}
-
-/* 移除选中菜单项的底部边框和伪元素 */
-.navigation >>> .el-menu-item.is-active {
-  border-bottom: none !important;
-}
-
-.navigation >>> .el-menu-item.is-active::after,
-.navigation >>> .el-menu-item::after {
-  display: none !important;
-  content: none !important;
-}
-
-/* 移除子菜单标题的底部边框 */
-.navigation >>> .el-submenu.is-active .el-submenu__title,
-.navigation >>> .el-submenu .el-submenu__title {
-  border-bottom: none !important;
-}
-
-.navigation >>> .el-submenu .el-submenu__title::after {
-  display: none !important;
-  content: none !important;
-}
-
-/* 修复子菜单选中时的背景高度和颜色 */
-.navigation >>> .el-submenu.is-active .el-submenu__title {
-  height: 60px !important;
-  line-height: 60px !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.navigation >>> .el-submenu .el-submenu__title:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  height: 60px !important;
-  line-height: 60px !important;
-}
-</style>
-
-<style>
-/* 全局样式：移除所有菜单项的底部边框 */
-.el-menu--horizontal > .el-menu-item {
-  border-bottom: none !important;
-}
-
-.el-menu--horizontal > .el-menu-item::after {
-  display: none !important;
-  content: none !important;
-}
-
-.el-menu--horizontal > .el-menu-item.is-active {
-  border-bottom: none !important;
-}
-
-.el-menu--horizontal > .el-menu-item.is-active::after {
-  display: none !important;
-  content: none !important;
-}
-
-.el-menu--horizontal > .el-submenu .el-submenu__title {
-  border-bottom: none !important;
-}
-
-.el-menu--horizontal > .el-submenu .el-submenu__title::after {
-  display: none !important;
-  content: none !important;
-}
-
-/* 确保子菜单标题没有白色背景 */
-.el-menu--horizontal > .el-submenu .el-submenu__title {
-  background-color: transparent !important;
-  padding: 0 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.el-menu--horizontal > .el-submenu.is-active .el-submenu__title {
-  border-bottom: none !important;
-  height: 60px !important;
-  line-height: 60px !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  padding: 0 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* 用户菜单选中时不显示背景色 */
-.el-menu--horizontal > .el-submenu.user-menu-item.is-active .el-submenu__title,
-.el-menu--horizontal > .el-submenu.user-menu-item .el-submenu__title:hover {
-  background-color: transparent !important;
-}
-
-.el-menu--horizontal > .el-submenu.is-active .el-submenu__title::after {
-  display: none !important;
-  content: none !important;
-}
-
-.el-menu--horizontal > .el-submenu .el-submenu__title:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  height: 60px !important;
-  line-height: 60px !important;
-}
-
-/* 当子菜单项被选中时，父菜单的样式 */
-.el-menu--horizontal > .el-submenu.is-opened .el-submenu__title,
-.el-menu--horizontal > .el-submenu.is-opened.is-active .el-submenu__title {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  height: 60px !important;
-  line-height: 60px !important;
-  padding: 0 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-bottom: none !important;
-}
-
-/* 确保子菜单标题内的文字垂直居中 */
-.el-menu--horizontal > .el-submenu .el-submenu__title > span {
-  display: inline-block !important;
-  vertical-align: middle !important;
-  line-height: normal !important;
-}
-
-/* 覆盖 Element UI 可能添加的白色背景 */
-.el-menu--horizontal > .el-submenu.is-opened .el-submenu__title,
-.el-menu--horizontal > .el-submenu.is-active.is-opened .el-submenu__title {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* 用户菜单下拉项图标间距 - 全局样式，确保覆盖 Element UI 默认样式 */
-.el-menu--popup .el-menu-item i.iconfont {
-  margin-right: 12px !important;
-  color: #ffffff !important; /* 图标颜色 */
-}
-
-.el-menu--popup .el-menu-item > i.iconfont {
-  margin-right: 12px !important;
-  color: #ffffff !important; /* 图标颜色 */
+	color: #8167a9;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.user-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	object-fit: cover;
+	cursor: pointer;
+}
+
+/* 响应式设计 */
+@media (max-width: 767px) {
+	.nav-item:after {
+		display: none;
+	}
+
+	.nav-item::before {
+		position: absolute;
+		display: block;
+		top: 15px;
+		left: 0;
+		width: 11px;
+		height: 1px;
+		content: "";
+		border: none;
+		background-color: #fff;
+	}
+
+	.dropdown-toggle::after {
+		position: absolute;
+		display: block;
+		top: 10px;
+		left: -23px;
+		width: 1px;
+		height: 11px;
+		content: "";
+		border: none;
+		background-color: #fff;
+		transition: all 200ms linear;
+	}
+
+	.dropdown-toggle[aria-expanded="true"]::after {
+		transform: rotate(90deg);
+		opacity: 0;
+	}
+
+	.dropdown-menu {
+		padding: 0 !important;
+		background-color: transparent;
+		box-shadow: none;
+		transition: all 200ms linear;
+	}
+
+	.nav-item.show .dropdown-menu {
+		margin-top: 10px !important;
+		margin-bottom: 20px !important;
+	}
+
+	.search-wrapper {
+		width: 150px;
+	}
 }
 </style>

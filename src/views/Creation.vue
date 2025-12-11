@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="creation-container">
      
    
-    <main>
+  
        <!-- 左侧组件列表 -->
        <section class="left">
          <left-menu />
@@ -60,7 +60,7 @@
         </el-tabs>
         
        </section>
-    </main>
+    
   </div>
 </template>
 
@@ -502,20 +502,23 @@ export default {
 <style scoped>
     
  
-  main{
-    height: 90vh;
+  .creation-container{
+    height: calc(100vh - 90px); /* 减去 TopBar(50px) 和 Footer(40px) 的高度 */
     width:100vw;
     display: flex;
-
+    margin-top: 0; /* 确保没有额外的 margin */
+    position: relative;
+    overflow-y: scroll;
   }
   .left{
-    height: 90vh;
+    height: 100%;
     width: 19.5vw;
-    left: 0;
-    top: 0;
+    position: relative;
+    flex-shrink: 0;
+    overflow: visible;
   }
   .right{
-    height: 90vh;
+    height: 100%;
     width: 14vw;
     right: 0;
     top: 0;
@@ -523,7 +526,7 @@ export default {
   .center{
     background-color: #f5f5f5; 
     width:66.5vw;
-    height:88vh;  
+    height: 100%;  
     margin:auto;
     border-radius: 4px;
     overflow-y: auto;

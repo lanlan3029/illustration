@@ -74,7 +74,7 @@ export default {
 
 .content{
   margin-top:2vh;
-  height:calc(96vh - 72px);
+  height:calc(100vh - 90px);
   display: flex;
   width:100vw;
   justify-content: space-between;

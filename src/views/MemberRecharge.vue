@@ -93,16 +93,7 @@
                 <img src="@/assets/logo/alipay.png" alt="支付宝" class="payment-logo" />
                 <span>支付宝</span>
               </div>
-              <div 
-                class="payment-method-item" 
-                :class="{ 'active': paymentMethod === 'wxpay' }"
-                @click="paymentMethod = 'wxpay'">
-                <div class="payment-radio">
-                  <i class="el-icon-check" v-if="paymentMethod === 'wxpay'"></i>
-                </div>
-                <img src="@/assets/logo/wepay.png" alt="微信支付" class="payment-logo" />
-                <span>微信支付</span>
-              </div>
+             
             </div>
           </div>
 

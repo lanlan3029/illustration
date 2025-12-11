@@ -407,7 +407,7 @@ export default {
 <style scoped>
 .container {
     width: 100%;
-    height: calc(100vh - 72px - 50px);
+    height: calc(100vh - 50px - 40px);
     padding: 20px;
     box-sizing: border-box;
     background-color: #f5f7fa;

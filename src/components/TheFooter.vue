@@ -13,11 +13,13 @@
 
 <style scoped>
 .box{
+  height:40px;
   width: 100%;
-  padding: 14px 16px;
-    background-color: #fff;
+  background-color: #fff;
   border-top: 1px solid #f0f0f0;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .box a{

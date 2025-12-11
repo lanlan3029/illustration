@@ -552,7 +552,7 @@ export default {
 
 <style scoped>
 .inspiration-library {
-    min-height: calc(100vh - 72px - 50px);
+    min-height: calc(100vh - 50px - 40px);
     background-color: #f5f7fa;
     display: flex;
     flex-direction: column;
