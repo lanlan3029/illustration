@@ -504,11 +504,11 @@ export default {
  
   .creation-container{
     height: calc(100vh - 90px); /* 减去 TopBar(50px) 和 Footer(40px) 的高度 */
-    width:100vw;
+    width:100%;
     display: flex;
     margin-top: 0; /* 确保没有额外的 margin */
     position: relative;
-    overflow-y: scroll;
+    overflow: hidden;
   }
   .left{
     height: 100%;
@@ -527,9 +527,9 @@ export default {
     background-color: #f5f5f5; 
     width:66.5vw;
     height: 100%;  
-    margin:auto;
+    margin:0 auto;
     border-radius: 4px;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -560,7 +560,8 @@ export default {
     justify-content: center;
     width: 100%;
     min-height: 100%;
-    margin-top: 32px; /* 为顶部的比例选择器留出空间 */
+    padding-top: 100px; /* 为顶部的比例选择器留出空间 */
+    box-sizing: border-box; /* 确保padding不会增加总高度 */
   }
   .content{
     position: relative;

@@ -512,11 +512,39 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       }
     },
     
-    // 跳转到角色组图页面（查看已有组图）
-    goCharacterGroupImages(characterId) {
+    // 预拉取角色下的插画，再跳转到角色组图页
+    async goCharacterGroupImages(characterId) {
       // 将角色ID保存到localStorage，供组图页面使用
       localStorage.setItem('viewCharacterId', String(characterId));
-      // 跳转到组图页面（可以创建一个新的页面，或者复用CreateGroupImages页面）
+
+      // 预先拉取 character_id 对应的插画，便于组图页直接使用
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await this.$http.get(`/ill`, {
+          params: {
+            character_id: characterId,
+            sort_param: 'createdAt',
+            sort_num: 'desc'
+          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+
+        if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
+          const illustrations = res.data.message || res.data.data || [];
+          localStorage.setItem('characterIllustrationsForView', JSON.stringify({
+            characterId,
+            illustrations
+          }));
+        } else {
+          // 若接口返回异常，仍然继续跳转
+          console.warn('获取角色关联插画失败:', res.data);
+        }
+      } catch (error) {
+        console.error('预拉取角色关联插画失败:', error);
+        // 不阻断导航
+      }
+
+      // 跳转到组图页面（复用 character-group-images 页面）
       this.$router.push({ 
         name: 'character-group-images', 
         params: { characterId: characterId } 

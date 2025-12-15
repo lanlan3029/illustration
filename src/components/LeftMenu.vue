@@ -647,7 +647,7 @@ export default {
 <style scoped>
 .container{
     width:19.5vw;
-    height:90vh;
+    height:calc(100vh - 90px);
     
 }
 .search{

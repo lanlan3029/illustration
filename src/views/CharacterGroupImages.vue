@@ -38,60 +38,52 @@
             <!-- 右侧：组图列表 -->
             <div class="right-panel">
                 <el-card class="result-card" shadow="hover">
-                    <div slot="header" class="card-header">
-                        <span>组图列表</span>
+                    <div v-if="loading" class="result-loading">
+                        <i class="el-icon-loading"></i>
+                        <p>加载中...</p>
                     </div>
-                    <div class="result-content">
-                        <div v-if="loading" class="result-loading">
-                            <i class="el-icon-loading"></i>
-                            <p>加载中...</p>
-                        </div>
-                        <div v-else-if="groupImages.length === 0" class="result-placeholder">
-                            <i class="el-icon-picture-outline"></i>
-                            <p>该角色还没有组图</p>
-                            <el-link type="primary" @click="goCreateGroupImages">创建组图</el-link>
-                        </div>
-                        <div v-else class="group-images-list">
-                            <div 
-                                v-for="(group, groupIndex) in groupImages" 
-                                :key="groupIndex"
-                                class="group-image-item">
-                                <div class="group-header">
-                                    <h3>{{ group.title || `组图 ${groupIndex + 1}` }}</h3>
-                                    <div class="group-meta">
-                                        <span>创建时间：{{ group.created_at || group.createdAt || '未知' }}</span>
-                                    </div>
-                                </div>
-                                <div class="group-images-grid">
-                                    <el-card 
-                                        v-for="(image, imgIndex) in group.image_urls" 
-                                        :key="imgIndex"
-                                        class="content-card"
-                                        shadow="hover">
-                                        <div class="card-image">
-                                            <el-image 
-                                                :src="getImageUrl(image)" 
-                                                fit="cover"
-                                                class="cover-image"
-                                                :preview-src-list="group.image_urls.map(img => getImageUrl(img))">
-                                                <div slot="error" class="image-slot">
-                                                    <i class="el-icon-picture-outline"></i>
-                                                </div>
-                                            </el-image>
-                                        </div>
-                                        <div class="card-content">
-                                            <h3 class="card-title">第 {{ imgIndex + 1 }} 张</h3>
-                                            <div class="card-actions">
-                                                <el-button 
-                                                    type="danger" 
-                                                    size="small" 
-                                                    @click="handleDeleteGroupImage(group, imgIndex)">
-                                                    删除
-                                                </el-button>
+                    <div v-else-if="groupImages.length === 0" class="result-placeholder">
+                        <i class="el-icon-picture-outline"></i>
+                        <p>该角色还没有组图</p>
+                        <el-link type="primary" @click="goCreateGroupImages">创建组图</el-link>
+                    </div>
+                    <div v-else class="group-images-list">
+                        <div 
+                            v-for="(group, groupIndex) in groupImages" 
+                            :key="groupIndex"
+                            class="group-image-item">
+                            <div class="group-header">
+                                <h3>{{ group.title || `组图 ${groupIndex + 1}` }}</h3>
+                            </div>
+                            <div class="group-images-grid">
+                                <el-card 
+                                    v-for="(image, imgIndex) in group.image_urls" 
+                                    :key="imgIndex"
+                                    class="content-card"
+                                    shadow="hover">
+                                    <div class="card-image">
+                                        <el-image 
+                                            :src="getImageUrl(image)" 
+                                            fit="cover"
+                                            class="cover-image"
+                                            :preview-src-list="group.image_urls.map(img => getImageUrl(img))">
+                                            <div slot="error" class="image-slot">
+                                                <i class="el-icon-picture-outline"></i>
                                             </div>
+                                        </el-image>
+                                    </div>
+                                    <div class="card-content">
+                                        <h3 class="card-title">第 {{ imgIndex + 1 }} 张</h3>
+                                        <div class="card-actions">
+                                            <el-button 
+                                                type="danger" 
+                                                size="small" 
+                                                @click="handleDeleteGroupImage(group, imgIndex)">
+                                                删除
+                                            </el-button>
                                         </div>
-                                    </el-card>
-                                </div>
+                                    </div>
+                                </el-card>
                             </div>
                         </div>
                     </div>
@@ -203,83 +195,73 @@ export default {
             }
         },
         
-        // 获取组图列表（通过 characterGroupImage 模型的 character_id 字段查询）
+        // 获取组图/插画列表：优先使用预拉取缓存，否则按 character_id 拉取插画
         async getGroupImages(characterId) {
             try {
-                // 使用角色组图接口，后端会通过 characterGroupImage 模型的 character_id 字段查询
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/character/${characterId}/group-images`
-                    : `/character/${characterId}/group-images`;
-                
-                const response = await this.$http.get(apiUrl, {
-                    headers: {
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                // 1) 先尝试使用 MyHomePage 预拉取的缓存
+                const cached = localStorage.getItem('characterIllustrationsForView');
+                if (cached) {
+                    const { characterId: cachedId, illustrations } = JSON.parse(cached);
+                    if (cachedId && String(cachedId) === String(characterId) && Array.isArray(illustrations) && illustrations.length) {
+                        const filtered = this.filterByCharacterId(illustrations, characterId);
+                        if (filtered.length) {
+                        this.groupImages = [{
+                            title: '角色组图',
+                            created_at: '',
+                            image_urls: filtered.map(img => this.pickImageUrl(img)),
+                            image_ids: filtered.map(img => img._id || img.id).filter(Boolean)
+                        }];
+                        // 走缓存直接返回
+                        return;
                     }
+                    }
+                }
+
+                // 2) 缓存不存在则按 character_id 拉取插画
+                const token = localStorage.getItem('token') || '';
+                const res = await this.$http.get('/ill', {
+                    params: {
+                        character_id: characterId,
+                        sort_param: 'createdAt',
+                        sort_num: 'desc'
+                    },
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
-                
-                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-                    // 获取组图数据（从 characterGroupImage 模型返回的数据）
-                    let groupImagesData = response.data.data || response.data.message || response.data.list || [];
-                    
-                    // 确保每个组图对象都有 image_urls 数组
-                    this.groupImages = groupImagesData.map(group => {
-                        // 如果组图对象中已经有 image_urls，直接使用
-                        if (group.image_urls && Array.isArray(group.image_urls) && group.image_urls.length > 0) {
-                            return {
-                                ...group,
-                                image_urls: group.image_urls,
-                                image_ids: group.image_ids || group.image_ids || []
-                            };
-                        }
-                        
-                        // 如果组图对象中有 images 字段，转换为 image_urls
-                        if (group.images && Array.isArray(group.images) && group.images.length > 0) {
-                            return {
-                                ...group,
-                                image_urls: group.images,
-                                image_ids: group.image_ids || []
-                            };
-                        }
-                        
-                        // 如果组图对象中有单个 image_url，转换为数组
-                        if (group.image_url) {
-                            return {
-                                ...group,
-                                image_urls: [group.image_url],
-                                image_ids: group.image_id ? [group.image_id] : []
-                            };
-                        }
-                        
-                        // 如果组图对象中有 content 字段（可能是数组或单个值）
-                        if (group.content) {
-                            const contentArray = Array.isArray(group.content) ? group.content : [group.content];
-                            return {
-                                ...group,
-                                image_urls: contentArray,
-                                image_ids: group.image_ids || []
-                            };
-                        }
-                        
-                        // 默认返回空数组
-                        return {
-                            ...group,
-                            image_urls: [],
-                            image_ids: []
-                        };
-                    }).filter(group => group.image_urls.length > 0); // 过滤掉没有图片的组图
-                    
-                    console.log('获取到的组图数据:', this.groupImages);
-                    console.log('原始响应数据:', response.data);
+
+                if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
+                    const illustrations = res.data.message || res.data.data || [];
+                    const filtered = this.filterByCharacterId(illustrations, characterId);
+                    this.groupImages = [{
+                        title: '角色插画',
+                        created_at: '',
+                        image_urls: filtered.map(img => this.pickImageUrl(img)),
+                        image_ids: filtered.map(img => img._id || img.id).filter(Boolean)
+                    }].filter(group => group.image_urls.length > 0);
                 } else {
-                    console.warn('获取组图列表响应格式异常:', response.data);
+                    console.warn('获取角色关联插画失败:', res.data);
                     this.groupImages = [];
                 }
             } catch (error) {
-                console.error('获取组图列表失败:', error);
-                console.error('错误详情:', error.response?.data);
-                this.$message.error('获取组图列表失败');
+                console.error('获取角色关联插画失败:', error);
+                this.$message.error('获取角色插画失败');
                 this.groupImages = [];
             }
+        },
+
+        // 兼容多种插画字段，提取图片 URL
+        pickImageUrl(img) {
+            if (!img) return '';
+            const val = img.url || img.image_url || img.content || img.picture || img.image || img;
+            return this.getImageUrl(val);
+        },
+
+        // 安全过滤：只保留 character_id 匹配的插画
+        filterByCharacterId(list, characterId) {
+            if (!characterId) return list || [];
+            return (list || []).filter(item => {
+                const cid = item.character_id || item.characterId || item.character || '';
+                return String(cid) === String(characterId);
+            });
         },
         
         // 处理图片URL
@@ -530,7 +512,7 @@ export default {
 }
 
 .group-image-item {
-    border: 1px solid #ebeef5;
+    
     border-radius: 8px;
     padding: 20px;
     background-color: #fff;
@@ -570,24 +552,17 @@ export default {
 }
 
 .card-image {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
     position: relative;
     width: 100%;
-    height: 200px;
-    overflow: hidden;
+    padding-top: 75%; /* 4:3 比例 */
     border-radius: 4px;
     background-color: #fafafa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
 }
 
 .cover-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;

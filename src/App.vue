@@ -57,9 +57,9 @@ html, body{
 }
 
 .app-main{
-    flex: 1 0 auto; /* 让主体根据内容自然增长 */
+    flex: 1; /* 占据剩余空间 */
     width: 100%;
-    overflow: visible; /* 由页面整体滚动，避免表格被裁切 */
+    overflow: hidden;
     padding-top: 50px; /* 为固定导航栏留出空间（TopBar高度50px） */
     transition: padding-top 0.3s ease-out; /* 与导航栏滚动效果同步 */
 }

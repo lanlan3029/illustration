@@ -52,8 +52,8 @@
                <div class="data">
               <span class="name">{{item.title}}</span>
               <div class="icon">
-                <span v-if="likeBookArr.includes(item._id)"><i   style="color:#F489B5" class="iconfont icon-aixin1"></i></span>
-                <span v-else class="iconfont icon-aixin"><i @click="likeBookFun(item._id)" ></i></span></div>
+                <span v-if="collectBookArr.includes(item._id)"><i style="color:#FFd301" class="iconfont icon-shoucang1"></i></span>
+                <span v-else class="iconfont icon-shoucang"><i @click="collectBookFun(item._id)" ></i></span></div>
             </div>
             </div>
           </el-card>
@@ -180,8 +180,8 @@ export default {
 
  
 
-    //点击喜欢绘本
-    likeBookFun(id) {
+    //点击收藏绘本
+    collectBookFun(id) {
       this.$http
         .post(`/user/like/`+id,{ownerid:this.userid,type:"book",likeid:id}
         ,{
@@ -192,11 +192,15 @@ export default {
         .then((response) => {
           console.log(response)
           if (response.data.desc === "success") {
-              //把该插画ID添加到用户已收藏插画数组
-              this.$store.commit("likeBook",id)
+              //把该绘本ID添加到用户已收藏绘本数组
+              this.$store.commit("collectBook",id)
+              this.$message.success('收藏成功');
           } 
         })
-        .catch((error) => console.log(error));
+        .catch((error) => {
+          console.error('收藏失败:', error);
+          this.$message.error('收藏失败，请重试');
+        });
     },
 
     //搜索绘本
@@ -323,6 +327,7 @@ justify-content: space-between;
 color:#606266;
 align-items: center;
 overflow: hidden;
+margin-top:8px;
   
 }
 .data .name{

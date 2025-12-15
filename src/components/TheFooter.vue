@@ -15,7 +15,7 @@
 .box{
   height:40px;
   width: 100%;
-  background-color: #fff;
+    background-color: #fff;
   border-top: 1px solid #f0f0f0;
   display: flex;
   align-items: center;

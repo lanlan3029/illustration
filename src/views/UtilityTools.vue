@@ -1,8 +1,8 @@
 <template>
   <div class="utility-tools-container">
     <div class="header">
-      <h1 class="page-title">图像分割工具</h1>
-      <p class="page-description">智能抠图，自动分离图片主体和背景</p>
+      <h1 class="page-title">智能抠图</h1>
+      <p class="page-description">请上传主体清晰的图片</p>
     </div>
 
     <div class="tool-content">

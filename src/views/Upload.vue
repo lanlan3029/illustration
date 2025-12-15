@@ -31,17 +31,18 @@ export default {
 <style scoped>
 .container{
     width:100vw;
-    height:90vh;
+    height:calc(100vh - 90px);
     padding:14vw;      
 }
 .upload{
-    width:72vw;
+    width:50vw;
     background-color: #fff;
     list-style: none;
     display: flex;
     padding:1vw;
      justify-content: space-between;
     padding:2vw;
+    margin: 0 auto;
 }
 .upload a{
     text-decoration: none;

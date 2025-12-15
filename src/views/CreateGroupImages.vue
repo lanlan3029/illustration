@@ -124,24 +124,24 @@
                         </div>
                         <el-scrollbar v-if="filteredResultImages.length > 0 && !processing" class="result-scrollbar">
                             <div class="result-images">
-                                <el-card 
-                                v-for="(image, index) in filteredResultImages" 
-                                :key="`image-${index}`"
+                        <el-card 
+                        v-for="(image, index) in filteredResultImages" 
+                        :key="`image-${image.order || index}`"
                                     class="content-card"
                                     shadow="hover">
                                     <div class="card-image">
                                 <el-image 
-                                    :src="image" 
+                            :src="image.url || image" 
                                             fit="cover"
                                             class="cover-image"
-                                    :preview-src-list="filteredResultImages">
+                            :preview-src-list="filteredResultImageUrls">
                                             <div slot="error" class="image-slot">
                                                 <i class="el-icon-picture-outline"></i>
                                             </div>
                                 </el-image>
                             </div>
                                     <div class="card-content">
-                                        <h3 class="card-title"> 第 {{ index + 1 }} 张</h3>
+                                <h3 class="card-title">{{ characterTitle }} - 第 {{ getDisplayOrder(image, index) }} 张</h3>
                                         <div class="card-actions">
                                             <el-button 
                                                 type="primary" 
@@ -180,6 +180,8 @@ export default {
             
             // 生成结果
             resultImages: [],
+            // 角色名称（用于生成标题）
+            characterName: localStorage.getItem('lastCharacterName') || '',
             
             // API配置
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
@@ -199,6 +201,14 @@ export default {
         // 过滤掉已收集的插画（现在直接从resultImages中删除，所以直接返回resultImages）
         filteredResultImages() {
             return this.resultImages || [];
+        },
+        // 仅用于预览的图片URL数组
+        filteredResultImageUrls() {
+            return (this.resultImages || []).map(img => img.url || img);
+        },
+        // 角色标题前缀
+        characterTitle() {
+            return this.characterName || '组图插画';
         }
     },
     mounted() {
@@ -252,12 +262,16 @@ export default {
                         this.$set(this, 'referenceImageUrl', imageUrl);
                         this.referenceFile = null;
                         
-                        // 保存角色ID，用于后续保存组图
-                        if (characterData.id) {
-                            localStorage.setItem('lastCharacterId', String(characterData.id));
+                        // 保存角色ID（兼容 id / _id），用于后续保存组图
+                        const characterId = characterData.id || characterData._id;
+                        if (characterId) {
+                            localStorage.setItem('lastCharacterId', String(characterId));
                         }
-                        
-                      
+                        // 保存角色名称
+                        if (characterData.character_name || characterData.name) {
+                            this.characterName = characterData.character_name || characterData.name;
+                            localStorage.setItem('lastCharacterName', this.characterName);
+                        }
                     }
                 } catch (error) {
                     console.error('解析角色信息失败:', error);
@@ -287,106 +301,18 @@ export default {
                 if (savedImages) {
                     const images = JSON.parse(savedImages);
                     if (Array.isArray(images) && images.length > 0) {
-                        this.resultImages = images;
+                        // 兼容历史数据（字符串数组），统一转换为对象数组并保留原始顺序
+                        this.resultImages = images.map((img, idx) => {
+                            if (typeof img === 'string') {
+                                return { url: img, order: idx + 1 };
+                            }
+                            return { url: img.url || img, order: img.order || idx + 1 };
+                        });
                         console.log('从localStorage恢复组图，共', images.length, '张');
                     }
                 }
             } catch (error) {
                 console.error('从localStorage恢复组图失败:', error);
-            }
-        },
-        
-        // 检查用户积分是否足够
-        async checkUserPoints() {
-      
-            
-            try {
-                const userId = localStorage.getItem('id');
-                const token = localStorage.getItem('token');
-                
-                if (!userId || !token) {
-                    return false;
-                }
-                
-                // 计算需要的积分（每个prompt生成一张图片，每张2积分）
-                const validPrompts = this.prompts.filter(p => p && p.trim());
-                const requiredPoints = validPrompts.length * 2;
-                
-                // 获取用户积分
-                const response = await this.$http.get(`/user/${userId}`, {
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-                
-                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-                    const userData = response.data.data || response.data.message || response.data;
-                    const userPoints = userData.points || userData.credits || 0;
-                    
-                    if (userPoints < requiredPoints) {
-                        this.$message.warning(`积分不足！需要 ${requiredPoints} 积分，当前只有 ${userPoints} 积分`);
-                        return false;
-                    }
-                    
-                    return true;
-                }
-                
-                return false;
-            } catch (error) {
-                console.error('检查积分失败:', error);
-                this.$message.error('检查积分失败，请稍后重试');
-                return false;
-            }
-        },
-        
-        // 扣除积分
-        async deductPoints(points) {
-            // 开发阶段不扣积分
-            // 判断开发环境：NODE_ENV 不是 production，或者 hostname 是 localhost
-            const isDevelopment = process.env.NODE_ENV !== 'production' || 
-                                  window.location.hostname === 'localhost' || 
-                                  window.location.hostname === '127.0.0.1';
-            
-            if (isDevelopment) {
-                console.log(`开发阶段：跳过扣除 ${points} 积分`);
-                return;
-            }
-            
-            try {
-                const userId = localStorage.getItem('id');
-                const token = localStorage.getItem('token');
-                
-                if (!userId || !token) {
-                    return;
-                }
-                
-                // 调用后端接口扣除积分
-                const response = await this.$http.post('/payment/deduct-points', {
-                    user_id: userId,
-                    points: points,
-                    reason: '生成图片'
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-                
-                if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-                    const userData = response.data.data || response.data.message || response.data;
-                    const remainingPoints = userData.points || userData.credits || 0;
-                    this.$message.success(`已扣除 ${points} 积分，剩余 ${remainingPoints} 积分`);
-                    
-                    // 更新store中的用户信息
-                    if (this.$store.state.userInfo) {
-                        this.$store.commit('setUserInfo', { ...this.$store.state.userInfo, points: remainingPoints });
-                    }
-                } else {
-                    console.warn('扣除积分失败:', response.data?.message);
-                }
-            } catch (error) {
-                console.error('扣除积分失败:', error);
-                // 扣除失败不影响主流程，只记录错误
             }
         },
         
@@ -479,15 +405,6 @@ export default {
             if (!this.canSubmit) {
                 return;
             }
-            
-            // 检查用户积分
-            const hasEnoughPoints = await this.checkUserPoints();
-            if (!hasEnoughPoints) {
-                this.$message.warning('积分不足，请先充值！');
-                this.$router.push('/member/recharge');
-                return;
-            }
-            
             this.processing = true;
             this.resultImages = [];
             
@@ -555,9 +472,9 @@ export default {
                     
                     // 提取图片URL数组
                     if (result.images && Array.isArray(result.images)) {
-                        this.resultImages = result.images;
+                        this.resultImages = result.images.map((img, idx) => ({ url: img, order: idx + 1 }));
                     } else if (result.image_urls && Array.isArray(result.image_urls)) {
-                        this.resultImages = result.image_urls;
+                        this.resultImages = result.image_urls.map((img, idx) => ({ url: img, order: idx + 1 }));
                     }
                     
                     // 保存生成的组图到localStorage
@@ -866,22 +783,36 @@ export default {
                 img.src = imageUrl;
             });
         },
+
+        // 保持插画序号稳定（收集后不重新计算）
+        getDisplayOrder(image, index) {
+            if (!image) return index + 1;
+            // 已有序号直接返回
+            if (image.order) return image.order;
+            // 若缺少序号，则写入一次，防止删除前面的图片后序号重置
+            const order = image._order || (index + 1);
+            this.$set(image, 'order', order);
+            return order;
+        },
         
         // 收集插画（发送URL给后端，由后端下载并保存）
         async collectIllustration(imageUrl, index) {
             try {
-                this.$message.info(`正在保存第 ${index + 1} 张插画...`);
+                const displayOrder = this.getDisplayOrder(imageUrl, index);
+                const pictureUrl = imageUrl && imageUrl.url ? imageUrl.url : imageUrl;
+                this.$message.info(`正在保存第 ${displayOrder} 张插画...`);
                 
                 // 处理URL格式
-                let pictureValue = imageUrl;
+                let pictureValue = pictureUrl;
                 
                 // 如果是相对路径，转换为完整URL
-                if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
-                    pictureValue = `https://static.kidstory.cc/${imageUrl}`;
+                if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
+                    pictureValue = `https://static.kidstory.cc/${pictureValue}`;
                 }
                 
                 // 获取角色ID
                 const characterId = localStorage.getItem('lastCharacterId') || localStorage.getItem('viewCharacterId');
+                const characterTitle = this.characterTitle;
                 
                 // 构建请求数据
                 // 后端支持三种方式：
@@ -890,8 +821,8 @@ export default {
                 // 3. URL（新增）- picture 字段为 URL 字符串（自动下载并保存）
                 const requestData = {
                     picture: pictureValue, // 使用 picture 字段，支持 URL 或 base64
-                    title: `组图插画 - 第 ${index + 1} 张`,
-                    description: `从组图创作中收集的第 ${index + 1} 张插画`,
+                    title: `${characterTitle} - 第 ${displayOrder} 张`,
+                    description: `${characterTitle} 的第 ${displayOrder} 张插画`,
                     type: 'others', // 默认类别为"其他"
                     character_id: characterId || undefined // 直接关联角色ID
                 };

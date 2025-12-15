@@ -866,7 +866,7 @@ export default {
 .info-item {
     margin-bottom: 12px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .info-item:last-child {

@@ -36,7 +36,7 @@
           </li>
 
           <li class="nav-item" :class="{ 'active': $route.path === '/utility-tools' }">
-            <router-link to="/utility-tools" class="nav-link" @click.native="closeSubmenu">实用工具</router-link>
+            <router-link to="/utility-tools" class="nav-link" @click.native="closeSubmenu">工具</router-link>
           </li>
 
           <!-- 搜索框 -->
@@ -143,11 +143,21 @@ export default {
         
         // 监听滚动事件
         window.addEventListener('scroll', this.handleScroll);
-        this.handleScroll(); // 初始化检查
+        // 延迟初始化检查，确保页面已完全加载
+        this.$nextTick(() => {
+            this.handleScroll();
+        });
         
-        // 监听路由变化，关闭下拉菜单
-        this.$watch('$route', () => {
+        // 监听路由变化，关闭下拉菜单并重置滚动状态
+        this.$watch('$route', (to) => {
             this.closeSubmenu();
+            // 如果跳转到 Creation 页面，重置滚动状态
+            if (to.path === '/creation') {
+                this.$nextTick(() => {
+                    window.scrollTo(0, 0);
+                    this.isScrolled = false;
+                });
+            }
         });
     },
     beforeDestroy() {
@@ -157,7 +167,9 @@ export default {
    
     methods:{
         handleScroll() {
-            this.isScrolled = window.scrollY > 50;
+            // 检查滚动位置，如果小于等于 0，确保 isScrolled 为 false
+            const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+            this.isScrolled = scrollY > 50;
         },
         toggleSubmenu(menuName) {
             // 如果点击的是当前已打开的菜单，则关闭；否则关闭其他菜单并打开当前菜单
@@ -407,7 +419,7 @@ export default {
 	width: 100%;
 	top: 0;
 	left: 0;
-	z-index: 1000;
+	z-index: 10000;
 	-webkit-transition: all 0.3s ease-out;
 	transition: all 0.3s ease-out;
 }
@@ -416,7 +428,9 @@ export default {
 .start-header {
 	opacity: 1;
 	transform: translateY(0);
-	padding: 20px 0;
+	height: 50px;
+	display: flex;
+	align-items: center;
 	box-shadow: 0 10px 30px 0 rgba(138, 155, 165, 0.15);
 	-webkit-transition: all 0.3s ease-out;
 	transition: all 0.3s ease-out;
@@ -424,8 +438,8 @@ export default {
 }
 
 .start-header.scroll-on {
+	height: 50px;
 	box-shadow: 0 5px 10px 0 rgba(138, 155, 165, 0.15);
-	padding: 10px 0;
 	-webkit-transition: all 0.3s ease-out;
 	transition: all 0.3s ease-out;
 }
@@ -466,7 +480,6 @@ export default {
 	height: 28px;
 	width: auto;
 	display: block;
-	filter: brightness(0) saturate(100%) invert(40%) sepia(60%) saturate(2000%) hue-rotate(250deg) brightness(0.9) contrast(1.2);
 	-webkit-transition: all 0.3s ease-out;
 	transition: all 0.3s ease-out;
 }
@@ -550,7 +563,7 @@ export default {
 }
 
 .dropdown-item {
-	padding: 3px 15px;
+	padding: 8px 16px;
 	color: #212121;
 	border-radius: 2px;
 	transition: all 200ms linear;
@@ -563,8 +576,8 @@ export default {
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-	color: #fff;
-	background-color: rgba(129, 103, 169, 0.6);
+	color: #8167a9;
+	
 }
 
 .dropdown-item i {

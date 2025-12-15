@@ -304,13 +304,13 @@ export default {
     },
 //点击收藏绘本
 collectBookFun(id) {
-      this.$http
-        .post(`/user/collect/`+id,{ownerid:this.userid,type:"book",id:id}
-        ,{
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
+   this.$http.post(`/user/collect/${id}`, {
+  type: "book"  // 只需要这个参数
+}, {
+  headers: {
+    "Authorization": "Bearer " + localStorage.getItem("token")
+  }
+})
         .then((response) => {
           console.log(response)
           if (response.data.desc === "success") {

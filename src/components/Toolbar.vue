@@ -22,7 +22,7 @@
        
             <label class="insert" @click="saveToMyIll">保存</label>
             <label class="insert" @click="deleteDraft">清空</label>
-            <label class="export" @click="AICompose">AI智能合成</label>
+            <label class="export" @click="AICompose">智能优化</label>
               
            
                           

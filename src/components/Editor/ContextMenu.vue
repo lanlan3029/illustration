@@ -170,7 +170,7 @@ export default {
     overflow: visible;
 }
 
-li{
+.contextmenu li{
     font-size: 14px;
     padding: 0 20px;
     position: relative;
@@ -183,7 +183,7 @@ li{
     box-sizing: border-box;
     cursor: pointer;
 }
-li:hover{
+.contextmenu li:hover{
     background-color: #f5f7f5;
 }
 </style>
