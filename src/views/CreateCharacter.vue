@@ -22,7 +22,7 @@
                                     :on-remove="handlePhotoRemove"
                                     :limit="1"
                                     accept="image/jpeg,image/jpg,image/png">
-                                    <div class="upload-step">1：上传照片</div>
+                                    <div class="upload-step">1：上传照片（可选）</div>
                                   
                                     <div class="el-upload__text-secondary">
                                         将文件拖到此处，或<em>点击上传</em>
@@ -32,6 +32,8 @@
                                             支持 JPG、PNG 格式，建议大小不超过 5MB
                                             <br />
                                             为保证生成效果，请上传半身照，确保人物面部清晰完整。
+                                            <br />
+                                            <span style="color: #909399;">提示：也可以不上传照片，仅使用提示词生成角色</span>
                                         </div>
                                     </template>
                                 </el-upload>
@@ -69,27 +71,17 @@
                                 <!-- 步骤2：角色信息输入 -->
                                 <div class="character-info-section">
                                     <div class="step-label">2：角色信息</div>
-                                    <el-form :model="form" label-width="100px" size="medium">
-                                        <el-form-item label="角色名称">
-                                            <el-input 
-                                                v-model="form.character_name" 
-                                                placeholder="请输入角色名称（如：魔法师、骑士等）"
-                                                clearable>
-                                            </el-input>
-                                        </el-form-item>
+                                    <prompt-fill 
+                                        v-model="form.prompt"
+                                        template-id="character-detail"
+                                        :show-template-selector="true"
+                                        :allow-custom="true">
+                                    </prompt-fill>
+                                </div>
+                                    
                                        
-                                        <el-form-item label="角色描述">
-                                            <el-input 
-                                                v-model="form.prompt" 
-                                                type="textarea"
-                                                :rows="3"
-                                                placeholder="穿背带裤的小男孩"
-                                                clearable>
-                                            </el-input>
-                                        </el-form-item>
-                                       
-                                    </el-form>
-            </div>
+                            
+            
 
                                
 
@@ -174,8 +166,13 @@
 </template>
 
 <script>
+import PromptFill from '@/components/PromptFill.vue';
+
 export default {
     name: 'CreateCharacter',
+    components: {
+        PromptFill
+    },
     data() {
         return {
             // 上传相关
@@ -227,9 +224,10 @@ export default {
     },
     computed: {
         canGenerate() {
-            // 需要：有上传的照片 + (角色名称或提示词) + 不在处理中
+            // 需要：(角色名称或提示词) + 不在处理中
+            // 照片是可选的，可以只用提示词生成
             const hasCharacterInfo = !!(this.form.character_name || this.form.prompt);
-            return !!this.photoFile && hasCharacterInfo && !this.processing;
+            return hasCharacterInfo && !this.processing;
         },
         // 获取正确的图片显示URL
         displayImageUrl() {
@@ -506,9 +504,7 @@ export default {
         // 生成最终角色
         async handleCreateCharacter() {
             if (!this.canGenerate) {
-                if (!this.photoFile) {
-                    this.$message.warning('请先上传照片');
-                } else if (!this.form.character_name && !this.form.prompt) {
+                if (!this.form.character_name && !this.form.prompt) {
                     this.$message.warning('请填写角色名称或提示词');
                 }
                 return;
@@ -530,35 +526,43 @@ export default {
                     requestData.character_name = this.form.character_name;
                 }
                 
-                // 拼接用户输入的提示词和默认提示词
+                // 拼接用户输入的提示词
                 let finalPrompt = '';
-                if (this.form.prompt && this.form.prompt.trim()) {
-                    // 如果用户输入了提示词，将默认提示词和用户提示词拼接
-                    finalPrompt = `${this.defaultPrompt} ${this.form.prompt.trim()}`;
+                if (this.photoFile) {
+                    // 如果有照片，使用默认提示词（用于图片替换）
+                    if (this.form.prompt && this.form.prompt.trim()) {
+                        finalPrompt = `${this.defaultPrompt} ${this.form.prompt.trim()}`;
                     } else {
-                    // 如果用户没有输入提示词，只使用默认提示词
-                    finalPrompt = this.defaultPrompt;
+                        finalPrompt = this.defaultPrompt;
+                    }
+                } else {
+                    // 如果没有照片，直接使用用户输入的提示词（纯文本生成）
+                    if (this.form.prompt && this.form.prompt.trim()) {
+                        finalPrompt = this.form.prompt.trim();
+                    } else {
+                        throw new Error('请填写提示词');
+                    }
                 }
                 
                 if (finalPrompt) {
                     requestData.prompt = finalPrompt;
                 }
                 
-                // 将用户上传的照片转换为Base64（压缩以减小文件大小）
-                if (!this.photoFile) {
-                    throw new Error('请先上传照片');
+                // 如果有照片，处理图片上传
+                if (this.photoFile) {
+                    // 将用户上传的照片转换为Base64（压缩以减小文件大小）
+                    const userImageBase64 = await this.fileToBase64(this.photoFile, true);
+                    
+                    // 使用默认参考图 r11.png
+                    const presetImageBase64 = await this.imageUrlToBase64(this.defaultReferenceImage, true);
+                    
+                    // 组合两张图片，传递给后端
+                    requestData.image = [
+                        userImageBase64,      // 用户上传的图片（Base64）
+                        presetImageBase64     // 脚本预设的图片（Base64）
+                    ];
                 }
-               
-                const userImageBase64 = await this.fileToBase64(this.photoFile, true);
-                
-                // 使用默认参考图 r11.png
-                const presetImageBase64 = await this.imageUrlToBase64(this.defaultReferenceImage, true);
-                
-                // 组合两张图片，传递给后端
-                requestData.image = [
-                    userImageBase64,      // 用户上传的图片（Base64）
-                    presetImageBase64     // 脚本预设的图片（Base64）
-                ];
+                // 如果没有照片，不传递 image 参数，后端将根据提示词直接生成
                 
                 // 可选：角色类型
                 if (this.form.character_type) {

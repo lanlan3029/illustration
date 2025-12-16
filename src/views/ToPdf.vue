@@ -6,7 +6,8 @@
       <div v-else v-for="(item, index) in imgToPDF" :key="index" class="item">
         <el-image :src="(`https://static.kidstory.cc/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
       </div>
-      <div  class="item">
+    
+      <div v-if="imgToPDF.length > 0" class="item">
         <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image>
       </div>
     </div>
@@ -31,6 +32,14 @@
     <el-input type="textarea" v-model="form.desc"  :autosize="{ minRows: 2, maxRows: 4 }" maxlength="200"
     show-word-limit></el-input>
   </el-form-item>
+
+  <!-- 审核与合规字段 -->
+  <el-form-item>
+    <el-checkbox v-model="form.authorizationConfirmed">
+      我确认本作品内容为原创或已获得合法授权，适合儿童阅读，对作品内容负责
+    </el-checkbox>
+  </el-form-item>
+
   <div class="btn">
    <el-button @click="downPDF" :disabled="disabled">下载PDF</el-button>
     <el-button @click="submit" type="primary">发布作品</el-button>
@@ -57,7 +66,9 @@ export default {
       form: {
           title: '',
           category: '',
-          desc:''
+          desc:'',
+          // 审核与合规字段
+          authorizationConfirmed: false
     },
     codeImg:require('../assets/images/pdfCode.png'),
     pdfBase64:''
@@ -81,32 +92,72 @@ export default {
       
     }  
     },
+    // 验证审核与合规信息
+    validateCompliance() {
+      if (!this.form.authorizationConfirmed) {
+        this.$message.warning('请确认审核与合规声明');
+        return false;
+      }
+      return true;
+    },
+    // 获取用户名
+    getUserName() {
+      const userInfo = this.$store.state.userInfo;
+      return userInfo ? (userInfo.name || userInfo.username || '用户') : '用户';
+    },
+    // 获取当前时间
+    getCurrentTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    },
     //上传绘本
     async submit(){
-     await this.getcheckedId()
-     //this.$router.push('/user/upload/submit-res/');
-     this.$http
-       .post(`/book/`,{content:this.checkedId,title:this.form.title,description:this.form.desc,type:this.form.category}
-       ,{
-         headers:{
-           "Authorization":"Bearer "+localStorage.getItem("token")
-         }
-       })
-       .then((response) => {
-         if (response.data.desc === "success") {
-          this.$router.push('/user/upload/submit-res/')        
-         } else {
-            this.$router.push({path:'/errorpage'});   
-         }
-       })
-       .catch((error) => console.log(error));
-     
+      // 验证审核与合规信息
+      if (!this.validateCompliance()) {
+        return;
+      }
+
+      await this.getcheckedId()
+      //this.$router.push('/user/upload/submit-res/');
+      this.$http
+        .post(`/book/`,{
+          content: this.checkedId,
+          title: this.form.title,
+          description: this.form.desc,
+          type: this.form.category,
+          // 提交审核与合规信息
+          compliance_checked: true
+        }
+        ,{
+          headers:{
+            "Authorization":"Bearer "+localStorage.getItem("token")
+          }
+        })
+        .then((response) => {
+          if (response.data.desc === "success") {
+           this.$router.push('/user/upload/submit-res/')        
+          } else {
+             this.$router.push({path:'/errorpage'});   
+          }
+        })
+        .catch((error) => console.log(error));
+      
     },
     draft(){
        console.log("作品已保存")
     },
 
     downPDF() {
+      // 验证审核与合规信息
+      if (!this.validateCompliance()) {
+        return;
+      }
+
       this.disabled = true;
       this.$message("正在下载，请勿重复点击");
 
@@ -217,5 +268,58 @@ padding:40px 0;
 }
 .backAdd:hover{
     background-color: #f5f6fa;
-} 
+}
+
+/* 审核与合规页面样式 */
+.compliance-page {
+  padding: 60px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compliance-content {
+  width: 100%;
+  max-width: 700px;
+}
+
+.compliance-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+  text-align: center;
+  margin-bottom: 50px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #409eff;
+}
+
+.compliance-statement {
+  background-color: #f5f7fa;
+  padding: 40px;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.compliance-statement p {
+  font-size: 18px;
+  color: #303133;
+  line-height: 2;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.signature {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e4e7ed;
+  text-align: right;
+}
+
+.signature p {
+  font-size: 14px;
+  color: #909399;
+  margin: 5px 0;
+  font-weight: normal;
+}
 </style>

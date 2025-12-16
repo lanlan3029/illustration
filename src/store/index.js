@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import { $ } from '@/utils/utils'
 import contextmenu from "./contextmenu"
 import copy from "./copy"
+import prompt from "./modules/prompt"
 
 Vue.use(Vuex)
 
@@ -205,5 +206,7 @@ export default new Vuex.Store({
 
     },
     actions: {},
-    modules: {}
+    modules: {
+        prompt
+    }
 })
