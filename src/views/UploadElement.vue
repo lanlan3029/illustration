@@ -32,7 +32,7 @@
                             <p>点击上传。上传后可预览，确认无误再提交。</p>
                         </div>
                     </div>
-                    <el-dialog :visible.sync="dialogVisible" width="520px">
+                    <el-dialog v-model="dialogVisible" width="520px">
                         <img width="100%" :src="dialogImageUrl" alt="preview">
                     </el-dialog>
                 </el-form-item>
@@ -104,6 +104,8 @@
 </template>
     
     <script>
+    import { ElMessage } from 'element-plus'
+    
     export default {
        data() {
           return {
@@ -156,11 +158,11 @@
                 localStorage.removeItem('pendingCharacterData');
               } catch (error) {
                 console.error('加载角色数据失败:', error);
-                this.$message.error('加载角色数据失败，请重新生成角色');
+                ElMessage.error('加载角色数据失败，请重新生成角色');
                 this.$router.push('/create-character');
               }
             } else {
-              this.$message.warning('未找到角色数据，请重新生成角色');
+              ElMessage.warning('未找到角色数据，请重新生成角色');
               this.$router.push('/create-character');
             }
           },
@@ -177,7 +179,7 @@
           fileChange(file){
              const isLt1M = file.size / 1024 / 1024 < 1;
              if (!isLt1M) {
-                 this.$message.error('上传图片大小不能超过 1MB!');
+                 ElMessage.error('上传图片大小不能超过 1MB!');
                  this.$refs['element-upload'].clearFiles()
              } else {
                  this.objClass.uploadHide=true;
@@ -202,7 +204,7 @@
             const hasImage = !!this.characterImageUrl;
 
             if (!hasName || !hasCategory || !hasImage) {
-              this.$message({
+              ElMessage({
                 message: '角色名称、类别和图片不能为空',
                 type: 'warning',
                 offset: '300'
@@ -285,22 +287,22 @@
 
                 if (segmentResponse.data && segmentResponse.data.code === 0) {
                   // 图像分割成功，角色已更新
-                  this.$message({ message: '角色保存成功', type: 'success' });
+                  ElMessage({ message: '角色保存成功', type: 'success' });
                   this.$router.push('/user?tab=2');
                 } else {
                   // 图像分割失败，但角色已创建，仍然提示成功
                   console.warn('图像分割更新失败，但角色已创建:', segmentResponse.data?.message);
-                  this.$message({ message: '角色保存成功', type: 'success' });
+                  ElMessage({ message: '角色保存成功', type: 'success' });
                   this.$router.push('/user?tab=2');
                 }
               } else {
                 // 如果图片不是base64，直接提示成功
-                this.$message({ message: '角色保存成功', type: 'success' });
+                ElMessage({ message: '角色保存成功', type: 'success' });
                 this.$router.push('/user?tab=2');
               }
             } catch (error) {
               console.error('保存角色失败:', error);
-              this.$message.error(error.response?.data?.message || error.message || '保存角色失败，请重试');
+              ElMessage.error(error.response?.data?.message || error.message || '保存角色失败，请重试');
             } finally {
               this.disabled = false;
             }
@@ -328,7 +330,7 @@
                     })
                     .then((response) => {
                         if (response.data.desc === "success") {
-                            this.$message({ message: '上传成功', type: 'success' })
+                            ElMessage({ message: '上传成功', type: 'success' })
                             this.$router.push('/user/upload/submit-res/');
                         } else {
                             this.$router.push({ path: '/errorpage' });
@@ -339,7 +341,7 @@
                         this.disabled = false
                     })
             } else {
-                this.$message({
+                ElMessage({
                     message: '图元、图元名称、类别不能为空',
                     type: 'warning',
                     offset: '300'
@@ -376,7 +378,7 @@
                 this.$router.push('/create-character');
               } else {
                 // 图元模式，只清除数据，留在当前页面
-                this.$message.success('已清除');
+                ElMessage.success('已清除');
               }
             }).catch(() => {
               // 用户取消删除
@@ -459,7 +461,7 @@
         line-height: 18rem !important;
     }
     /* 选择后隐藏上传框 */
-    .uploadHide >>> .el-upload { display: none; }
+    .uploadHide  :deep(.el-upload) { display: none; }
 
     @media (max-width: 1024px){
         .container{ padding:24px 16px 56px; }
@@ -475,9 +477,9 @@
         }
     }
     /* 移除输入与下拉选择阴影 */
-    .card >>> .el-input__inner,
-    .card >>> .el-textarea__inner,
-    .card >>> .el-select .el-input__inner {
+    .card  :deep(.el-input__inner),
+    .card  :deep(.el-textarea__inner),
+    .card  :deep(.el-select .el-input__inner) {
         box-shadow: none !important;
     }
     /* 角色图片预览 */

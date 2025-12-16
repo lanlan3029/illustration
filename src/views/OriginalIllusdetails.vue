@@ -50,7 +50,7 @@ import Suggestion from "../components/Suggestion.vue";
 import {mapState} from 'vuex'
 
 export default {
-  name: "Home",
+  name: "OriginalIllusDetails",
   components: {
 
    Suggestion

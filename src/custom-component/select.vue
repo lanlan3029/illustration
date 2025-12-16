@@ -8,7 +8,7 @@
 </template>
 <script>
 export default {
-  name: 'list',
+  name: 'CustomSelect',
   props: ['btns', 'value'],
   data() {
     return {

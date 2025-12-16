@@ -1,13 +1,10 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 import { $ } from '@/utils/utils'
 import contextmenu from "./contextmenu"
 import copy from "./copy"
 import prompt from "./modules/prompt"
 
-Vue.use(Vuex)
-
-export default new Vuex.Store({
+export default createStore({
     state: {
 
         ...contextmenu.state,
@@ -95,7 +92,7 @@ export default new Vuex.Store({
             curComponent.style[key] = value
         },
         setComponentData(state, componentData = []) {
-            Vue.set(state, "componentData", componentData)
+            state.componentData = componentData
         },
         setComponentImage(state, status) {
             state.curComponent.propValue = status

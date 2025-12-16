@@ -47,7 +47,8 @@ export default {
     },
     computed:{
         ...mapState([
-            "editMode"
+            "editMode",
+            "componentData"
         ])
     }, 
     mounted(){
@@ -73,7 +74,13 @@ export default {
     },
     methods:{
         handleBlur(e){
-            this.element.propValue = e.target.innerHTML
+            // 使用 store mutation 更新 propValue，而不是直接修改 props
+            const newValue = e.target.innerHTML
+            this.$emit("input", this.element, newValue)
+            // 如果 element 是当前选中的组件，也更新 store
+            if (this.$store.state.curComponent && this.$store.state.curComponent.id === this.element.id) {
+                this.$store.commit('setComponentImage', newValue)
+            }
             this.canEdit = false
             // 失焦时更新尺寸
             this.updateSize()
@@ -126,12 +133,38 @@ export default {
                 const minHeight = 22
                 
                 // 如果内容为空，使用最小尺寸
-                if (!this.element.propValue || this.element.propValue.trim() === '') {
-                    this.element.style.width = minWidth
-                    this.element.style.height = minHeight
+                // 使用 store mutation 更新 style，而不是直接修改 props
+                const newWidth = (!this.element.propValue || this.element.propValue.trim() === '') 
+                    ? minWidth 
+                    : Math.max(scrollWidth + padding, minWidth)
+                const newHeight = (!this.element.propValue || this.element.propValue.trim() === '') 
+                    ? minHeight 
+                    : Math.max(scrollHeight + padding, minHeight)
+                
+                // 如果 element 是当前选中的组件，使用 store mutation 更新
+                if (this.$store.state.curComponent && this.$store.state.curComponent.id === this.element.id) {
+                    this.$store.commit('setShapeSingStyle', { key: 'width', value: newWidth })
+                    this.$store.commit('setShapeSingStyle', { key: 'height', value: newHeight })
                 } else {
-                    this.element.style.width = Math.max(scrollWidth + padding, minWidth)
-                    this.element.style.height = Math.max(scrollHeight + padding, minHeight)
+                    // 如果不是当前组件，直接更新 element（因为它是从 store 来的引用）
+                    // 但为了符合 Vue 3 规范，我们仍然通过 mutation 更新
+                    // 找到 element 在 componentData 中的索引
+                    const componentData = this.componentData || this.$store.state.componentData || []
+                    const index = componentData.findIndex(item => item.id === this.element.id)
+                    if (index !== -1) {
+                        // 临时设置为当前组件，然后更新
+                        const originalCurComponent = this.$store.state.curComponent
+                        this.$store.commit('setCurComponent', { component: this.element, index })
+                        this.$store.commit('setShapeSingStyle', { key: 'width', value: newWidth })
+                        this.$store.commit('setShapeSingStyle', { key: 'height', value: newHeight })
+                        // 恢复原来的当前组件
+                        if (originalCurComponent) {
+                            const originalIndex = componentData.findIndex(item => item.id === originalCurComponent.id)
+                            if (originalIndex !== -1) {
+                                this.$store.commit('setCurComponent', { component: originalCurComponent, index: originalIndex })
+                            }
+                        }
+                    }
                 }
             }
         },

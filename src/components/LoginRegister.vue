@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="box">
-        <div class="close"><i class="el-icon-close"  @click="closeMask()"></i></div>
+        <div class="close"><i class="el-icon-close" @click="closeMask()"></i></div>
       <div class="left"></div>
       <div class="right">
         <ul class="title">
@@ -38,169 +38,184 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import { ref, getCurrentInstance } from 'vue'
+import { useStore } from 'vuex'
+import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
-export default{
-    data(){
-        return{
-            countLog:true,
-            count:{
-                name:"",
-                pwd:""
-            },
-            userid:"",
-            emailCount:{
-                emailName:"",
-                emailPwd:"",
-            }
+export default {
+    name: 'LoginRegister',
+    setup() {
+        const store = useStore()
+        const { proxy } = getCurrentInstance()
+        
+        const countLog = ref(true)
+        const count = ref({
+            name: "",
+            pwd: ""
+        })
+        const userid = ref("")
+        const emailCount = ref({
+            emailName: "",
+            emailPwd: "",
+        })
+        
+        const $http = proxy?.$http || axios
+        const $message = proxy?.$message || ElMessage
+        
+        const closeMask = () => {
+            store.commit("closeMask")
         }
-    },
-    computed:mapState([]),
-    methods:{
-        closeMask(){
-            this.$store.commit("closeMask") 
-             
-        },
-        countIn(){
-          this.countLog=true;
-        },
+        const countIn = () => {
+            countLog.value = true
+        }
        
         //获取用户信息
-        async getUser(){
-       try{
-        if (!this.userid) {
-            return; // 如果没有用户ID，直接返回
+        const getUser = async () => {
+            try {
+                if (!userid.value) {
+                    return // 如果没有用户ID，直接返回
+                }
+                let res = await $http.get(`/user/` + userid.value, {
+                    timeout: 10000 // 10秒超时
+                })
+                let toolUser = res.data.message
+                store.commit("setUserInfo", toolUser)
+            } catch(err) {
+                console.error('获取用户信息失败:', err)
+                // 只有网络错误或超时才显示登录框，其他错误不处理
+                if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
+                    // 网络错误或超时，不强制显示登录框
+                } else {
+                    store.commit('showMask')
+                }
+            }
         }
-        let res= await this.$http.get(`/user/`+this.userid, {
-            timeout: 10000 // 10秒超时
-        })
-        let toolUser=res.data.message;
-        this.$store.commit("setUserInfo",toolUser)
-       }catch(err){
-        console.error('获取用户信息失败:', err);
-        // 只有网络错误或超时才显示登录框，其他错误不处理
-        if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
-            // 网络错误或超时，不强制显示登录框
-        } else {
-        this.$store.commit('showMask')     
-        }
-    }
-    },
        
         //登陆
-        login(){
-          // 表单验证
-          if (!this.count.name || !this.count.pwd) {
-              this.$message({
-                  message: '请输入邮箱和密码',
-                  type: 'warning',
-                  offset: '180',
-              });
-              return;
-          }
-
-          this.$http
-        .post(`/pb/login`, {
-         email:this.count.name, 
-          password: this.count.pwd,
-        }, {
-            timeout: 15000 // 15秒超时
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            this.closeMask();
-              
-            localStorage.setItem("token", response.data.message);
-            localStorage.setItem("id", response.data.user_id);
-            this.$store.commit("hasLogin",true)  
-            this.userid=localStorage.getItem("id")
-            this.getUser(this.userid)
-          } else {
-              this.$message({
-    message: '邮箱或密码错误',
-    type: 'warning',
-    offset:'180',
-  })
-              console.log("login");
-          }
-        })
-        .catch((error) => {
-            console.error('登录错误:', error);
-            let errorMsg = '登录失败，请稍后重试';
-            if (error.code === 'ECONNABORTED') {
-                errorMsg = '请求超时，请检查网络连接';
-            } else if (error.code === 'ERR_NETWORK') {
-                errorMsg = '网络错误，请检查网络连接';
-            } else if (error.response) {
-                errorMsg = error.response.data?.message || '登录失败';
+        const login = () => {
+            // 表单验证
+            if (!count.value.name || !count.value.pwd) {
+                $message({
+                    message: '请输入邮箱和密码',
+                    type: 'warning',
+                    offset: 180,
+                })
+                return
             }
-            this.$message({
-                message: errorMsg,
-                type: 'error',
-                offset: '180',
-            });
-        });
-        },
+
+            $http
+                .post(`/pb/login`, {
+                    email: count.value.name, 
+                    password: count.value.pwd,
+                }, {
+                    timeout: 15000 // 15秒超时
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        closeMask()
+                        localStorage.setItem("token", response.data.message)
+                        localStorage.setItem("id", response.data.user_id)
+                        store.commit("hasLogin", true)
+                        userid.value = localStorage.getItem("id")
+                        getUser(userid.value)
+                    } else {
+                        $message({
+                            message: '邮箱或密码错误',
+                            type: 'warning',
+                            offset: 180,
+                        })
+                        console.log("login")
+                    }
+                })
+                .catch((error) => {
+                    console.error('登录错误:', error)
+                    let errorMsg = '登录失败，请稍后重试'
+                    if (error.code === 'ECONNABORTED') {
+                        errorMsg = '请求超时，请检查网络连接'
+                    } else if (error.code === 'ERR_NETWORK') {
+                        errorMsg = '网络错误，请检查网络连接'
+                    } else if (error.response) {
+                        errorMsg = error.response.data?.message || '登录失败'
+                    }
+                    $message({
+                        message: errorMsg,
+                        type: 'error',
+                        offset: 180,
+                    })
+                })
+        }
 
         //注册
-        register(){
-          // 表单验证
-          if (!this.emailCount.emailName || !this.emailCount.emailPwd) {
-              this.$message({
-                  message: '请输入邮箱和密码',
-                  type: 'warning',
-                  offset: '180',
-              });
-              return;
-          }
-
-          this.$http
-        .post(`/pb/regist/`, {
-         email:this.emailCount.emailName, 
-          password: this.emailCount.emailPwd,
-        }, {
-            timeout: 15000 // 15秒超时
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            this.countLog=true
-            this.$message({
-    message: '注册成功，请登陆吧',
-    type: 'success',
-    offset:'180',
-  })
-          } else {
-              this.$message({
-    message: response.data?.message || '出错啦，请再试一次',
-    type: 'warning',
-    offset:'180',
-  })
-          }
-        })
-        .catch((error) => {
-            console.error('注册错误:', error);
-            let errorMsg = '注册失败，请稍后重试';
-            if (error.code === 'ECONNABORTED') {
-                errorMsg = '请求超时，请检查网络连接';
-            } else if (error.code === 'ERR_NETWORK') {
-                errorMsg = '网络错误，请检查网络连接';
-            } else if (error.response) {
-                errorMsg = error.response.data?.message || '注册失败';
+        const register = () => {
+            // 表单验证
+            if (!emailCount.value.emailName || !emailCount.value.emailPwd) {
+                $message({
+                    message: '请输入邮箱和密码',
+                    type: 'warning',
+                    offset: 180,
+                })
+                return
             }
-            this.$message({
-                message: errorMsg,
-                type: 'error',
-                offset: '180',
-            });
-        });
-          
-        },
 
-        toregister(){
-          this.countLog=false;
+            $http
+                .post(`/pb/regist/`, {
+                    email: emailCount.value.emailName, 
+                    password: emailCount.value.emailPwd,
+                }, {
+                    timeout: 15000 // 15秒超时
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        countLog.value = true
+                        $message({
+                            message: '注册成功，请登陆吧',
+                            type: 'success',
+                            offset: 180,
+                        })
+                    } else {
+                        $message({
+                            message: response.data?.message || '出错啦，请再试一次',
+                            type: 'warning',
+                            offset: 180,
+                        })
+                    }
+                })
+                .catch((error) => {
+                    console.error('注册错误:', error)
+                    let errorMsg = '注册失败，请稍后重试'
+                    if (error.code === 'ECONNABORTED') {
+                        errorMsg = '请求超时，请检查网络连接'
+                    } else if (error.code === 'ERR_NETWORK') {
+                        errorMsg = '网络错误，请检查网络连接'
+                    } else if (error.response) {
+                        errorMsg = error.response.data?.message || '注册失败'
+                    }
+                    $message({
+                        message: errorMsg,
+                        type: 'error',
+                        offset: 180,
+                    })
+                })
         }
-    },
-   
+
+        const toregister = () => {
+            countLog.value = false
+        }
+        
+        return {
+            countLog,
+            count,
+            userid,
+            emailCount,
+            closeMask,
+            countIn,
+            getUser,
+            login,
+            register,
+            toregister
+        }
+    }
 }
 </script>
 

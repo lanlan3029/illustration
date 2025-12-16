@@ -167,6 +167,7 @@
 
 <script>
 import PromptFill from '@/components/PromptFill.vue';
+import { ElMessage } from 'element-plus';
 
 export default {
     name: 'CreateCharacter',
@@ -253,13 +254,13 @@ export default {
             const isLt5M = file.raw.size / 1024 / 1024 < 5;
             
             if (!isImage) {
-                this.$message.error('只能上传图片文件！');
+                ElMessage.error('只能上传图片文件！');
                 this.handlePhotoRemove();
                 return;
             }
             
             if (!isLt5M) {
-                this.$message.error('图片大小不能超过 5MB！');
+                ElMessage.error('图片大小不能超过 5MB！');
                 this.handlePhotoRemove();
                 return;
             }
@@ -276,7 +277,7 @@ export default {
                 });
             };
             reader.onerror = () => {
-                this.$message.error('读取图片失败，请重试');
+                ElMessage.error('读取图片失败，请重试');
             };
             reader.readAsDataURL(file.raw);
         },
@@ -297,7 +298,7 @@ export default {
         // 抠图处理
         async handleSegment() {
             if (!this.photoFile) {
-                this.$message.warning('请先上传照片');
+                ElMessage.warning('请先上传照片');
                 return;
             }
             
@@ -352,7 +353,7 @@ export default {
                     if (imageUrl) {
                         this.segmentedImageUrl = imageUrl;
                         this.segmentedImageData = result;
-                        this.$message.success('抠图成功！');
+                        ElMessage.success('抠图成功！');
                     } else {
                         throw new Error('未找到抠图结果');
                     }
@@ -376,7 +377,7 @@ export default {
                     errorMessage = error.message;
                 }
                 
-                this.$message.error(errorMessage);
+                ElMessage.error(errorMessage);
             } finally {
                 this.segmenting = false;
             }
@@ -505,7 +506,7 @@ export default {
         async handleCreateCharacter() {
             if (!this.canGenerate) {
                 if (!this.form.character_name && !this.form.prompt) {
-                    this.$message.warning('请填写角色名称或提示词');
+                    ElMessage.warning('请填写角色名称或提示词');
                 }
                 return;
             }
@@ -610,7 +611,7 @@ export default {
                     };
                     
                     // 显示成功消息
-                    this.$message.success('角色创建成功！');
+                    ElMessage.success('角色创建成功！');
                     
                     // 优先使用 image_url，其次使用 character_image_url，最后使用 base64
                     if (result.image_url) {
@@ -706,7 +707,7 @@ export default {
                     errorMessage = error.message;
                 }
                 
-                this.$message.error(errorMessage);
+                ElMessage.error(errorMessage);
             } finally {
                 this.processing = false;
             }
@@ -873,7 +874,7 @@ export default {
         // 收集角色：跳转到上传页面确认信息后保存
         async collectCharacter() {
             if (!this.resultImageUrl) {
-                this.$message.warning('没有可收集的角色图片');
+                ElMessage.warning('没有可收集的角色图片');
                 return;
             }
             
@@ -907,14 +908,14 @@ export default {
                 });
             } catch (error) {
                 console.error('收集角色失败:', error);
-                this.$message.error('收集角色失败: ' + (error.message || '请重试'));
+                ElMessage.error('收集角色失败: ' + (error.message || '请重试'));
             }
         },
         
         // 下载结果
         async downloadResult() {
             if (!this.resultImageUrl) {
-                this.$message.warning('没有可下载的图片');
+                ElMessage.warning('没有可下载的图片');
                 return;
             }
             
@@ -1018,10 +1019,10 @@ export default {
                     }
                 }
                 
-                this.$message.success('下载成功');
+                ElMessage.success('下载成功');
             } catch (error) {
                 console.error('下载失败:', error);
-                this.$message.error('下载失败: ' + (error.message || '请重试'));
+                ElMessage.error('下载失败: ' + (error.message || '请重试'));
             } finally {
                 this.downloading = false;
             }
@@ -1030,12 +1031,12 @@ export default {
         // 用于创作插画
         async useInIllustration() {
             if (!this.resultImageUrl) {
-                this.$message.warning('没有可用的角色图片');
+                ElMessage.warning('没有可用的角色图片');
                 return;
             }
             
             try {
-                this.$message.info('正在处理角色图片...');
+                ElMessage.info('正在处理角色图片...');
                 
                 // 获取角色信息
                 const result = this.resultImageData || {};
@@ -1074,7 +1075,7 @@ export default {
                         }
                     } catch (error) {
                         console.error('创建角色失败:', error);
-                        this.$message.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                        ElMessage.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
                         return;
                     }
                 }
@@ -1096,25 +1097,25 @@ export default {
                 localStorage.setItem('characterImage', segmentedImageUrl);
                 
                 // 提示角色已保存
-                this.$message.success('角色已保存到"我的角色"');
+                ElMessage.success('角色已保存到"我的角色"');
                 
                 // 跳转到创作插画页面
                 this.$router.push('/creation');
             } catch (error) {
                 console.error('创作插画失败:', error);
-                this.$message.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                ElMessage.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
             }
         },
         
         // 用于创作组图
         async useInCreation() {
             if (!this.resultImageUrl) {
-                this.$message.warning('没有可用的角色图片');
+                ElMessage.warning('没有可用的角色图片');
                 return;
             }
             
             try {
-                this.$message.info('正在处理角色图片...');
+                ElMessage.info('正在处理角色图片...');
                 
                 // 获取角色信息
                 const result = this.resultImageData || {};
@@ -1153,7 +1154,7 @@ export default {
                         }
                     } catch (error) {
                         console.error('创建角色失败:', error);
-                        this.$message.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                        ElMessage.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
                         return;
                     }
                 }
@@ -1175,13 +1176,13 @@ export default {
                 localStorage.setItem('characterImage', segmentedImageUrl);
                 
                 // 提示角色已保存
-                this.$message.success('角色已保存到"我的角色"');
+                ElMessage.success('角色已保存到"我的角色"');
                 
                 // 跳转到创作组图页面
                 this.$router.push('/create-group-images');
             } catch (error) {
                 console.error('创作组图失败:', error);
-                this.$message.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                ElMessage.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
             }
         },
         
@@ -1511,7 +1512,7 @@ export default {
     height: 100%;
 }
 
-.result-card >>> .el-card__body {
+.result-card :deep(.el-card__body) {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1574,7 +1575,7 @@ export default {
     min-height: 0;
 }
 
-.left-panel .panel-card >>> .el-card__body {
+.left-panel .panel-card :deep(.el-card__body) {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -1733,12 +1734,12 @@ export default {
     display: block;
 }
 
-.result-image >>> .el-image {
+.result-image :deep(.el-image) {
     width: 100%;
     display: block;
 }
 
-.result-image >>> .el-image__inner {
+.result-image :deep(.el-image__inner) {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
@@ -1751,7 +1752,7 @@ export default {
     width: 100%;
 }
 
-.save-success-message >>> .el-alert {
+.save-success-message :deep(.el-alert) {
     padding: 12px 16px;
 }
 
@@ -1863,8 +1864,8 @@ export default {
     overflow: hidden;
 }
 
-.photo-image >>> .el-image,
-.segmented-image >>> .el-image {
+.photo-image :deep(.el-image),
+.segmented-image :deep(.el-image) {
     width: 376px !important;
     height: 216px !important;
     max-width: 376px !important;
@@ -1872,8 +1873,8 @@ export default {
     display: block !important;
 }
 
-.photo-image >>> .el-image__inner,
-.segmented-image >>> .el-image__inner {
+.photo-image :deep(.el-image__inner),
+.segmented-image :deep(.el-image__inner) {
     width: 376px !important;
     height: 216px !important;
     max-width: 376px !important;
@@ -1882,8 +1883,8 @@ export default {
     display: block !important;
 }
 
-.photo-image >>> img,
-.segmented-image >>> img {
+.photo-image :deep(img),
+.segmented-image :deep(img) {
     width: 376px !important;
     height: 216px !important;
     max-width: 376px !important;
@@ -1960,7 +1961,7 @@ export default {
     box-sizing: border-box;
 }
 
-.character-info-section >>> .el-form-item {
+.character-info-section :deep(.el-form-item) {
     margin-bottom: 18px;
 }
 
@@ -2030,13 +2031,13 @@ export default {
     flex-shrink: 0;
 }
 
-.upload-demo >>> .el-upload {
+.upload-demo :deep(.el-upload) {
     width: 100%;
     display: block;
     position: relative;
 }
 
-.upload-demo >>> .el-upload-dragger {
+.upload-demo :deep(.el-upload-dragger) {
     width: 400px !important;
     height: 240px !important;
     min-width: 400px !important;
@@ -2055,7 +2056,7 @@ export default {
     margin: 0 auto;
 }
 
-.upload-demo >>> .el-upload-dragger > * {
+.upload-demo :deep(.el-upload-dragger > *) {
     position: absolute;
     top: 0;
     left: 0;
@@ -2069,12 +2070,12 @@ export default {
     box-sizing: border-box;
 }
 
-.upload-demo >>> .el-upload-dragger:hover {
+.upload-demo :deep(.el-upload-dragger:hover) {
     border-color: #409eff;
     background-color: #f5f7fa;
 }
 
-.upload-demo >>> .upload-step {
+.upload-demo :deep(.upload-step) {
     font-size: 20px;
     font-weight: 600;
     color: #409eff;
@@ -2084,7 +2085,7 @@ export default {
     letter-spacing: 1px;
 }
 
-.upload-demo >>> .el-upload__text {
+.upload-demo :deep(.el-upload__text) {
     color: #303133;
     font-size: 18px;
     font-weight: 600;
@@ -2092,25 +2093,25 @@ export default {
     margin-top: 16px;
 }
 
-.upload-demo >>> .el-upload__text-secondary {
+.upload-demo :deep(.el-upload__text-secondary) {
     color: #606266;
     font-size: 14px;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 0;
 }
 
-.upload-demo >>> .el-upload__text-secondary em {
+.upload-demo :deep(.el-upload__text-secondary em) {
     color: #409eff;
     font-style: normal;
     font-weight: 500;
 }
 
-.upload-demo >>> .el-upload__text em {
+.upload-demo :deep(.el-upload__text em) {
     color: #409eff;
     font-style: normal;
 }
 
-.upload-demo >>> .el-upload__tip {
+.upload-demo :deep(.el-upload__tip) {
     font-size: 12px;
     color: #909399;
     margin-top: 8px;

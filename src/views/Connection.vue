@@ -42,7 +42,7 @@
 
 
 export default {
-  name: 'Home',
+  name: 'ConnectionPage',
   components: {
 
   },

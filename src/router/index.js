@@ -1,10 +1,6 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import store from '../store'
-
-
-Vue.use(VueRouter)
 
 
 
@@ -282,7 +278,7 @@ const routes = [{
         props: true,
     },
     {
-        path: "*",
+        path: '/:pathMatch(.*)*',
         name: 'NotFound',
         component: () =>
             import ( /* webpackChunkName: "notFound" */ '../views/NotFound.vue'),
@@ -292,38 +288,29 @@ const routes = [{
 
 ]
 
-const router = new VueRouter({
-    mode: 'hash',
-    base: process.env.BASE_URL,
+const router = createRouter({
+    history: createWebHashHistory(process.env.BASE_URL),
     routes
 })
-const originalPush = VueRouter.prototype.push;
 
-VueRouter.prototype.push = function push(location) {
-    return originalPush.call(this, location).catch(err => err)
-}
 router.beforeEach((to, from, next) => {
-
     if (window._hmt) {
         if (to.path) {
             window._hmt.push(['_trackPageview', '/#' + to.fullPath])
         }
     }
     
-
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
         const cango = (to.name == 'Home' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')
         if ((!token || token == "undefined") && (!cango)) {
             store.state.isMask = true
         } else {
-            next();
+            next()
         }
     } else {
-        next();
+        next()
     }
- 
-
 })
 
 export default router

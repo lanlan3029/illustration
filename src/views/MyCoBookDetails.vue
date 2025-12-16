@@ -48,7 +48,7 @@
 import {mapState} from "vuex"
 
 export default {
-  name: "Home",
+  name: "MyCoBookDetails",
   components: {
   },
   data(){

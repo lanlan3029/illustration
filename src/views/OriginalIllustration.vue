@@ -49,7 +49,7 @@
 import {mapState} from "vuex"
 
 export default {
-  name: "Home",
+  name: "OriginalIllustration",
   components: {
   },
   data() {

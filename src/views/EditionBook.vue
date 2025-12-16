@@ -37,6 +37,7 @@
 
 <script>
 import {mapState} from 'vuex'
+import { ElMessage } from 'element-plus';
 
 export default {
   data(){
@@ -82,7 +83,7 @@ export default {
         },
     ).then((response) => {
           if (response.data.desc === "success") {
-            this.$message({
+            ElMessage({
           message: '已删除',
           type: 'success'
         });
@@ -111,7 +112,7 @@ export default {
     height: 90vh;
     overflow-y: scroll;
 }
-.box>>>.el-input__inner{
+.box :deep(.el-input__inner){
     box-shadow:none;
 }
 .btn{

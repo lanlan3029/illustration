@@ -57,6 +57,7 @@
 import html2Canvas from "html2canvas";
 import JsPDF from "jspdf";
 import { mapState } from "vuex";
+import { ElMessage } from 'element-plus'
 
 export default {
   data() {
@@ -95,7 +96,7 @@ export default {
     // 验证审核与合规信息
     validateCompliance() {
       if (!this.form.authorizationConfirmed) {
-        this.$message.warning('请确认审核与合规声明');
+        ElMessage.warning('请确认审核与合规声明');
         return false;
       }
       return true;
@@ -159,7 +160,7 @@ export default {
       }
 
       this.disabled = true;
-      this.$message("正在下载，请勿重复点击");
+      ElMessage("正在下载，请勿重复点击");
 
       let target = document.getElementsByClassName("box");
       console.log(target)

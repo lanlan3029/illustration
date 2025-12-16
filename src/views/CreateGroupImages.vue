@@ -4,9 +4,11 @@
             <!-- 左侧：参考图和prompt输入 -->
             <div class="left-panel">
                 <el-card class="panel-card" shadow="hover">
-                    <div slot="header" class="card-header">
-                        <span>创作组图</span>
-                    </div>
+                    <template #header>
+                        <div class="card-header">
+                            <span>创作组图</span>
+                        </div>
+                    </template>
                     <div class="panel-content-wrapper">
                     <div class="panel-content">
                         <!-- 参考图上传/导入 -->
@@ -59,9 +61,11 @@
                                     class="reference-image"
                                     :preview-src-list="[referenceImageUrl]"
                                     @error="handleImageLoadError">
-                                    <div slot="error" class="image-slot">
-                                        <i class="el-icon-picture-outline"></i>
-                                    </div>
+                                    <template #error>
+                                        <div class="image-slot">
+                                            <i class="el-icon-picture-outline"></i>
+                                        </div>
+                                    </template>
                                 </el-image>
                                 <div class="reference-actions">
                                     <el-button 
@@ -110,9 +114,11 @@
             <!-- 右侧：生成结果展示 -->
             <div class="right-panel">
                 <el-card class="result-card" shadow="hover">
-                    <div slot="header" class="card-header">
-                        <span>生成结果</span>
-                    </div>
+                    <template #header>
+                        <div class="card-header">
+                            <span>生成结果</span>
+                        </div>
+                    </template>
                     <div class="result-content">
                         <div v-if="!filteredResultImages.length && !processing" class="result-placeholder">
                             <i class="el-icon-picture-outline"></i>
@@ -135,9 +141,11 @@
                                             fit="cover"
                                             class="cover-image"
                             :preview-src-list="filteredResultImageUrls">
-                                            <div slot="error" class="image-slot">
-                                                <i class="el-icon-picture-outline"></i>
-                                            </div>
+                                            <template #error>
+                                                <div class="image-slot">
+                                                    <i class="el-icon-picture-outline"></i>
+                                                </div>
+                                            </template>
                                 </el-image>
                             </div>
                                     <div class="card-content">
@@ -162,6 +170,8 @@
 </template>
 
 <script>
+import { ElMessage } from 'element-plus'
+
 export default {
     name: 'CreateGroupImages',
     data() {
@@ -229,7 +239,7 @@ export default {
                 // 自动导入创作角色的图片
                 // characterImage 可能是 base64 格式（data:image/...）或外部URL
                 console.log('从localStorage导入的图片格式:', characterImage.startsWith('data:') ? 'Base64' : 'URL', characterImage.substring(0, 50) + '...');
-                this.$set(this, 'referenceImageUrl', characterImage);
+                this.referenceImageUrl = characterImage;
                 this.referenceFile = null; // 导入的图片没有文件对象
             }
         },
@@ -259,7 +269,7 @@ export default {
                             imageUrl = `https://static.kidstory.cc/${imageUrl}`;
                         }
                         
-                        this.$set(this, 'referenceImageUrl', imageUrl);
+                        this.referenceImageUrl = imageUrl;
                         this.referenceFile = null;
                         
                         // 保存角色ID（兼容 id / _id），用于后续保存组图
@@ -338,8 +348,8 @@ export default {
             console.log('尝试导入角色图片，localStorage中的characterImage:', characterImage ? '存在' : '不存在');
             
             if (characterImage) {
-                // 使用 Vue.set 确保响应式更新
-                this.$set(this, 'referenceImageUrl', characterImage);
+                // 直接赋值即可触发响应式（Vue 3）
+                this.referenceImageUrl = characterImage;
                 this.referenceFile = null; // 导入的图片没有文件对象
                 
                 // 等待下一个 tick 确保视图更新
@@ -347,10 +357,10 @@ export default {
                     console.log('导入后的 referenceImageUrl:', this.referenceImageUrl ? '已设置' : '未设置');
                     console.log('导入的图片格式:', characterImage.startsWith('data:') ? 'Base64' : 'URL');
                     console.log('导入的图片预览:', characterImage.substring(0, 100) + '...');
-                    this.$message.success('已成功导入角色图片');
+                    ElMessage.success('已成功导入角色图片');
                 });
             } else {
-                this.$message.warning('未找到角色图片，请先在创作角色页面点击"创作插画"或"创作组图"按钮');
+                ElMessage.warning('未找到角色图片，请先在创作角色页面点击"创作插画"或"创作组图"按钮');
                 console.warn('localStorage中没有characterImage，请检查是否已生成角色并保存');
             }
         },
@@ -791,7 +801,7 @@ export default {
             if (image.order) return image.order;
             // 若缺少序号，则写入一次，防止删除前面的图片后序号重置
             const order = image._order || (index + 1);
-            this.$set(image, 'order', order);
+            image.order = order;
             return order;
         },
         
@@ -800,7 +810,7 @@ export default {
             try {
                 const displayOrder = this.getDisplayOrder(imageUrl, index);
                 const pictureUrl = imageUrl && imageUrl.url ? imageUrl.url : imageUrl;
-                this.$message.info(`正在保存第 ${displayOrder} 张插画...`);
+                ElMessage.info(`正在保存第 ${displayOrder} 张插画...`);
                 
                 // 处理URL格式
                 let pictureValue = pictureUrl;
@@ -837,7 +847,7 @@ export default {
                 // 获取token
                 const token = localStorage.getItem('token') || '';
                 if (!token) {
-                    this.$message.error('请先登录');
+                    ElMessage.error('请先登录');
                     return;
                 }
                 
@@ -859,14 +869,14 @@ export default {
                     await this.$nextTick();
                     this.$forceUpdate();
                     
-                    this.$message.success(`第 ${index + 1} 张插画已保存到"我的插画"`);
+                    ElMessage.success(`第 ${index + 1} 张插画已保存到"我的插画"`);
                 } else {
                     throw new Error(response.data?.message || '保存失败');
                 }
             } catch (error) {
                 console.error('收集插画失败:', error);
                 const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
-                this.$message.error(`收集插画失败: ${errorMessage}`);
+                ElMessage.error(`收集插画失败: ${errorMessage}`);
             }
         },
         
@@ -909,8 +919,8 @@ export default {
     flex-direction: column;
 }
 
-.panel-card >>> .el-card__body,
-.result-card >>> .el-card__body {
+.panel-card :deep(.el-card__body),
+.result-card :deep(.el-card__body) {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -961,11 +971,11 @@ export default {
     width: 100%;
 }
 
-.upload-demo >>> .el-upload {
+.upload-demo  :deep(.el-upload) {
     width: 100%;
 }
 
-.upload-demo >>> .el-upload-dragger {
+.upload-demo  :deep(.el-upload-dragger) {
     width: 240px;
     height: 180px;
     margin: 0 auto;
@@ -999,12 +1009,12 @@ export default {
     display: block;
 }
 
-.reference-image >>> .el-image {
+.reference-image  :deep(.el-image) {
     width: 100%;
     height: 100%;
 }
 
-.reference-image >>> .el-image__inner {
+.reference-image  :deep(.el-image__inner) {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -1057,7 +1067,7 @@ export default {
     min-height: 0;
 }
 
-.result-scrollbar >>> .el-scrollbar__wrap {
+.result-scrollbar  :deep(.el-scrollbar__wrap) {
     overflow-x: hidden;
 }
 

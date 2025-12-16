@@ -31,6 +31,7 @@
 </template>
 <script>
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 
 import toast from '@/utils/toast'
 import html2Canvas from "html2canvas"
@@ -41,6 +42,7 @@ import generateID from "@/utils/generateID"
 // 导入自定义样式的包
 import {commonStyle,commonAttr} from "@/custom-component/component-list"
 export default {
+    name: 'EditorToolbar',
     data(){
         return{
             id:localStorage.getItem('id'),  
@@ -141,12 +143,12 @@ export default {
             // 获取画布元素
             let target = document.getElementsByClassName("content");
             if (!target || !target[0]) {
-                this.$message.warning('未找到画布内容，请先添加元素到画布');
+                ElMessage.warning('未找到画布内容，请先添加元素到画布');
                 return;
             }
-            
+
             // 显示加载提示
-            const loading = this.$message({
+            const loading = ElMessage({
                 message: '正在获取画布内容...',
                 type: 'info',
                 duration: 0
@@ -257,10 +259,10 @@ export default {
                                 }
                             }
                         });
-                        this.$message.success('AI智能合成成功！图片已添加到画布');
+                        ElMessage.success('AI智能合成成功！图片已添加到画布');
                     };
                     img.onerror = () => {
-                        this.$message.error('图片加载失败，请检查图片数据');
+                        ElMessage.error('图片加载失败，请检查图片数据');
                     };
                     img.src = imageUrl;
                 } else {
@@ -273,7 +275,7 @@ export default {
         } catch (error) {
             console.error('AI智能合成失败:', error);
             const errorMessage = error.response?.data?.message || error.response?.data?.desc || error.message || 'AI智能合成失败，请重试';
-            this.$message.error(errorMessage);
+            ElMessage.error(errorMessage);
         }
        },
        
@@ -341,12 +343,12 @@ export default {
                // 获取画布元素
                let target = document.getElementsByClassName("content");
                if (!target || !target[0]) {
-                   this.$message.warning('未找到画布内容，请先添加元素到画布');
+                   ElMessage.warning('未找到画布内容，请先添加元素到画布');
                    return;
                }
-               
+
                // 显示加载提示
-               const loading = this.$message({
+               const loading = ElMessage({
                    message: '正在保存画布图片...',
                    type: 'info',
                    duration: 0
@@ -384,7 +386,7 @@ export default {
                const token = localStorage.getItem('token') || '';
                if (!token) {
                    loading.close();
-                   this.$message.warning('请先登录');
+                   ElMessage.warning('请先登录');
                    return;
                }
                
@@ -409,14 +411,14 @@ export default {
                
                // 检查响应
                if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-                   this.$message.success('已保存到"我的插画"');
+                   ElMessage.success('已保存到"我的插画"');
                } else {
                    throw new Error(response.data?.message || '保存失败');
                }
            } catch (error) {
                console.error('保存画布图片失败:', error);
                const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
-               this.$message.error(`保存失败: ${errorMessage}`);
+               ElMessage.error(`保存失败: ${errorMessage}`);
            }
        },
        deleteDraft(){
@@ -426,7 +428,7 @@ export default {
         this.$store.commit('setCurComponent', {component: null, index: null});
         // 隐藏右键菜单
         this.$store.commit('hideContextMenu');
-        this.$message.success('画布已清空');
+        ElMessage.success('画布已清空');
        }
     }
 }

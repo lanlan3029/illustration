@@ -31,13 +31,13 @@
           fit="contain"
           @load="handleImageLoad(index)"
           @error="handleImageError(index)">
-          <template slot="placeholder">
+          <template #placeholder>
             <div class="image-loading">
               <i class="el-icon-loading"></i>
               <p>页面加载中...</p>
             </div>
           </template>
-          <template slot="error">
+          <template #error>
             <div class="image-error">
               <i class="el-icon-picture-outline"></i>
               <p>图片加载失败</p>
@@ -51,7 +51,7 @@
         style="width:984.3px; height:699px" 
         fit="contain"
         @load="handleCodeImageLoad">
-        <template slot="placeholder">
+        <template v-slot:placeholder>
           <div class="image-loading">
             <i class="el-icon-loading"></i>
             <p>页面加载中...</p>
@@ -95,9 +95,10 @@
 import html2Canvas from "html2canvas";
 import JsPDF from "jspdf";
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 
 export default {
-  name: "Home",
+  name: "OriginalBookDetails",
   components: {
   },
   data(){
@@ -132,7 +133,7 @@ export default {
       } catch (err) {
         this.loading = false
         console.log(err)
-        this.$message({
+        ElMessage({
           message: '抱歉，出错了！',
           type: 'error'
         });
@@ -346,7 +347,7 @@ collectBookFun(id) {
 
     downPDF() {
       this.disabled = true;
-      this.$message("正在下载，请勿重复点击");
+      ElMessage("正在下载，请勿重复点击");
 
       let target = document.getElementsByClassName("book-content");
       console.log(target)

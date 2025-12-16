@@ -41,7 +41,7 @@
                                     </el-upload>
                                 </div>
                             </div>
-                            <el-dialog :visible.sync="contentDialogVisible" width="520px">
+                            <el-dialog v-model="contentDialogVisible" width="520px">
                                 <img width="100%" :src="contentPreviewUrl" alt="内容图片预览">
                             </el-dialog>
                         </el-form-item>
@@ -68,7 +68,7 @@
                                 </div>
                             </div>
                             <!-- 预览弹窗 -->
-                            <el-dialog :visible.sync="styleDialogVisible" width="520px">
+                            <el-dialog v-model="styleDialogVisible" width="520px">
                                 <img width="100%" :src="stylePreviewUrl" alt="风格图片预览">
                             </el-dialog>
                         </el-form-item>
@@ -138,6 +138,8 @@
 </template>
 
 <script>
+import { ElMessage } from 'element-plus'
+
 export default {
     name: 'StyleTransfer',
     data() {
@@ -240,11 +242,11 @@ export default {
                     // 清除localStorage
                     localStorage.removeItem('styleTransferContentImage');
                     
-                    this.$message.success('已自动加载画布内容图片');
+                    ElMessage.success('已自动加载画布内容图片');
                 } catch (error) {
                     console.error('加载内容图片失败:', error);
                     localStorage.removeItem('styleTransferContentImage');
-                    this.$message.warning('加载画布图片失败');
+                    ElMessage.warning('加载画布图片失败');
                 }
             }
         },
@@ -272,7 +274,7 @@ export default {
             
             const isLt5M = file.size / 1024 / 1024 < 5;
             if (!isLt5M) {
-                this.$message.error('内容图片大小不能超过 5MB!');
+                ElMessage.error('内容图片大小不能超过 5MB!');
                 this.$refs['content-upload'].clearFiles();
                 this.contentFileList = [];
                 return false;
@@ -317,10 +319,10 @@ export default {
                 const file = new File([blob], `${preset.id}.jpg`, { type: 'image/jpeg' });
                 
                 this.styleFile = file;
-                this.$message.success(`已选择：${preset.name}`);
+                ElMessage.success(`已选择：${preset.name}`);
             } catch (error) {
                 console.error('加载预设风格图片失败:', error);
-                this.$message.error('加载风格图片失败，请重试');
+                ElMessage.error('加载风格图片失败，请重试');
             }
         },
         
@@ -339,7 +341,7 @@ export default {
         // 处理风格迁移 - 调用后端API
         async handleProcess() {
             if (!this.canProcess) {
-                this.$message.warning('请先上传内容图片和风格图片');
+                ElMessage.warning('请先上传内容图片和风格图片');
                 return;
             }
 
@@ -405,7 +407,7 @@ export default {
                     if (imageUrl) {
                         this.resultImageUrl = imageUrl;
                         this.resultImageData = resultMessage;
-                        this.$message.success('风格迁移成功！');
+                        ElMessage.success('风格迁移成功！');
                     } else {
                         throw new Error('未获取到结果图片');
                     }
@@ -418,7 +420,7 @@ export default {
                     if (imageUrl) {
                         this.resultImageUrl = imageUrl;
                         this.resultImageData = responseData.data || responseData;
-                        this.$message.success('风格迁移成功！');
+                        ElMessage.success('风格迁移成功！');
                     } else {
                         throw new Error('未获取到结果图片');
                     }
@@ -431,7 +433,7 @@ export default {
                     if (errorMsg.includes('ali-oss') || errorMsg.includes('OSS')) {
                         console.warn('检测到OSS错误，自动禁用OSS并重试...');
                         this.form.useOss = false;
-                        this.$message.warning('OSS服务不可用，已自动切换到本地存储模式');
+                        ElMessage.warning('OSS服务不可用，已自动切换到本地存储模式');
                         setTimeout(() => {
                             this.handleProcess();
                         }, 500);
@@ -448,7 +450,7 @@ export default {
                         userFriendlyMsg = 'API调用配额已用完，请稍后再试';
                     }
                     
-                    this.$message.error(userFriendlyMsg);
+                    ElMessage.error(userFriendlyMsg);
                     console.error('风格迁移失败:', responseData);
                 }
             } catch (error) {
@@ -466,7 +468,7 @@ export default {
                         console.warn('检测到OSS错误，自动禁用OSS并重试...');
                         this.form.useOss = false;
                         // 自动重试（不发送use_oss参数）
-                        this.$message.warning('OSS服务不可用，已自动切换到本地存储模式');
+                        ElMessage.warning('OSS服务不可用，已自动切换到本地存储模式');
                         // 重新调用处理函数
                         setTimeout(() => {
                             this.handleProcess();
@@ -492,7 +494,7 @@ export default {
                     errorMessage = error.message;
                 }
                 
-                this.$message.error(errorMessage);
+                ElMessage.error(errorMessage);
             } finally {
                 this.processing = false;
             }
@@ -556,10 +558,10 @@ export default {
                     document.body.removeChild(link);
                 }
                 
-                this.$message.success('下载成功');
+                ElMessage.success('下载成功');
             } catch (error) {
                 console.error('下载错误:', error);
-                this.$message.error('下载失败，请重试');
+                ElMessage.error('下载失败，请重试');
             } finally {
                 this.downloading = false;
             }
@@ -583,7 +585,7 @@ export default {
                 this.$refs['content-upload'].clearFiles();
             }
             
-            this.$message.info('已重置');
+            ElMessage.info('已重置');
         }
     }
 };
@@ -776,15 +778,15 @@ export default {
 }
 
 /* 确保上传组件占满容器宽度 - 使用更具体的选择器 */
-.left-panel .upload-section >>> .el-upload,
-.left-panel .upload-section >>> .el-upload--picture-card {
+.left-panel .upload-section  :deep( .el-upload,)
+.left-panel .upload-section  :deep(.el-upload--picture-card) {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
     box-sizing: border-box !important;
 }
 
-.left-panel .upload-section >>> .el-upload-list--picture-card {
+.left-panel .upload-section  :deep(.el-upload-list--picture-card) {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
@@ -792,7 +794,7 @@ export default {
     box-sizing: border-box !important;
 }
 
-.left-panel .upload-section >>> .el-upload-list--picture-card .el-upload-list__item {
+.left-panel .upload-section  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
@@ -800,12 +802,12 @@ export default {
 }
 
 /* 确保上传组件左对齐，移除默认margin */
-.left-panel .upload-section >>> .el-upload,
-.left-panel .upload-section >>> .el-upload-list--picture-card {
+.left-panel .upload-section  :deep( .el-upload,)
+.left-panel .upload-section  :deep(.el-upload-list--picture-card) {
     margin: 0 !important;
 }
 
-.left-panel .upload-section >>> .el-upload-list--picture-card .el-upload-list__item {
+.left-panel .upload-section  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     margin: 0 !important;
 }
 
@@ -1008,9 +1010,9 @@ export default {
 }
 
 /* 上传框样式 - 增大尺寸，宽高比4:3，宽度100% */
-.left-panel >>> .el-upload,
-.left-panel >>> .el-upload--picture-card,
-.left-panel >>> .el-upload-list--picture-card .el-upload {
+.left-panel  :deep( .el-upload,)
+.left-panel  :deep( .el-upload--picture-card,)
+.left-panel  :deep(.el-upload-list--picture-card .el-upload) {
     width: 20rem !important;
     max-width: 20rem !important;
     min-width: 20rem !important;
@@ -1021,7 +1023,7 @@ export default {
 }
 
 /* 修复上传列表项宽度 */
-.left-panel >>> .el-upload-list--picture-card {
+.left-panel  :deep(.el-upload-list--picture-card) {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
@@ -1029,7 +1031,7 @@ export default {
     box-sizing: border-box !important;
 }
 
-.left-panel >>> .el-upload-list--picture-card .el-upload-list__item {
+.left-panel  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
@@ -1039,34 +1041,34 @@ export default {
     margin: 0 !important;
 }
 
-.left-panel >>> .uploadHide .el-upload {
+.left-panel  :deep(.uploadHide .el-upload) {
     display: none;
 }
 
 /* 移除输入框阴影 */
-.panel-card >>> .el-input__inner,
-.panel-card >>> .el-textarea__inner,
-.panel-card >>> .el-select .el-input__inner {
+.panel-card  :deep( .el-input__inner,)
+.panel-card  :deep( .el-textarea__inner,)
+.panel-card  :deep(.el-select .el-input__inner) {
     box-shadow: none !important;
 }
 
 /* 表单项样式调整 */
-.left-panel >>> .el-form-item {
+.left-panel  :deep(.el-form-item) {
     margin-bottom: 24px;
 }
 
-.left-panel >>> .el-form-item__label {
+.left-panel  :deep(.el-form-item__label) {
     font-weight: 600;
     color: #344054;
 }
 
 /* 确保表单项内容左对齐，统一左右边距 */
-.left-panel >>> .el-form-item__content {
+.left-panel  :deep(.el-form-item__content) {
     margin-left: 0 !important;
     padding: 0;
 }
 
-.left-panel >>> .el-card__body {
+.left-panel  :deep(.el-card__body) {
     padding: 20px;
 }
 
@@ -1103,8 +1105,8 @@ export default {
         font-size: 20px;
     }
     
-    .left-panel >>> .uploadShow .el-upload,
-    .left-panel >>> .uploadHide .el-upload-list--picture-card .el-upload-list__item {
+    .left-panel  :deep( .uploadShow .el-upload,)
+    .left-panel  :deep(.uploadHide .el-upload-list--picture-card .el-upload-list__item) {
         width: 100% !important;
         height: 10.5rem !important;
         line-height: 10.5rem !important;

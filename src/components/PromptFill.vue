@@ -49,13 +49,14 @@
                 class="var-input"
                 @input="onInputChange(varItem, $event)"
                 @blur="onInputBlur(varItem)">
-                <el-button 
-                  v-if="varValues[varItem.key]"
-                  slot="append" 
-                  icon="el-icon-close"
-                  @click="clearVarValue(varItem)"
-                  size="small">
-                </el-button>
+                <template #append>
+                  <el-button 
+                    v-if="varValues[varItem.key]"
+                    @click="clearVarValue(varItem)"
+                    size="small">
+                    <i class="el-icon-close"></i>
+                  </el-button>
+                </template>
               </el-input>
               
               <!-- 选项标签列表 -->
@@ -137,6 +138,7 @@
 <script>
 import { parseTemplate, renderTemplate } from '@/prompt-core/parseTemplate';
 import { mapState, mapGetters, mapActions } from 'vuex';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: 'PromptFill',
@@ -328,7 +330,7 @@ export default {
         if (this.tokens && this.tokens.length > 0) {
           this.tokens.forEach(token => {
             if (token.type === 'var' && newSelections[token.name]) {
-              this.$set(this.varValues, token.key, newSelections[token.name]);
+              this.varValues[token.key] = newSelections[token.name];
             }
           });
         }
@@ -365,7 +367,7 @@ export default {
       // 默认展开所有分类
       this.$nextTick(() => {
         this.sortedCategories.forEach(cat => {
-          this.$set(this.categoryCollapsed, cat.id, false);
+          this.categoryCollapsed[cat.id] = false;
         });
       });
     });
@@ -394,7 +396,7 @@ export default {
           if (token.type === 'var') {
             const currentValue = this.$store.getters['prompt/selection'](token.name) || this.defaults[token.name] || '';
             if (currentValue) {
-              this.$set(this.varValues, token.key, currentValue);
+              this.varValues[token.key] = currentValue;
               // 同步到 store
               this.selectValue({
                 varKey: token.name,
@@ -410,7 +412,7 @@ export default {
     
     onVarChange(varItem, value) {
       if (value) {
-        this.$set(this.varValues, varItem.key, value);
+        this.varValues[varItem.key] = value;
         // 同步到 store
         this.selectValue({
           varKey: varItem.name,
@@ -423,14 +425,14 @@ export default {
     
     // 点击标签选择选项
     selectOption(varItem, option) {
-      this.$set(this.varValues, varItem.key, option);
+      this.varValues[varItem.key] = option;
       this.syncToStore(varItem, option, false);
     },
     
     // 输入框内容变化
     onInputChange(varItem, value) {
       // 实时更新本地值，但不立即同步到 store（等 blur 时同步）
-      this.$set(this.varValues, varItem.key, value);
+      this.varValues[varItem.key] = value;
     },
     
     // 输入框失去焦点时同步到 store
@@ -438,7 +440,7 @@ export default {
       const value = this.varValues[varItem.key];
       if (value && value.trim()) {
         const trimmedValue = value.trim();
-        this.$set(this.varValues, varItem.key, trimmedValue);
+        this.varValues[varItem.key] = trimmedValue;
         // 检查是否是预设选项，如果不是则作为自定义选项
         const isPresetOption = this.getVarOptions(varItem.name).includes(trimmedValue);
         this.syncToStore(varItem, trimmedValue, !isPresetOption);
@@ -460,7 +462,7 @@ export default {
     
     // 清除变量值
     clearVarValue(varItem) {
-      this.$set(this.varValues, varItem.key, '');
+      this.varValues[varItem.key] = '';
       this.$store.commit('prompt/setSelection', {
         key: varItem.name,
         value: ''
@@ -526,7 +528,7 @@ export default {
     },
     
     toggleCategory(categoryId) {
-      this.$set(this.categoryCollapsed, categoryId, !this.categoryCollapsed[categoryId]);
+      this.categoryCollapsed[categoryId] = !this.categoryCollapsed[categoryId];
     },
     
     getCategoryIcon(categoryId) {
@@ -549,7 +551,7 @@ export default {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        this.$message.success('已复制到剪贴板');
+        ElMessage.success('已复制到剪贴板');
       }
     },
     
@@ -562,7 +564,7 @@ export default {
     
     // 简单描述模式下选择风格
     selectStyleOption(option) {
-      this.$set(this.varValues, 'art_style-0', option);
+      this.varValues['art_style-0'] = option;
       this.selectValue({
         varKey: 'art_style',
         value: option,
@@ -584,7 +586,7 @@ export default {
           const systemIds = ['character-detail', 'character-simple'];
           const systemTemplates = this.templates.filter(t => systemIds.includes(t.id));
           this.$store.commit('prompt/setTemplates', systemTemplates);
-          this.$message.success('已清除所有自定义模板');
+          ElMessage.success('已清除所有自定义模板');
           // 如果当前选中的是自定义模板，切换到第一个系统模板
           if (this.selectedTemplateId && !systemIds.includes(this.selectedTemplateId)) {
             this.selectedTemplateId = systemIds[0];
@@ -605,7 +607,7 @@ export default {
       }).then(() => {
         // 删除模板
         this.$store.commit('prompt/removeTemplate', templateId);
-        this.$message.success('已删除模板');
+        ElMessage.success('已删除模板');
         
         // 如果当前选中的是被删除的模板，切换到第一个系统模板
         const systemIds = ['character-detail', 'character-simple'];

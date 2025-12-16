@@ -21,7 +21,7 @@
   <i class="el-icon-plus"></i>
 </el-upload>
     </div>
-    <el-dialog :visible.sync="dialogVisible" width="80%">
+    <el-dialog v-model="dialogVisible" width="80%">
       <el-image :src="dialogImageUrl" alt="" fit="contain" style="width: 100%; max-height: 70vh;"></el-image>
 </el-dialog>
   </el-form-item>
@@ -56,6 +56,8 @@
 </template>
 
 <script>
+import { ElMessage } from 'element-plus'
+
 export default {
    data() {
       return {
@@ -300,7 +302,7 @@ export default {
          async onSubmit(){
           // 验证表单
           if (this.fileList.length === 0) {
-            this.$message({
+            ElMessage({
               message: '请至少上传一张图片',
               type: 'warning',
               offset: '300'
@@ -309,7 +311,7 @@ export default {
           }
           
           if (!this.form.name || !this.form.category) {
-              this.$message({
+              ElMessage({
               message: '插画名称、类别不能为空',
           type: 'warning',
               offset: '300'
@@ -325,7 +327,7 @@ export default {
             let successCount = 0;
             let failCount = 0;
             
-            this.$message.info('正在上传图片...');
+            ElMessage.info('正在上传图片...');
             
             for (let i = 0; i < this.fileList.length; i++) {
               try {
@@ -378,9 +380,9 @@ export default {
                 
                 if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
                   if (failCount > 0) {
-                    this.$message.success(`绘本创建成功！成功上传 ${successCount} 张图片${failCount > 0 ? `，${failCount} 张失败` : ''}`);
+                    ElMessage.success(`绘本创建成功！成功上传 ${successCount} 张图片${failCount > 0 ? `，${failCount} 张失败` : ''}`);
                   } else {
-                    this.$message.success('绘本上传成功！');
+                    ElMessage.success('绘本上传成功！');
                   }
                   this.$router.push('/user/upload/submit-res/');
                 } else {
@@ -388,16 +390,16 @@ export default {
                 }
               } catch (error) {
                 console.error('创建绘本失败:', error);
-                this.$message.error('图片上传成功，但创建绘本失败，请稍后重试');
+                ElMessage.error('图片上传成功，但创建绘本失败，请稍后重试');
                 this.disabled = false;
               }
             } else {
-              this.$message.error('所有图片上传失败，请重试');
+              ElMessage.error('所有图片上传失败，请重试');
               this.disabled = false;
             }
           } catch (error) {
             console.error('上传失败:', error);
-            this.$message.error('上传失败，请稍后重试');
+            ElMessage.error('上传失败，请稍后重试');
             this.disabled = false;
           }
    },
@@ -435,57 +437,57 @@ export default {
 }
 
 /* 表单样式统一 */
-.box >>> .el-form {
+.box  :deep(.el-form) {
     width: 100%;
 }
 
-.box >>> .el-form-item {
+.box  :deep(.el-form-item) {
     margin-bottom: 48px;
     text-align: left !important; /* 确保表单项内容左对齐 */
 }
 
 /* 确保上传表单项内容左对齐 */
-.box >>> .el-form-item__content {
+.box  :deep(.el-form-item__content) {
     text-align: left !important;
     justify-content: flex-start !important;
 }
 
-.box >>> .el-form-item__label {
+.box  :deep(.el-form-item__label) {
     text-align: left;
     font-weight: 500;
     color: #606266;
 }
 
 /* 统一输入框样式 */
-.box >>> .el-input,
-.box >>> .el-select,
-.box >>> .el-textarea {
+.box  :deep( .el-input,)
+.box  :deep( .el-select,)
+.box  :deep(.el-textarea) {
     width: 100%;
 }
 
-.box >>> .el-input__inner,
-.box >>> .el-textarea__inner {
+.box  :deep( .el-input__inner,)
+.box  :deep(.el-textarea__inner) {
     box-shadow: none;
     border: 1px solid #dcdfe6;
     transition: border-color 0.2s;
 }
 
-.box >>> .el-input__inner:focus,
-.box >>> .el-textarea__inner:focus {
+.box  :deep( .el-input__inner:focus,)
+.box  :deep(.el-textarea__inner:focus) {
     border-color: #409eff;
 }
 
 /* 选择框样式 */
-.box >>> .el-select {
+.box  :deep(.el-select) {
     width: 100%;
 }
 
-.box >>> .el-select .el-input__inner {
+.box  :deep(.el-select .el-input__inner) {
     width: 100%;
 }
 
 /* 按钮样式 */
-.box >>> .el-form-item:last-child {
+.box  :deep(.el-form-item:last-child) {
     margin-bottom: 0;
     margin-top: 10px;
 }
@@ -503,7 +505,7 @@ export default {
 }
 
 /* Element UI upload组件根容器 - 使用flex布局，让列表和按钮在同一行 */
-.custom-upload >>> .el-upload {
+.custom-upload  :deep(.el-upload) {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
@@ -512,14 +514,14 @@ export default {
 }
 
 /* 缩略图列表 - 使用flex布局，让列表项和上传按钮一起换行 */
-.custom-upload >>> .el-upload-list--picture-card {
+.custom-upload  :deep(.el-upload-list--picture-card) {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
 }
 
 /* 缩略图项 - 4:3 宽高比，可拖拽 */
-.custom-upload >>> .el-upload-list--picture-card .el-upload-list__item {
+.custom-upload  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 148px;
     height: 111px; /* 148 * 3/4 = 111px，保持4:3比例 */
     margin-right: 8px;
@@ -531,13 +533,13 @@ export default {
 	}
 
 /* 确保缩略图内的图片不可拖拽，只有容器可拖拽 */
-.custom-upload >>> .el-upload-list--picture-card .el-upload-list__item img {
+.custom-upload  :deep(.el-upload-list--picture-card .el-upload-list__item img) {
     pointer-events: none;
     user-select: none;
 }
 
 /* 缩略图图片 - 按比例显示 */
-.custom-upload >>> .el-upload-list--picture-card .el-upload-list__item-thumbnail {
+.custom-upload  :deep(.el-upload-list--picture-card .el-upload-list__item-thumbnail) {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -545,7 +547,7 @@ export default {
 }
 
 /* 上传按钮 - 4:3 宽高比，紧跟缩略图 */
-.custom-upload >>> .el-upload--picture-card {
+.custom-upload  :deep(.el-upload--picture-card) {
     width: 148px;
     height: 111px; /* 148 * 3/4 = 111px，保持4:3比例 */
     line-height: 111px;
@@ -559,19 +561,19 @@ export default {
 	}
 
 /* 确保加号图标居中 */
-.custom-upload >>> .el-upload--picture-card .el-icon-plus {
+.custom-upload  :deep(.el-upload--picture-card .el-icon-plus) {
     line-height: 1;
     font-size: 28px;
     color: #8c939d;
 }
 
 /* 拖拽时的样式 */
-.custom-upload >>> .el-upload-list__item[draggable="true"] {
+.custom-upload  :deep(.el-upload-list__item[draggable="true"]) {
     cursor: move;
     transition: opacity 0.2s;
 }
 
-.custom-upload >>> .el-upload-list__item[draggable="true"]:hover {
+.custom-upload  :deep(.el-upload-list__item[draggable="true"]:hover) {
     opacity: 0.8;
 	}
 </style>

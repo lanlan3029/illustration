@@ -178,13 +178,13 @@ export default {
     box-sizing: border-box;
 }
 
-.attr-list >>> .el-form {
+.attr-list  :deep(.el-form) {
     width: 100%;
     box-sizing: border-box;
 }
 
 /* 表单项样式优化 */
-.attr-list >>> .el-form-item {
+.attr-list  :deep(.el-form-item) {
     margin-bottom: 16px;
     display: flex;
     align-items: center;
@@ -192,7 +192,7 @@ export default {
     box-sizing: border-box;
 }
 
-.attr-list >>> .el-form-item__label {
+.attr-list  :deep(.el-form-item__label) {
     padding: 0 0px 0 0;
     line-height: 32px;
     text-align: left;
@@ -203,7 +203,7 @@ export default {
     white-space: nowrap;
 }
 
-.attr-list >>> .el-form-item__content {
+.attr-list  :deep(.el-form-item__content) {
     flex: 1;
     line-height: 32px;
     min-width: 0;
@@ -212,22 +212,22 @@ export default {
 }
 
 /* 输入框和选择框样式 */
-.attr-list >>> .el-input,
-.attr-list >>> .el-select {
+.attr-list  :deep( .el-input,)
+.attr-list  :deep(.el-select) {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-.attr-list >>> .el-input__inner {
+.attr-list  :deep(.el-input__inner) {
     width: 100%;
     max-width: 100%;
     padding: 0 4px;
     box-sizing: border-box;
 }
 
-.attr-list >>> .el-input__inner,
-.attr-list >>> .el-textarea__inner {
+.attr-list  :deep( .el-input__inner,)
+.attr-list  :deep(.el-textarea__inner) {
     border-radius: 4px;
     border: 1px solid #dcdfe6;
     transition: border-color 0.2s;
@@ -236,40 +236,40 @@ export default {
     max-width: 100%;
 }
 
-.attr-list >>> .el-input__inner:focus,
-.attr-list >>> .el-textarea__inner:focus {
+.attr-list  :deep( .el-input__inner:focus,)
+.attr-list  :deep(.el-textarea__inner:focus) {
     border-color: #409eff;
 }
 
 /* 颜色选择器样式 */
-.attr-list >>> .el-color-picker {
+.attr-list  :deep(.el-color-picker) {
     vertical-align: middle;
 }
 
 /* 文本域特殊处理 */
-.attr-list >>> .form-item-textarea {
+.attr-list  :deep(.form-item-textarea) {
     align-items: flex-start;
 }
 
-.attr-list >>> .form-item-textarea .el-form-item__label {
+.attr-list  :deep(.form-item-textarea .el-form-item__label) {
     padding-top: 8px;
 }
 
-.attr-list >>> .form-item-textarea .el-textarea {
+.attr-list  :deep(.form-item-textarea .el-textarea) {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-.attr-list >>> .el-select {
+.attr-list  :deep(.el-select) {
     max-width: 100%;
 }
 
-.attr-list >>> .el-select .el-input {
+.attr-list  :deep(.el-select .el-input) {
     max-width: 100%;
 }
 
-.attr-list >>> .el-select .el-input__inner {
+.attr-list  :deep(.el-select .el-input__inner) {
     max-width: 100%;
 }
 </style>

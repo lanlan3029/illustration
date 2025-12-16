@@ -58,6 +58,7 @@ import Grid from "./Grid.vue"
 import {changeStyleWithScale} from '@/utils/translate'
 import { getStyle } from '@/utils/style'
 export default {
+    name: 'EditorIndex',
     components:{
         Shape,Grid
     },

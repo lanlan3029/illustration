@@ -25,7 +25,9 @@
                 >
                   <i class="el-icon-upload"></i>
                   <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-                  <div class="el-upload__tip" slot="tip">只能上传jpg/png文件</div>
+                  <template #tip>
+                    <div class="el-upload__tip">只能上传jpg/png文件</div>
+                  </template>
                 </el-upload>
               </div>
               <!-- 有图片时显示原图 -->
@@ -76,11 +78,13 @@
                 :preview-src-list="[segmentedImageUrl]"
                 @error="handleImageError"
               >
-                <div slot="error" class="image-error">
-                  <i class="el-icon-picture-outline"></i>
-                  <p>图片加载失败</p>
-                  <p class="error-url">{{ segmentedImageUrl }}</p>
-                </div>
+                <template #error>
+                  <div class="image-error">
+                    <i class="el-icon-picture-outline"></i>
+                    <p>图片加载失败</p>
+                    <p class="error-url">{{ segmentedImageUrl }}</p>
+                  </div>
+</template>
               </el-image>
             </div>
             <div v-if="segmentedImageUrl" class="action-buttons">
@@ -109,7 +113,7 @@
     <!-- 添加到角色的对话框 -->
     <el-dialog
       title="添加到我的角色"
-      :visible.sync="showAddToCharacterDialog"
+      v-model:visible="showAddToCharacterDialog"
       width="500px"
     >
       <el-form :model="characterForm" label-width="100px">
@@ -133,8 +137,9 @@
           ></el-input>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="showAddToCharacterDialog = false">取消</el-button>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showAddToCharacterDialog = false">取消</el-button>
         <el-button 
           type="primary" 
           @click="addToCharacter"
@@ -142,12 +147,15 @@
         >
           保存
         </el-button>
-      </div>
-    </el-dialog>
+        </div>
+      </template>
+      </el-dialog>
   </div>
 </template>
 
 <script>
+import { ElMessage } from 'element-plus'
+
 export default {
   name: 'UtilityTools',
   data() {
@@ -295,7 +303,7 @@ export default {
         this.segmentedImageUrl = '';
         this.segmentedImageId = null;
         this.saveToLocalStorage();
-        this.$message.success('已删除原图');
+        ElMessage.success('已删除原图');
       }).catch(() => {
         // 用户取消删除
       });
@@ -311,13 +319,13 @@ export default {
     // 处理图片加载错误
     handleImageError() {
       console.error('图片加载失败，URL:', this.segmentedImageUrl);
-      this.$message.error('图片加载失败，请检查URL是否正确');
+      ElMessage.error('图片加载失败，请检查URL是否正确');
     },
 
     // 图像分割
     async handleSegment() {
       if (!this.originalFile) {
-        this.$message.warning('请先上传图片');
+        ElMessage.warning('请先上传图片');
         return;
       }
 
@@ -327,7 +335,7 @@ export default {
       try {
         const token = localStorage.getItem('token') || '';
         if (!token) {
-          this.$message.error('请先登录');
+          ElMessage.error('请先登录');
           this.processing = false;
           return;
         }
@@ -406,7 +414,7 @@ export default {
             this.saveToLocalStorage();
             // 强制更新视图
             this.$forceUpdate();
-            this.$message.success('图像分割成功！');
+            ElMessage.success('图像分割成功！');
             
             // 自动下载图片
             await this.autoDownloadImage();
@@ -418,7 +426,7 @@ export default {
           // 检查是否是文件内容错误
           const errorMsg = response.data?.message || response.data?.desc || '';
           if (errorMsg.includes('InvalidFile.Content') || errorMsg.includes('阿里云API错误: InvalidFile.Content')) {
-            this.$message({
+            ElMessage({
               message: '上传文件不规范，请上传 单人、完整、清晰 的图片；视频首帧需包含 清晰、完整、占比较大 的人体（部分模型要求全身）。',
               type: 'error',
               duration: 6000,
@@ -435,14 +443,14 @@ export default {
         
         // 检查是否是文件内容错误
         if (errorMessage.includes('InvalidFile.Content') || errorMessage.includes('阿里云API错误: InvalidFile.Content')) {
-          this.$message({
+          ElMessage({
             message: '上传文件不规范，请上传 单人、完整、清晰 的图片；视频首帧需包含 清晰、完整、占比较大 的人体（部分模型要求全身）。',
             type: 'error',
             duration: 6000,
             showClose: true
           });
         } else {
-          this.$message.error(errorMessage || '图像分割失败，请重试');
+          ElMessage.error(errorMessage || '图像分割失败，请重试');
         }
       } finally {
         this.processing = false;
@@ -498,7 +506,7 @@ export default {
               // 删除失败不影响下载
             }
 
-            this.$message.success('下载成功！');
+            ElMessage.success('下载成功！');
           } catch (error) {
             console.warn('后端下载失败，使用前端下载:', error);
             // 后端下载失败，使用前端下载方式
@@ -548,7 +556,7 @@ export default {
     // 手动下载图片（用户点击下载按钮）
     async downloadImage() {
       if (!this.segmentedImageUrl) {
-        this.$message.warning('没有可下载的图片');
+        ElMessage.warning('没有可下载的图片');
         return;
       }
 
@@ -558,12 +566,12 @@ export default {
     // 添加到我的角色
     async addToCharacter() {
       if (!this.characterForm.name || !this.characterForm.category) {
-        this.$message.warning('请填写角色名称和类别');
+        ElMessage.warning('请填写角色名称和类别');
         return;
       }
 
       if (!this.segmentedImageUrl) {
-        this.$message.warning('没有可保存的图片');
+        ElMessage.warning('没有可保存的图片');
         return;
       }
 
@@ -572,7 +580,7 @@ export default {
       try {
         const token = localStorage.getItem('token') || '';
         if (!token) {
-          this.$message.error('请先登录');
+          ElMessage.error('请先登录');
           this.savingCharacter = false;
           return;
         }
@@ -604,7 +612,7 @@ export default {
           });
 
           if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
-            this.$message.success('角色保存成功！');
+            ElMessage.success('角色保存成功！');
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
@@ -642,7 +650,7 @@ export default {
           });
 
           if (segmentResponse.data && segmentResponse.data.code === 0) {
-            this.$message.success('角色保存成功！');
+            ElMessage.success('角色保存成功！');
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
@@ -676,7 +684,7 @@ export default {
           });
 
           if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
-            this.$message.success('角色保存成功！');
+            ElMessage.success('角色保存成功！');
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
@@ -688,7 +696,7 @@ export default {
       } catch (error) {
         console.error('保存角色失败:', error);
         const errorMessage = error.response?.data?.message || error.message || '保存角色失败，请重试';
-        this.$message.error(errorMessage);
+        ElMessage.error(errorMessage);
       } finally {
         this.savingCharacter = false;
       }

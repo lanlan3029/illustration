@@ -18,6 +18,7 @@
 import componentList from '@/custom-component/component-list'
 import {deepCopy} from "@/utils/utils"
 import generateID from "@/utils/generateID"
+import { ElMessage } from 'element-plus'
 
 export default {
     data() {
@@ -61,7 +62,7 @@ export default {
                 this.$store.commit("addComponent", {component})
                 
             } else {
-                this.$message.warning('画布未初始化，请稍后再试')
+                ElMessage.warning('画布未初始化，请稍后再试')
             }
         }
     },

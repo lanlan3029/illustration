@@ -10,10 +10,12 @@
               fit="contain"
               class="preview-image"
               :preview-src-list="[imageUrl]">
-              <div slot="error" class="image-slot">
-                <i class="el-icon-picture-outline"></i>
-                <p>图片加载失败</p>
-              </div>
+              <template #error>
+                <div class="image-slot">
+                  <i class="el-icon-picture-outline"></i>
+                  <p>图片加载失败</p>
+                </div>
+              </template>
             </el-image>
           </div>
   </el-form-item>
@@ -83,6 +85,7 @@
 
 <script>
 import {mapState} from 'vuex'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'EditionIll',
@@ -132,12 +135,12 @@ export default {
     onSubmit(){
       this.$refs.form.validate((valid) => {
         if (!valid) {
-          this.$message.warning('请完善表单信息');
+          ElMessage.warning('请完善表单信息');
           return false;
         }
         
         if (!this.illustrationId) {
-          this.$message.error('缺少作品ID，无法保存');
+          ElMessage.error('缺少作品ID，无法保存');
           return;
         }
         
@@ -155,7 +158,7 @@ export default {
           })
           .then((response) => {
             if (response.data.desc === "success" || response.data.code === 0) {
-              this.$message({
+              ElMessage({
                 message: '保存成功',
                 type: 'success'
               });
@@ -164,12 +167,12 @@ export default {
                 this.$router.push('/user/upload/edition-success');
               }, 1000);
             } else {
-              this.$message.error(response.data.message || '保存失败，请重试');
+              ElMessage.error(response.data.message || '保存失败，请重试');
             }
           })
           .catch((error) => {
             console.error('保存失败:', error);
-            this.$message.error(error.response?.data?.message || '保存失败，请稍后重试');
+            ElMessage.error(error.response?.data?.message || '保存失败，请稍后重试');
           })
           .finally(() => {
             this.submitting = false;
@@ -180,7 +183,7 @@ export default {
     // 处理删除（显示确认弹窗）
     handleDelete(){
       if (!this.illustrationId) {
-        this.$message.error('缺少作品ID，无法删除');
+        ElMessage.error('缺少作品ID，无法删除');
         return;
       }
       
@@ -213,7 +216,7 @@ export default {
         })
         .then((response) => {
           if (response.data.desc === "success" || response.data.code === 0) {
-            this.$message({
+            ElMessage({
               message: '删除成功',
           type: 'success'
         });
@@ -222,12 +225,12 @@ export default {
               this.$router.push({ path: '/user', query: { tab: '3' } });
             }, 1000);
           } else {
-            this.$message.error(response.data.message || '删除失败，请重试');
+            ElMessage.error(response.data.message || '删除失败，请重试');
           }
         })
         .catch((error) => {
           console.error('删除失败:', error);
-          this.$message.error(error.response?.data?.message || '删除失败，请稍后重试');
+          ElMessage.error(error.response?.data?.message || '删除失败，请稍后重试');
         })
         .finally(() => {
           this.deleting = false;

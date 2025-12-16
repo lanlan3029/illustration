@@ -15,8 +15,8 @@
               ></el-image>
             </div>
    <el-descriptions class="margin-top" :column="2" :colon="false">
-    <template slot="title">{{item.title}}</template>
-    <template slot="extra">
+    <template #title>{{item.title}}</template>
+    <template #extra>
       <el-button size="small" @click="deleteCollectIllus(item)">取消收藏</el-button>
     </template>
    <el-descriptions-item span="2" label="描述">{{item.description}}</el-descriptions-item> 

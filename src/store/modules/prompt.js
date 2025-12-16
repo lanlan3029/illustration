@@ -1,4 +1,3 @@
-import Vue from 'vue';
 import { INITIAL_CATEGORIES } from '@/prompt-core/constants';
 import { deepClone, mergeTemplatesWithSystem, mergeBanksWithSystem } from '@/prompt-core/utils';
 
@@ -72,11 +71,11 @@ export default {
       persist(state);
     },
     upsertBank(state, { id, bank }) {
-      Vue.set(state.banks, id, bank);
+      state.banks[id] = bank;
       persist(state);
     },
     deleteBank(state, id) {
-      Vue.delete(state.banks, id);
+      delete state.banks[id];
       persist(state);
     },
     setSelections(state, selections) {
@@ -84,12 +83,12 @@ export default {
       persist(state);
     },
     setSelection(state, { key, value }) {
-      Vue.set(state.selections, key, value);
+      state.selections[key] = value;
       persist(state);
     },
     addCustomOption(state, { bankId, option }) {
       if (!state.banks[bankId]) {
-        Vue.set(state.banks, bankId, { name: bankId, category: 'other', options: [] });
+        state.banks[bankId] = { name: bankId, category: 'other', options: [] };
       }
       if (!state.banks[bankId].options.includes(option)) {
         state.banks[bankId].options.push(option);

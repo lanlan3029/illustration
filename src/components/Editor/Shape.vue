@@ -27,6 +27,7 @@ import eventBus from "@/utils/eventBus"
 import calculateComponentPositionAndSize from "@/utils/calculateComponentPositionAndSize"
 import { mod360 } from "@/utils/translate"
 export default {
+    name: 'EditorShape',
     data(){
         return{
             pointList:['lt', 't', 'rt', 'r', 'rb', 'b', 'lb', 'l'], // 八个方向

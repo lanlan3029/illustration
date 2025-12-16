@@ -4,9 +4,11 @@
             <!-- 左侧：角色信息 -->
             <div class="left-panel">
                 <el-card class="panel-card" shadow="hover">
-                    <div slot="header" class="card-header">
-                        <span>角色信息</span>
-                    </div>
+                    <template #header>
+                        <div class="card-header">
+                            <span>角色信息</span>
+                        </div>
+                    </template>
                     <div class="panel-content">
                         <div v-if="loading" class="loading-state">
                             <i class="el-icon-loading"></i>
@@ -67,9 +69,11 @@
                                             fit="cover"
                                             class="cover-image"
                                             :preview-src-list="group.image_urls.map(img => getImageUrl(img))">
-                                            <div slot="error" class="image-slot">
-                                                <i class="el-icon-picture-outline"></i>
-                                            </div>
+                                            <template #error>
+                                                <div class="image-slot">
+                                                    <i class="el-icon-picture-outline"></i>
+                                                </div>
+                                            </template>
                                         </el-image>
                                     </div>
                                     <div class="card-content">
@@ -94,6 +98,8 @@
 </template>
 
 <script>
+import { ElMessage } from 'element-plus'
+
 export default {
     name: 'CharacterGroupImages',
     props: {
@@ -129,7 +135,7 @@ export default {
             // 获取当前角色ID
             const characterId = this.characterId || this.$route.params.characterId || localStorage.getItem('viewCharacterId');
             if (!characterId) {
-                this.$message.warning('未找到角色ID');
+                ElMessage.warning('未找到角色ID');
                 return;
             }
             
@@ -156,7 +162,7 @@ export default {
         async loadData() {
             const characterId = this.characterId || this.$route.params.characterId || localStorage.getItem('viewCharacterId');
             if (!characterId) {
-                this.$message.error('缺少角色ID');
+                ElMessage.error('缺少角色ID');
                 return;
             }
             
@@ -191,7 +197,7 @@ export default {
                 }
             } catch (error) {
                 console.error('获取角色信息失败:', error);
-                this.$message.error('获取角色信息失败');
+                ElMessage.error('获取角色信息失败');
             }
         },
         
@@ -243,7 +249,7 @@ export default {
                 }
             } catch (error) {
                 console.error('获取角色关联插画失败:', error);
-                this.$message.error('获取角色插画失败');
+                ElMessage.error('获取角色插画失败');
                 this.groupImages = [];
             }
         },
@@ -297,12 +303,12 @@ export default {
                     illustrationId = group.illustration_ids[imgIndex];
                 } else {
                     // 如果没有插画ID，提示用户
-                    this.$message.warning('无法获取插画ID，请通过"我的插画"页面删除');
+                    ElMessage.warning('无法获取插画ID，请通过"我的插画"页面删除');
                     return;
                 }
                 
                 if (!illustrationId) {
-                    this.$message.error('无法获取插画ID');
+                    ElMessage.error('无法获取插画ID');
                     return;
                 }
                 
@@ -350,7 +356,7 @@ export default {
                             });
                         }
                         
-                        this.$message.success('插画已删除，组图已清空');
+                        ElMessage.success('插画已删除，组图已清空');
                     } else {
                         // 更新组图（删除单张图片后更新组图数据）
                         const groupId = group.id || group._id;
@@ -370,7 +376,7 @@ export default {
                             });
                         }
                         
-                        this.$message.success('插画已删除');
+                        ElMessage.success('插画已删除');
                     }
                 } else {
                     throw new Error(response.data?.message || '删除失败');
@@ -378,7 +384,7 @@ export default {
             } catch (error) {
                 if (error !== 'cancel') {
                     console.error('删除插画失败:', error);
-                    this.$message.error('删除失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                    ElMessage.error('删除失败: ' + (error.response?.data?.message || error.message || '请重试'));
                 }
             }
         }
@@ -418,8 +424,8 @@ export default {
     flex-direction: column;
 }
 
-.panel-card >>> .el-card__body,
-.result-card >>> .el-card__body {
+.panel-card  :deep(.el-card__body),
+.result-card  :deep(.el-card__body) {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -547,7 +553,7 @@ export default {
     margin-bottom: 0;
 }
 
-.content-card >>> .el-card__body {
+.content-card  :deep(.el-card__body) {
     padding: 12px;
 }
 

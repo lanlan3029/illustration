@@ -22,7 +22,7 @@
           :class="objClass">
           <i class="el-icon-plus"></i>
         </el-upload>
-        <el-dialog :visible.sync="dialogVisible" width="80%">
+        <el-dialog v-model="dialogVisible" width="80%">
           <img width="100%" :src="dialogImageUrl" alt="">
         </el-dialog>
       </div>
@@ -58,6 +58,7 @@
 <script>
 
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 
 export default {
    data() {
@@ -110,7 +111,7 @@ export default {
           
         const isLt2M = file.size / 1024 / 1024 < 2;
        if (!isLt2M) {
-          this.$message.error('上传头像图片大小不能超过 2MB!');
+          ElMessage.error('上传头像图片大小不能超过 2MB!');
           this.$refs.upload.clearFiles()
         }else{
           this.objClass.uploadHide=true;
@@ -152,7 +153,7 @@ export default {
         })
         .then((response) => {
           if (response.data.desc === "success") {
-            this.$message({
+            ElMessage({
           message: '个人资料修改成功',
           type: 'success'
         });     
@@ -203,74 +204,74 @@ export default {
 }
 
 /* 表单样式统一 */
-.box >>> .el-form {
+.box  :deep(.el-form) {
     width: 100%;
     text-align: left;
 }
 
-.box >>> .el-form-item {
+.box  :deep(.el-form-item) {
     margin-bottom: 32px;
     text-align: left;
 }
 
-.box >>> .el-form-item__label {
+.box  :deep(.el-form-item__label) {
     text-align: left;
     font-weight: 500;
     color: #606266;
     padding-right: 20px;
 }
 
-.box >>> .el-form-item__content {
+.box  :deep(.el-form-item__content) {
     text-align: left;
 }
 
 /* 统一输入框样式 */
-.box >>> .el-input,
-.box >>> .el-select,
-.box >>> .el-textarea,
-.box >>> .el-date-editor {
+.box  :deep( .el-input,)
+.box  :deep( .el-select,)
+.box  :deep( .el-textarea,)
+.box  :deep(.el-date-editor) {
     width: 100%;
 }
 
-.box >>> .el-input__inner,
-.box >>> .el-textarea__inner {
+.box  :deep( .el-input__inner,)
+.box  :deep(.el-textarea__inner) {
     box-shadow: none;
     border: 1px solid #dcdfe6;
     transition: border-color 0.2s;
 }
 
-.box >>> .el-input__inner:focus,
-.box >>> .el-textarea__inner:focus {
+.box  :deep( .el-input__inner:focus,)
+.box  :deep(.el-textarea__inner:focus) {
     border-color: #409eff;
 }
 
 /* 选择框样式 */
-.box >>> .el-select {
+.box  :deep(.el-select) {
     width: 100%;
 }
 
-.box >>> .el-select .el-input__inner {
+.box  :deep(.el-select .el-input__inner) {
     width: 100%;
 }
 
 /* 日期选择器样式 */
-.box >>> .el-date-editor {
+.box  :deep(.el-date-editor) {
     width: 100%;
 }
 
 /* 单选框组样式 */
-.box >>> .el-radio-group {
+.box  :deep(.el-radio-group) {
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
-.box >>> .el-radio {
+.box  :deep(.el-radio) {
     margin-right: 0;
 }
 
 /* 按钮样式 */
-.box >>> .el-form-item:last-child {
+.box  :deep(.el-form-item:last-child) {
     margin-bottom: 0;
     margin-top: 20px;
 }
@@ -318,40 +319,40 @@ export default {
     margin-top: 12px;
 }
 
-.box >>> .el-tag {
+.box  :deep(.el-tag) {
     margin-right: 8px;
     margin-top: 8px;
 }
 
 /* 上传组件样式 */
-.uploadShow >>> .el-upload {
+.uploadShow  :deep(.el-upload) {
     width: 120px !important;
     height: 120px !important;
     line-height: 120px !important;
     border-radius: 8px;
 }
 
-.uploadShow >>> .el-upload .el-icon-plus {
+.uploadShow  :deep(.el-upload .el-icon-plus) {
     font-size: 28px;
     color: #8c939d;
 }
 
-.uploadHide >>> .el-upload-list--picture-card .el-upload-list__item {
+.uploadHide  :deep(.el-upload-list--picture-card .el-upload-list__item) {
     width: 120px !important;
     height: 120px !important;
     border-radius: 8px;
 }
 
-.uploadHide >>> .el-upload {
+.uploadHide  :deep(.el-upload) {
     display: none !important;
 }
 
 /* 对话框样式 */
-.box >>> .el-dialog__body {
+.box  :deep(.el-dialog__body) {
     padding: 20px;
 }
 
-.box >>> .el-dialog__body img {
+.box  :deep(.el-dialog__body img) {
     border-radius: 4px;
 }
 
@@ -365,7 +366,7 @@ export default {
         padding: 24px;
     }
     
-    .box >>> .el-form-item {
+    .box  :deep(.el-form-item) {
         margin-bottom: 24px;
     }
 }

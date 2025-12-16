@@ -43,9 +43,10 @@
 
 
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 
 export default {
-  name: "Home",
+  name: "MyBookDetails",
   components: {
 
    
@@ -75,7 +76,7 @@ export default {
      this.id = this.$route.params.bookId;
      
      if (!this.id) {
-       this.$message.error('缺少绘本ID');
+       ElMessage.error('缺少绘本ID');
        return;
      }
      
@@ -104,11 +105,11 @@ export default {
          // 加载图片URL
          await this.loadBookImages();
        } else {
-         this.$message.error('获取绘本详情失败');
+         ElMessage.error('获取绘本详情失败');
        }
      } catch (error) {
        console.error('获取绘本详情失败:', error);
-       this.$message.error('加载绘本失败，请稍后重试');
+       ElMessage.error('加载绘本失败，请稍后重试');
      } finally {
        this.loading = false;
      }

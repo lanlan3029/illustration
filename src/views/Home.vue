@@ -15,7 +15,7 @@
                         :key="style.id"
                         class="style-card"
                         :class="{ 'selected': selectedStyleId === style.id }"
-                        @click.native="selectStyle(style.id)"
+                        @click="selectStyle(style.id)"
                         :body-style="{ padding: '0' }">
                         <template #header>
                             <div class="style-header">
@@ -28,9 +28,11 @@
                                 :alt="style.artStyle"
                                 fit="cover"
                                 class="style-image">
-                                <div slot="error" class="image-slot">
-                                    <i class="el-icon-picture-outline"></i>
-                                </div>
+                                <template #error>
+                                    <div class="image-slot">
+                                        <i class="el-icon-picture-outline"></i>
+                                    </div>
+                                </template>
                             </el-image>
                            
                         </div>
@@ -58,9 +60,11 @@
                                 :alt="selectedStyle.artStyle"
                                 fit="contain"
                                 class="preview-image">
-                                <div slot="error" class="image-slot">
-                                    <i class="el-icon-picture-outline"></i>
-                                </div>
+                                <template #error>
+                                    <div class="image-slot">
+                                        <i class="el-icon-picture-outline"></i>
+                                    </div>
+                                </template>
                             </el-image>
                         </div>
                         
@@ -87,9 +91,11 @@
                                 :src="generatedImageUrl"
                                 fit="contain"
                                 class="result-image">
-                                <div slot="error" class="image-slot">
-                                    <i class="el-icon-picture-outline"></i>
-                                </div>
+                                <template #error>
+                                    <div class="image-slot">
+                                        <i class="el-icon-picture-outline"></i>
+                                    </div>
+                                </template>
                             </el-image>
                         </div>
                         
@@ -132,7 +138,6 @@
                             type="primary"
                             class="generate-button"
                             @click="generateIllustration"
-                            :icon="generating ? 'el-icon-loading' : 'el-icon-magic-stick'"
                             :loading="generating"
                             :disabled="!subjectScene || !subjectScene.trim() || generating">
                             {{ generating ? '生成中...' : '生成' }}
@@ -148,8 +153,19 @@
 </template>
 
 <script>
+import { getCurrentInstance } from 'vue'
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
+
 export default {
     name: 'InspirationLibrary',
+    setup() {
+        const { proxy } = getCurrentInstance()
+        return {
+            $http: proxy?.$http || axios,
+            $message: proxy?.$message || ElMessage
+        }
+    },
     data() {
         return {
             selectedStyleId: null,
@@ -315,7 +331,7 @@ export default {
         },
         async copyPrompt() {
             if (!this.generatedPrompt) {
-                this.$message.warning('请先输入主体场景');
+                ElMessage.warning('请先输入主体场景');
                 return;
             }
 
@@ -334,7 +350,7 @@ export default {
                 }
 
                 this.copySuccess = true;
-                this.$message.success('复制成功！');
+                ElMessage.success('复制成功！');
 
                 // 2秒后恢复按钮状态
                 setTimeout(() => {
@@ -342,14 +358,14 @@ export default {
                 }, 2000);
             } catch (err) {
                 console.error('复制失败:', err);
-                this.$message.error('复制失败，请手动复制');
+                ElMessage.error('复制失败，请手动复制');
             }
         },
         
         // 生成插画 - 使用与创建角色相同的API（文生图）
         async generateIllustration() {
             if (!this.generatedPrompt) {
-                this.$message.warning('请先输入主体场景');
+                ElMessage.warning('请先输入主体场景');
                 return;
             }
             
@@ -402,7 +418,7 @@ export default {
                     
                     if (imageUrl) {
                         this.generatedImageUrl = imageUrl;
-                        this.$message.success('插画生成成功！');
+                        ElMessage.success('插画生成成功！');
                     } else {
                         throw new Error('响应中未找到图片URL');
                     }
@@ -439,7 +455,7 @@ export default {
                     errorMessage = error.message;
                 }
                 
-                this.$message.error(errorMessage);
+                ElMessage.error(errorMessage);
             } finally {
                 this.generating = false;
             }
@@ -677,12 +693,12 @@ export default {
     padding: 0;
 }
 
-.style-card >>> .el-card__header {
+.style-card :deep(.el-card__header) {
     padding: 12px 8px;
     border-bottom: 1px solid #ebeef5;
 }
 
-.style-card >>> .el-card__body {
+.style-card :deep(.el-card__body) {
     padding: 0;
 }
 
@@ -705,7 +721,7 @@ export default {
     max-height: 100%;
 }
 
-.style-image >>> .el-image {
+.style-image :deep(.el-image) {
     width: 100%;
     height: 100%;
     display: flex;
@@ -713,7 +729,7 @@ export default {
     justify-content: center;
 }
 
-.style-image >>> .el-image__inner {
+.style-image :deep(.el-image__inner) {
     width: auto;
     height: 100%;
     max-width: 100%;
@@ -807,7 +823,7 @@ export default {
     max-height: 300px;
 }
 
-.preview-image >>> .el-image__inner {
+.preview-image :deep(.el-image__inner) {
     width: 100%;
     height: auto;
     max-height: 300px;
@@ -892,7 +908,7 @@ export default {
     flex: 1;
 }
 
-.info-input >>> .el-textarea__inner {
+.info-input :deep(.el-textarea__inner) {
     font-size: 14px;
     color: #606266;
     line-height: 1.6;
@@ -930,7 +946,7 @@ export default {
     width: 100%;
 }
 
-.prompt-textarea >>> .el-textarea__inner {
+.prompt-textarea :deep(.el-textarea__inner) {
     background-color: #f5f7fa;
     color: #303133;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -967,7 +983,7 @@ export default {
     background-color: #fff;
 }
 
-.result-image >>> .el-image__inner {
+.result-image :deep(.el-image__inner) {
     width: 100%;
     height: auto;
     max-height: 500px;

@@ -40,6 +40,12 @@
     </svg>
 </template>
 
+<script>
+export default {
+    name: 'EditorGrid'
+}
+</script>
+
 <style scoped>
 .grid{
     position: absolute;

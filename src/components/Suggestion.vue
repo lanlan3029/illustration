@@ -18,6 +18,7 @@
 import {mapState} from "vuex"
 
 export default {
+    name: 'SuggestionBox',
     data(){
         return{
             userid:localStorage.getItem("id"),

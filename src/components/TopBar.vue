@@ -11,8 +11,8 @@
 
         <ul class="navbar-nav">
           <!-- 菜单项 -->
-          <li class="nav-item" :class="{ 'active': $route.path === '/' }">
-            <router-link to="/" class="nav-link" @click.native="closeSubmenu">AI插画</router-link>
+          <li class="nav-item" :class="{ 'active': route.path === '/' }">
+            <router-link to="/" class="nav-link" @click="closeSubmenu">AI插画</router-link>
           </li>
 
           <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation' }">
@@ -20,23 +20,23 @@
               创作
             </a>
             <ul class="dropdown-menu">
-              <li><router-link to="/create-character" class="dropdown-item" @click.native="closeSubmenu">创作角色</router-link></li>
-              <li><router-link to="/create-group-images" class="dropdown-item" @click.native="closeSubmenu">创作组图</router-link></li>
-              <li><router-link to="/creation" class="dropdown-item" @click.native="closeSubmenu">创作插画</router-link></li>
-              <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click.native="closeSubmenu">合成绘本</router-link></li>
+              <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">创作角色</router-link></li>
+              <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">创作组图</router-link></li>
+              <li><router-link to="/creation" class="dropdown-item" @click="closeSubmenu">创作插画</router-link></li>
+              <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click="closeSubmenu">合成绘本</router-link></li>
             </ul>
           </li>
 
-          <li class="nav-item" :class="{ 'active': $route.path === '/user/upload' }">
-            <router-link to="/user/upload" class="nav-link" @click.native="closeSubmenu">上传</router-link>
+          <li class="nav-item" :class="{ 'active': route.path === '/user/upload' }">
+            <router-link to="/user/upload" class="nav-link" @click="closeSubmenu">上传</router-link>
           </li>
 
-          <li class="nav-item" :class="{ 'active': $route.path === '/books' }">
-            <router-link to="/books" class="nav-link" @click.native="closeSubmenu">原创绘本</router-link>
+          <li class="nav-item" :class="{ 'active': route.path === '/books' }">
+            <router-link to="/books" class="nav-link" @click="closeSubmenu">原创绘本</router-link>
           </li>
 
-          <li class="nav-item" :class="{ 'active': $route.path === '/utility-tools' }">
-            <router-link to="/utility-tools" class="nav-link" @click.native="closeSubmenu">工具</router-link>
+          <li class="nav-item" :class="{ 'active': route.path === '/utility-tools' }">
+            <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">工具</router-link>
           </li>
 
           <!-- 搜索框 -->
@@ -109,307 +109,360 @@
 </template>
 
 <script>
-import {mapState} from "vuex"
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, getCurrentInstance } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 export default {
-    data(){
-        return{ 
-          logoUrl:require('../assets/logo/logo.png'),
-            userid:localStorage.getItem("id"),
-            searchValue:'',
-            userPoints: 0, // 用户积分
-            showMemberDialog: false, // 是否显示会员信息对话框
-            activeSubmenu: null, // 当前激活的子菜单
-            isScrolled: false, // 是否已滚动
-        }
-    },
-    computed:{
-        ...mapState([
-            "userInfo","isLogin","fansArr","attentionArr","searchArry"
-        ])
-    },
-    async mounted(){
-        await this.tokenFail();
-        await this.getUser();
-        await this.getCollectionBook();
-        await this.getLikeBook();
-        await this.getCollectionIllus();
-        await this.getLikeIllus();
-        await this.getAttention();
-        await this.getFans();
+    name: 'TopBar',
+    setup() {
+        const store = useStore()
+        const router = useRouter()
+        const route = useRoute()
+        const { proxy } = getCurrentInstance()
         
-        // 点击外部关闭子菜单
-        document.addEventListener('click', this.handleClickOutside);
+        const logoUrl = require('../assets/logo/logo.png')
+        const userid = ref(localStorage.getItem("id"))
+        const searchValue = ref('')
+        const userPoints = ref(0) // 用户积分
+        const showMemberDialog = ref(false) // 是否显示会员信息对话框
+        const activeSubmenu = ref(null) // 当前激活的子菜单
+        const isScrolled = ref(false) // 是否已滚动
         
-        // 监听滚动事件
-        window.addEventListener('scroll', this.handleScroll);
-        // 延迟初始化检查，确保页面已完全加载
-        this.$nextTick(() => {
-            this.handleScroll();
-        });
+        const $http = proxy?.$http || axios
+        const $message = proxy?.$message || ElMessage
         
-        // 监听路由变化，关闭下拉菜单并重置滚动状态
-        this.$watch('$route', (to) => {
-            this.closeSubmenu();
-            // 如果跳转到 Creation 页面，重置滚动状态
-            if (to.path === '/creation') {
-                this.$nextTick(() => {
-                    window.scrollTo(0, 0);
-                    this.isScrolled = false;
-                });
-            }
-        });
-    },
-    beforeDestroy() {
-        document.removeEventListener('click', this.handleClickOutside);
-        window.removeEventListener('scroll', this.handleScroll);
-    },
-   
-    methods:{
-        handleScroll() {
+        // 从 store 获取状态
+        const userInfo = computed(() => store.state.userInfo)
+        const isLogin = computed(() => store.state.isLogin)
+        const fansArr = computed(() => store.state.fansArr)
+        const attentionArr = computed(() => store.state.attentionArr)
+        const searchArry = computed(() => store.state.searchArry)
+        
+        const handleScroll = () => {
             // 检查滚动位置，如果小于等于 0，确保 isScrolled 为 false
-            const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-            this.isScrolled = scrollY > 50;
-        },
-        toggleSubmenu(menuName) {
+            const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+            isScrolled.value = scrollY > 50
+        }
+        
+        const toggleSubmenu = (menuName) => {
             // 如果点击的是当前已打开的菜单，则关闭；否则关闭其他菜单并打开当前菜单
-            if (this.activeSubmenu === menuName) {
-                this.activeSubmenu = null;
+            if (activeSubmenu.value === menuName) {
+                activeSubmenu.value = null
             } else {
-                this.activeSubmenu = menuName;
+                activeSubmenu.value = menuName
             }
-        },
-        closeSubmenu() {
-            this.activeSubmenu = null;
-        },
-        handleClickOutside(event) {
-            if (!this.$el.contains(event.target)) {
-                this.closeSubmenu();
+        }
+        
+        const closeSubmenu = () => {
+            activeSubmenu.value = null
+        }
+        
+        const handleClickOutside = (event) => {
+            const el = proxy?.$el
+            if (el && !el.contains(event.target)) {
+                closeSubmenu()
             }
-        },
-        showMask(){
-           this.$store.commit("showMask")  
-        },
-        toMyHomePage(){
-           this.$router.push("/user/")
-        },
-        toProfile(){
-            this.$router.push("/user/profile")
-        },
-        toMemberRecharge(){
-            this.$router.push("/member/recharge")
-        },
-        contactUs(){
+        }
+        
+        const showMask = () => {
+            store.commit("showMask")
+        }
+        
+        const toMyHomePage = () => {
+            router.push("/user/")
+        }
+        
+        const toProfile = () => {
+            router.push("/user/profile")
+        }
+        
+        const toMemberRecharge = () => {
+            router.push("/member/recharge")
+        }
+        
+        const contactUs = () => {
             // 联系我们功能，可以跳转到联系页面或显示联系方式
-            this.$message.info('请联系客服：support@kidstory.cc');
-        },
+            $message.info('请联系客服：support@kidstory.cc')
+        }
       
-        goToRecharge(){
+        const goToRecharge = () => {
             // 跳转到充值页面
-            this.showMemberDialog = false;
-            this.$router.push('/member/recharge');
-        },
-        logout(){
-            localStorage.removeItem("id"),
-            localStorage.removeItem("token"),
-            this.$store.commit("hasLogin",false),
-            this.$store.commit("setUserInfo",null),
-            this.$router.push('/')  
-        },
+            showMemberDialog.value = false
+            router.push('/member/recharge')
+        }
+        
+        const logout = () => {
+            localStorage.removeItem("id")
+            localStorage.removeItem("token")
+            store.commit("hasLogin", false)
+            store.commit("setUserInfo", null)
+            router.push('/')
+        }
+        
         //搜索绘本
-        async searchFun(Value){
-          if(Value){
-            this.$store.commit("setSearchInput",this.searchValue)
-           this.$router.push({
-        name: "search-books",
-        query: { keyWord: Value },
-      });
-          }else{
-            this.$router.push("/books")
-          }
-        },
-
-        tokenFail(){
-      this.$http.post(`/user/iflogin`,{},
-      {
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-      .then((response)=>{
-        if(response.data.desc == "success"){
-          this.$store.commit("hasLogin",true)
-        }else{     
-          this.$store.commit('showMask')
-        }     
-      })
-    },
-
-   async getUser(){
-       try{
-        if (!this.userid) {
-            return; // 如果没有用户ID，直接返回
-        }
-        let res= await this.$http.get(`/user/`+this.userid, {
-            timeout: 10000 // 10秒超时
-        })
-        let toolUser=res.data.message;
-        this.$store.commit("setUserInfo",toolUser)
-        // 获取用户积分
-        this.userPoints = toolUser.points || toolUser.credits || 0;
-       }catch(err){
-        console.error('获取用户信息失败:', err);
-        // 只有非网络错误才显示登录框，避免后端服务不可用时强制弹出登录框
-        if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
-            // 网络错误或超时，不强制显示登录框，静默失败
-        } else if (err.response && err.response.status === 401) {
-            // 401未授权，显示登录框
-            this.$store.commit('showMask');
-        }
-    }
-    },
-     //获取用户收藏的绘本
-     getCollectionBook(){ 
-      this.$http
-        .get(`/user/list/collect`,
-        {
-            params:{category:"book",id:this.userid},
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            let arr=response.data.message
-            let tool=[]
-            for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].collectid)
+        const searchFun = async (Value) => {
+            if (Value) {
+                store.commit("setSearchInput", searchValue.value)
+                router.push({
+                    name: "search-books",
+                    query: { keyWord: Value },
+                })
+            } else {
+                router.push("/books")
             }
-              this.$store.commit("collectBook",tool)
-          } 
-        })
-        .catch((error) => console.log(error));
-    },
+        }
+
+        const tokenFail = () => {
+            return $http.post(`/user/iflogin`, {}, {
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem("token")
+                }
+            })
+            .then((response) => {
+                if (response.data.desc == "success") {
+                    store.commit("hasLogin", true)
+                } else {
+                    store.commit('showMask')
+                }
+            })
+        }
+
+        const getUser = async () => {
+            try {
+                if (!userid.value) {
+                    return // 如果没有用户ID，直接返回
+                }
+                let res = await $http.get(`/user/` + userid.value, {
+                    timeout: 10000 // 10秒超时
+                })
+                let toolUser = res.data.message
+                store.commit("setUserInfo", toolUser)
+                // 获取用户积分
+                userPoints.value = toolUser.points || toolUser.credits || 0
+            } catch(err) {
+                console.error('获取用户信息失败:', err)
+                // 只有非网络错误才显示登录框，避免后端服务不可用时强制弹出登录框
+                if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
+                    // 网络错误或超时，不强制显示登录框，静默失败
+                } else if (err.response && err.response.status === 401) {
+                    // 401未授权，显示登录框
+                    store.commit('showMask')
+                }
+            }
+        }
+        //获取用户收藏的绘本
+        const getCollectionBook = () => {
+            return $http
+                .get(`/user/list/collect`, {
+                    params: { category: "book", id: userid.value },
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        let arr = response.data.message
+                        let tool = []
+                        for (var i = 0; i < arr.length; i++) {
+                            tool.push(arr[i].collectid)
+                        }
+                        store.commit("collectBook", tool)
+                    }
+                })
+                .catch((error) => console.log(error))
+        }
 
         //获取用户喜欢的绘本
-        getLikeBook(){
-      this.$http
-        .get(`/user/list/like`,
-        {params:{category:"book",id:this.userid},
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            let arr=response.data.message
-            let tool=[]
-            for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].likeid)
-            }
-              this.$store.commit("likeBook",tool)
-
-          } 
-        })
-        .catch((error) => console.log(error));
-    },
+        const getLikeBook = () => {
+            return $http
+                .get(`/user/list/like`, {
+                    params: { category: "book", id: userid.value },
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        let arr = response.data.message
+                        let tool = []
+                        for (var i = 0; i < arr.length; i++) {
+                            tool.push(arr[i].likeid)
+                        }
+                        store.commit("likeBook", tool)
+                    }
+                })
+                .catch((error) => console.log(error))
+        }
 
         //获取用户收藏的插画
-        getCollectionIllus(){
-      this.$http
-        .get(`/user/list/collect`,{
-            params:{category:"illustration",id:this.userid},
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            let arr=response.data.message
-            let tool=[]
-            for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].collectid)
-            }
-              this.$store.commit("collectIllus",tool)
-              
-          } 
-        })
-        .catch((error) => console.log(error));
-    },
+        const getCollectionIllus = () => {
+            return $http
+                .get(`/user/list/collect`, {
+                    params: { category: "illustration", id: userid.value },
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        let arr = response.data.message
+                        let tool = []
+                        for (var i = 0; i < arr.length; i++) {
+                            tool.push(arr[i].collectid)
+                        }
+                        store.commit("collectIllus", tool)
+                    }
+                })
+                .catch((error) => console.log(error))
+        }
 
         //获取用户喜欢的插画
-        getLikeIllus(){
-      this.$http
-        .get(`/user/list/like`,{
-            params:{category:"illustration",id:this.userid},
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            let arr=response.data.message
-            let tool=[]
-            for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].likeid)
-            }
-              this.$store.commit("likeIllus",tool)
-              
-          } 
-        })
-        .catch((error) => console.log(error));
-    },
+        const getLikeIllus = () => {
+            return $http
+                .get(`/user/list/like`, {
+                    params: { category: "illustration", id: userid.value },
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        let arr = response.data.message
+                        let tool = []
+                        for (var i = 0; i < arr.length; i++) {
+                            tool.push(arr[i].likeid)
+                        }
+                        store.commit("likeIllus", tool)
+                    }
+                })
+                .catch((error) => console.log(error))
+        }
 
         //获取用户关注的人
-        getAttention(){
-          this.$http
-        .get(`/user/list/fllow`,
-        {params:{id:this.userid},
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
-        })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            let arr=response.data.message
-            let tool=[]
-            for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].fllowid)
-            }
-              this.$store.commit("myAttention",tool)  
-              console.log(tool)   
-          } 
-          
-        })
-        .catch((error) => console.log(error));
-        },
+        const getAttention = () => {
+            return $http
+                .get(`/user/list/fllow`, {
+                    params: { id: userid.value },
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        let arr = response.data.message
+                        let tool = []
+                        for (var i = 0; i < arr.length; i++) {
+                            tool.push(arr[i].fllowid)
+                        }
+                        store.commit("myAttention", tool)
+                        console.log(tool)
+                    }
+                })
+                .catch((error) => console.log(error))
+        }
 
-         //获取粉丝
-         getFans(){
-          this.$http
-        .get(`/user/list/fllow`,
-        {params:{id:this.userid,sign:"item"},
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
-          }
+        //获取粉丝
+        const getFans = () => {
+            return $http
+                .get(`/user/list/fllow`, {
+                    params: { id: userid.value, sign: "item" },
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                })
+                .then((response) => {
+                    if (response.data.desc === "success") {
+                        let arr = response.data.message
+                        let tool = []
+                        for (var i = 0; i < arr.length; i++) {
+                            tool.push(arr[i].fllowid)
+                        }
+                        store.commit("myFans", tool)
+                        console.log(tool)
+                    }
+                })
+                .catch((error) => console.log(error))
+        }
+        
+        // 初始化
+        onMounted(async () => {
+            await tokenFail()
+            await getUser()
+            await getCollectionBook()
+            await getLikeBook()
+            await getCollectionIllus()
+            await getLikeIllus()
+            await getAttention()
+            await getFans()
+            
+            // 点击外部关闭子菜单
+            document.addEventListener('click', handleClickOutside)
+            
+            // 监听滚动事件
+            window.addEventListener('scroll', handleScroll)
+            // 延迟初始化检查，确保页面已完全加载
+            nextTick(() => {
+                handleScroll()
+            })
+            
+            // 监听路由变化，关闭下拉菜单并重置滚动状态
+            watch(() => route.path, (to) => {
+                closeSubmenu()
+                // 如果跳转到 Creation 页面，重置滚动状态
+                if (to === '/creation') {
+                    nextTick(() => {
+                        window.scrollTo(0, 0)
+                        isScrolled.value = false
+                    })
+                }
+            })
         })
-        .then((response) => {
-          if (response.data.desc === "success") {
-            let arr=response.data.message
-            let tool=[]
-            for(var i=0;i<arr.length;i++){
-               tool.push(arr[i].fllowid)
-            }
-              this.$store.commit("myFans",tool)
-              console.log(tool)
-          } 
-         
+        
+        onBeforeUnmount(() => {
+            document.removeEventListener('click', handleClickOutside)
+            window.removeEventListener('scroll', handleScroll)
         })
-        .catch((error) => console.log(error));
-        },
- 
-    
-}}
+        
+        return {
+            logoUrl,
+            userid,
+            searchValue,
+            userPoints,
+            showMemberDialog,
+            activeSubmenu,
+            isScrolled,
+            userInfo,
+            isLogin,
+            fansArr,
+            attentionArr,
+            searchArry,
+            route,
+            handleScroll,
+            toggleSubmenu,
+            closeSubmenu,
+            handleClickOutside,
+            showMask,
+            toMyHomePage,
+            toProfile,
+            toMemberRecharge,
+            contactUs,
+            goToRecharge,
+            logout,
+            searchFun,
+            tokenFail,
+            getUser,
+            getCollectionBook,
+            getLikeBook,
+            getCollectionIllus,
+            getLikeIllus,
+            getAttention,
+            getFans
+        }
+    }
+}
 </script>
 
 <style scoped>

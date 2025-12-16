@@ -61,7 +61,7 @@
   import {mapState} from "vuex"
   
   export default {
-    name: "Home",
+    name: "SearchBooks",
     components: {
     },
     computed:mapState([

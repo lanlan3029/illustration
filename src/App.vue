@@ -5,11 +5,13 @@
   <main class="app-main">
     <router-view />
   </main>
-  <the-footer :class="{ 'fixed-footer': $route.path==='/' }"/>
+  <the-footer :class="{ 'fixed-footer': route.path==='/' }"/>
   </div>
 </template>
 <script>
-import {mapState} from "vuex"
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRoute } from 'vue-router'
 import TopBar from './components/TopBar.vue'
 import LoginRegister from "./components/LoginRegister.vue"
 import TheFooter from './components/TheFooter.vue'
@@ -18,21 +20,23 @@ document.oncontextmenu = function () {
         return false;
       };
 export default {
+  name: 'App',
   components: {
-    TopBar,LoginRegister,TheFooter
+    TopBar,
+    LoginRegister,
+    TheFooter
   },
-  data(){
-    return{
-    }   
-  },
-   computed:mapState([
-        "isMask",      
-    ]),
+  setup() {
+    const store = useStore()
+    const route = useRoute()
     
-  methods:{
-   
-   
-}
+    const isMask = computed(() => store.state.isMask)
+    
+    return {
+      isMask,
+      route
+    }
+  }
 }
 </script>
 

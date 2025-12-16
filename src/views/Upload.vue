@@ -1,8 +1,8 @@
 <template>
     <div class="container">
     <ul class="upload">
-        <router-link to="/user/upload/upload-illustration"><li style="background-color:rgba(113,197,99,0.6)" ><i class="el-icon-picture-outline"></i><span>上传插画</span></li></router-link>
-       <router-link to="/user/upload/upload-local-illustration"><li style="background-color:rgba(255,211,1,0.6)"><i class="el-icon-reading"></i><span>上传绘本</span></li></router-link>
+        <router-link to="/user/upload/upload-illustration"><li style="background-color:rgba(113,197,99,0.6)" ><el-icon><UploadPictureIcon /></el-icon><span>上传插画</span></li></router-link>
+       <router-link to="/user/upload/upload-local-illustration"><li style="background-color:rgba(255,211,1,0.6)"><el-icon><UploadReadingIcon /></el-icon><span>上传绘本</span></li></router-link>
       
      
        
@@ -11,20 +11,22 @@
 </template>
 
 <script>
-export default {
-    data(){
-        return{
+import { Picture as UploadPictureIcon, Reading as UploadReadingIcon } from '@element-plus/icons-vue'
 
-        }
-    },
-    methods:{
-       
-    
-    },
-    mounted(){
-    
+export default {
+  name: 'UploadPage',
+  components: {
+    UploadPictureIcon,
+    UploadReadingIcon,
+  },
+  data() {
+    return {
     }
-    
+  },
+  methods: {
+  },
+  mounted() {
+  },
 }
 </script>
 

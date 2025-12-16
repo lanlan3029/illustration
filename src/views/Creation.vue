@@ -68,6 +68,7 @@
 
 import LeftMenu from "../components/LeftMenu.vue"
 import {mapState} from 'vuex'
+import { ElMessage } from 'element-plus'
 
 import Toolbar from '@/components/Toolbar'
 import Editor from '@/components/Editor/index'
@@ -82,7 +83,7 @@ import html2Canvas from "html2canvas";
 
 
 export default {
-  name: 'Home',
+  name: 'CreationPage',
   data(){
     return{
       userId:localStorage.getItem("id"),
@@ -281,7 +282,7 @@ export default {
         await new Promise(resolve => setTimeout(resolve, 100))
 
         // 显示提示信息，持续1秒
-        this.$message({
+        ElMessage({
           message: "正在下载,请勿重复点击",
           duration: 1000
         });
@@ -320,7 +321,7 @@ export default {
         this.saveBase64(url)
       } catch (error) {
         console.error('下载失败:', error);
-        this.$message.error('下载失败，请重试');
+        ElMessage.error('下载失败，请重试');
       } finally {
         // 下载完成，恢复按钮状态
         this.downloading = false;
@@ -423,7 +424,7 @@ export default {
             this.$router.push('/user/upload/style-transfer');
          }).catch((error) => {
             console.error('导出图片失败:', error);
-            this.$message.error('导出图片失败，请重试');
+            ElMessage.error('导出图片失败，请重试');
          });
        },
        

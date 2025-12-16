@@ -1,7 +1,7 @@
 <template>
    <div class="container">
     <div class="search">
-     <el-input  size="medium" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @input="loadSearch(searchInput)"/></div>
+     <el-input size="default" v-model="searchInput" prefix-icon="el-icon-search" placeholder="Enter something..." @input="loadSearch(searchInput)"/></div>
    <!--  显示搜索结果 -->
     <div v-if="(searchInput !='')" class="classify">
     <div
@@ -22,8 +22,12 @@
                 lazy
                 :scroll-container="$refs.scrollContainer"
               >
-                <div slot="placeholder" class="img-ph"><i class="el-icon-picture-outline"></i></div>
-                <div slot="error" class="img-ph"><i class="el-icon-picture-outline"></i></div>
+                <template #placeholder>
+                  <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
+                </template>
+                <template #error>
+                  <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
+                </template>
               </el-image>
           </li>
         </ul>
@@ -56,8 +60,12 @@
               lazy
               :scroll-container="$refs.scrollContainer"
             >
-              <div slot="placeholder" class="img-ph"><i class="el-icon-picture-outline"></i></div>
-              <div slot="error" class="img-ph"><i class="el-icon-picture-outline"></i></div>
+              <template #placeholder>
+                <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
+              </template>
+              <template #error>
+                <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
+              </template>
             </el-image>
         </li>
 
@@ -72,6 +80,7 @@
 
 <script>
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 import ClassChart from './ClassChart.vue'
 // 导入generateID
 import generateID from "@/utils/generateID"
@@ -298,7 +307,7 @@ export default {
                 this.pictureArr = []
                 this.scrollDisabled = true
                 this.loading = false
-                this.$message.error('加载图元失败，请重试')
+                ElMessage.error('加载图元失败，请重试')
             }
         },
         

@@ -15,7 +15,9 @@
   :file-list="fileList">
   <i class="el-icon-upload"></i>
   <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-  <div class="el-upload__tip" slot="tip">只能上传PDF文件，且不超过10M。</div>
+  <template #tip>
+    <div class="el-upload__tip">只能上传PDF文件，且不超过10M。</div>
+  </template>
 </el-upload>
   </el-form-item>
   <el-form-item label="作品名称">
@@ -85,7 +87,7 @@ export default {
 .box{
     width:60vw;
 }
-.box>>>.el-input__inner{
+.box :deep(.el-input__inner) {
     box-shadow:none;
 }
 .btn{

@@ -18,14 +18,16 @@
                 fit="cover" 
                 @click="goBookDetails(item._id)"
               >
-                <div slot="error" class="image-slot">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
+                <template #error>
+                  <div class="image-slot">
+                    <i class="el-icon-picture-outline"></i>
+                  </div>
+                </template>
               </el-image>
             </div>
    <el-descriptions :column="2" :colon="false">
-    <template slot="title">{{item.title || '未命名绘本'}}</template>
-    <template slot="extra">
+    <template #title>{{item.title || '未命名绘本'}}</template>
+    <template #extra>
       <el-button size="small" @click="cancelCollectBook(item._id)">取消收藏</el-button>
     </template>
    <el-descriptions-item span="2" label="描述">{{item.description || '暂无描述'}}</el-descriptions-item>
@@ -40,6 +42,7 @@
   
   <script>
   import {mapState} from "vuex"
+  import { ElMessage } from 'element-plus'
 
   export default {
       data(){
@@ -121,12 +124,12 @@ cancelCollectBook(id){
           if (response.data.desc === "success") {
              // 重新加载收藏绘本数据
              this.getCollectBook();
-             this.$message.success('已取消收藏');
+             ElMessage.success('已取消收藏');
           } 
         })
         .catch((error) => {
           console.error('取消收藏失败:', error);
-          this.$message.error('取消收藏失败，请重试');
+          ElMessage.error('取消收藏失败，请重试');
         });
 },
    goBookDetails(id){

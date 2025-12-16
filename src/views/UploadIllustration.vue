@@ -37,8 +37,12 @@
           :show-file-list="false"
           accept=".png, .jpg, .jpeg, .JPG, .JPEG"
         >
-          <el-button slot="trigger" size="small" type="primary">选择本地图片</el-button>
-          <div slot="tip" class="el-upload__tip">只能上传jpg/png文件</div>
+          <template #trigger>
+            <el-button size="small" type="primary">选择本地图片</el-button>
+          </template>
+          <template #tip>
+            <div class="el-upload__tip">只能上传jpg/png文件</div>
+          </template>
         </el-upload>
       </div>
   </el-form-item>
@@ -75,6 +79,7 @@
 
 <script>
 import {mapState} from 'vuex'
+import { ElMessage } from 'element-plus'
 
 export default {
   data(){
@@ -134,7 +139,7 @@ export default {
           this.uploadStoreImage();
         }
          } else {
-              this.$message({
+              ElMessage({
           message: '插画、插画名称、类别不能为空',
           type: 'warning',
           offset:'300'
@@ -159,15 +164,15 @@ export default {
        });
        
        if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
-         this.$message.success('上传成功');
+         ElMessage.success('上传成功');
          this.$router.push('/user/upload/submit-res/');
        } else {
-         this.$message.error('上传失败');
+         ElMessage.error('上传失败');
          this.disabled = false;
        }
      } catch (error) {
        console.error('上传失败:', error);
-       this.$message.error('上传失败，请稍后重试');
+       ElMessage.error('上传失败，请稍后重试');
        this.disabled = false;
      }
    },
@@ -203,15 +208,15 @@ export default {
        });
        
        if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
-         this.$message.success('上传成功');
+         ElMessage.success('上传成功');
          this.$router.push('/user/upload/submit-res/');
        } else {
-         this.$message.error('上传失败');
+         ElMessage.error('上传失败');
          this.disabled = false;
        }
      } catch (error) {
        console.error('上传失败:', error);
-       this.$message.error('上传失败，请稍后重试');
+       ElMessage.error('上传失败，请稍后重试');
        this.disabled = false;
      }
    },
@@ -233,7 +238,7 @@ export default {
 .box{
     width:60vw;
 }
-.box>>>.el-input__inner{
+.box :deep(.el-input__inner) {
     box-shadow:none;
 }
 .btn{

@@ -42,12 +42,16 @@
                 lazy
                 @click="toDetail(item._id)"
               >
-                <div slot="placeholder" class="img-placeholder">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
-                <div slot="error" class="img-error">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
+                <template #placeholder>
+                  <div class="img-placeholder">
+                    <i class="el-icon-picture-outline"></i>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="img-error">
+                    <i class="el-icon-picture-outline"></i>
+                  </div>
+                </template>
               </el-image>
                <div class="data">
               <span class="name">{{item.title}}</span>
@@ -75,9 +79,10 @@
 // @ is an alias to /src
 
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 
 export default {
-  name: "Home",
+  name: "OriginalBooks",
   components: {
   },
   computed:mapState([
@@ -129,7 +134,7 @@ export default {
       }catch(err){
         this.loading=false 
         console.log(err)
-        this.$message({
+        ElMessage({
           message: '抱歉，出错了！',
           type: 'error'
         });
@@ -194,12 +199,12 @@ export default {
           if (response.data.desc === "success") {
               //把该绘本ID添加到用户已收藏绘本数组
               this.$store.commit("collectBook",id)
-              this.$message.success('收藏成功');
+              ElMessage.success('收藏成功');
           } 
         })
         .catch((error) => {
           console.error('收藏失败:', error);
-          this.$message.error('收藏失败，请重试');
+          ElMessage.error('收藏失败，请重试');
         });
     },
 

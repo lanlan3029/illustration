@@ -1,7 +1,7 @@
-import { Message } from 'element-ui'
+import { ElMessage } from 'element-plus'
 
 export default function toast(message = '', type = '', duration = 1500) {
-    Message({
+    ElMessage({
         message,
         type,
         duration,

@@ -23,7 +23,7 @@
 //import RightInfo from "../components/RightInfo.vue";
 //import Suggestion from "../components/Suggestion.vue"
 export default {
-  name: "Home",
+  name: "MyIllusDetails",
   components: {
 
    

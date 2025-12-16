@@ -15,7 +15,7 @@ import {
 from '@/utils/textareaStyle.js'
 
 export default {
-  name: 'Box',
+  name: 'CustomBox',
   props: ['show', 'width', 'height', 'left', 'top', 'borderW', 'canvasW', 'canvasH', 'canDrag', 'canvas'],
   data() {
     return {

@@ -42,9 +42,11 @@
                 fit="cover"
                 class="cover-image"
               >
-                <div slot="error" class="image-slot">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
+                <template #error>
+                  <div class="image-slot">
+                    <i class="el-icon-picture-outline"></i>
+                  </div>
+                </template>
               </el-image>
             </div>
             <div class="card-content">
@@ -87,9 +89,11 @@
                 fit="cover"
                 class="cover-image"
               >
-                <div slot="error" class="image-slot">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
+                <template #error>
+                  <div class="image-slot">
+                    <i class="el-icon-picture-outline"></i>
+                  </div>
+                </template>
               </el-image>
             </div>
             <div class="card-content">
@@ -132,9 +136,11 @@
                 fit="cover"
                 class="cover-image"
               >
-                <div slot="error" class="image-slot">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
+                <template #error>
+                  <div class="image-slot">
+                    <i class="el-icon-picture-outline"></i>
+                  </div>
+                </template>
               </el-image>
             </div>
             <div class="card-content">
@@ -182,6 +188,7 @@
 
 <script>
 import {mapState} from "vuex"
+import { ElMessage } from 'element-plus'
 import MyCollectionIll from '../components/MyCollectionIll.vue'
 import MyCollectionBook from '../components/MyCollectionBook.vue'
 import MyAttention from '../components/MyAttention.vue'
@@ -280,13 +287,13 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
                     }
                 } catch (err) {
                     console.error('获取插画详情失败:', err);
-                    this.$message.error('获取插画信息失败，请重试');
+                    ElMessage.error('获取插画信息失败，请重试');
                     return;
                 }
             }
             
             if (!imageUrl) {
-                this.$message.error('无法获取插画图片');
+                ElMessage.error('无法获取插画图片');
                 return;
             }
             
@@ -342,13 +349,13 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
             };
             
             img.onerror = () => {
-                this.$message.error('图片加载失败，请检查图片URL');
+                ElMessage.error('图片加载失败，请检查图片URL');
             };
             
             img.src = imageUrl;
         } catch (error) {
             console.error('编辑插画失败:', error);
-            this.$message.error('编辑插画失败，请重试');
+            ElMessage.error('编辑插画失败，请重试');
         }
     },
     // 处理删除插画（显示确认弹窗）
@@ -391,7 +398,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
                 this.illArr.splice(index, 1);
               }
               this.deletingIllId = null;
-              this.$message({
+              ElMessage({
                 message: '删除成功',
                 type: 'success',
                 duration: 2000
@@ -399,7 +406,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
             }, 400); // 等待缩小动画完成（300ms + 100ms缓冲）
           } else {
             this.deletingIllId = null;
-            this.$message({
+            ElMessage({
               message: response.data.message || '删除失败',
               type: 'error'
             });
@@ -408,7 +415,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         .catch((error) => {
           console.error('删除插画失败:', error);
           this.deletingIllId = null;
-          this.$message({
+          ElMessage({
             message: error.response?.data?.message || '删除失败，请稍后重试',
             type: 'error'
           });
@@ -461,7 +468,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
                 this.setBooks();
               }
               this.deletingBookId = null;
-              this.$message({
+              ElMessage({
                 message: '删除成功',
                 type: 'success',
                 duration: 2000
@@ -469,7 +476,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
             }, 400); // 等待缩小动画完成（300ms + 100ms缓冲）
           } else {
             this.deletingBookId = null;
-            this.$message({
+            ElMessage({
               message: response.data.message || '删除失败',
               type: 'error'
             });
@@ -478,7 +485,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         .catch((error) => {
           console.error('删除绘本失败:', error);
           this.deletingBookId = null;
-          this.$message({
+          ElMessage({
             message: error.response?.data?.message || '删除失败，请稍后重试',
             type: 'error'
           });
@@ -508,7 +515,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         // 跳转到创作组图页面
         this.$router.push('/create-group-images');
       } else {
-        this.$message.warning('未找到角色信息');
+        ElMessage.warning('未找到角色信息');
       }
     },
     
@@ -639,7 +646,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
                 this.characterArr.splice(index, 1);
               }
               this.deletingCharacterId = null;
-              this.$message({
+              ElMessage({
                 message: '删除成功',
                 type: 'success',
                 duration: 2000
@@ -647,7 +654,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
             }, 400); // 等待缩小动画完成（300ms + 100ms缓冲）
           } else {
             this.deletingCharacterId = null;
-            this.$message({
+            ElMessage({
               message: response.data.message || '删除失败',
               type: 'error'
             });
@@ -656,7 +663,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         .catch((error) => {
           console.error('删除角色失败:', error);
           this.deletingCharacterId = null;
-          this.$message({
+          ElMessage({
             message: error.response?.data?.message || '删除失败，请稍后重试',
             type: 'error'
           });
@@ -678,7 +685,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         } catch(err){
           console.error('获取我的插画失败:', err);
           this.illArr = []; // 出错时设置为空数组
-          this.$message.error('加载插画失败，请稍后重试');
+          ElMessage.error('加载插画失败，请稍后重试');
         } finally {
           this.loadingIll = false; // 加载完成
         }
@@ -708,7 +715,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         } catch(err){
           console.error('获取我的绘本失败:', err);
           this.toolArr = []; // 出错时设置为空数组
-          this.$message.error('加载绘本失败，请稍后重试');
+          ElMessage.error('加载绘本失败，请稍后重试');
         } finally {
           this.loadingBooks = false; // 加载完成
         }

@@ -25,9 +25,11 @@
           </el-card>
 
           <el-card class="info-card" shadow="hover">
-            <div slot="header" class="card-header">
-              <span>积分使用说明</span>
-            </div>
+            <template #header>
+              <div class="card-header">
+                <span>积分使用说明</span>
+              </div>
+            </template>
             <ul class="info-list">
               <li>
                 <i class="el-icon-info"></i>
@@ -51,9 +53,11 @@
 
         <!-- 右侧：充值套餐 -->
         <el-card class="recharge-card" shadow="hover">
-          <div slot="header" class="card-header">
-            <span>充值套餐</span>
-          </div>
+          <template #header>
+            <div class="card-header">
+              <span>充值套餐</span>
+            </div>
+          </template>
           <div class="recharge-packages">
             <div 
               class="package-item" 
@@ -119,7 +123,7 @@
       <!-- 二维码支付弹窗 -->
       <el-dialog
         title="扫码支付"
-        :visible.sync="showQRCode"
+        v-model="showQRCode"
         width="400px"
         :close-on-click-modal="false"
         :close-on-press-escape="false"
@@ -131,9 +135,11 @@
           <p class="qrcode-tip">请使用{{ paymentMethod === 'alipay' ? '支付宝' : '微信' }}扫描二维码完成支付</p>
           <p class="qrcode-order">订单号：{{ currentOrderNo }}</p>
         </div>
-        <div slot="footer" class="dialog-footer">
-          <el-button @click="cancelPayment">取消支付</el-button>
-        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="cancelPayment">取消支付</el-button>
+          </div>
+        </template>
       </el-dialog>
     
   </div>
@@ -141,6 +147,7 @@
 
 <script>
 import { mapState } from 'vuex'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'MemberRecharge',
@@ -157,8 +164,8 @@ export default {
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
     }
   },
-  beforeDestroy() {
-    // 组件销毁前清除轮询
+  beforeUnmount() {
+    // 组件卸载前清除轮询
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
     }
@@ -168,7 +175,7 @@ export default {
   },
   async mounted() {
     if (!this.isLogin) {
-      this.$message.warning('请先登录');
+      ElMessage.warning('请先登录');
       this.$router.push('/');
       return;
     }
@@ -208,7 +215,7 @@ export default {
     // 处理充值
     async handleRecharge() {
       if (!this.selectedPackage || !this.paymentMethod) {
-        this.$message.warning('请选择套餐和支付方式');
+        ElMessage.warning('请选择套餐和支付方式');
         return;
       }
 
@@ -218,7 +225,7 @@ export default {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          this.$message.error('请先登录');
+          ElMessage.error('请先登录');
           this.$router.push('/');
           return;
         }
@@ -253,14 +260,14 @@ export default {
         }
 
         this.currentOrderNo = orderNo;
-        this.$message.success('订单创建成功，正在跳转支付...');
+        ElMessage.success('订单创建成功，正在跳转支付...');
 
         // 步骤2：获取支付URL
         await this.getPayUrlAndProcess(orderNo);
 
       } catch (error) {
         console.error('充值失败:', error);
-        this.$message.error(error.response?.data?.message || error.message || '充值失败，请稍后重试');
+        ElMessage.error(error.response?.data?.message || error.message || '充值失败，请稍后重试');
         this.processing = false;
       }
     },
@@ -311,13 +318,13 @@ export default {
           this.startPollingOrderStatus(orderNo);
         } else {
           // 其他支付类型
-          this.$message.warning(`不支持的支付类型: ${payType}`);
+          ElMessage.warning(`不支持的支付类型: ${payType}`);
           this.processing = false;
         }
 
       } catch (error) {
         console.error('获取支付URL失败:', error);
-        this.$message.error(error.response?.data?.message || error.message || '获取支付链接失败');
+        ElMessage.error(error.response?.data?.message || error.message || '获取支付链接失败');
         this.processing = false;
       }
     },
@@ -382,7 +389,7 @@ export default {
               // 更新用户积分
               await this.getUserPoints();
               
-              this.$message.success('支付成功！积分已到账');
+              ElMessage.success('支付成功！积分已到账');
               
               // 跳转到成功页面或刷新
               setTimeout(() => {
@@ -394,7 +401,7 @@ export default {
               this.pollingInterval = null;
               this.showQRCode = false;
               this.processing = false;
-              this.$message.warning(`订单状态：${order.status_text || '异常'}`);
+              ElMessage.warning(`订单状态：${order.status_text || '异常'}`);
             }
           }
         } catch (error) {
@@ -483,7 +490,7 @@ export default {
   border: none;
 }
 
-.points-card >>> .el-card__body {
+.points-card  :deep(.el-card__body) {
   padding: 30px;
 }
 

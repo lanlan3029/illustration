@@ -3,8 +3,8 @@
    <div class="index5-focus" v-for="(item,index) in attentionDetails" :key="index">    
         <el-avatar :src="item.avatar" :size="120" class="avatar"></el-avatar>
           <el-descriptions class="index5-info" :column="2" :colon="false">
-    <template slot="title">{{item.name}}</template>
-    <template slot="extra">
+    <template #title>{{item.name}}</template>
+    <template #extra>
       <el-button size="small" @click="unFocus(item)">取消关注</el-button>
     </template>
    <el-descriptions-item label="描述">{{item.introduce}}</el-descriptions-item>
