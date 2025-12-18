@@ -364,7 +364,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       const illustrationName = item.title || '未命名插画';
       
       this.$confirm(
-        `确定要删除"${illustrationName}"吗？删除后无法恢复。`,
+        `确定要删除插画"${illustrationName}"吗？删除后无法恢复。`,
         '确认删除',
         {
           confirmButtonText: '确定删除',
@@ -431,7 +431,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       const bookName = item.title || '未命名绘本';
       
       this.$confirm(
-        `确定要删除"${bookName}"吗？删除后无法恢复。`,
+        `确定要删除绘本"${bookName}"吗？删除后无法恢复。`,
         '确认删除',
         {
           confirmButtonText: '确定删除',

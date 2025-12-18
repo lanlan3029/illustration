@@ -3,28 +3,24 @@
     <div class="content">
       <div class="content-left">
         <div class="el-select">
-          <el-select
-            v-model="model"
-            style="width: 12vw;margin:0"
-            placeholder="排序方式"
-             size="mini"
-          >
-            <el-option
+          <!-- 排序方式：改为单选按钮组 -->
+          <el-radio-group v-model="sortType" size="mini" @change="handleSortChange">
+            <el-radio-button
               v-for="item in sortList"
               :key="item.value"
-      :label="item.label"
-      :value="item.value"
-              ></el-option
+              :label="item.value"
             >
-          </el-select>
-         
-          <el-radio-group v-model="button2"  size="mini">
-            <el-radio-button label="不限"></el-radio-button>
-            <el-radio-button label="百科"></el-radio-button>
-            <el-radio-button label="习惯"></el-radio-button>
-            <el-radio-button label="益智"></el-radio-button>
-            <el-radio-button label="艺术"></el-radio-button>
-            <el-radio-button label="英语"></el-radio-button>
+              {{ item.label }}
+            </el-radio-button>
+          </el-radio-group>
+          <!-- 类别筛选 -->
+          <el-radio-group v-model="button2"  size="mini" @change="handleCategoryChange">
+            <el-radio-button 
+              v-for="option in categoryOptions" 
+              :key="option.value"
+              :label="option.value">
+              {{ option.label }}
+            </el-radio-button>
           </el-radio-group>
         </div>
 
@@ -33,7 +29,7 @@
       <div v-if="loading" class="loading"><span class="text">故事正在加载</span><i class="el-icon-loading" :size="32" ></i></div>
         <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
         <div class="item" v-for="(item, index) in books" :key="item._id || index">
-          <el-card class="card">
+          <el-card class="card" shadow="hover">
             <div>
               <el-image
                 :src="(`https://static.kidstory.cc/`+item.cover)"
@@ -113,9 +109,18 @@ export default {
           label: "时间",
         },
       ],
-      model: "",
+      sortType: "default",
       button1: "不限",
-      button2: "不限",
+      button2: "", // 使用空字符串表示"不限"
+      categoryOptions: [
+        { label: "不限", value: "" },
+        { label: "儿童读物", value: "reading" },
+        { label: "习惯养成", value: "habit" },
+        { label: "英语启蒙", value: "english" },
+        { label: "数学启蒙", value: "math" },
+        { label: "科普百科", value: "knowledge" },
+        { label: "其他", value: "others" },
+      ],
     };
   },
   methods: {
@@ -124,10 +129,25 @@ export default {
       this.$router.push({name:'bookdetails',params:{bookId:id}});
     },
 
+    // 当前排序参数
+    getSortParams() {
+      // 默认和“热度”都按热度倒序
+      if (this.sortType === 'time') {
+        return { sort_param: 'createdAt', sort_num: 'desc' };
+      }
+      return { sort_param: 'heat', sort_num: 'desc' };
+    },
+
     //获取后台返回的绘本数据（18）
    async getBooks(){
       try{
-        let res=await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=1`)
+        const { sort_param, sort_num } = this.getSortParams();
+        let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=1`;
+        // 如果选择了类别，添加 type 参数
+        if (this.button2) {
+          url += `&type=${this.button2}`;
+        }
+        let res=await this.$http.get(url)
         //对象数组，对象包含绘本的name\id\content\description等
         this.toolArry=res.data.message
         
@@ -166,7 +186,13 @@ export default {
     if(!this.loadControl) {
       this.loadControl=true
         try {
-          let res = await this.$http.get(`/book/?sort_param=heat&sort_num=desc&page=` + this.num)
+          const { sort_param, sort_num } = this.getSortParams();
+          let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=` + this.num;
+          // 如果选择了类别，添加 type 参数
+          if (this.button2) {
+            url += `&type=${this.button2}`;
+          }
+          let res = await this.$http.get(url)
           if (res.data.message.length == 0) {
             this.scrollDisabled = true
           } else {
@@ -240,6 +266,32 @@ export default {
         return
       }
     },
+    // 处理排序变化
+    async handleSortChange() {
+      // 重置分页
+      this.num = 1;
+      this.scrollDisabled = false;
+      this.loading = true;
+      // 清空当前列表
+      this.$store.commit("removeBooks");
+      // 重新获取数据
+      await this.getBooks();
+      await this.getImgUrl();
+      await this.setBooks();
+    },
+    // 处理类别变化
+    async handleCategoryChange() {
+      // 重置分页
+      this.num = 1;
+      this.scrollDisabled = false;
+      this.loading = true;
+      // 清空当前列表
+      this.$store.commit("removeBooks");
+      // 重新获取数据
+      await this.getBooks();
+      await this.getImgUrl();
+      await this.setBooks();
+    },
     //跳转到books
     async toBooks(){
       if(this.searchInput==''){
@@ -269,8 +321,8 @@ export default {
   justify-content: center;
 }
 .content-left {
-  width: 1200px;
-  max-width: 90vw;
+  width: 80vw;
+  max-width: 80vw;
   height: 88vh;
   overflow-y: auto;
   margin: 0 auto;
@@ -287,19 +339,37 @@ export default {
 }
 .item {
   box-sizing: border-box;
-  flex: 0 0 calc((100% - 48px) / 3); /* 三列：两处gap共48px */
+  flex: 0 0 calc((100% - 72px) / 4); /* 五列：四处gap共96px */
   margin: 0; /* 通过 gap 控制间距 */
-  overflow: hidden;
-  border-radius: 4px;
+  border-radius: 8px;
   user-select: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.card{ width: 100%; }
+
+.item:hover {
+  transform: scale(1.02);
+}
+.card{ 
+  width: 100%; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+}
+
+.card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
 .image {
   width: 100%;
   aspect-ratio: 3 / 2; /* 稳定比例，避免高度不一致 */
   object-fit: cover;
   border-radius: 4px;
   cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.item:hover .image {
+  transform: scale(1.05);
 }
 .img-placeholder, .img-error{
   width: 100%;
@@ -320,6 +390,11 @@ export default {
   justify-content: space-between;
   height: 30px;
   padding: 0 1vw;
+}
+/* 固定内部 el-select 组件宽度 */
+.el-select :deep(.el-select) {
+  width: 240px;
+  min-width: 240px;
 }
 .el-input__inner{
   height:28px;
@@ -365,5 +440,21 @@ text-align: left;
 }
 .loading .text{
   display: block;
+}
+
+/* 自定义类别选择按钮的选中颜色 */
+:deep(.el-radio-button.is-active .el-radio-button__inner) {
+  background-color: #8167a9 !important;
+  border-color: #8167a9 !important;
+  color: #fff !important;
+  box-shadow: -1px 0 0 0 #8167a9 !important;
+}
+
+:deep(.el-radio-button__inner:hover) {
+  color: #8167a9;
+}
+
+:deep(.el-radio-button:first-child .el-radio-button__inner) {
+  border-left: 1px solid #dcdfe6;
 }
 </style>

@@ -1,91 +1,166 @@
 <template>
-  
-   
-    <div class="content">
-      <div class="content-left">
-        <div class="info">   
-        <el-avatar :src="authorDetails.avatar" :size="48" class="avatar"></el-avatar>
-        <div class="text">
-          <div class="title"><span>{{bookDetails.title}}</span><el-tag size="mini">{{bookDetails.type}}</el-tag></div>
-          <div class="author"><span @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span><span v-if="(authorDetails._id!=userid)">
-            <el-button type="text" size="mini" v-if="attentionArr.includes(authorDetails._id)" @click="cancelAttention(authorDetails._id)">已关注</el-button>
-            <el-button type="text" size="mini" v-else @click="newAttention(authorDetails._id)">关注</el-button>
-            </span></div>
-          </div>
-          </div>
-    
-         <div class="book">
-          <div class="desc">{{bookDetails.description}}</div>
-          <div class="book-content">
-        <div v-for="(item, index) in bookDetails.content" :key="index" class="item">
-        <!-- 如果图片URL还没准备好（还是ID），显示加载中 -->
-        <div v-if="isImageId(item)" class="image-loading">
-          <i class="el-icon-loading"></i>
-          <p>页面加载中...</p>
+  <div class="book-reader-container">
+    <div class="book-layout">
+      <!-- 左侧信息栏 -->
+      <div class="book-info">
+        <div class="title">
+          <span>{{bookDetails.title}}</span>
+          <el-tag
+            size="small"
+            style="background-color:#b7a6d6; color:#fff; border:none;"
+          >
+            {{typeLabel}}
+          </el-tag>
         </div>
-        <!-- 如果图片URL已准备好，显示图片 -->
-        <el-image 
-          v-else
-          :src="getImageUrl(item)" 
-          style="width:984.3px;height:699px" 
-          fit="contain"
-          @load="handleImageLoad(index)"
-          @error="handleImageError(index)">
-          <template #placeholder>
-            <div class="image-loading">
-              <i class="el-icon-loading"></i>
-              <p>页面加载中...</p>
-            </div>
-          </template>
-          <template #error>
-            <div class="image-error">
-              <i class="el-icon-picture-outline"></i>
-              <p>图片加载失败</p>
-            </div>
-          </template>
-        </el-image>
-      </div>
-      <div  class="item">
-      <el-image 
-        :src="codeImg" 
-        style="width:984.3px; height:699px" 
-        fit="contain"
-        @load="handleCodeImageLoad">
-        <template v-slot:placeholder>
-          <div class="image-loading">
-            <i class="el-icon-loading"></i>
-            <p>页面加载中...</p>
+        <!-- 作者信息 -->
+        <div class="header-content">
+          <el-avatar :src="authorDetails.avatar" :size="40" class="avatar" @click="toAuthor(authorDetails._id)"></el-avatar>
+          <div class="author-info">
+            <span class="author-name" @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span>
+            <el-button 
+              v-if="authorDetails._id && authorDetails._id != userid"
+              type="text" 
+              size="small" 
+              @click="attentionArr.includes(authorDetails._id) ? cancelAttention(authorDetails._id) : newAttention(authorDetails._id)">
+              {{ attentionArr.includes(authorDetails._id) ? '已关注' : '关注' }}
+            </el-button>
           </div>
-        </template>
-      </el-image>
+        </div>
+        <div class="book-description" v-if="bookDetails.description">
+          <p>{{bookDetails.description}}</p>
+        </div>
+        <div class="header-actions">
+          <el-button 
+            type="text" 
+            size="large"
+            @click="collectBookArr.includes(bookDetails._id) ? null : collectBookFun(bookDetails._id)">
+            <i
+              :class="collectBookArr.includes(bookDetails._id) ? 'iconfont icon-shoucang1' : 'iconfont icon-shoucang'" 
+              :style="collectBookArr.includes(bookDetails._id) ? 'color:#FFd301' : ''"
+            ></i>
+          </el-button>
+          <el-button
+            size="large"
+            @click="downPDF"
+            :disabled="disabled"
+          >
+            下载
+          </el-button>
+        </div>
       </div>
-    </div>
-         </div>
-
-        
-
-      <div class="footer">
-        <ul>
-       <li @click="attention"><el-tooltip class="item" effect="dark" content="关注作者" placement="top">
-        <el-avatar :size="56" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"></el-avatar></el-tooltip>
-        </li>
-        <li> 
-          <span v-if="likeBookArr.includes(bookDetails._id)"><i  style="color:#F489B5" class="iconfont icon-aixin1"></i></span>
-                <span v-else><i class="iconfont icon-aixin" @click="likeBookFun(bookDetails._id)" ></i></span></li>
-        <li>
-                <span v-if="collectBookArr.includes(bookDetails._id)" ><i style="color:#FFd301" class="iconfont icon-shoucang1"></i></span>
-                <span v-else><i class="iconfont icon-shoucang" @click="collectBookFun(bookDetails._id)" ></i></span></li>
-
-              <li>
-                <el-button @click="downPDF" :disabled="disabled">下载</el-button>
-              </li>
-         
-       </ul>
-      </div>
-      </div>
-
-    </div>
   
+      <!-- 右侧书本翻页区域 -->
+      <div class="book-viewer-wrapper">
+    <!-- 书本翻页区域 -->
+    <div class="book-viewer">
+      <div class="book-wrapper" :class="{ 'flipping': isFlipping }">
+        <!-- 单页显示 -->
+        <div class="book-page single-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
+          <div class="page-content">
+            <transition :name="flipDirection" mode="out-in">
+              <div :key="currentPageIndex" class="page-content-inner">
+                <div v-if="getCurrentPageContent()" class="page-image-wrapper">
+                  <div v-if="isImageId(getCurrentPageContent())" class="image-loading">
+                    <i class="el-icon-loading"></i>
+                    <p>加载中...</p>
+                  </div>
+                  <el-image 
+                    v-else
+                    :src="getImageUrl(getCurrentPageContent())" 
+                    fit="contain"
+                    class="page-image"
+                    @load="handlePageImageLoad(currentPageIndex)"
+                    @error="handlePageImageError(currentPageIndex)">
+                    <template #placeholder>
+                      <div class="image-loading">
+                        <i class="el-icon-loading"></i>
+                        <p>加载中...</p>
+                      </div>
+                    </template>
+                    <template #error>
+                      <div class="image-error">
+                        <i class="el-icon-picture-outline"></i>
+                        <p>加载失败</p>
+                      </div>
+                    </template>
+                  </el-image>
+                </div>
+                <div v-else class="page-empty">
+                  <p v-if="currentPageIndex === 0">封面</p>
+                  <p v-else-if="currentPageIndex >= totalPages - 1">封底</p>
+                </div>
+              </div>
+            </transition>
+            <!-- 右侧书页边缘 -->
+            <div class="page-edge right-edge"></div>
+            <!-- 左侧书页边缘 -->
+            <div class="page-edge left-edge"></div>
+            <!-- 右侧边缘翻页按钮区域 -->
+            <div 
+              class="page-flip-trigger right-trigger" 
+              @click.stop="nextPage"
+              @mouseenter="showFlipButton = true"
+              @mouseleave="showFlipButton = false">
+              <transition name="fade">
+                <el-button 
+                  v-if="showFlipButton && currentPageIndex < totalPages - 1"
+                  class="flip-button"
+                  circle
+                  size="large">
+                  <el-icon><ArrowRightBold /></el-icon>
+                </el-button>
+              </transition>
+            </div>
+            <!-- 左侧边缘翻页按钮区域 -->
+            <div 
+              class="page-flip-trigger left-trigger" 
+              @click.stop="prevPage"
+              @mouseenter="showPrevButton = true"
+              @mouseleave="showPrevButton = false">
+              <transition name="fade">
+                <el-button 
+                  v-if="showPrevButton && currentPageIndex > 0"
+                  class="flip-button"
+                  circle
+                  size="large">
+                  <el-icon><ArrowLeftBold /></el-icon>
+                </el-button>
+              </transition>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 翻页控制按钮 -->
+      <div class="page-controls">
+        <el-button 
+          class="page-btn prev-btn"
+          :disabled="currentPageIndex <= 0"
+          @click="prevPage"
+          circle
+          size="large">
+          <el-icon><ArrowLeftBold /></el-icon>
+        </el-button>
+        
+        <div class="page-indicator">
+          <span class="current-page">{{ currentPageIndex + 1 }}</span>
+          <span class="separator">/</span>
+          <span class="total-pages">{{ totalPages }}</span>
+        </div>
+        
+        <el-button 
+          class="page-btn next-btn"
+          :disabled="currentPageIndex >= totalPages - 1"
+          @click="nextPage"
+          circle
+          size="large">
+          <el-icon><ArrowRightBold /></el-icon>
+        </el-button>
+      </div>
+    </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -101,11 +176,17 @@ export default {
   name: "OriginalBookDetails",
   components: {
   },
+  props: {
+    bookId: {
+      type: String,
+      default: ''
+    }
+  },
   data(){
     return{
       disabled:false,
       userid:localStorage.getItem("id"),
-      id:this.$router.currentRoute.params.bookId,
+      id: '',
       authorId:'',
       bookDetails:[],
       authorDetails:[],
@@ -113,15 +194,131 @@ export default {
       codeImg:require('../assets/images/pdfCode.png'),
       loadingImages: true, // 图片加载状态
       imageLoadStatus: {}, // 每张图片的加载状态
+      currentPageIndex: 0, // 当前页面索引
+      isFlipping: false, // 是否正在翻页
+      showFlipButton: false, // 是否显示右侧翻页按钮
+      showPrevButton: false, // 是否显示左侧翻页按钮
+      flipDirection: 'slide-left', // 翻页方向：slide-left（向右翻）或 slide-right（向左翻）
     }
   },
-  computed:mapState([
-        "collectBookArr",
-        "likeBookArr",
-        "attentionArr",
+  watch: {
+    bookId: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.id = newVal;
+        }
+      }
+    },
+    '$route.params.bookId': {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.id = newVal;
+        }
+      }
+    }
+  },
+  computed:{
+    ...mapState([
+      "collectBookArr",
+      "likeBookArr",
+      "attentionArr",
     ]),
+    // 总页数（单页模式）
+    totalPages() {
+      if (!this.bookDetails.content || !Array.isArray(this.bookDetails.content)) {
+        return 0;
+      }
+      // 包括二维码页
+      return this.bookDetails.content.length + 1;
+    },
+    // 所有页面内容（包括二维码）
+    allPages() {
+      if (!this.bookDetails.content || !Array.isArray(this.bookDetails.content)) {
+        return [];
+      }
+      return [...this.bookDetails.content, this.codeImg];
+    },
+    // 类型标签映射
+    typeLabel() {
+      const typeMap = {
+        'reading': '儿童读物',
+        'habit': '习惯养成',
+        'english': '英语启蒙',
+        'math': '数学启蒙',
+        'knowledge': '科普百科',
+        'others': '其他'
+      };
+      return typeMap[this.bookDetails.type] || this.bookDetails.type;
+    }
+  },
 
   methods:{
+    // 获取当前页面内容
+    getCurrentPageContent() {
+      return this.allPages[this.currentPageIndex] || null;
+    },
+    // 处理页面点击（保留原有功能，但优先级低于边缘按钮）
+    handlePageClick(event) {
+      // 如果点击的是边缘触发器区域，不处理
+      if (event.target.closest('.page-flip-trigger')) {
+        return;
+      }
+      const pageWidth = event.currentTarget.offsetWidth;
+      const clickX = event.offsetX;
+      // 点击右侧50%区域翻到下一页
+      if (clickX > pageWidth / 2) {
+        this.nextPage();
+      } else {
+        // 点击左侧50%区域翻到上一页
+        this.prevPage();
+      }
+    },
+    // 上一页
+    prevPage() {
+      if (this.currentPageIndex > 0 && !this.isFlipping) {
+        this.isFlipping = true;
+        this.showPrevButton = false; // 翻页时隐藏按钮
+        this.flipDirection = 'slide-right'; // 向左翻页
+        this.currentPageIndex--;
+        setTimeout(() => {
+          this.isFlipping = false;
+        }, 500);
+      }
+    },
+    // 下一页
+    nextPage() {
+      if (this.currentPageIndex < this.totalPages - 1 && !this.isFlipping) {
+        this.isFlipping = true;
+        this.showFlipButton = false; // 翻页时隐藏按钮
+        this.flipDirection = 'slide-left'; // 向右翻页
+        this.currentPageIndex++;
+        setTimeout(() => {
+          this.isFlipping = false;
+        }, 500);
+      }
+    },
+    // 键盘快捷键支持
+    handleKeyPress(event) {
+      if (event.key === 'ArrowLeft') {
+        this.prevPage();
+      } else if (event.key === 'ArrowRight') {
+        this.nextPage();
+      }
+    },
+    // 处理页面图片加载
+    handlePageImageLoad(index) {
+      if (this.imageLoadStatus) {
+        this.handleImageLoad(index);
+      }
+    },
+    // 处理页面图片错误
+    handlePageImageError(index) {
+      if (this.imageLoadStatus) {
+        this.handleImageError(index);
+      }
+    },
    //获取绘本详情
       async getBooks() {
       try {
@@ -170,7 +367,7 @@ export default {
             try {
               let res = await this.$http.get(`/ill/` + item)
               if (res.data && res.data.message && res.data.message.content) {
-                this.$set(this.bookDetails.content, i, res.data.message.content)
+                this.bookDetails.content[i] = res.data.message.content
               }
           } catch (err) {
             console.log(err)
@@ -349,169 +546,486 @@ collectBookFun(id) {
       this.disabled = true;
       ElMessage("正在下载，请勿重复点击");
 
-      let target = document.getElementsByClassName("book-content");
-      console.log(target)
-     //打印区域
-      html2Canvas(target[0], {
-        dpi: 172,
-        useCORS: true,
-      }).then((canvas) => {
-        var contentWidth = canvas.width;
-        var contentHeight = canvas.height;
+      // 创建一个临时容器来包含所有页面内容用于PDF生成
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.width = '984.3px';
+      tempContainer.className = 'pdf-export-container';
       
-        //一页pdf显示html页面生成的canvas高度;
-        var pageHeight = (contentWidth / 984.3) * 699;
-        //未生成pdf的html页面高度
-        var leftHeight = contentHeight;
-        //pdf页面偏移
-        var position = 0;
-        //a4纸的尺寸[595.28,841.89]，html页面生成的canvas在pdf中图片的宽高
-        var imgWidth = 984.3;
-        var imgHeight = (984.3 / contentWidth) * contentHeight;
-        var pageData = canvas.toDataURL("image/jpeg");
-        var pdf = new JsPDF("l", "pt", [imgWidth,699]);
+      // 添加所有页面图片
+      this.allPages.forEach((item) => {
+        if (!this.isImageId(item)) {
+          const imgWrapper = document.createElement('div');
+          imgWrapper.style.width = '984.3px';
+          imgWrapper.style.height = '699px';
+          imgWrapper.style.marginBottom = '0';
+          
+          const img = document.createElement('img');
+          img.src = this.getImageUrl(item);
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'contain';
+          
+          imgWrapper.appendChild(img);
+          tempContainer.appendChild(imgWrapper);
+        }
+      });
       
-        //有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
-        //当内容未超过pdf一页显示的范围，无需分页
-        if (leftHeight < pageHeight) {
-          pdf.addImage(pageData, "JPEG", 0, 0, imgWidth, imgHeight);
-        } else {
-          while (leftHeight > 0) {
-            pdf.addImage(pageData, "JPEG", 0, position, imgWidth, imgHeight);
-            leftHeight -= pageHeight;
-            position -= 699;
-            //避免添加空白页
-            if (leftHeight > 0) {
-              pdf.addPage();
+      document.body.appendChild(tempContainer);
+      
+      // 等待图片加载
+      setTimeout(() => {
+        html2Canvas(tempContainer, {
+          dpi: 172,
+          useCORS: true,
+          scale: 2,
+        }).then((canvas) => {
+          document.body.removeChild(tempContainer);
+          
+          var contentWidth = canvas.width;
+          var contentHeight = canvas.height;
+        
+          //一页pdf显示html页面生成的canvas高度;
+          var pageHeight = (contentWidth / 984.3) * 699;
+          //未生成pdf的html页面高度
+          var leftHeight = contentHeight;
+          //pdf页面偏移
+          var position = 0;
+          //a4纸的尺寸[595.28,841.89]，html页面生成的canvas在pdf中图片的宽高
+          var imgWidth = 984.3;
+          var imgHeight = (984.3 / contentWidth) * contentHeight;
+          var pageData = canvas.toDataURL("image/jpeg");
+          var pdf = new JsPDF("l", "pt", [imgWidth,699]);
+        
+          //有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
+          //当内容未超过pdf一页显示的范围，无需分页
+          if (leftHeight < pageHeight) {
+            pdf.addImage(pageData, "JPEG", 0, 0, imgWidth, imgHeight);
+          } else {
+            while (leftHeight > 0) {
+              pdf.addImage(pageData, "JPEG", 0, position, imgWidth, imgHeight);
+              leftHeight -= pageHeight;
+              position -= 699;
+              //避免添加空白页
+              if (leftHeight > 0) {
+                pdf.addPage();
+              }
             }
           }
-        }
-        //保存到本地
-        pdf.save("StoryTime.pdf");
-      
-      });
+          //保存到本地
+          pdf.save("StoryTime.pdf");
+          this.disabled = false;
+        }).catch((error) => {
+          document.body.removeChild(tempContainer);
+          console.error('PDF生成失败:', error);
+          ElMessage.error('PDF生成失败，请重试');
+          this.disabled = false;
+        });
+      }, 1000);
     },
   },
   async mounted(){
-   
-    await this.getBooks();
-    await this.getImgUrl();
-     await this.setId();
-    await this.getAuthor();
-   console.log(this.bookDetails)
-console.log(this.authorDetails)
+    // 确保 id 已设置
+    if (!this.id) {
+      this.id = this.bookId || (this.$route ? this.$route.params.bookId : '');
+    }
     
+    if (this.id) {
+      await this.getBooks();
+      await this.getImgUrl();
+      await this.setId();
+      await this.getAuthor();
+    }
+    
+    // 添加键盘事件监听
+    window.addEventListener('keydown', this.handleKeyPress);
+  },
+  beforeUnmount() {
+    // 移除键盘事件监听
+    window.removeEventListener('keydown', this.handleKeyPress);
   }
 };
 </script>
 <style scoped>
-.content {
-  display: flex;
-  justify-content: center;
+.book-reader-container {
+  min-height: 100vh;
+  padding: 20px;
 }
-.content-left {
-  width: 1200px;
-  max-width: 90vw;
-  height: 88vh;
+
+
+
+
+.book-layout {
   display: flex;
-  flex-wrap: wrap;
-  background-color: #f5f6fa;
-  overflow-y: scroll;
+  gap: 24px;
+  max-width: 80vw;
   margin: 0 auto;
+  align-items: flex-start;
 }
-.content-left .info {
+
+/* 左侧信息栏 - 宽度 1/4 (25%) */
+.book-info {
+  width: 25%;
+  flex-shrink: 0;
   display: flex;
-  flex-wrap: nowrap;
-  padding:16px;
-  color:#303133;
-  width:984.3px;
-  margin:auto;
-}
-.content-left .book{
-  width: 984.3px;
-  min-height: 200px;
-  background-color: #fff;
-  margin:auto;
-  font-size:20px;
-  font-weight: 600;
-}
-.content-left .book .desc{
-  width:100%;
-  min-height:116px;
-  padding:48px;
-  font-size: 20;
-  letter-spacing: 2px;
-  background-color: #fff;
-  color:#1c345e;
-  
-}
-.content-left .book.book-content{
-  width: 984.3px;
-  min-height: 200px;
-  background-color: #fff;
-  margin:auto;
-  font-size:20px;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
-.content-left .info .avatar{
+/* 滚动条样式优化 */
+.book-info::-webkit-scrollbar {
+  width: 6px;
+}
+
+.book-info::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.book-info::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.book-info::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 右侧书本翻页区域 - 宽度 3/4 (75%) */
+.book-viewer-wrapper {
+  width: 75%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-content .avatar {
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.content-left .info .text{
-
-  font-size:16px;
-  margin-left:16px;
-  
-}
-.content-left .info .text .title{
-  font-weight:700;
-  user-select: none;
-  height:24px;
-  line-height: 24px;
+.book-info .title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
   text-align: left;
 }
 
-.content-left .info .text .author{
-   font-size:14px;
-   cursor:pointer;
-   text-align: left;
+.book-info .author-info {
+  font-size: 14px;
+  color: #606266;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.content-left .info .text .author span{
-  margin-right:16px;
-}
-.item{
-  width: 984.3px;
-  height: 699px;
-}
-.content-left .footer{
- width:100%;
-  height:180px;
 
+.author-name {
+  cursor: pointer;
+  color: #212121;
 }
-.content-left .footer ul{
-  list-style: none;
-     display: flex;
-    width:600px;
-    justify-content: space-between;
-    margin:auto;
-    padding:60px 0;
-   
+
+.author-name:hover {
+  text-decoration: none;
+  color: #8167a9;
 }
-.content-left .footer ul li{
- cursor:pointer;
-  width:56px;
-  height:56px;
-  font-size:20px;
-  line-height: 56px;
- text-align: center;
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
-.content-left .footer ul li .iconfont{
-  font-size:28px;
-  cursor:pointer;
+
+.header-actions .iconfont {
+  font-size: 28px;
+  cursor: pointer;
 }
-.content-left .footer ul li:active{
-   animation:zoomOut;
-   animation-duration: 1s;
+
+/* 书本翻页区域 */
+.book-viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  perspective: 2000px;
+}
+
+.book-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.6s ease;
+}
+
+.book-wrapper.flipping {
+  pointer-events: none;
+}
+
+/* 书本页面 */
+.book-page {
+  position: relative;
+  background: #fff;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.book-page.single-page {
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 3px #d4d7de;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.book-page.single-page:hover:not(.flipping) {
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 3px #c0c4cc;
+  transform: translateY(-2px);
+}
+
+.book-page.single-page.flipping {
+  cursor: wait;
+}
+
+.page-content {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.page-content-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* 书页边缘效果 - 使用背景图片 */
+.page-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  height: 100%;
+  z-index: 15;
+  pointer-events: none;
+  background-image: url('@/assets/images/read_edgie.png');
+  background-size: 12px 100%;
+  background-repeat: no-repeat;
+}
+
+.page-edge.right-edge {
+  right: 0;
+  background-position: right center;
+}
+
+.page-edge.left-edge {
+  left: 0;
+  background-position: left center;
+  transform: scaleX(-1); /* 翻转图片用于左侧 */
+}
+
+/* 页面边缘翻页触发器 */
+.page-flip-trigger {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.page-flip-trigger.right-trigger {
+  right: 0;
+  background: transparent;
+  border-radius: 0 8px 8px 0;
+}
+
+.page-flip-trigger.left-trigger {
+  left: 0;
+  background: transparent;
+  border-radius: 8px 0 0 8px;
+}
+
+.page-flip-trigger:hover {
+  background: transparent;
+}
+
+.page-flip-trigger.left-trigger:hover {
+  background: transparent;
+}
+
+.flip-button {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #303133 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.flip-button:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.flip-button :deep(.el-icon) {
+  color: #303133;
+}
+
+/* 淡入淡出动画 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.page-image-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+}
+
+.page-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.page-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  color: #909399;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+/* 翻页控制按钮 */
+.page-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 32px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  border: none;
+  background: #8167a9;
+  color: #fff;
+  transition: all 0.3s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #553a7d;
+  transform: scale(1.1);
+}
+
+.page-btn:disabled {
+  background: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #303133;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.current-page {
+  font-weight: 700;
+  color: #8167a9;
+}
+
+.separator {
+  color: #909399;
+}
+
+.total-pages {
+  color: #606266;
+}
+
+/* 描述信息 */
+.book-description {
+  padding: 0;
+}
+
+.book-description p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #606266;
+  margin: 0;
+  text-align: left;
 }
 
 /* 图片加载中样式 */
@@ -566,6 +1080,68 @@ console.log(this.authorDetails)
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .book-layout {
+    flex-direction: column;
+  }
+  
+  .book-info {
+    width: 100%;
+  }
+  
+  .book-viewer-wrapper {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .book-reader-container {
+    padding: 10px;
+  }
+  
+  .book-layout {
+    gap: 16px;
+  }
+  
+  .book-viewer {
+    padding: 10px 0;
+  }
+  
+  .book-wrapper {
+    height: 60vh;
+    min-height: 400px;
+  }
+  
+  .book-page.single-page {
+    max-width: 100%;
+  }
+  
+  .page-controls {
+    gap: 16px;
+    padding: 12px;
+  }
+  
+  .page-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .book-header {
+    padding: 12px 16px;
+  }
+  
+  .header-content {
+    gap: 8px;
+  }
+  
+  .book-description {
+    padding: 16px;
   }
 }
 

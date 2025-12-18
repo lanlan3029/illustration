@@ -12,6 +12,7 @@ import '@/styles/cropper.css'
 import 'animate.css/animate.css'
 import '@/assets/lefticon/iconfont.css'
 import axios from 'axios'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 const app = createApp(App)
 
@@ -32,6 +33,9 @@ app.config.globalProperties.$message = ElementPlus.ElMessage
 
 app.mount('#app')
 
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+  }
 //百度统计
 var _hmt = _hmt || [];
 window._hmt = _hmt;

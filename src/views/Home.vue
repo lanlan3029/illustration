@@ -957,7 +957,8 @@ export default {
 .copy-button,
 .generate-button {
     width: 100%;
-    margin-top: 8px;
+    margin: 8px auto 0;
+    
 }
 
 .generated-result {

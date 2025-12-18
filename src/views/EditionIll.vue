@@ -190,7 +190,7 @@ export default {
       const illustrationName = this.form.name || '该作品';
       
       this.$confirm(
-        `确定要删除"${illustrationName}"吗？删除后无法恢复。`,
+        `确定要删除"${illustrationName}"吗？。`,
         '确认删除',
         {
           confirmButtonText: '确定删除',

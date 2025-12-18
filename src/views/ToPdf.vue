@@ -2,22 +2,23 @@
   <div class="container">
     
     <div class="box">
-      <div v-if="imgToPDF.length==0" class="backAdd" @click="handleBack"><i class="el-icon-document-add" ></i><span>点击添加图片</span></div>
+      <div v-if="imgToPDF.length==0" class="backAdd" @click="handleBack"><i class="el-icon-document-add" ></i><span>点击添加插画</span></div>
       <div v-else v-for="(item, index) in imgToPDF" :key="index" class="item">
-        <el-image :src="(`https://static.kidstory.cc/`+item.content)" style="width:984.3px; height:699px" fit="contain"></el-image>
+        <el-image :src="(`https://static.kidstory.cc/`+item.content)" fit="contain"></el-image>
       </div>
     
       <div v-if="imgToPDF.length > 0" class="item">
-        <el-image :src="codeImg" style="width:984.3px; height:699px" fit="contain"></el-image>
+        <el-image :src="codeImg" fit="contain"></el-image>
       </div>
     </div>
+    
     <div class="details">
       <el-form ref="form" :model="form" label-width="80px">
-  <el-form-item label="书名" >
+  <el-form-item label="绘本名称" >
     <el-input v-model="form.title" maxlength="24"
         show-word-limit></el-input>
   </el-form-item>
-   <el-form-item label="类别">
+   <el-form-item label="绘本类别">
     <el-select v-model="form.category" placeholder="请选择绘本类别">
       <el-option label="儿童读物" value="reading"></el-option>
       <el-option label="习惯养成" value="habit"></el-option>
@@ -28,8 +29,8 @@
     </el-select>
   </el-form-item>
 
-  <el-form-item label="介绍">
-    <el-input type="textarea" v-model="form.desc"  :autosize="{ minRows: 2, maxRows: 4 }" maxlength="200"
+  <el-form-item label="绘本介绍">
+    <el-input type="textarea" v-model="form.desc"  :autosize="{ minRows: 6, maxRows: 10 }" maxlength="500"
     show-word-limit></el-input>
   </el-form-item>
 
@@ -212,38 +213,232 @@ export default {
 
 <style scoped>
 .container {
-  width: 100vw;
-  height: 90vh;
-  background-color: #f5f5f5;
-  overflow: scroll;
+  display: flex;
+  gap: 24px;
+  max-width: 80vw;
+  width:80vw;
+  height: 60vh;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 .btn {
-  width: 984.3px;
-height:120px;
-padding:40px 0;
-  margin:auto;
+  width: 100%;
+  padding: 20px 0 0;
+  margin-top: auto;
+  margin-bottom: 0;
   display: flex;
-  justify-content: space-around;
-  
-  
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid #ebeef5;
+  flex-shrink: 0;
+}
+
+.btn :deep(.el-button) {
+  flex: 1;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.btn :deep(.el-button--default) {
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  color: #606266;
+}
+
+.btn :deep(.el-button--default:hover) {
+  background-color: #f5f7fa;
+  border-color: #b7a6d6;
+  color: #8167a9;
+}
+
+.btn :deep(.el-button--primary) {
+  background-color: #8167a9;
+  border-color: #8167a9;
+  color: #fff;
+}
+
+.btn :deep(.el-button--primary:hover) {
+  background-color: #6e5494;
+  border-color: #6e5494;
+}
+
+.btn :deep(.el-button:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .box {
-  width: 984.3px;
-  min-height: 699px;
-  margin: auto;
+  width: 50%;
+ height:100%; 
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: 60vh;
+  overflow-y: scroll;
+}
+
+.box .item{
+  width: 80%;
+  display: flex;
+  justify-content: center;
+}
+
+.box .item :deep(.el-image) {
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 4 / 3;
   background-color: #fff;
   border-radius: 8px;
-}
-.box .item{
-  width: 984.3px;
-  height: 699px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
 }
 
 .details{
-  width: 984.3px;
-  height: 200px;
-  margin:auto;
-  margin-top:24px;
+  width: 50%;
+  flex-shrink: 0;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: 60vh;
+  overflow: hidden;
+}
+
+.details :deep(.el-form) {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 60px 32px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 表单内容区域可滚动 */
+.details :deep(.el-form > .el-form-item) {
+  flex-shrink: 0;
+}
+
+.details :deep(.el-form-item) {
+  margin-bottom: 32px;
+  flex-shrink: 0;
+}
+
+/* 最后一个表单项（复选框）与按钮之间的间距 */
+.details :deep(.el-form-item:last-of-type) {
+  margin-bottom: 24px;
+}
+
+.details :deep(.el-form-item__label) {
+  font-weight: 600;
+  color: #303133;
+  font-size: 15px;
+  padding-bottom: 10px;
+  line-height: 1.5;
+}
+
+.details :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  transition: all 0.3s;
+}
+
+.details :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #b7a6d6 inset;
+}
+
+.details :deep(.el-input.is-focus .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #8167a9 inset;
+}
+
+.details :deep(.el-select) {
+  width: 100%;
+}
+
+.details :deep(.el-select .el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  transition: all 0.3s;
+}
+
+.details :deep(.el-select .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #b7a6d6 inset;
+}
+
+.details :deep(.el-textarea__inner) {
+  border-radius: 8px;
+  border: 1px solid #dcdfe6;
+  transition: all 0.3s;
+  font-family: inherit;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.details :deep(.el-textarea__inner:hover) {
+  border-color: #b7a6d6;
+}
+
+.details :deep(.el-textarea__inner:focus) {
+  border-color: #8167a9;
+  box-shadow: 0 0 0 1px #8167a9 inset;
+}
+
+.details :deep(.el-checkbox) {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.details :deep(.el-checkbox__label) {
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.7;
+  padding-left: 8px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.details :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #8167a9;
+  border-color: #8167a9;
+}
+
+.details :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+  color: #303133;
+}
+
+/* 滚动条样式优化 */
+.details :deep(.el-form)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.details :deep(.el-form)::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.details :deep(.el-form)::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.details :deep(.el-form)::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .backAdd{
@@ -251,14 +446,14 @@ padding:40px 0;
     height:160px;
     font-size: 60px;
     align-items: center;
-    border: 6px dashed #eee;
+    justify-content: center;
+    border: 4px dashed #eee;
     cursor: pointer;
     display: flex;
-   position: relative;
-   left:372px;
-   top:269.5px;
     flex-direction: column;  
-     padding:37px 0;
+    padding:37px 0;
+    margin: auto;
+    border-radius: 8px;
 }
 .backAdd span{
     font-size:18px;

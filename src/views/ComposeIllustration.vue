@@ -67,8 +67,8 @@
                     :class="{ 'selected': checkedImage.includes(item) }">
                     <el-image 
                         :src="(`https://static.kidstory.cc/`+item.content)" 
-                        style="width:12vw; height: 8.448vw" 
-                        fit="contain">
+                        fit="cover"
+                        class="illus-thumb">
                     </el-image>
                     <span v-if="checkedImage.includes(item)" class="check-mark">
                         <i class="el-icon-check"></i>
@@ -199,7 +199,7 @@ export default {
 .container{
     width:100vw;
     min-height:90vh;
-    padding:0 5vw;
+    padding:0 10vw;
     background-color: #f5f5f5;
     overflow-y: auto;
     position: relative;
@@ -331,17 +331,17 @@ export default {
     width:100%;
     display: flex;
     flex-wrap:wrap;
-    gap: 1vw;
+    gap: 1.5%;
 }
 
 .container .items li{
-    width:13vw;
-    height:9.448vw;
+    /* 五列布局：每行 5 个，预留间距 */
+    width: 18%;
+    position: relative;
     padding:0.5vw;
     border-radius: 4px;
     background-color: #fff;
     cursor:pointer;
-    position: relative;
     transition: all 0.3s;
     border: 2px solid transparent;
 }
@@ -383,6 +383,14 @@ export default {
 
 .compose-btn i{
     margin-right: 8px;
+}
+
+/* 插画缩略图：填满 4:3 容器 */
+.illus-thumb{
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: block;
+    border-radius: 4px;
 }
 
 </style>
