@@ -1,7 +1,7 @@
 import { defineAsyncComponent } from 'vue'
 
 const components = [
-    { name: 'Picture', file: 'Picture' },
+    { name: 'Picture', file: 'Picture' }, // 保持 Picture 名称，但检查是否已注册
     { name: 'v-text', file: 'VText' } // 使用 kebab-case 名称以匹配 component-list.js 中的 'v-text'
 ]
 

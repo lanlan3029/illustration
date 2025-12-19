@@ -79,6 +79,7 @@
                                     <div class="card-content">
                                         <h3 class="card-title">第 {{ imgIndex + 1 }} 张</h3>
                                         <div class="card-actions">
+                                            <el-button size="small" type="primary" @click="goEdition(image)">编辑</el-button>
                                             <el-button 
                                                 type="danger" 
                                                 size="small" 
@@ -99,6 +100,10 @@
 
 <script>
 import { ElMessage } from 'element-plus'
+// 导入generateID
+import generateID from "@/utils/generateID"
+// 导入自定义样式的包
+import {commonStyle,commonAttr} from "@/custom-component/component-list"
 
 export default {
     name: 'CharacterGroupImages',
@@ -253,6 +258,107 @@ export default {
                 this.groupImages = [];
             }
         },
+
+        async goEdition(item){
+        try {
+            // 获取插画的完整信息（包括图片URL）
+            let imageUrl = '';
+            if (item.content) {
+                // 如果是相对路径，转换为完整URL
+                if (item.content.startsWith('http://') || item.content.startsWith('https://')) {
+                    imageUrl = item.content;
+                } else {
+                    imageUrl = `https://static.kidstory.cc/${item.content}`;
+                }
+            } else {
+                // 如果没有content，尝试从API获取
+                try {
+                    const res = await this.$http.get(`/ill/${item._id}`, {
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    });
+                    if (res.data && res.data.message && res.data.message.content) {
+                        const content = res.data.message.content;
+                        if (content.startsWith('http://') || content.startsWith('https://')) {
+                            imageUrl = content;
+                        } else {
+                            imageUrl = `https://static.kidstory.cc/${content}`;
+                        }
+                    }
+                } catch (err) {
+                    console.error('获取插画详情失败:', err);
+                    ElMessage.error('获取插画信息失败，请重试');
+                    return;
+                }
+            }
+            
+            if (!imageUrl) {
+                ElMessage.error('无法获取插画图片');
+                return;
+            }
+            
+            // 将插画图片转换为组件数据
+            // 创建图片组件
+            const img = new Image();
+            img.crossOrigin = 'anonymous'; // 允许跨域
+            
+            img.onload = () => {
+                // 获取画布尺寸（从store获取，单位是vw，需要转换为px）
+                // 假设屏幕宽度为1920px，1vw = 19.2px
+                const vwToPx = window.innerWidth / 100;
+                const canvasWidth = 56 * vwToPx; // 56vw 转换为 px
+                const canvasHeight = 42 * vwToPx; // 42vw 转换为 px（从store获取）
+                
+                // 计算图片尺寸，确保不超过画布大小，同时保持宽高比
+                let displayWidth = img.width;
+                let displayHeight = img.height;
+                
+                // 如果图片超过画布，按比例缩放
+                if (displayWidth > canvasWidth || displayHeight > canvasHeight) {
+                    const scale = Math.min(canvasWidth / displayWidth, canvasHeight / displayHeight);
+                    displayWidth = Math.floor(displayWidth * scale);
+                    displayHeight = Math.floor(displayHeight * scale);
+                }
+                
+                // 居中显示
+                const top = Math.max(0, (canvasHeight - displayHeight) / 2);
+                const left = Math.max(0, (canvasWidth - displayWidth) / 2);
+                
+                // 创建组件数据
+                const componentData = {
+                    ...commonAttr,
+                    id: generateID(),
+                    component: 'Picture',
+                    label: '图片',
+                    icon: '',
+                    propValue: imageUrl,
+                    style: {
+                        ...commonStyle,
+                        top: top,
+                        left: left,
+                        width: displayWidth,
+                        height: displayHeight,
+                    }
+                };
+                
+                // 将组件数据设置到 store
+                this.$store.commit('setComponentData', [componentData]);
+                
+                // 跳转到创作页面
+                this.$router.push('/creation');
+            };
+            
+            img.onerror = () => {
+                ElMessage.error('图片加载失败，请检查图片URL');
+            };
+            
+            img.src = imageUrl;
+        } catch (error) {
+            console.error('编辑插画失败:', error);
+            ElMessage.error('编辑插画失败，请重试');
+        }
+    },
 
         // 兼容多种插画字段，提取图片 URL
         pickImageUrl(img) {

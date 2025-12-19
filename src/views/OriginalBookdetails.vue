@@ -18,11 +18,17 @@
           <div class="author-info">
             <span class="author-name" @click="toAuthor(authorDetails._id)">{{authorDetails.name}}</span>
             <el-button 
-              v-if="authorDetails._id && authorDetails._id != userid"
-              type="text" 
+              v-if="authorDetails && authorDetails._id && String(authorDetails._id) !== String(userid)"
+              :class="[
+                'follow-btn',
+                attentionArr && attentionArr.includes(authorDetails._id) ? 'followed' : 'not-followed',
+                { 'follow-animating': isFollowingAnimating }
+              ]"
               size="small" 
-              @click="attentionArr.includes(authorDetails._id) ? cancelAttention(authorDetails._id) : newAttention(authorDetails._id)">
-              {{ attentionArr.includes(authorDetails._id) ? '已关注' : '关注' }}
+              @click="handleFollowClick(authorDetails._id)">
+              <span class="follow-btn-text">
+                {{ attentionArr && attentionArr.includes(authorDetails._id) ? '已关注' : '+ 关注' }}
+              </span>
             </el-button>
           </div>
         </div>
@@ -33,9 +39,14 @@
           <el-button 
             type="text" 
             size="large"
-            @click="collectBookArr.includes(bookDetails._id) ? null : collectBookFun(bookDetails._id)">
+            class="collect-btn"
+            :class="{ 'collecting': isCollecting }"
+            @click="handleCollectClick">
             <i
-              :class="collectBookArr.includes(bookDetails._id) ? 'iconfont icon-shoucang1' : 'iconfont icon-shoucang'" 
+              :class="[
+                collectBookArr.includes(bookDetails._id) ? 'iconfont icon-shoucang1' : 'iconfont icon-shoucang',
+                { 'collect-animate': isCollecting }
+              ]" 
               :style="collectBookArr.includes(bookDetails._id) ? 'color:#FFd301' : ''"
             ></i>
           </el-button>
@@ -189,7 +200,7 @@ export default {
       id: '',
       authorId:'',
       bookDetails:[],
-      authorDetails:[],
+      authorDetails:{},
       //存放请求到的绘本原始数据
       codeImg:require('../assets/images/pdfCode.png'),
       loadingImages: true, // 图片加载状态
@@ -199,6 +210,9 @@ export default {
       showFlipButton: false, // 是否显示右侧翻页按钮
       showPrevButton: false, // 是否显示左侧翻页按钮
       flipDirection: 'slide-left', // 翻页方向：slide-left（向右翻）或 slide-right（向左翻）
+      collectIdMap: {}, // 保存绘本ID到收藏记录ID的映射
+      isCollecting: false, // 收藏按钮点击动画状态
+      isFollowingAnimating: false, // 关注按钮点击动画状态
     }
   },
   watch: {
@@ -440,9 +454,23 @@ export default {
    attention(){
     console.log("关注作者")
    },
-   
 
-
+    // 处理关注按钮点击
+    handleFollowClick(id) {
+      if (this.isFollowingAnimating) return;
+      
+      this.isFollowingAnimating = true;
+      
+      if (this.attentionArr && this.attentionArr.includes(id)) {
+        this.cancelAttention(id);
+      } else {
+        this.newAttention(id);
+      }
+      
+      setTimeout(() => {
+        this.isFollowingAnimating = false;
+      }, 600);
+    },
 
     //关注
     newAttention(id){
@@ -454,13 +482,23 @@ export default {
           }
         })
         .then((response) => {
-          console.log(this.attentionArr)
-          if (response.data.desc === "success") {
+          if (response.data.desc === "success" || response.data.code === 0) {
               //把该用户ID到用户已关注数组
               this.$store.commit("myAttention",id)
-          } 
+              ElMessage({
+    message: '关注成功',
+    type: 'success',
+    plain: true,
+    offset:100,
+  })
+          } else {
+              ElMessage.warning(response.data.message || '关注失败');
+          }
         })
-        .catch((error) => console.log(error));
+        .catch((error) => {
+          console.error('关注失败:', error);
+          ElMessage.error('关注失败，请重试');
+        });
    },
     //取消关注
     cancelAttention(id){
@@ -473,14 +511,23 @@ export default {
         },
     )
         .then((response) => {
-          console.log(this.attentionArr)
-          if (response.data.desc === "success") {
+          if (response.data.desc === "success" || response.data.code === 0) {
               //把该用户ID到用户已关注数组
               this.$store.commit("cancelAttention",id)
-              console.log(this.attentionArr)
-          } 
+              ElMessage({
+    message: '已取消关注',
+    type: 'info',
+    plain: true,
+    offset:150,
+  })
+          } else {
+              ElMessage.warning(response.data.message || '取消关注失败');
+          }
         })
-        .catch((error) => console.log(error));
+        .catch((error) => {
+          console.error('取消关注失败:', error);
+          ElMessage.error('取消关注失败，请重试');
+        });
    },
    //点击喜欢绘本
    likeBookFun(id) {
@@ -500,24 +547,122 @@ export default {
         })
         .catch((error) => console.log(error));
     },
+// 处理收藏按钮点击
+handleCollectClick() {
+  if (!this.bookDetails._id) return;
+  
+  this.isCollecting = true;
+  
+  if (this.collectBookArr.includes(this.bookDetails._id)) {
+    this.cancelCollectBook(this.bookDetails._id);
+  } else {
+    this.collectBookFun(this.bookDetails._id);
+  }
+  
+  // 动画结束后重置状态
+  setTimeout(() => {
+    this.isCollecting = false;
+  }, 600);
+},
+
 //点击收藏绘本
 collectBookFun(id) {
    this.$http.post(`/user/collect/${id}`, {
-  type: "book"  // 只需要这个参数
-}, {
-  headers: {
-    "Authorization": "Bearer " + localStorage.getItem("token")
+    type: "book"
+  }, {
+    headers: {
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    }
+  })
+  .then((response) => {
+    console.log(response)
+    if (response.data.desc === "success" || response.data.code === 0) {
+      //把该绘本ID添加到用户已收藏绘本数组
+      this.$store.commit("collectBook", [id])
+      // 如果响应中包含收藏记录ID，保存到映射中
+      if (response.data.message && response.data.message._id) {
+        this.collectIdMap[id] = response.data.message._id;
+      } else {
+        // 如果没有返回收藏记录ID，重新获取收藏记录列表
+        this.loadCollectIdMap();
+      }
+      ElMessage.success('收藏成功');
+    } else {
+      ElMessage.warning(response.data.message || '收藏失败');
+    }
+  })
+  .catch((error) => {
+    console.error('收藏失败:', error);
+    ElMessage.error('收藏失败，请重试');
+  });
+},
+
+//取消收藏绘本
+cancelCollectBook(bookId) {
+  // 通过绘本ID找到对应的收藏记录ID
+  const collectRecordId = this.collectIdMap[bookId];
+  if (!collectRecordId) {
+    // 如果没有映射，尝试从API获取
+    this.loadCollectIdMap().then(() => {
+      const recordId = this.collectIdMap[bookId];
+      if (recordId) {
+        this.performCancelCollect(bookId, recordId);
+      } else {
+        ElMessage.error('找不到收藏记录');
+      }
+    });
+    return;
   }
-})
-        .then((response) => {
-          console.log(response)
-          if (response.data.desc === "success") {
-              //把该插画ID添加到用户已收藏插画数组
-              this.$store.commit("collectBook",id)
-          } 
-        })
-        .catch((error) => console.log(error));
-    },
+  
+  this.performCancelCollect(bookId, collectRecordId);
+},
+
+// 执行取消收藏操作
+performCancelCollect(bookId, collectRecordId) {
+  this.$http.delete(`/user/list/collect?id=${collectRecordId}`, {
+    headers: {
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    }
+  })
+  .then((response) => {
+    if (response.data.desc === "success" || response.data.code === 0) {
+      // 从store中移除
+      this.$store.commit("cancelCoBook", bookId);
+      // 从映射中移除
+      delete this.collectIdMap[bookId];
+      ElMessage.success('已取消收藏');
+    } else {
+      ElMessage.warning(response.data.message || '取消收藏失败');
+    }
+  })
+  .catch((error) => {
+    console.error('取消收藏失败:', error);
+    ElMessage.error('取消收藏失败，请重试');
+  });
+},
+
+// 加载收藏记录映射
+async loadCollectIdMap() {
+  try {
+    const userId = localStorage.getItem("id");
+    const res = await this.$http.get(`/user/list/collect?id=${userId}&category=book`, {
+      headers: {
+        "Authorization": "Bearer " + localStorage.getItem("token")
+      }
+    });
+    if (res.data.desc === "success" || res.data.code === 0) {
+      const collectRecords = res.data.message || [];
+      this.collectIdMap = {};
+      collectRecords.forEach(record => {
+        if (record.collectid) {
+          this.collectIdMap[record.collectid] = record._id;
+        }
+      });
+    }
+  } catch (error) {
+    console.error('加载收藏记录失败:', error);
+  }
+},
 
    setId(){
       this.authorId=this.bookDetails.ownerid
@@ -630,14 +775,16 @@ collectBookFun(id) {
     if (!this.id) {
       this.id = this.bookId || (this.$route ? this.$route.params.bookId : '');
     }
-    
+
     if (this.id) {
       await this.getBooks();
       await this.getImgUrl();
       await this.setId();
       await this.getAuthor();
+      // 加载收藏记录映射
+      await this.loadCollectIdMap();
     }
-    
+
     // 添加键盘事件监听
     window.addEventListener('keydown', this.handleKeyPress);
   },
@@ -737,8 +884,10 @@ collectBookFun(id) {
   color: #606266;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .author-name {
@@ -749,6 +898,84 @@ collectBookFun(id) {
 .author-name:hover {
   text-decoration: none;
   color: #8167a9;
+}
+
+/* 关注按钮样式 */
+:deep(.follow-btn) {
+  padding: 4px 12px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 1px solid !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: auto !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+:deep(.follow-btn.not-followed) {
+  background: linear-gradient(135deg, #8167a9 0%, #9d8bb8 100%) !important;
+  border-color: #8167a9 !important;
+  color: #fff !important;
+}
+
+:deep(.follow-btn.not-followed:hover) {
+  background: linear-gradient(135deg, #9d8bb8 0%, #b5a5d0 100%) !important;
+  border-color: #9d8bb8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(129, 103, 169, 0.3) !important;
+}
+
+:deep(.follow-btn.followed) {
+  background: #f5f6fa !important;
+  border-color: #dcdfe6 !important;
+  color: #606266 !important;
+}
+
+:deep(.follow-btn.followed:hover) {
+  background: #ebeef5 !important;
+  border-color: #c0c4cc !important;
+  color: #909399 !important;
+}
+
+:deep(.follow-btn.follow-animating) {
+  pointer-events: none !important;
+  animation: followPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.follow-btn-text {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.follow-btn.follow-animating .follow-btn-text) {
+  animation: followTextBounce 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes followPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes followTextBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
 }
 
 .header-actions {
@@ -764,6 +991,35 @@ collectBookFun(id) {
 .header-actions .iconfont {
   font-size: 28px;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collect-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collect-btn:hover {
+  transform: scale(1.1);
+}
+
+.collect-btn.collecting {
+  pointer-events: none;
+}
+
+.collect-animate {
+  animation: collectPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes collectPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 /* 书本翻页区域 */
@@ -899,7 +1155,7 @@ collectBookFun(id) {
   background: rgba(255, 255, 255, 0.3) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+
   color: #303133 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;

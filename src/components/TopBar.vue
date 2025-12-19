@@ -32,7 +32,7 @@
           </li>
 
           <li class="nav-item" :class="{ 'active': route.path === '/books' }">
-            <router-link to="/books" class="nav-link" @click="closeSubmenu">原创绘本</router-link>
+            <router-link to="/books" class="nav-link" @click="closeSubmenu">绘本</router-link>
           </li>
 
           <li class="nav-item" :class="{ 'active': route.path === '/utility-tools' }">
@@ -49,7 +49,7 @@
                 v-model="searchValue" 
                 name="search" 
                 autocomplete="off" 
-                placeholder="请输入搜索内容" 
+                placeholder="搜索绘本" 
                 @keyup.enter="searchFun(searchValue)"
                 @click.stop
               >

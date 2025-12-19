@@ -3,8 +3,7 @@
     <div class="content">
       <div class="content-left">
         <div class="el-select">
-          <!-- 排序方式：改为单选按钮组 -->
-          <el-radio-group v-model="sortType" size="mini" @change="handleSortChange">
+          <el-radio-group v-model="sortType" size="small" @change="handleSortChange">
             <el-radio-button
               v-for="item in sortList"
               :key="item.value"
@@ -13,8 +12,7 @@
               {{ item.label }}
             </el-radio-button>
           </el-radio-group>
-          <!-- 类别筛选 -->
-          <el-radio-group v-model="button2"  size="mini" @change="handleCategoryChange">
+          <el-radio-group v-model="button2"  size="small" @change="handleCategoryChange">
             <el-radio-button 
               v-for="option in categoryOptions" 
               :key="option.value"
@@ -24,94 +22,84 @@
           </el-radio-group>
         </div>
 
-  <!-- 不搜索时显示全部绘本 -->
-      <div  class="box">
-      <div v-if="loading" class="loading"><span class="text">故事正在加载</span><i class="el-icon-loading" :size="32" ></i></div>
-        <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
-        <div class="item" v-for="(item, index) in books" :key="item._id || index">
-          <el-card class="card" shadow="hover">
-            <div>
-              <el-image
-                :src="(`https://static.kidstory.cc/`+item.cover)"
-                class="image"
-                fit="cover"
-                lazy
-                @click="toDetail(item._id)"
-              >
-                <template #placeholder>
-                  <div class="img-placeholder">
-                    <i class="el-icon-picture-outline"></i>
+        <div class="box">
+          <div v-if="loading" class="loading">
+            <span class="text">故事正在加载</span>
+            <i class="el-icon-loading" :size="32"></i>
+          </div>
+          <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
+            <div class="item" v-for="(item, index) in books" :key="item._id || index">
+              <el-card class="card" shadow="hover">
+                <el-image
+                  :src="(`https://static.kidstory.cc/`+item.cover)"
+                  class="image"
+                  fit="cover"
+                  lazy
+                  @click="toDetail(item._id)"
+                >
+                  <template #placeholder>
+                    <div class="img-placeholder">
+                      <i class="el-icon-picture-outline"></i>
+                    </div>
+                  </template>
+                  <template #error>
+                    <div class="img-error">
+                      <i class="el-icon-picture-outline"></i>
+                    </div>
+                  </template>
+                </el-image>
+                <div class="data">
+                  <span class="name">{{item.title}}</span>
+                  <div class="icon">
+                    <span 
+                      v-if="collectBookArr.includes(item._id)" 
+                      class="iconfont icon-shoucang1 collect-icon"
+                      :class="{ 'collect-animate': collectingIds.includes(item._id) }"
+                      @click="handleCollectClick(item._id)"
+                      style="color:#FFd301; cursor: pointer;">
+                    </span>
+                    <span 
+                      v-else 
+                      class="iconfont icon-shoucang collect-icon"
+                      :class="{ 'collect-animate': collectingIds.includes(item._id) }"
+                      @click="handleCollectClick(item._id)" 
+                      style="cursor: pointer;">
+                    </span>
                   </div>
-                </template>
-                <template #error>
-                  <div class="img-error">
-                    <i class="el-icon-picture-outline"></i>
-                  </div>
-                </template>
-              </el-image>
-               <div class="data">
-              <span class="name">{{item.title}}</span>
-              <div class="icon">
-                <span v-if="collectBookArr.includes(item._id)"><i style="color:#FFd301" class="iconfont icon-shoucang1"></i></span>
-                <span v-else class="iconfont icon-shoucang"><i @click="collectBookFun(item._id)" ></i></span></div>
+                </div>
+              </el-card>
             </div>
-            </div>
-          </el-card>
+          </div>
         </div>
       </div>
-     
-      
-    
-    </div>
-      
- 
-      </div>
-
     </div>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
 
 export default {
   name: "OriginalBooks",
-  components: {
-  },
   computed:mapState([
         "books", "collectBookArr",
-        "likeBookArr",
     ]),
   data() {
     return {
       userid:localStorage.getItem("id"),
-      bookArry:[],
-     toolArry:[],
-     num:1,
-     imgUrl:[],
-     loading:true,
-     loadControl:false,
-     scrollDisabled:false,
+      toolArry:[],
+      num:1,
+      loading:true,
+      loadControl:false,
+      scrollDisabled:false,
       sortList: [
-        {
-          value: "default",
-          label: "默认",
-        },
-        {
-          value: "hot",
-          label: "热度",
-        },
-        {
-          value: "time",
-          label: "时间",
-        },
+        { value: "default", label: "默认" },
+        { value: "hot", label: "热度" },
+        { value: "time", label: "时间" },
       ],
       sortType: "default",
-      button1: "不限",
-      button2: "", // 使用空字符串表示"不限"
+      button2: "",
       categoryOptions: [
         { label: "不限", value: "" },
         { label: "儿童读物", value: "reading" },
@@ -121,6 +109,8 @@ export default {
         { label: "科普百科", value: "knowledge" },
         { label: "其他", value: "others" },
       ],
+      collectingIds: [],
+      collectIdMap: {},
     };
   },
   methods: {
@@ -143,8 +133,9 @@ export default {
       try{
         const { sort_param, sort_num } = this.getSortParams();
         let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=1`;
-        // 如果选择了类别，添加 type 参数
-        if (this.button2) {
+        // 只有当 button2 有值且不为空字符串时，才添加 type 参数
+        // "不限"对应的 value 是空字符串，此时不添加 type 参数，显示所有绘本
+        if (this.button2 && this.button2.trim() !== '') {
           url += `&type=${this.button2}`;
         }
         let res=await this.$http.get(url)
@@ -177,139 +168,207 @@ export default {
     });
     await Promise.all(promises);
    },
-   setBooks(){
-    this.$store.commit("addBooks",this.toolArry)
-    this.loading=false  
-   },
-  //下一页
-   async loadMore(){
-    if(!this.loadControl) {
-      this.loadControl=true
+    setBooks(){
+      this.$store.commit("addBooks",this.toolArry)
+      this.loading=false  
+    },
+
+    async loadMore(){
+      if(!this.loadControl) {
+        this.loadControl=true
         try {
           const { sort_param, sort_num } = this.getSortParams();
-          let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=` + this.num;
-          // 如果选择了类别，添加 type 参数
-          if (this.button2) {
+          const nextPage = this.num + 1;
+          let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=` + nextPage;
+          if (this.button2 && this.button2.trim() !== '') {
             url += `&type=${this.button2}`;
           }
           let res = await this.$http.get(url)
-          if (res.data.message.length == 0) {
+          const books = res.data?.message || res.data?.data || [];
+          if (!Array.isArray(books) || books.length === 0) {
             this.scrollDisabled = true
+            this.loadControl = false
           } else {
-            this.toolArry = res.data.message
+            this.toolArry = books
             await this.getImgUrl();
             await this.setBooks();
-            this.num++
+            this.num = nextPage;
             this.loadControl=false
           }
         } catch (err) {
-          console.log(err)
+          this.loadControl = false
         }
-    }
-  
+      }
     },
 
- 
+    handleCollectClick(id) {
+      if (!id) {
+        ElMessage.error('绘本ID无效');
+        return;
+      }
+      
+      if (!this.collectingIds.includes(id)) {
+        this.collectingIds.push(id);
+      }
+      
+      if (this.collectBookArr.includes(id)) {
+        this.cancelCollectBook(id);
+      } else {
+        this.collectBookFun(id);
+      }
+      
+      setTimeout(() => {
+        const index = this.collectingIds.indexOf(id);
+        if (index > -1) {
+          this.collectingIds.splice(index, 1);
+        }
+      }, 600);
+    },
 
-    //点击收藏绘本
     collectBookFun(id) {
-      this.$http
-        .post(`/user/like/`+id,{ownerid:this.userid,type:"book",likeid:id}
-        ,{
-          headers:{
-            "Authorization":"Bearer "+localStorage.getItem("token")
+      if (!id) {
+        ElMessage.error('绘本ID无效');
+        return;
+      }
+      
+      const token = localStorage.getItem("token");
+      if (!token) {
+        ElMessage.warning('请先登录');
+        return;
+      }
+      
+      this.$http.post(`/user/collect/${id}`, {
+        type: "book"
+      }, {
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      })
+      .then((response) => {
+        if (response.data.desc === "success" || response.data.code === 0) {
+          this.$store.commit("collectBook", [id])
+          if (response.data.message && response.data.message._id) {
+            this.collectIdMap[id] = response.data.message._id;
+          } else {
+            this.loadCollectIdMap();
           }
-        })
-        .then((response) => {
-          console.log(response)
-          if (response.data.desc === "success") {
-              //把该绘本ID添加到用户已收藏绘本数组
-              this.$store.commit("collectBook",id)
-              ElMessage.success('收藏成功');
-          } 
-        })
-        .catch((error) => {
-          console.error('收藏失败:', error);
-          ElMessage.error('收藏失败，请重试');
-        });
+          ElMessage.success('收藏成功');
+        } else {
+          ElMessage.warning(response.data.message || '收藏失败');
+        }
+      })
+      .catch(() => {
+        ElMessage.error('收藏失败，请重试');
+      });
     },
 
-    //搜索绘本
-    async searchFun(){
-      this.$store.commit("removeBooks")
-      if(this.searchInput!= ''){
-        this.$router.push({
-        name: "books",
-        query: { keyWord: this.searchInput },
+    cancelCollectBook(bookId) {
+      const collectRecordId = this.collectIdMap[bookId];
+      if (!collectRecordId) {
+        this.loadCollectIdMap().then(() => {
+          const recordId = this.collectIdMap[bookId];
+          if (recordId) {
+            this.performCancelCollect(bookId, recordId);
+          } else {
+            ElMessage.error('找不到收藏记录');
+          }
+        });
+        return;
+      }
+      
+      this.performCancelCollect(bookId, collectRecordId);
+    },
+
+    performCancelCollect(bookId, collectRecordId) {
+      this.$http.delete(`/user/list/collect?id=${collectRecordId}`, {
+        headers: {
+          "Authorization": "Bearer " + localStorage.getItem("token")
+        }
+      })
+      .then((response) => {
+        if (response.data.desc === "success" || response.data.code === 0) {
+          this.$store.commit("cancelCoBook", bookId);
+          delete this.collectIdMap[bookId];
+          ElMessage.success('已取消收藏');
+        } else {
+          ElMessage.warning(response.data.message || '取消收藏失败');
+        }
+      })
+      .catch(() => {
+        ElMessage.error('取消收藏失败，请重试');
       });
-        await this.getSearchBooks()
-        await this.getImgUrl()
-        await this.setBooks()
-      }else{
-        return
+    },
+
+    async loadCollectIdMap() {
+      try {
+        const userId = localStorage.getItem("id");
+        const token = localStorage.getItem("token");
+        if (!userId || !token) {
+          return;
+        }
+        const res = await this.$http.get(`/user/list/collect?id=${userId}&category=book`, {
+          headers: {
+            "Authorization": "Bearer " + token
+          }
+        });
+        if (res.data.desc === "success" || res.data.code === 0) {
+          const collectRecords = res.data.message || [];
+          this.collectIdMap = {};
+          collectRecords.forEach(record => {
+            if (record.collectid) {
+              this.collectIdMap[record.collectid] = record._id;
+            }
+          });
+        }
+      } catch (error) {
+        // 静默失败
       }
     },
 
     async getAllBooks(){
       this.$store.commit("removeBooks")
+      this.num = 1;
+      this.scrollDisabled = false;
+      this.loadControl = false;
       if(this.searchInput==''){
         this.$router.push({
-        name: "books"
-      });
-      //获取第一页的18本绘本
+          name: "books"
+        });
         await this.getBooks();
-    //获取图片
-    await this.getImgUrl();
-    
-   await this.setBooks();
-      }else{
-        return
+        await this.getImgUrl();
+        await this.setBooks();
       }
     },
-    // 处理排序变化
+
     async handleSortChange() {
-      // 重置分页
       this.num = 1;
       this.scrollDisabled = false;
+      this.loadControl = false;
       this.loading = true;
-      // 清空当前列表
       this.$store.commit("removeBooks");
-      // 重新获取数据
       await this.getBooks();
       await this.getImgUrl();
       await this.setBooks();
     },
-    // 处理类别变化
+
     async handleCategoryChange() {
-      // 重置分页
       this.num = 1;
       this.scrollDisabled = false;
+      this.loadControl = false;
       this.loading = true;
-      // 清空当前列表
       this.$store.commit("removeBooks");
-      // 重新获取数据
       await this.getBooks();
       await this.getImgUrl();
       await this.setBooks();
     },
-    //跳转到books
-    async toBooks(){
-      if(this.searchInput==''){
-        this.$router.push({
-        name: "books"
-      });
-       
-    }
-
-
-  }},
+  },
 
 
 
   async mounted(){
-      await this.getAllBooks()  
+    await this.getAllBooks();
+    await this.loadCollectIdMap();
   },
-
 };
 </script>
 <style scoped>
@@ -427,8 +486,37 @@ text-align: left;
   font-size:14px;
   cursor:pointer;
 }
+
+.data .icon .collect-icon {
+  cursor: pointer;
+  padding: 4px;
+  display: inline-block;
+  font-size: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1;
+}
+
+.data .icon .collect-icon:hover {
+  transform: scale(1.15);
+}
+
+.data .icon .collect-icon.collect-animate {
+  animation: collectPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+@keyframes collectPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.6) rotate(15deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
 .box{
- 
   margin-bottom: 32px;
 }
 .loading{

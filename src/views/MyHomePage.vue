@@ -54,7 +54,7 @@
               <p class="card-meta">创建时间：{{item.created_at || item.createdAt || '未知'}}</p>
               <div class="card-actions">
                 <el-button size="small" type="primary" @click="goCreateGroupImages(item.id || item._id)">创作组图</el-button>
-                <el-button size="small" type="info" @click="goCharacterGroupImages(item.id || item._id)">查看组图</el-button>
+                <el-button size="small" color="#626aef" @click="goCharacterGroupImages(item.id || item._id)">查看组图</el-button>
                 <el-button size="small" type="danger" @click="handleDeleteCharacter(item)">删除</el-button>
               </div>
             </div>
@@ -162,22 +162,22 @@
       </div>
 
 <!-- 已收藏插画 -->
-      <div v-if="activeIndex == 5" class="index2">
+      <div v-if="activeIndex == 5" class="card-container">
        <my-collection-ill/>
       </div>
 
 <!-- 已收藏绘本 -->
-      <div v-if="activeIndex == 6" class="index5">
+      <div v-if="activeIndex == 6" class="card-container">
        <my-collection-book />
       </div>
 
 <!-- 我的关注 -->
-      <div v-if="activeIndex == 7" class="index2">
+      <div v-if="activeIndex == 7" class="card-container">
        <my-attention />    
       </div>
 
 <!-- 我的粉丝 -->
-      <div v-if="activeIndex == 8" class="index2">
+      <div v-if="activeIndex == 8" class="card-container">
        <my-fans />    
       </div>
 
@@ -247,7 +247,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       this.$router.push("/creation");
     },
    goLocalIllus(){
-       this.$router.push("/user/upload/upload-local-illustration");
+       this.$router.push("/user/upload/upload-local-book");
    },
    goHome(){
        this.$router.push("/");
@@ -1197,6 +1197,14 @@ overflow: hidden;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
+}
+
+.card-actions :deep(.el-button) {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 8px 12px;
 }
 
 /* 空状态 */

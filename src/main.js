@@ -34,7 +34,10 @@ app.config.globalProperties.$message = ElementPlus.ElMessage
 app.mount('#app')
 
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-    app.component(key, component)
+    // 跳过 Picture，因为自定义组件已经注册了 Picture
+    if (key !== 'Picture') {
+        app.component(key, component)
+    }
   }
 //百度统计
 var _hmt = _hmt || [];

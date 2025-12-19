@@ -37,9 +37,7 @@
         <div class="books">
           <div class="title">
             <p>绘本作品</p>
-            <el-link :underline="false" @click="goMybooks"
-              >更多<i class="el-icon-d-arrow-right el-icon--right"></i>
-            </el-link>
+          
           </div>
           <ul class="books-items" v-if="bookArry && bookArry.length > 0">
             <li
@@ -384,9 +382,7 @@ export default {
     goMyIllu() {
       this.activeIndex = 2;
     },
-    goMybooks() {
-      this.activeIndex = 3;
-    },
+  
     goIllusDetails(id) {
       this.$router.push({name:'illusdetails',params:{illId:id}});
     },
@@ -440,9 +436,6 @@ export default {
     font-size: 28px;
     font-weight:500;
 }
-.container .left .info .info-right{
-    
-}
 .container .left .illustration,
 .books {
   height: 38vh;
@@ -479,19 +472,17 @@ export default {
   list-style: none;
   margin-top: 4vh;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 2vw;
 }
 .container .left .books ul li {
-  width: 16vw;
+  width: calc((100% - 3 * 2vw) / 4);
   height: 11.26vw;
   background-color: #f5f6fa;
   cursor: pointer;
-  margin-right: 3vw;
   border-radius: 4px;
   overflow: hidden;
-}
-.container .left .books ul li:last-child{
-  margin-right: 0;
 }
 
 .books-item {

@@ -144,9 +144,9 @@ const routes = [{
     },
     {
         path: '/user/upload/upload-local-book',
-        name: 'upload-local-illustration',
+        name: 'upload-local-book',
         component: () =>
-            import ( /* webpackChunkName: "upload-illustration" */ '../views/UploadLocalBook.vue'),
+            import ( /* webpackChunkName: "upload-local-book" */ '../views/UploadLocalBook.vue'),
         meta: {
             requiresAuth: true
         }

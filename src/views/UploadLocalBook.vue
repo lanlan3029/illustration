@@ -3,26 +3,31 @@
 <div class="box">
 
 <el-form ref="form" :model="form" label-width="100px">
-    <el-form-item label="上传绘本">
-    <div class="upload-container">
+    <el-form-item label="上传作品">
     <el-upload
         ref="upload"
-  action="https://api.kidstory.cc/picture/"
-  list-type="picture-card"
-  :auto-upload="false"
-  :on-change="fileChange"
-  :on-preview="handlePictureCardPreview"
-  :on-remove="handleRemove"
+        action="https://api.kidstory.cc/picture/"
+        list-type="picture-card"
+        :auto-upload="false"
+        :on-change="fileChange"
+        :on-preview="handlePictureCardPreview"
+        :on-remove="handleRemove"
         :file-list="uploadFileList"
-  accept=".png, .jpg, .jpeg, .JPG, .JPEG"
+        accept=".png, .jpg, .jpeg, .JPG, .JPEG"
         multiple
-        class="custom-upload"
-  >
-  <i class="el-icon-plus"></i>
-</el-upload>
+        :limit="30"
+        class="upload-wrapper"
+    >
+      <template #default>
+        <el-icon><Plus /></el-icon>
+      </template>
+    </el-upload>
+    <div class="upload-tip" v-if="uploadFileList.length > 1">
+      <el-icon><InfoFilled /></el-icon>
+      <span>提示：可以拖动图片进行排序</span>
     </div>
-    <el-dialog v-model="dialogVisible" width="80%">
-      <el-image :src="dialogImageUrl" alt="" fit="contain" style="width: 100%; max-height: 70vh;"></el-image>
+    <el-dialog v-model="dialogVisible" width="80%" :close-on-click-modal="true">
+      <el-image :src="dialogImageUrl" alt="" fit="contain"></el-image>
 </el-dialog>
   </el-form-item>
   <el-form-item label="作品名称">
@@ -30,15 +35,12 @@
   </el-form-item>
   <el-form-item label="类别"> 
     <el-select v-model="form.category" placeholder="请选择绘本类别">
-      <el-option label="生活日常" value="daily"></el-option>
-      <el-option label="欢庆节日" value="festival"></el-option>
-       <el-option label="校园生活" value="school"></el-option>
-        <el-option label="动物世界" value="animal"></el-option>
-        <el-option label="奇幻想象" value="fantasy"></el-option>
-        <el-option label="数学知识" value="math"></el-option> 
-        <el-option label="文学知识" value="literature"></el-option>
-        <el-option label="英语学习" value="english"></el-option>
-        <el-option label="其他" value="others"></el-option>
+      <el-option label="儿童读物" value="reading"></el-option>
+      <el-option label="习惯养成" value="habit"></el-option>
+      <el-option label="英语启蒙" value="english"></el-option>
+      <el-option label="数学启蒙" value="math"></el-option>
+      <el-option label="科普百科" value="knowledge"></el-option>
+      <el-option label="其他" value="others"></el-option>
     </el-select>
   </el-form-item>
   <el-form-item label="绘本描述">
@@ -57,8 +59,13 @@
 
 <script>
 import { ElMessage } from 'element-plus'
+import { InfoFilled, Plus } from '@element-plus/icons-vue'
 
 export default {
+  components: {
+    InfoFilled,
+    Plus
+  },
    data() {
       return {
         dialogImageUrl: '',
@@ -78,7 +85,6 @@ export default {
       handleRemove(file, fileList) {
         // 更新文件列表
         this.updateFileLists(fileList);
-        console.log('移除文件:', file, '剩余文件:', fileList);
         
         // 重新初始化拖拽功能
         this.$nextTick(() => {
@@ -90,9 +96,14 @@ export default {
         this.dialogVisible = true;
       },
       fileChange(file, fileList) {
+        // 确保新文件有正确的格式
+        if (file.raw && !file.url) {
+          // 为新文件创建预览 URL
+          file.url = URL.createObjectURL(file.raw);
+        }
+        
         // 更新文件列表
         this.updateFileLists(fileList);
-        console.log('文件列表:', this.fileList);
         
         // 在下一个 tick 后初始化拖拽功能
         this.$nextTick(() => {
@@ -102,8 +113,28 @@ export default {
       
       // 更新文件列表
       updateFileLists(fileList) {
-        this.uploadFileList = fileList;
-        this.fileList = fileList.map(item => item.raw || item);
+        // 确保文件列表格式正确
+        this.uploadFileList = fileList.map((item, index) => {
+          // 如果 item 是文件对象，转换为 Element Plus 需要的格式
+          if (item instanceof File) {
+            return {
+              name: item.name,
+              url: URL.createObjectURL(item),
+              raw: item,
+              uid: Date.now() + index + Math.random()
+            };
+          }
+          // 如果已经有正确的格式，确保有必要的属性
+          if (!item.url && item.raw) {
+            item.url = URL.createObjectURL(item.raw);
+          }
+          return item;
+        });
+        
+        // 提取原始文件对象数组，按顺序保存
+        this.fileList = this.uploadFileList
+          .filter(item => item.raw) // 只保留有原始文件的对象
+          .map(item => item.raw);
       },
       
       // 初始化拖拽排序功能
@@ -113,18 +144,6 @@ export default {
         
         const items = uploadList.querySelectorAll('.el-upload-list__item');
         items.forEach((item, index) => {
-          // 移除之前的监听器（使用命名函数以便正确移除）
-          const dragStartHandler = (e) => this.handleDragStart(e);
-          const dragOverHandler = (e) => this.handleDragOver(e);
-          const dropHandler = (e) => this.handleDrop(e);
-          const dragEndHandler = (e) => this.handleDragEnd(e);
-          
-          // 保存处理器到元素上，以便后续移除
-          item._dragStartHandler = dragStartHandler;
-          item._dragOverHandler = dragOverHandler;
-          item._dropHandler = dropHandler;
-          item._dragEndHandler = dragEndHandler;
-          
           // 移除旧监听器
           if (item._oldDragStartHandler) {
             item.removeEventListener('dragstart', item._oldDragStartHandler);
@@ -133,12 +152,16 @@ export default {
             item.removeEventListener('dragend', item._oldDragEndHandler);
           }
           
+          // 创建新的事件处理器
+          const dragStartHandler = (e) => this.handleDragStart(e);
+          const dragOverHandler = (e) => this.handleDragOver(e);
+          const dropHandler = (e) => this.handleDrop(e);
+          const dragEndHandler = (e) => this.handleDragEnd(e);
+          
           // 设置可拖拽
           item.draggable = true;
           item.dataset.index = index;
-          
-          // 添加样式提示可拖拽
-          item.style.cursor = 'move';
+          item.style.cursor = 'grab';
           item.style.userSelect = 'none';
           
           // 添加事件监听
@@ -147,7 +170,7 @@ export default {
           item.addEventListener('drop', dropHandler);
           item.addEventListener('dragend', dragEndHandler);
           
-          // 保存旧处理器
+          // 保存处理器以便后续移除
           item._oldDragStartHandler = dragStartHandler;
           item._oldDragOverHandler = dragOverHandler;
           item._oldDropHandler = dropHandler;
@@ -163,19 +186,10 @@ export default {
           return;
         }
         
-        // 如果点击的是图片或其他子元素，确保能拖拽
-        if (e.target !== item) {
-          // 如果点击的是图片，阻止图片的默认拖拽行为
-          if (e.target.tagName === 'IMG') {
-            e.preventDefault();
-            // 手动触发父元素的拖拽
-            item.dispatchEvent(new DragEvent('dragstart', {
-              bubbles: true,
-              cancelable: true,
-              dataTransfer: e.dataTransfer
-            }));
-            return;
-          }
+        // 如果点击的是图片，阻止图片的默认拖拽行为
+        if (e.target.tagName === 'IMG') {
+          e.preventDefault();
+          return;
         }
         
         this.dragIndex = parseInt(item.dataset.index);
@@ -215,15 +229,21 @@ export default {
           // 添加插入指示器
           const indicator = document.createElement('div');
           indicator.className = 'drag-indicator';
-          indicator.style.cssText = 'position: absolute; left: 0; right: 0; height: 2px; background: #409eff; z-index: 10; pointer-events: none;';
+          indicator.style.cssText = `
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #f5576c;
+            z-index: 10;
+            pointer-events: none;
+          `;
           
           currentItem.style.position = 'relative';
           if (mouseY > itemCenterY) {
-            // 鼠标在下半部分，插入到后面
             indicator.style.bottom = '0';
             currentItem.appendChild(indicator);
           } else {
-            // 鼠标在上半部分，插入到前面
             indicator.style.top = '0';
             currentItem.insertBefore(indicator, currentItem.firstChild);
          }
@@ -253,16 +273,14 @@ export default {
           
           // 根据鼠标位置决定插入位置
           let insertIndex = targetIndex;
-          if (mouseY > itemCenterY && dragIndex < targetIndex) {
-            insertIndex = targetIndex;
-          } else if (mouseY <= itemCenterY && dragIndex > targetIndex) {
-            insertIndex = targetIndex;
-          } else if (dragIndex < targetIndex) {
-            insertIndex = targetIndex;
-         } else {
-            insertIndex = targetIndex;
+          if (mouseY > itemCenterY) {
+            insertIndex = dragIndex < targetIndex ? targetIndex : targetIndex + 1;
+          } else {
+            insertIndex = dragIndex < targetIndex ? targetIndex : targetIndex;
           }
           
+          // 确保索引有效
+          insertIndex = Math.max(0, Math.min(insertIndex, newFileList.length));
           newFileList.splice(insertIndex, 0, draggedItem);
           
           // 更新列表
@@ -291,7 +309,7 @@ export default {
         const indicators = document.querySelectorAll('.drag-indicator');
         indicators.forEach(indicator => indicator.remove());
         
-        // 恢复所有列表项的透明度
+        // 恢复所有列表项的样式
         const allItems = this.$refs.upload?.$el?.querySelectorAll('.el-upload-list__item');
         if (allItems) {
           allItems.forEach(item => {
@@ -305,16 +323,16 @@ export default {
             ElMessage({
               message: '请至少上传一张图片',
               type: 'warning',
-              offset: '300'
+              offset: 100
             });
             return;
           }
           
           if (!this.form.name || !this.form.category) {
               ElMessage({
-              message: '插画名称、类别不能为空',
-          type: 'warning',
-              offset: '300'
+              message: '作品名称、类别不能为空',
+              type: 'warning',
+              offset: 100
         });
             return;
           }
@@ -322,84 +340,55 @@ export default {
           this.disabled = true;
           
           try {
-            // 步骤1：先将所有图片上传到 /ill/ 接口，获取图片ID
-            const imageIds = [];
-            let successCount = 0;
-            let failCount = 0;
+            // 使用方式1：直接上传多张图片文件到 /book/ 接口（推荐方式）
+            const formData = new FormData();
             
-            ElMessage.info('正在上传图片...');
+            // 添加表单字段
+            formData.append('title', this.form.name);
+            formData.append('description', this.form.desc || '');
+            formData.append('type', this.form.category);
             
-            for (let i = 0; i < this.fileList.length; i++) {
-              try {
-                let formdata = new FormData();
-                formdata.append('picture', this.fileList[i]);
-                formdata.append('title', this.form.name + (i > 0 ? ` (${i + 1})` : ''));
-                formdata.append('description', this.form.desc);
-                formdata.append('type', this.form.category);
-                
-                const response = await this.$http.post(`/ill/`, formdata, {
-                  headers: {
-                    'Content-Type': 'multipart/form-data',
-                    "Authorization": "Bearer " + localStorage.getItem("token")
-                  }
-                });
-                
-                if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
-                  // 获取图片ID
-                  const imageId = response.data.message?._id || response.data.message?.id || response.data.data?._id || response.data.data?.id;
-                  if (imageId) {
-                    imageIds.push(imageId);
-                    successCount++;
-                  } else {
-                    console.warn(`第 ${i + 1} 张图片上传成功但未返回ID`);
-                    failCount++;
-                  }
-                } else {
-                  failCount++;
-                }
-              } catch (error) {
-                console.error(`上传第 ${i + 1} 张图片失败:`, error);
-                failCount++;
+            // 添加所有图片文件（使用 pictures 字段，可以多次 append）
+            this.fileList.forEach((file) => {
+              formData.append('pictures', file);
+            });
+            
+            ElMessage.info('正在上传绘本...');
+            
+            const response = await this.$http.post(`/book/`, formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                "Authorization": "Bearer " + localStorage.getItem("token")
               }
-            }
+            });
             
-            // 步骤2：如果有成功上传的图片，将图片ID数组发送到 /book/ 接口创建绘本
-            if (imageIds.length > 0) {
-              try {
-                const response = await this.$http.post(`/book/`, {
-                  content: imageIds,
-                  title: this.form.name,
-                  description: this.form.desc,
-                  type: this.form.category
-                }, {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    "Authorization": "Bearer " + localStorage.getItem("token")
-                  }
-                });
-                
-                if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
-                  if (failCount > 0) {
-                    ElMessage.success(`绘本创建成功！成功上传 ${successCount} 张图片${failCount > 0 ? `，${failCount} 张失败` : ''}`);
-                  } else {
-                    ElMessage.success('绘本上传成功！');
-                  }
-                  this.$router.push('/user/upload/submit-res/');
-                } else {
-                  throw new Error(response.data?.message || '创建绘本失败');
-                }
-              } catch (error) {
-                console.error('创建绘本失败:', error);
-                ElMessage.error('图片上传成功，但创建绘本失败，请稍后重试');
-                this.disabled = false;
-              }
+            if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
+              const bookData = response.data.message || response.data.data;
+              const illustrationCount = bookData?.illustration_count || bookData?.illustration_ids?.length || this.fileList.length;
+              
+              ElMessage.success({
+                message: `绘本创建成功！共上传 ${illustrationCount} 张图片`,
+                type: 'success',
+                offset: 100
+              });
+              
+              // 跳转到提交结果页面
+              this.$router.push('/user/upload/submit-res/');
             } else {
-              ElMessage.error('所有图片上传失败，请重试');
+              const errorMsg = response.data?.message || response.data?.desc || '创建绘本失败';
+              ElMessage.error({
+                message: errorMsg,
+                offset: 100
+              });
               this.disabled = false;
             }
           } catch (error) {
             console.error('上传失败:', error);
-            ElMessage.error('上传失败，请稍后重试');
+            const errorMsg = error.response?.data?.message || error.message || '上传失败，请稍后重试';
+            ElMessage.error({
+              message: errorMsg,
+              offset: 100
+            });
             this.disabled = false;
           }
    },
@@ -418,162 +407,125 @@ export default {
 <style scoped>
 .container{
     width:100vw;
-    min-height:90vh;
-    padding:40px 20px;
+    min-height:calc(100vh - 90px);
+    padding: 60px 20px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     background-color: #f5f6fa;
 }
+
 .box{
-    width:60vw;
-    max-width: 1200px;
-    height: 80vh;
-    margin: 0 auto;
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 40px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-/* 表单样式统一 */
-.box  :deep(.el-form) {
     width: 100%;
+    max-width: 900px;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    overflow-y: scroll;
+    height:80vh;
 }
 
-.box  :deep(.el-form-item) {
-    margin-bottom: 48px;
-    text-align: left !important; /* 确保表单项内容左对齐 */
+/* 表单样式 */
+.box :deep(.el-form-item) {
+    margin-bottom: 32px;
 }
 
-/* 确保上传表单项内容左对齐 */
-.box  :deep(.el-form-item__content) {
-    text-align: left !important;
-    justify-content: flex-start !important;
-}
-
-.box  :deep(.el-form-item__label) {
-    text-align: left;
+.box :deep(.el-form-item__label) {
     font-weight: 500;
     color: #606266;
 }
 
-/* 统一输入框样式 */
-.box  :deep( .el-input,)
-.box  :deep( .el-select,)
-.box  :deep(.el-textarea) {
+.box :deep(.el-input),
+.box :deep(.el-select),
+.box :deep(.el-textarea) {
     width: 100%;
 }
 
-.box  :deep( .el-input__inner,)
-.box  :deep(.el-textarea__inner) {
-    box-shadow: none;
-    border: 1px solid #dcdfe6;
-    transition: border-color 0.2s;
-}
-
-.box  :deep( .el-input__inner:focus,)
-.box  :deep(.el-textarea__inner:focus) {
-    border-color: #409eff;
-}
-
-/* 选择框样式 */
-.box  :deep(.el-select) {
+/* 上传组件样式 */
+.upload-wrapper {
     width: 100%;
 }
 
-.box  :deep(.el-select .el-input__inner) {
+/* 文件列表容器 - 使用flex布局精确控制 */
+.upload-wrapper :deep(.el-upload-list--picture-card) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 缩小上传卡片和预览图尺寸 - 精确计算宽度，一行4个，4:3 宽高比 */
+.upload-wrapper :deep(.el-upload-list--picture-card .el-upload-list__item),
+.upload-wrapper :deep(.el-upload--picture-card) {
+    width: calc((100% - 24px) / 4); /* 一行4个，3个间距(8px*3=24px) */
+    aspect-ratio: 4 / 3;            /* 宽高比 4:3 */
+    height: auto;
+    margin: 0 !important;
+    flex-shrink: 0;
+    line-height: normal;
+    box-sizing: border-box;
+}
+
+/* 确保上传按钮始终显示 */
+.upload-wrapper :deep(.el-upload--picture-card) {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+}
+
+/* 图片预览样式 */
+.upload-wrapper :deep(.el-upload-list--picture-card .el-upload-list__item-thumbnail) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 拖拽相关样式 */
+.upload-wrapper :deep(.el-upload-list__item[draggable="true"]) {
+    cursor: grab;
+}
+
+.upload-wrapper :deep(.el-upload-list__item[draggable="true"]:active) {
+    cursor: grabbing;
+}
+
+/* 上传提示 */
+.upload-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    color: #0369a1;
+    font-size: 14px;
+}
+
+.upload-tip .el-icon {
+    font-size: 16px;
 }
 
 /* 按钮样式 */
-.box  :deep(.el-form-item:last-child) {
-    margin-bottom: 0;
-    margin-top: 10px;
+.btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
-.btn{
-    width: 120px;
+.btn :deep(.el-button) {
+    width: 200px;
     height: 40px;
     font-size: 16px;
 }
 
-/* 上传容器 - 左对齐 */
-.upload-container {
-    width: 100%;
-    text-align: left;
+/* 拖拽指示器 */
+:deep(.drag-indicator) {
+    background: #f5576c;
 }
-
-/* Element UI upload组件根容器 - 使用flex布局，让列表和按钮在同一行 */
-.custom-upload  :deep(.el-upload) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 0; /* 使用gap统一间距 */
-}
-
-/* 缩略图列表 - 使用flex布局，让列表项和上传按钮一起换行 */
-.custom-upload  :deep(.el-upload-list--picture-card) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-}
-
-/* 缩略图项 - 4:3 宽高比，可拖拽 */
-.custom-upload  :deep(.el-upload-list--picture-card .el-upload-list__item) {
-    width: 148px;
-    height: 111px; /* 148 * 3/4 = 111px，保持4:3比例 */
-    margin-right: 8px;
-    margin-bottom: 8px;
-    flex-shrink: 0;
-    cursor: move;
-    position: relative;
-    user-select: none;
-	}
-
-/* 确保缩略图内的图片不可拖拽，只有容器可拖拽 */
-.custom-upload  :deep(.el-upload-list--picture-card .el-upload-list__item img) {
-    pointer-events: none;
-    user-select: none;
-}
-
-/* 缩略图图片 - 按比例显示 */
-.custom-upload  :deep(.el-upload-list--picture-card .el-upload-list__item-thumbnail) {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: center;
-}
-
-/* 上传按钮 - 4:3 宽高比，紧跟缩略图 */
-.custom-upload  :deep(.el-upload--picture-card) {
-    width: 148px;
-    height: 111px; /* 148 * 3/4 = 111px，保持4:3比例 */
-    line-height: 111px;
-    margin-right: 8px;
-    margin-bottom: 8px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-	}
-
-/* 确保加号图标居中 */
-.custom-upload  :deep(.el-upload--picture-card .el-icon-plus) {
-    line-height: 1;
-    font-size: 28px;
-    color: #8c939d;
-}
-
-/* 拖拽时的样式 */
-.custom-upload  :deep(.el-upload-list__item[draggable="true"]) {
-    cursor: move;
-    transition: opacity 0.2s;
-}
-
-.custom-upload  :deep(.el-upload-list__item[draggable="true"]:hover) {
-    opacity: 0.8;
-	}
 </style>

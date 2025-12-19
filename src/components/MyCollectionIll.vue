@@ -73,6 +73,7 @@ this.getCollectIllus()
 <style scoped>
 
 
+
 .index2-items {
   list-style: none;
   width: 68vw;

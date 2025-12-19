@@ -146,7 +146,10 @@ export default createStore({
             state.editionBook = item
         },
         addBooks(state, items) {
-            state.books = state.books.concat(items)
+            // 去重：基于 _id 过滤掉已存在的书籍，防止重复添加
+            const existingIds = new Set(state.books.map(book => book._id));
+            const newItems = items.filter(item => item._id && !existingIds.has(item._id));
+            state.books = state.books.concat(newItems);
         },
         removeBooks(state) {
             state.books = []
@@ -187,7 +190,9 @@ export default createStore({
         //取消收藏绘本
         cancelCoBook(state, item) {
             let d = state.collectBookArr.indexOf(item)
-            state.collectBookArr.splice(d)
+            if (d !== -1) {
+                state.collectBookArr.splice(d, 1)
+            }
         },
         setUserInfo(state, items) {
             state.userInfo = items
