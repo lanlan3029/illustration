@@ -574,49 +574,10 @@ export default {
     flex-direction: column;
 }
 
-/* 头部导航栏 */
-.library-header {
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 16px 24px;
-}
 
-.header-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
 
-.header-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #409eff;
-    display: flex;
-    align-items: center;
-    margin: 0;
-}
 
-.header-title i {
-    font-size: 24px;
-    margin-right: 8px;
-}
 
-.header-subtitle {
-    font-size: 14px;
-    color: #909399;
-    display: none;
-}
-
-@media (min-width: 768px) {
-    .header-subtitle {
-        display: block;
-    }
-}
 
 /* 主内容区域 */
 .library-main {

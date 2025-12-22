@@ -64,9 +64,9 @@
       <div class="book-viewer-wrapper">
     <!-- 书本翻页区域 -->
     <div class="book-viewer">
-      <div class="book-wrapper" :class="{ 'flipping': isFlipping }">
-        <!-- 单页显示 -->
-        <div class="book-page single-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
+      <div class="book-wrapper" :class="{ 'flipping': isFlipping, 'spread-mode': isSpreadMode }">
+        <!-- 单页显示（横版绘本） -->
+        <div v-if="!isSpreadMode" class="book-page single-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
           <div class="page-content">
             <transition :name="flipDirection" mode="out-in">
               <div :key="currentPageIndex" class="page-content-inner">
@@ -140,6 +140,115 @@
             </div>
           </div>
         </div>
+        
+        <!-- 双页显示（竖版书页） -->
+        <div v-else class="book-page spread-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
+          <div class="spread-content">
+            <transition :name="flipDirection" mode="out-in">
+              <div :key="currentPageIndex" class="spread-content-inner">
+                <!-- 左页 -->
+                <div class="spread-page-left">
+                  <div v-if="getCurrentSpreadContent().left" class="page-image-wrapper">
+                    <div v-if="isImageId(getCurrentSpreadContent().left)" class="image-loading">
+                      <i class="el-icon-loading"></i>
+                      <p>加载中...</p>
+                    </div>
+                    <el-image 
+                      v-else
+                      :src="getImageUrl(getCurrentSpreadContent().left)" 
+                      fit="contain"
+                      class="page-image"
+                      @load="handlePageImageLoad(currentPageIndex * 2)"
+                      @error="handlePageImageError(currentPageIndex * 2)">
+                      <template #placeholder>
+                        <div class="image-loading">
+                          <i class="el-icon-loading"></i>
+                          <p>加载中...</p>
+                        </div>
+                      </template>
+                      <template #error>
+                        <div class="image-error">
+                          <i class="el-icon-picture-outline"></i>
+                          <p>加载失败</p>
+                        </div>
+                      </template>
+                    </el-image>
+                  </div>
+                  <div v-else class="page-empty">
+                    <p>封面</p>
+                  </div>
+                  <div class="page-edge left-edge"></div>
+                </div>
+                
+                <!-- 右页 -->
+                <div class="spread-page-right">
+                  <div v-if="getCurrentSpreadContent().right" class="page-image-wrapper">
+                    <div v-if="isImageId(getCurrentSpreadContent().right)" class="image-loading">
+                      <i class="el-icon-loading"></i>
+                      <p>加载中...</p>
+                    </div>
+                    <el-image 
+                      v-else
+                      :src="getImageUrl(getCurrentSpreadContent().right)" 
+                      fit="contain"
+                      class="page-image"
+                      @load="handlePageImageLoad(currentPageIndex * 2 + 1)"
+                      @error="handlePageImageError(currentPageIndex * 2 + 1)">
+                      <template #placeholder>
+                        <div class="image-loading">
+                          <i class="el-icon-loading"></i>
+                          <p>加载中...</p>
+                        </div>
+                      </template>
+                      <template #error>
+                        <div class="image-error">
+                          <i class="el-icon-picture-outline"></i>
+                          <p>加载失败</p>
+                        </div>
+                      </template>
+                    </el-image>
+                  </div>
+                  <div v-else class="page-empty">
+                    <p>封底</p>
+                  </div>
+                  <div class="page-edge right-edge"></div>
+                </div>
+              </div>
+            </transition>
+            <!-- 右侧边缘翻页按钮区域 -->
+            <div 
+              class="page-flip-trigger right-trigger" 
+              @click.stop="nextPage"
+              @mouseenter="showFlipButton = true"
+              @mouseleave="showFlipButton = false">
+              <transition name="fade">
+                <el-button 
+                  v-if="showFlipButton && currentPageIndex < totalPages - 1"
+                  class="flip-button"
+                  circle
+                  size="large">
+                  <el-icon><ArrowRightBold /></el-icon>
+                </el-button>
+              </transition>
+            </div>
+            <!-- 左侧边缘翻页按钮区域 -->
+            <div 
+              class="page-flip-trigger left-trigger" 
+              @click.stop="prevPage"
+              @mouseenter="showPrevButton = true"
+              @mouseleave="showPrevButton = false">
+              <transition name="fade">
+                <el-button 
+                  v-if="showPrevButton && currentPageIndex > 0"
+                  class="flip-button"
+                  circle
+                  size="large">
+                  <el-icon><ArrowLeftBold /></el-icon>
+                </el-button>
+              </transition>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 翻页控制按钮 -->
@@ -154,9 +263,17 @@
         </el-button>
         
         <div class="page-indicator">
-          <span class="current-page">{{ currentPageIndex + 1 }}</span>
-          <span class="separator">/</span>
-          <span class="total-pages">{{ totalPages }}</span>
+          <template v-if="isSpreadMode">
+            <span class="current-page">{{ (currentPageIndex * 2) + 1 }}-{{ Math.min((currentPageIndex * 2) + 2, allPages.length) }}</span>
+            <span class="separator">/</span>
+            <span class="total-pages">{{ allPages.length }}</span>
+            <span class="spread-hint">（双页）</span>
+          </template>
+          <template v-else>
+            <span class="current-page">{{ currentPageIndex + 1 }}</span>
+            <span class="separator">/</span>
+            <span class="total-pages">{{ totalPages }}</span>
+          </template>
         </div>
         
         <el-button 
@@ -213,6 +330,8 @@ export default {
       collectIdMap: {}, // 保存绘本ID到收藏记录ID的映射
       isCollecting: false, // 收藏按钮点击动画状态
       isFollowingAnimating: false, // 关注按钮点击动画状态
+      imageAspectRatios: {}, // 存储每张图片的宽高比 {index: {width, height, ratio, isLandscape}}
+      layoutMode: 'single', // 'single' 单页模式 或 'spread' 双页模式
     }
   },
   watch: {
@@ -239,13 +358,27 @@ export default {
       "likeBookArr",
       "attentionArr",
     ]),
-    // 总页数（单页模式）
+    // 判断是否为双页模式（竖版书页）
+    isSpreadMode() {
+      // 检查第一张图片的宽高比来判断整体布局
+      if (this.allPages.length === 0) return false;
+      const firstImage = this.imageAspectRatios[0];
+      if (!firstImage) return false;
+      // 高 > 宽，判定为竖版，使用双页模式
+      return firstImage.isPortrait;
+    },
+    // 总页数（根据模式计算）
     totalPages() {
       if (!this.bookDetails.content || !Array.isArray(this.bookDetails.content)) {
         return 0;
       }
-      // 包括二维码页
-      return this.bookDetails.content.length + 1;
+      const contentLength = this.bookDetails.content.length + 1; // 包括二维码页
+      // 双页模式：每2页算一屏，向上取整
+      if (this.isSpreadMode) {
+        return Math.ceil(contentLength / 2);
+      }
+      // 单页模式：每页一屏
+      return contentLength;
     },
     // 所有页面内容（包括二维码）
     allPages() {
@@ -269,9 +402,19 @@ export default {
   },
 
   methods:{
-    // 获取当前页面内容
+    // 获取当前页面内容（单页模式）
     getCurrentPageContent() {
       return this.allPages[this.currentPageIndex] || null;
+    },
+    // 获取当前双页内容（双页模式）
+    getCurrentSpreadContent() {
+      if (!this.isSpreadMode) return { left: null, right: null };
+      const leftIndex = this.currentPageIndex * 2;
+      const rightIndex = leftIndex + 1;
+      return {
+        left: this.allPages[leftIndex] || null,
+        right: this.allPages[rightIndex] || null
+      };
     },
     // 处理页面点击（保留原有功能，但优先级低于边缘按钮）
     handlePageClick(event) {
@@ -295,6 +438,8 @@ export default {
         this.isFlipping = true;
         this.showPrevButton = false; // 翻页时隐藏按钮
         this.flipDirection = 'slide-right'; // 向左翻页
+        // 双页模式：每次减1（代表一屏）
+        // 单页模式：每次减1（代表一页）
         this.currentPageIndex--;
         setTimeout(() => {
           this.isFlipping = false;
@@ -307,6 +452,8 @@ export default {
         this.isFlipping = true;
         this.showFlipButton = false; // 翻页时隐藏按钮
         this.flipDirection = 'slide-left'; // 向右翻页
+        // 双页模式：每次加1（代表一屏，包含2页）
+        // 单页模式：每次加1（代表一页）
         this.currentPageIndex++;
         setTimeout(() => {
           this.isFlipping = false;
@@ -326,6 +473,59 @@ export default {
       if (this.imageLoadStatus) {
         this.handleImageLoad(index);
       }
+      // 检测图片宽高比（如果还没有检测过）
+      if (!this.imageAspectRatios[index] && this.allPages[index]) {
+        this.detectImageAspectRatio(this.allPages[index], index);
+      }
+    },
+    // 检测图片宽高比
+    detectImageAspectRatio(img, index) {
+      return new Promise((resolve) => {
+        if (typeof img === 'string' && !this.isImageId(img)) {
+          const image = new Image();
+          image.onload = () => {
+            const width = image.naturalWidth || image.width;
+            const height = image.naturalHeight || image.height;
+            const ratio = width / height;
+            const isLandscape = width > height; // 横版：宽 > 高
+            const isPortrait = height > width; // 竖版：高 > 宽
+            
+            // Vue 3 中直接赋值即可触发响应式更新
+            this.imageAspectRatios[index] = {
+              width,
+              height,
+              ratio,
+              isLandscape,
+              isPortrait
+            };
+            
+            // 根据第一张图片决定布局模式
+            if (index === 0) {
+              this.layoutMode = isPortrait ? 'spread' : 'single';
+            }
+            
+            resolve({ width, height, ratio, isLandscape, isPortrait });
+          };
+          image.onerror = () => {
+            // 加载失败时使用默认值（横版）
+            // Vue 3 中直接赋值即可触发响应式更新
+            this.imageAspectRatios[index] = {
+              width: 4,
+              height: 3,
+              ratio: 4/3,
+              isLandscape: true,
+              isPortrait: false
+            };
+            if (index === 0) {
+              this.layoutMode = 'single';
+            }
+            resolve({ width: 4, height: 3, ratio: 4/3, isLandscape: true, isPortrait: false });
+          };
+          image.src = this.getImageUrl(img);
+        } else {
+          resolve(null);
+        }
+      });
     },
     // 处理页面图片错误
     handlePageImageError(index) {
@@ -359,8 +559,9 @@ export default {
           return
         }
         
-        //初始化图片加载状态
+        //初始化图片加载状态和宽高比检测
         this.imageLoadStatus = {}
+        this.imageAspectRatios = {}
         for (let j = 0; j < tool.length; j++) {
           this.imageLoadStatus[j] = 'loading'
         }
@@ -372,7 +573,8 @@ export default {
           
           // 检查是否已经是URL格式，如果是则保持loading状态，等待图片加载
           if (typeof item === 'string' && (item.startsWith('http://') || item.startsWith('https://'))) {
-            // 已经是URL，保持loading状态，等待@load事件触发
+            // 已经是URL，检测宽高比
+            await this.detectImageAspectRatio(item, i);
             continue
           }
           
@@ -382,6 +584,8 @@ export default {
               let res = await this.$http.get(`/ill/` + item)
               if (res.data && res.data.message && res.data.message.content) {
                 this.bookDetails.content[i] = res.data.message.content
+                // 检测宽高比
+                await this.detectImageAspectRatio(res.data.message.content, i);
               }
           } catch (err) {
             console.log(err)
@@ -1079,12 +1283,104 @@ async loadCollectIdMap() {
 
 .page-content {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 3; /* 横版绘本：宽 > 高 */
   position: relative;
   overflow: hidden;
   background: #fff;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* 双页跨页布局 */
+.book-page.spread-page {
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 3px #d4d7de;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.book-page.spread-page:hover:not(.flipping) {
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 3px #c0c4cc;
+  transform: translateY(-2px);
+}
+
+.book-page.spread-page.flipping {
+  cursor: wait;
+}
+
+.spread-content {
+  width: 100%;
+  max-width: 100%;
+  /* 竖版书页：高 > 宽，双页并排 */
+  /* 使用更合理的高度设置：限制最大高度为视口的80%，同时保持3:4的宽高比 */
+  aspect-ratio: 3 / 4;
+  max-height: 80vh; /* 限制最大高度，避免在屏幕上过高 */
+  min-height: 400px; /* 设置最小高度，确保在小屏幕上也有足够显示空间 */
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.spread-content-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+}
+
+.spread-page-left,
+.spread-page-right {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  min-height: 0; /* 允许flex子元素缩小 */
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.spread-page-left {
+  border-right: 2px solid #e4e7ed;
+}
+
+.spread-page-left .page-image-wrapper,
+.spread-page-right .page-image-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+}
+
+.spread-page-left .page-image,
+.spread-page-right .page-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.spread-page-left .page-empty,
+.spread-page-right .page-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  color: #909399;
+  font-size: 24px;
+  font-weight: 500;
 }
 
 .page-content-inner {
@@ -1269,6 +1565,12 @@ async loadCollectIdMap() {
 
 .total-pages {
   color: #606266;
+}
+
+.spread-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 8px;
 }
 
 /* 描述信息 */

@@ -83,7 +83,7 @@
             :class="['content-card', { 'card-deleting': deletingIllId === item._id }]"
             shadow="hover"
           >
-            <div class="card-image" @click="goIllusDetails(item._id)">
+            <div class="card-image" @click="showImagePreview(`https://static.kidstory.cc/${item.content}`)">
               <el-image
                 :src="`https://static.kidstory.cc/${item.content}`"
                 fit="cover"
@@ -149,7 +149,7 @@
               
              
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goBookEdition(item)">编辑</el-button>
+                <el-button size="small" type="primary" @click="goBookDetails(item._id)">编辑</el-button>
                 <el-button size="small" type="danger" @click="handleDeleteBook(item)">删除</el-button>
               </div>
             </div>
@@ -184,6 +184,23 @@
     </div>
  
   </div>
+
+  <!-- 图片预览遮罩层 -->
+  <transition name="fade">
+    <div v-if="showImagePreviewModal" class="image-preview-overlay" @click="closeImagePreview">
+      <div class="image-preview-container" @click.stop>
+        <img
+          :src="previewImageUrl"
+          class="preview-image"
+          alt="预览图片"
+          @error="handleImageError"
+        />
+        <div class="preview-close" @click="closeImagePreview">
+          <i class="el-icon-close"></i>
+        </div>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -213,7 +230,8 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       deletingCharacterId: null, // 正在删除的角色ID
       deletingIllId: null, // 正在删除的插画ID
       deletingBookId: null, // 正在删除的绘本ID
-     
+      showImagePreviewModal: false, // 是否显示图片预览遮罩
+      previewImageUrl: '', // 预览的图片URL
     };
   },
   computed:mapState([
@@ -252,11 +270,28 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
    goHome(){
        this.$router.push("/");
    },
-    goIllusDetails(id) {
-      this.$router.push({name:'user-illusdetails',params:{illId:id}});
+    showImagePreview(imageUrl) {
+      this.previewImageUrl = imageUrl
+      this.showImagePreviewModal = true
+      // 禁止背景滚动
+      document.body.style.overflow = 'hidden'
+    },
+    closeImagePreview() {
+      this.showImagePreviewModal = false
+      this.previewImageUrl = ''
+      // 恢复背景滚动
+      document.body.style.overflow = ''
+    },
+    handleImageError(e) {
+      console.error('图片加载失败:', e)
+      ElMessage.error('图片加载失败')
     },
     goBookDetails(id){
-      this.$router.push({name:'user-bookdetails',params:{bookId:id}});
+      // 编辑模式：跳转到上传页面并传递绘本ID
+      this.$router.push({
+        name: 'upload-local-book',
+        query: { bookId: id, mode: 'edit' }
+      });
     },
     async goEdition(item){
         try {
@@ -1146,6 +1181,83 @@ overflow: hidden;
   background: #f5f7fa;
   color: #909399;
   font-size: 30px;
+}
+
+/* 图片预览遮罩层 */
+.image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.image-preview-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.preview-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.preview-close:hover {
+  background-color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.preview-close i {
+  font-size: 20px;
+  color: #303133;
 }
 
 /* 卡片内容区域 */

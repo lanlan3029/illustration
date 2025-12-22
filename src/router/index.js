@@ -10,6 +10,12 @@ const routes = [{
         component: Home
     },
     {
+        path: '/AIbooks',
+        name: 'AIbooks',
+        component: () =>
+            import ( /* webpackChunkName: "ai-books" */ '../views/AIBooks.vue'),
+    },
+    {
         path: '/creation',
         name: 'creation',
         component: () =>

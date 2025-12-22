@@ -14,6 +14,9 @@
           <li class="nav-item" :class="{ 'active': route.path === '/' }">
             <router-link to="/" class="nav-link" @click="closeSubmenu">AI插画</router-link>
           </li>
+          <li class="nav-item" :class="{ 'active': route.path === '/AIbooks' }">
+            <router-link to="/AIbooks" class="nav-link" @click="closeSubmenu">AI绘本</router-link>
+          </li>
 
           <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation' }">
             <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('creation')">

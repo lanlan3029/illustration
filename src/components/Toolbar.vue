@@ -20,7 +20,12 @@
             >下载图片</label>
             </div>
        
-            <label class="insert" @click="saveToMyIll">保存</label>
+            <label 
+                class="insert" 
+                :class="{ 'disabled': isSaved }"
+                @click="saveToMyIll"
+                :style="isSaved ? { cursor: 'not-allowed', opacity: 0.6 } : {}"
+            >保存</label>
             <label class="insert" @click="deleteDraft">清空</label>
             <label class="export" @click="AICompose">智能优化</label>
               
@@ -54,7 +59,8 @@ export default {
                 'fontSize',
                 'borderWidth',
             ],
-            draftArry:[]
+            draftArry:[],
+            isSaved: false // 是否已保存，用于控制保存按钮状态
         }
     },
     components:{
@@ -330,6 +336,11 @@ export default {
        
        // 保存画布图片到"我的插画"
        async saveToMyIll(){
+           // 如果已保存且没有改动，直接返回
+           if (this.isSaved) {
+               return;
+           }
+           
            try {
                // 取消选中组件
                this.$store.commit('setCurComponent', {component:null,index:null});
@@ -411,7 +422,21 @@ export default {
                
                // 检查响应
                if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-                   ElMessage.success('已保存到"我的插画"');
+                   // 保存成功，禁用保存按钮
+                   this.isSaved = true
+                   
+                   ElMessage({
+                       message: '保存成功！已保存到"我的插画"',
+                       type: 'success',
+                       duration: 1000,
+                       offset: 150
+                   });
+                   
+                   // 3秒后自动解禁保存按钮
+                   setTimeout(() => {
+                       this.isSaved = false
+                   }, 3000)
+                  
                } else {
                    throw new Error(response.data?.message || '保存失败');
                }
@@ -426,6 +451,8 @@ export default {
         this.$store.commit('setComponentData', []);
         // 取消选中组件
         this.$store.commit('setCurComponent', {component: null, index: null});
+        // 重置保存状态
+        this.isSaved = false;
         // 隐藏右键菜单
         this.$store.commit('hideContextMenu');
         ElMessage.success('画布已清空');

@@ -125,9 +125,20 @@ export default {
     }
   },
   mounted(){
-    this.getCollectIll();
+    // 先从服务器获取草稿（优先使用服务器草稿）
+    this.getCollectIll().then(() => {
+      // 如果服务器没有草稿，再从本地存储恢复数据
+      if (!this.componentData || this.componentData.length === 0) {
+        this.loadFromLocalStorage();
+      }
+    }).catch(() => {
+      // 如果服务器请求失败，使用本地存储的数据
+      this.loadFromLocalStorage();
+    });
     // 根据当前画布尺寸计算宽高比
     this.calculateCurrentAspectRatio();
+    // 监听组件数据变化，自动保存到本地
+    this.setupAutoSave();
   },
   methods:{
     //获取草稿
@@ -140,15 +151,14 @@ export default {
           console.log(res)
           if(res.data.message){
             this.draftid=res.data.message._id
-          this.draftArr=res.data.message.content
-          if(this.draftArr.length>0){
-            this.$store.commit('setComponentData',this.draftArr)
+            this.draftArr=res.data.message.content
+            if(this.draftArr.length>0){
+              this.$store.commit('setComponentData',this.draftArr)
+            }
           }
-          }
-         
-         
         } catch(err){
           console.log(err)
+          throw err; // 重新抛出错误，让调用者处理
         }
     },
 
@@ -455,6 +465,96 @@ export default {
            });
            
            this.selectedAspectRatio = closestRatio;
+       },
+       
+       // 从本地存储恢复画布数据
+       loadFromLocalStorage() {
+           try {
+               const savedData = localStorage.getItem('creation_canvas_data');
+               if (savedData) {
+                   const canvasData = JSON.parse(savedData);
+                   
+                   // 检查数据是否过期（7天内有效）
+                   const now = Date.now();
+                   const dataAge = now - (canvasData.timestamp || 0);
+                   const maxAge = 7 * 24 * 60 * 60 * 1000; // 7天
+                   
+                   if (dataAge < maxAge && canvasData.componentData && canvasData.componentData.length > 0) {
+                       // 恢复组件数据
+                       this.$store.commit('setComponentData', canvasData.componentData);
+                       
+                       // 恢复画布样式（如果有）
+                       if (canvasData.canvasStyle) {
+                           this.$store.commit('setCanvasStyle', canvasData.canvasStyle);
+                       }
+                       
+                       console.log('已从本地存储恢复画布数据');
+                   } else if (dataAge >= maxAge) {
+                       // 数据已过期，清除
+                       localStorage.removeItem('creation_canvas_data');
+                       console.log('本地存储的画布数据已过期，已清除');
+                   }
+               }
+           } catch (error) {
+               console.error('从本地存储恢复画布数据失败:', error);
+           }
+       },
+       
+       // 保存画布数据到本地存储
+       saveToLocalStorage() {
+           try {
+               const canvasData = {
+                   componentData: this.componentData,
+                   canvasStyle: this.canvasStyleData,
+                   timestamp: Date.now()
+               };
+               localStorage.setItem('creation_canvas_data', JSON.stringify(canvasData));
+           } catch (error) {
+               console.error('保存画布数据到本地存储失败:', error);
+               // 如果存储失败（可能是存储空间不足），尝试清除旧数据
+               try {
+                   localStorage.removeItem('creation_canvas_data');
+                   localStorage.setItem('creation_canvas_data', JSON.stringify({
+                       componentData: this.componentData,
+                       canvasStyle: this.canvasStyleData,
+                       timestamp: Date.now()
+                   }));
+               } catch (e) {
+                   console.error('清除旧数据后重新保存失败:', e);
+               }
+           }
+       },
+       
+       // 设置自动保存
+       setupAutoSave() {
+           // 使用防抖，避免频繁保存
+           let saveTimer = null;
+           const debounceSave = () => {
+               if (saveTimer) {
+                   clearTimeout(saveTimer);
+               }
+               saveTimer = setTimeout(() => {
+                   this.saveToLocalStorage();
+               }, 1000); // 1秒后保存
+           };
+           
+           // 监听 Vuex store 中 componentData 的变化
+           this.$store.watch(
+               (state) => state.componentData,
+               () => {
+                   debounceSave();
+               },
+               { deep: true }
+           );
+           
+           // 监听画布样式变化
+           this.$store.watch(
+               (state) => state.canvasStyleData,
+               () => {
+                   debounceSave();
+               },
+               { deep: true }
+           );
        },
        
        // 处理宽高比变化
