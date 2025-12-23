@@ -14,10 +14,11 @@ export const commonAttr = {
 
 
 // 编辑器左侧组件列表
+// 注意：label 和 propValue 使用翻译键，需要在组件中使用 $t() 进行翻译
 const list = [{
     component: 'v-text',
-    label: '插入文字',
-    propValue: '双击编辑文字',
+    label: 'componentList.insertText', // 翻译键
+    propValue: 'componentList.doubleClickEdit', // 翻译键
     icon: 'wenben',
     style: {
         width: 200,

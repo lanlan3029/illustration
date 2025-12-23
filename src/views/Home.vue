@@ -8,7 +8,7 @@
             <!-- 左侧：风格列表 -->
             <div class="style-list-container">
                  <el-scrollbar class="style-list-container-scroll">
-                <h2 class="section-title">艺术风格列表</h2>
+                <h2 class="section-title">{{ $t('home.title') }}</h2>
                 <div class="style-list">
                     <el-card
                         v-for="style in styles"
@@ -45,7 +45,7 @@
             <!-- 右侧：风格详情和 Prompt 生成 -->
             <div class="style-detail-container">
                 <el-scrollbar class="style-list-container-scroll">
-                <h2 class="section-title">生成插画</h2>
+                <h2 class="section-title">{{ $t('home.generateIllustration') }}</h2>
                 <div class="style-detail">
                     <div v-if="!selectedStyle" class="placeholder">
                         <i class="el-icon-mouse"></i>
@@ -79,14 +79,14 @@
                                 </el-progress>
                                 <p class="progress-text">
                                     <i class="el-icon-loading"></i>
-                                    正在生成插画，请稍候...
+                                    {{ $t('home.generating') }}
                                 </p>
                             </div>
                         </div>
                         
                         <!-- 生成结果展示 - 显示在进度条位置 -->
                         <div v-if="generatedImageUrl && !generating" class="generated-result">
-                            <h3 class="result-title">生成结果</h3>
+                            <h3 class="result-title">{{ $t('home.generateIllustration') }}</h3>
                             <el-image
                                 :src="generatedImageUrl"
                                 fit="contain"
@@ -101,34 +101,34 @@
                         
                         <div class="style-info">
                             <div class="info-item">
-                                <label class="info-label">艺术风格：</label>
+                                <label class="info-label">{{ $t('home.artStyle') }}</label>
                                 <el-input
                                     v-model="editableArtStyle"
                                     type="textarea"
                                     :rows="1"
-                                    placeholder="请输入艺术风格"
+                                    :placeholder="$t('home.artStylePlaceholder')"
                                     class="info-input">
                                 </el-input>
                             </div>
                             <div class="info-item">
-                                <label class="info-label">元素细节：</label>
+                                <label class="info-label">{{ $t('home.elementDetails') }}</label>
                                 <el-input
                                     v-model="editableElementDetails"
                                     type="textarea"
                                     :rows="2"
-                                    placeholder="请输入元素细节"
+                                    :placeholder="$t('home.elementDetailsPlaceholder')"
                                     class="info-input">
                                 </el-input>
                             </div>
                         </div>
 
                         <div class="input-section">
-                            <label class="input-label">主体场景（请输入您想要生成的内容）：</label>
+                            <label class="input-label">{{ $t('home.subjectScene') }}</label>
                             <el-input
                                 v-model="subjectScene"
                                 type="textarea"
                                 :rows="2"
-                                placeholder="例如：戴着探险帽的小狐狸，坐在一个红色斑点蘑菇上，手里拿着一个精致的提灯"
+                                :placeholder="$t('home.subjectPlaceholder')"
                                 class="subject-input">
                             </el-input>
                         </div>
@@ -140,7 +140,7 @@
                             @click="generateIllustration"
                             :loading="generating"
                             :disabled="!subjectScene || !subjectScene.trim() || generating">
-                            {{ generating ? '生成中...' : '生成' }}
+                            {{ generating ? $t('home.generating') : $t('home.generate') }}
                         </el-button>
                     </div>
                 </div>
@@ -153,7 +153,8 @@
 </template>
 
 <script>
-import { getCurrentInstance } from 'vue'
+import { getCurrentInstance, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
@@ -161,9 +162,45 @@ export default {
     name: 'InspirationLibrary',
     setup() {
         const { proxy } = getCurrentInstance()
+        const { t } = useI18n()
+        
+        // 风格配置：包含 key、id 和对应的图片路径
+        const styleConfigs = [
+            { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.png') },
+            { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.png') },
+            { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.png') },
+            { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.png') },
+            { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.png') },
+            { key: 'engravingLines', id: 7, image: require('@/assets/prompt/7.png') },
+            { key: 'pencilSketch3D', id: 16, image: require('@/assets/prompt/16.png') },
+            { key: 'feltCollage', id: 18, image: require('@/assets/prompt/18.png') },
+            { key: 'blackWhiteDoodle', id: 2, image: require('@/assets/prompt/2.png') },
+            { key: 'collageIllustration', id: 4, image: require('@/assets/prompt/4.png') },
+            { key: 'rusticHandDrawn', id: 8, image: require('@/assets/prompt/8.png') },
+            { key: 'maximalistCopperplate', id: 9, image: require('@/assets/prompt/9.png') },
+            { key: 'doodleSoul', id: 10, image: require('@/assets/prompt/10.png') },
+            { key: 'keithHaringDoodle', id: 11, image: require('@/assets/prompt/11.png') },
+            { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.png') },
+            { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.png') },
+            { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.png') },
+            { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.png') }
+        ]
+        
+        // 根据当前语言动态获取风格列表
+        const styles = computed(() => {
+            return styleConfigs.map(config => ({
+                id: config.id,
+                key: config.key,
+                artStyle: t(`aibooks.styles.${config.key}.artStyle`),
+                elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
+                image: config.image
+            }))
+        })
+        
         return {
             $http: proxy?.$http || axios,
-            $message: proxy?.$message || ElMessage
+            $message: proxy?.$message || ElMessage,
+            styles
         }
     },
     data() {
@@ -175,126 +212,7 @@ export default {
             copySuccess: false,
             generating: false,
             generatedImageUrl: null,
-            apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
-            styles: [
-                {
-                    id: 1,
-                    artStyle: '钢笔线稿插画',
-                    elementDetails: '细节丰富，黑白线条，饱满构图，明亮的光线。',
-                    image: require('@/assets/prompt/1.png'),
-                },
-                {
-                    id: 6,
-                    artStyle: '彩色轮廓浪漫主义',
-                    elementDetails: '彩色轮廓插图，无拘无束的氛围，生动的色彩和宽松的笔触，嬉戏和无忧无虑的场景。',
-                    image: require('@/assets/prompt/6.png'),
-                },
-                {
-                    id: 15,
-                    artStyle: '蜡笔噪点手绘',
-                    elementDetails: '采用蜡笔笔触风格，粗糙颗粒质感与不规则边缘，简约手绘感。暖柔色调为基础，画面添加噪点效果，以颗粒密度替代渐变。',
-                    image: require('@/assets/prompt/15.png'),
-                },
-                {
-                    id: 17,
-                    artStyle: '复古绘本草图',
-                    elementDetails: '手绘彩色草图，粗略的线条，粗重质感笔触，米黄色暖调背景，复古儿童读物风格。',
-                    image: require('@/assets/prompt/17.png'),
-                },
-                {
-                    id: 5,
-                    artStyle: '皮克斯风格动画',
-                    elementDetails: '高质量3D渲染，柔和的材质，影棚效果，生动的表情和动作。',
-                    image: require('@/assets/prompt/5.png'),
-                },
-              
-                {
-                    id: 7,
-                    artStyle: '凹版印刷线条',
-                    elementDetails: '彩色图片，精致的线条，0.01毫米线条，以点线表现明暗关系，大师级排线，细致的细节，高清画质。',
-                    image: require('@/assets/prompt/7.png'),
-                },
-                {
-                    id: 16,
-                    artStyle: '铅笔素描3D图',
-                    elementDetails: '手绘铅笔素描风格，3D 设计图视角，主体居中构图。',
-                    image: require('@/assets/prompt/16.png'),
-                },
-               
-                {
-                    id: 18,
-                    artStyle: '薄片毛毡拼贴画',
-                    elementDetails: '手工质感，色彩鲜艳，带有波点、条纹等装饰性图案，黄色带白色波点的背景，材质呈现毛毡的纹理与厚度，角色造型卡通夸张。',
-                    image: require('@/assets/prompt/18.png'),
-                },
-                {
-                    id: 2,
-                    artStyle: '黑白涂鸦风',
-                    elementDetails: '一张密集的涂鸦插画，充满各种卡通风格的黑色线条绘制的图像。这些元素以随机和重复的方式排列，营造出一种混乱但充满活力的氛围。 角色具有简单的线条，圆润的轮廓和各种表情，展现出天真和幽默感。 构图是紧凑的，没有明显的留白。 整个图像只有黑白两色，对比鲜明，线条粗细一致，风格统一。 照明均匀，没有阴影，呈现出一种平面的视觉效果。 整体风格是卡通、涂鸦，带有童趣和创意。 营造出一种随意而又充满想象力的感觉。',
-                    image: require('@/assets/prompt/2.png'),
-                },
-        
-                {
-                    id: 4,
-                    artStyle: '拼贴风格插画',
-                    elementDetails: '纸张拼贴画风格，通过使用清晰的形状和色块来展现平面的透视感和纹理。整体氛围欢快愉悦，色彩明亮，风格活泼俏皮。',
-                    image: require('@/assets/prompt/4.png'),
-                },
-              
-                {
-                    id: 8,
-                    artStyle: '质朴手绘风格',
-                    elementDetails: '背景白色，极简，九宫格，灵魂画手，手绘线稿，涂鸦风格，普鲁士蓝色线勾勒，小女孩，趣味，绘本风，雷蒙德·布里格斯（Raymond Briggs）和马蒂亚斯·阿道夫松（Mattias Adolfsson）风格的插画，彩铅与水彩混合创作，手稿，大师杰作。',
-                    image: require('@/assets/prompt/8.png'),
-                },
-                {
-                    id: 9,
-                    artStyle: '极繁铜版印刷',
-                    elementDetails: '铜版画风格，满画幅，极繁主义，黑色粗线条勾线清晰，高饱和色，高对比度，以蓝色为主色调营造宁静氛围，搭配橙色、白色，纹理细腻，层次丰富，塑造优雅自然的画面。借精致笔触与色彩层次，营造宁静清新、诗意浪漫的氛围，展现浪漫美好与艺术价值，让观者沉浸于宁静美好视觉体验 ，极繁主义，丰富的细节、装饰图案、层次感，空间感，呈现出一种神圣感，令人震撼的画面画面，高清，高细节。',
-                    image: require('@/assets/prompt/9.png'),
-                },
-                {
-                    id: 10,
-                    artStyle: '绘本涂鸦/灵魂画手',
-                    elementDetails: '背景白色，极简，九宫格布局，手绘线稿，涂鸦风格，普鲁士蓝色线勾勒，彩铅与水彩混合创作，手稿质感，趣味，雷蒙德·布里格斯风格。',
-                    image: require('@/assets/prompt/10.png'),
-                },
-                {
-                    id: 11,
-                    artStyle: 'Keith Haring 涂鸦',
-                    elementDetails: '粗线条记号笔插图，黑白配色，白色背景，装饰性涂鸦图案。',
-                    image: require('@/assets/prompt/11.png'),
-                },
-                {
-                    id: 12,
-                    artStyle: '抽象平面设计',
-                    elementDetails: '风格化的形状，色彩鲜艳，卡通般的视觉效果，柔和的米色天空，光线均匀分布，平静温馨的氛围，简约风格。',
-                    image: require('@/assets/prompt/12.png'),
-                },
-                {
-                    id: 13,
-                    artStyle: '简洁卡通插画',
-                    elementDetails: '简洁明快，色彩柔和，纯白色背景，物体/角色拥有圆润的身形和短小的四肢。',
-                    image: require('@/assets/prompt/13.png'),
-                },
-                {
-                    id: 14,
-                    artStyle: '治愈系水彩',
-                    elementDetails: '水彩质感，清新柔和的色调，营造平静、治愈的氛围。',
-                    image: require('@/assets/prompt/14.png'),
-                },
-                {
-                    id: 19,
-                    artStyle: '油画风格',
-                    elementDetails: '浓厚笔触的油画风格，童趣绘本，炫彩光影，清晰的笔触，复杂的画面，极致的细节，超高清，32k。',
-                    image: require('@/assets/prompt/19.png'),
-                },
-
-
-               
-              
-
-            ],
+            apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
         };
     },
     computed: {

@@ -9,10 +9,10 @@
         @select="handleSelect"
       >
        
-        <el-menu-item index="2">我的角色</el-menu-item>
-        <el-menu-item index="3">我的插画</el-menu-item>
-        <el-menu-item index="4">我的绘本</el-menu-item>
-        <el-menu-item index="6">收藏绘本</el-menu-item>
+        <el-menu-item index="2">{{ $t('myHomePage.myCharacters') }}</el-menu-item>
+        <el-menu-item index="3">{{ $t('myHomePage.myIllustrations') }}</el-menu-item>
+        <el-menu-item index="4">{{ $t('myHomePage.myBooks') }}</el-menu-item>
+        <el-menu-item index="6">{{ $t('myHomePage.collectedBooks') }}</el-menu-item>
        
       </el-menu>
 
@@ -22,7 +22,7 @@
       <div v-if="activeIndex == 2" class="card-container">
         <!-- 加载中 -->
         <div v-if="loadingCharacters" class="empty-state">
-          <p>正在加载...</p>
+          <p>{{ $t('myHomePage.loading') }}</p>
         </div>
         <!-- 有角色时显示卡片 -->
         <transition-group 
@@ -50,26 +50,26 @@
               </el-image>
             </div>
             <div class="card-content">
-              <h3 class="card-title">{{item.character_name || '未命名角色'}}</h3>
-              <p class="card-meta">创建时间：{{item.created_at || item.createdAt || '未知'}}</p>
+              <h3 class="card-title">{{item.character_name || $t('myHomePage.unnamedCharacter')}}</h3>
+              <p class="card-meta">{{ $t('myHomePage.createTime') }}{{item.created_at || item.createdAt || $t('myHomePage.unknown')}}</p>
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goCreateGroupImages(item.id || item._id)">创作组图</el-button>
-                <el-button size="small" color="#626aef" @click="goCharacterGroupImages(item.id || item._id)">查看组图</el-button>
-                <el-button size="small" type="danger" @click="handleDeleteCharacter(item)">删除</el-button>
+                <el-button size="small" type="primary" @click="goCreateGroupImages(item.id || item._id)">{{ $t('myHomePage.createGroupImages') }}</el-button>
+                <el-button size="small" color="#626aef" @click="goCharacterGroupImages(item.id || item._id)">{{ $t('myHomePage.viewGroupImages') }}</el-button>
+                <el-button size="small" type="danger" @click="handleDeleteCharacter(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
             </div>
           </el-card>
         </transition-group>
         <!-- 加载完成但没有角色 -->
         <div v-else class="empty-state">
-          <p>还没有创建角色，快去创作吧！</p>
+          <p>{{ $t('myHomePage.noCharacters') }}</p>
         </div>
       </div>
 <!-- 我的插画 -->
       <div v-if="activeIndex == 3" class="card-container">
         <!-- 加载中 -->
         <div v-if="loadingIll" class="empty-state">
-          <p>正在加载...</p>
+          <p>{{ $t('myHomePage.loading') }}</p>
         </div>
         <!-- 有插画时显示卡片 -->
         <transition-group 
@@ -97,26 +97,26 @@
               </el-image>
             </div>
             <div class="card-content">
-              <h3 class="card-title">{{item.title || '未命名插画'}}</h3>
-              <p class="card-description">{{item.description || '暂无描述'}}</p>
-           
+              <h3 class="card-title">{{item.title || $t('myHomePage.unnamedIllustration')}}</h3>
+              <p class="card-description">{{item.description || $t('myHomePage.noDescription')}}</p>
+
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goEdition(item)">编辑</el-button>
-                <el-button size="small" type="danger" @click="handleDeleteIll(item)">删除</el-button>
+                <el-button size="small" type="primary" @click="goEdition(item)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button size="small" type="danger" @click="handleDeleteIll(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
             </div>
           </el-card>
         </transition-group>
         <!-- 加载完成但没有插画 -->
         <div v-else class="empty-state">
-          <p>还没有创建插画，快去创作吧！</p>
+          <p>{{ $t('myHomePage.noIllustrations') }}</p>
         </div>
       </div>
 <!-- 我的绘本 -->
       <div v-if="activeIndex == 4" class="card-container">
         <!-- 加载中 -->
         <div v-if="loadingBooks" class="empty-state">
-          <p>正在加载...</p>
+          <p>{{ $t('myHomePage.loading') }}</p>
         </div>
         <!-- 有绘本时显示卡片 -->
         <transition-group 
@@ -144,20 +144,20 @@
               </el-image>
             </div>
             <div class="card-content">
-              <h3 class="card-title">{{item.title || '未命名绘本'}}</h3>
-              <p class="card-description">{{item.description || '暂无描述'}}</p>
+              <h3 class="card-title">{{item.title || $t('myHomePage.unnamedBook')}}</h3>
+              <p class="card-description">{{item.description || $t('myHomePage.noDescription')}}</p>
               
              
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goBookDetails(item._id)">编辑</el-button>
-                <el-button size="small" type="danger" @click="handleDeleteBook(item)">删除</el-button>
+                <el-button size="small" type="primary" @click="goBookDetails(item._id)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button size="small" type="danger" @click="handleDeleteBook(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
             </div>
           </el-card>
         </transition-group>
         <!-- 加载完成但没有绘本 -->
         <div v-else class="empty-state">
-          <p>还没有创建绘本，快去创作吧！</p>
+          <p>{{ $t('myHomePage.noBooks') }}</p>
         </div>
       </div>
 
@@ -192,7 +192,7 @@
         <img
           :src="previewImageUrl"
           class="preview-image"
-          alt="预览图片"
+          :alt="$t('myHomePage.previewImage')"
           @error="handleImageError"
         />
         <div class="preview-close" @click="closeImagePreview">
@@ -284,7 +284,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     },
     handleImageError(e) {
       console.error('图片加载失败:', e)
-      ElMessage.error('图片加载失败')
+      ElMessage.error(this.$t('myHomePage.imageLoadFailed'))
     },
     goBookDetails(id){
       // 编辑模式：跳转到上传页面并传递绘本ID
@@ -322,13 +322,13 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
                     }
                 } catch (err) {
                     console.error('获取插画详情失败:', err);
-                    ElMessage.error('获取插画信息失败，请重试');
+                    ElMessage.error(this.$t('myHomePage.getIllustrationInfoFailed'));
                     return;
                 }
             }
-            
+
             if (!imageUrl) {
-                ElMessage.error('无法获取插画图片');
+                ElMessage.error(this.$t('myHomePage.cannotGetIllustrationImage'));
                 return;
             }
             
@@ -384,26 +384,26 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
             };
             
             img.onerror = () => {
-                ElMessage.error('图片加载失败，请检查图片URL');
+                ElMessage.error(this.$t('myHomePage.imageLoadFailedCheckUrl'));
             };
             
             img.src = imageUrl;
         } catch (error) {
             console.error('编辑插画失败:', error);
-            ElMessage.error('编辑插画失败，请重试');
+            ElMessage.error(this.$t('myHomePage.editIllustrationFailed'));
         }
     },
     // 处理删除插画（显示确认弹窗）
     handleDeleteIll(item) {
       const illustrationId = item._id;
-      const illustrationName = item.title || '未命名插画';
-      
+      const illustrationName = item.title || this.$t('myHomePage.unnamedIllustration');
+
       this.$confirm(
-        `确定要删除插画"${illustrationName}"吗？删除后无法恢复。`,
-        '确认删除',
+        this.$t('myHomePage.confirmDeleteIllustration', { name: illustrationName }),
+        this.$t('myHomePage.confirmDelete'),
         {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
+          confirmButtonText: this.$t('myHomePage.confirmDeleteButton'),
+          cancelButtonText: this.$t('myHomePage.cancel'),
           type: 'warning',
           confirmButtonClass: 'el-button--danger'
         }
@@ -434,7 +434,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
               }
               this.deletingIllId = null;
               ElMessage({
-                message: '删除成功',
+                message: this.$t('myHomePage.deleteSuccess'),
                 type: 'success',
                 duration: 2000
               });
@@ -442,7 +442,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           } else {
             this.deletingIllId = null;
             ElMessage({
-              message: response.data.message || '删除失败',
+              message: response.data.message || this.$t('myHomePage.deleteFailed'),
               type: 'error'
             });
           }
@@ -451,7 +451,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           console.error('删除插画失败:', error);
           this.deletingIllId = null;
           ElMessage({
-            message: error.response?.data?.message || '删除失败，请稍后重试',
+            message: error.response?.data?.message || this.$t('myHomePage.deleteFailedRetry'),
             type: 'error'
           });
         });
@@ -463,14 +463,14 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     // 处理删除绘本（显示确认弹窗）
     handleDeleteBook(item) {
       const bookId = item._id;
-      const bookName = item.title || '未命名绘本';
+      const bookName = item.title || this.$t('myHomePage.unnamedBook');
       
       this.$confirm(
-        `确定要删除绘本"${bookName}"吗？删除后无法恢复。`,
-        '确认删除',
+        this.$t('myHomePage.confirmDeleteBook', { name: bookName }),
+        this.$t('myHomePage.confirmDelete'),
         {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
+          confirmButtonText: this.$t('myHomePage.confirmDeleteButton'),
+          cancelButtonText: this.$t('myHomePage.cancel'),
           type: 'warning',
           confirmButtonClass: 'el-button--danger'
         }
@@ -504,7 +504,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
               }
               this.deletingBookId = null;
               ElMessage({
-                message: '删除成功',
+                message: this.$t('myHomePage.deleteSuccess'),
                 type: 'success',
                 duration: 2000
               });
@@ -512,7 +512,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           } else {
             this.deletingBookId = null;
             ElMessage({
-              message: response.data.message || '删除失败',
+              message: response.data.message || this.$t('myHomePage.deleteFailed'),
               type: 'error'
             });
           }
@@ -521,7 +521,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           console.error('删除绘本失败:', error);
           this.deletingBookId = null;
           ElMessage({
-            message: error.response?.data?.message || '删除失败，请稍后重试',
+            message: error.response?.data?.message || this.$t('myHomePage.deleteFailedRetry'),
             type: 'error'
           });
         });
@@ -550,7 +550,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         // 跳转到创作组图页面
         this.$router.push('/create-group-images');
       } else {
-        ElMessage.warning('未找到角色信息');
+        ElMessage.warning(this.$t('myHomePage.characterNotFound'));
       }
     },
     
@@ -649,11 +649,11 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     // 删除角色
     handleDeleteCharacter(character) {
       const characterId = character.id || character._id;
-      const characterName = character.character_name || '未命名角色';
-      
-      this.$confirm(`确定要删除角色"${characterName}"吗？删除后无法恢复。`, '确认删除', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      const characterName = character.character_name || this.$t('myHomePage.unnamedCharacter');
+
+      this.$confirm(this.$t('myHomePage.confirmDeleteCharacter', { name: characterName }), this.$t('myHomePage.confirmDelete'), {
+        confirmButtonText: this.$t('myHomePage.confirmDeleteButton'),
+        cancelButtonText: this.$t('myHomePage.cancel'),
         type: 'warning'
       }).then(() => {
         this.deleteCharacter(characterId);
@@ -682,7 +682,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
               }
               this.deletingCharacterId = null;
               ElMessage({
-                message: '删除成功',
+                message: this.$t('myHomePage.deleteSuccess'),
                 type: 'success',
                 duration: 2000
               });
@@ -690,7 +690,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           } else {
             this.deletingCharacterId = null;
             ElMessage({
-              message: response.data.message || '删除失败',
+              message: response.data.message || this.$t('myHomePage.deleteFailed'),
               type: 'error'
             });
           }
@@ -699,7 +699,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           console.error('删除角色失败:', error);
           this.deletingCharacterId = null;
           ElMessage({
-            message: error.response?.data?.message || '删除失败，请稍后重试',
+            message: error.response?.data?.message || this.$t('myHomePage.deleteFailedRetry'),
             type: 'error'
           });
         });
@@ -720,7 +720,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         } catch(err){
           console.error('获取我的插画失败:', err);
           this.illArr = []; // 出错时设置为空数组
-          ElMessage.error('加载插画失败，请稍后重试');
+          ElMessage.error(this.$t('myHomePage.loadIllustrationsFailed'));
         } finally {
           this.loadingIll = false; // 加载完成
         }
@@ -750,7 +750,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         } catch(err){
           console.error('获取我的绘本失败:', err);
           this.toolArr = []; // 出错时设置为空数组
-          ElMessage.error('加载绘本失败，请稍后重试');
+          ElMessage.error(this.$t('myHomePage.loadBooksFailed'));
         } finally {
           this.loadingBooks = false; // 加载完成
         }

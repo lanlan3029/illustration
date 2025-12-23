@@ -4,7 +4,7 @@
             <!-- <el-button>撤销</el-button> -->
             <!-- <el-button>重做</el-button> -->
             <div class="left">
-            <label for="input" class="insert">插入本地图片</label>
+            <label for="input" class="insert">{{ $t('toolbar.insertLocalImage') }}</label>
             <input
                 id="input"
                 type="file"
@@ -17,7 +17,7 @@
               :class="{ 'disabled': downloading }"
               @click.prevent.stop="exportImg"
               :style="downloading ? { cursor: 'not-allowed', opacity: 0.6 } : {}"
-            >下载图片</label>
+            >{{ $t('toolbar.downloadImage') }}</label>
             </div>
        
             <label 
@@ -25,9 +25,9 @@
                 :class="{ 'disabled': isSaved }"
                 @click="saveToMyIll"
                 :style="isSaved ? { cursor: 'not-allowed', opacity: 0.6 } : {}"
-            >保存</label>
-            <label class="insert" @click="deleteDraft">清空</label>
-            <label class="export" @click="AICompose">智能优化</label>
+            >{{ $t('toolbar.save') }}</label>
+            <label class="insert" @click="deleteDraft">{{ $t('toolbar.clear') }}</label>
+            <label class="export" @click="AICompose">{{ $t('toolbar.smartOptimize') }}</label>
               
            
                           
@@ -84,7 +84,7 @@ export default {
             const file = e.target.files[0]
             // 查看是否是图片样式
             if(!file.type.includes("image")){
-                toast("只能放图片","error")
+                toast(this.$t('toolbar.onlyImageFiles'),"error")
                 return
             }
 
@@ -104,7 +104,7 @@ export default {
                             id:generateID(),
                             // 组件种类
                             component:"Picture",
-                            label:"图片",
+                            label: this.$t('toolbar.image'),
                             icon:"",
                             // 图片路径
                             propValue:fileResult,
@@ -149,13 +149,13 @@ export default {
             // 获取画布元素
             let target = document.getElementsByClassName("content");
             if (!target || !target[0]) {
-                ElMessage.warning('未找到画布内容，请先添加元素到画布');
+                ElMessage.warning(this.$t('toolbar.canvasNotFound'));
                 return;
             }
 
             // 显示加载提示
             const loading = ElMessage({
-                message: '正在获取画布内容...',
+                message: this.$t('toolbar.gettingCanvas'),
                 type: 'info',
                 duration: 0
             });
@@ -192,7 +192,7 @@ export default {
             const prompt = "高清修复，4K 分辨率，绘图精细度 30，保留各图元原始特征；统一风格：儿童彩铅插画风格，色调柔和清新；智能优化：边缘过渡自然，消除拼接痕迹，比例协调，画面整体统一；negative prompt: 元素错位，边缘生硬，风格割裂，拼接痕迹明显，比例失衡";
             
             // 更新加载提示
-            loading.message = 'AI智能合成中，请稍候...';
+            loading.message = this.$t('toolbar.aiComposing');
             
             // 构建请求数据
             const requestData = {
@@ -253,7 +253,7 @@ export default {
                                 ...commonAttr,
                                 id: generateID(),
                                 component: "Picture",
-                                label: "AI合成图片",
+                                label: this.$t('toolbar.aiComposedImage'),
                                 icon: "",
                                 propValue: imageUrl,
                                 style: {
@@ -280,7 +280,7 @@ export default {
             }
         } catch (error) {
             console.error('AI智能合成失败:', error);
-            const errorMessage = error.response?.data?.message || error.response?.data?.desc || error.message || 'AI智能合成失败，请重试';
+            const errorMessage = error.response?.data?.message || error.response?.data?.desc || error.message || this.$t('toolbar.aiComposeFailed');
             ElMessage.error(errorMessage);
         }
        },
@@ -354,13 +354,13 @@ export default {
                // 获取画布元素
                let target = document.getElementsByClassName("content");
                if (!target || !target[0]) {
-                   ElMessage.warning('未找到画布内容，请先添加元素到画布');
+                   ElMessage.warning(this.$t('toolbar.canvasNotFound'));
                    return;
                }
 
                // 显示加载提示
                const loading = ElMessage({
-                   message: '正在保存画布图片...',
+                   message: this.$t('toolbar.savingCanvas'),
                    type: 'info',
                    duration: 0
                });
@@ -397,15 +397,15 @@ export default {
                const token = localStorage.getItem('token') || '';
                if (!token) {
                    loading.close();
-                   ElMessage.warning('请先登录');
+                   ElMessage.warning(this.$t('toolbar.pleaseLogin'));
                    return;
                }
                
                // 构建请求数据
                const requestData = {
                    picture: canvasBase64, // base64 格式的图片
-                   title: '创作插画',
-                   description: '从画布保存的插画',
+                   title: this.$t('toolbar.creationIllustration'),
+                   description: this.$t('toolbar.savedFromCanvas'),
                    type: 'others' // 默认类别为"其他"
                };
                
@@ -426,7 +426,7 @@ export default {
                    this.isSaved = true
                    
                    ElMessage({
-                       message: '保存成功！已保存到"我的插画"',
+                       message: this.$t('toolbar.saveSuccess'),
                        type: 'success',
                        duration: 1000,
                        offset: 150
@@ -438,12 +438,12 @@ export default {
                    }, 3000)
                   
                } else {
-                   throw new Error(response.data?.message || '保存失败');
+                   throw new Error(response.data?.message || this.$t('toolbar.saveFailed'));
                }
            } catch (error) {
                console.error('保存画布图片失败:', error);
-               const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
-               ElMessage.error(`保存失败: ${errorMessage}`);
+               const errorMessage = error.response?.data?.message || error.message || this.$t('toolbar.saveFailedRetry');
+               ElMessage.error(`${this.$t('toolbar.saveFailed')}: ${errorMessage}`);
            }
        },
        deleteDraft(){
@@ -455,7 +455,7 @@ export default {
         this.isSaved = false;
         // 隐藏右键菜单
         this.$store.commit('hideContextMenu');
-        ElMessage.success('画布已清空');
+        ElMessage.success(this.$t('toolbar.canvasCleared'));
        }
     }
 }

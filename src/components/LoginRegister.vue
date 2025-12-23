@@ -1,45 +1,127 @@
 <template>
-  <div class="container">
-    <div class="box">
-        <div class="close"><i class="el-icon-close" @click="closeMask()"></i></div>
-      <div class="left"></div>
-      <div class="right">
-        <ul class="title">
-          <li @click="countIn" :class="[countLog ? 'curLogin' : '']">账号登陆</li>
-          <li><el-divider direction="vertical"></el-divider></li>
-          <li  @click="toregister" :class="[!countLog ? 'curLogin' : '']">注册</li>
-        </ul>
+  <transition name="fade">
+    <div class="container" @click.self="closeMask">
+      <transition name="slide-up">
+        <div class="box" @click.stop>
+          <div class="close" @click="closeMask">
+            <i class="el-icon-close"></i>
+          </div>
+          <div class="left"></div>
+          <div class="right">
+            <ul class="title">
+              <li 
+                @click="countIn" 
+                :class="['title-item', { 'active': countLog }]"
+              >
+                {{ $t('loginRegister.accountLogin') }}
+              </li>
+              <li class="divider-wrapper">
+                <el-divider direction="vertical"></el-divider>
+              </li>
+              <li 
+                @click="toregister" 
+                :class="['title-item', { 'active': !countLog }]"
+              >
+                {{ $t('loginRegister.register') }}
+              </li>
+            </ul>
 
-         <div v-if="countLog" class="form">
-            <div class="logLine">
-            <span>账 号</span>
-            <input v-model="count.name" type="text" name="email" class="input" placeholder="请输入邮箱" />
-            </div>
-            <div class="logLine">
-            <span>密 码</span>
-            <input v-model="count.pwd" type="password" name="password" class="input" placeholder="请输入密码" />
-            </div>
-            <el-button @click="login" class="btn">登录</el-button>
-            <div class="toregister" @click="toregister">没有账号？<span>注册</span></div>
-        </div>
+            <transition name="form-fade" mode="out-in">
+              <div v-if="countLog" key="login" class="form">
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <i class="el-icon-user input-icon"></i>
+                    <input 
+                      v-model="count.name" 
+                      type="text" 
+                      name="email" 
+                      class="input" 
+                      :placeholder="$t('loginRegister.enterEmail')"
+                      @focus="onInputFocus"
+                      @blur="onInputBlur"
+                    />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <i class="el-icon-lock input-icon"></i>
+                    <input 
+                      v-model="count.pwd" 
+                      type="password" 
+                      name="password" 
+                      class="input" 
+                      :placeholder="$t('loginRegister.enterPassword')"
+                      @focus="onInputFocus"
+                      @blur="onInputBlur"
+                    />
+                  </div>
+                </div>
+                <el-button 
+                  @click="login" 
+                  class="btn btn-primary"
+                  :loading="loading"
+                >
+                  {{ $t('loginRegister.login') }}
+                </el-button>
+                <div class="toregister">
+                  {{ $t('loginRegister.noAccount') }}
+                  <span @click="toregister">{{ $t('loginRegister.registerNow') }}</span>
+                </div>
+              </div>
 
-      <div v-if="!countLog" class="form">
-           <div class="logLine">
-            <span>邮 箱</span>
-            <input v-model="emailCount.emailName" type="text" name="email" class="input" placeholder="请输入邮箱" /></div>
-            <div class="logLine"><span>密 码</span>
-            <input v-model="emailCount.emailPwd" type="password" name="password" class="input" placeholder="请输入密码" /></div>
-            <el-button @click="register" class="btn">注册</el-button>
-            
+              <div v-else key="register" class="form">
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <i class="el-icon-message input-icon"></i>
+                    <input 
+                      v-model="emailCount.emailName" 
+                      type="text" 
+                      name="email" 
+                      class="input" 
+                      :placeholder="$t('loginRegister.enterEmail')"
+                      @focus="onInputFocus"
+                      @blur="onInputBlur"
+                    />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <i class="el-icon-lock input-icon"></i>
+                    <input 
+                      v-model="emailCount.emailPwd" 
+                      type="password" 
+                      name="password" 
+                      class="input" 
+                      :placeholder="$t('loginRegister.enterPassword')"
+                      @focus="onInputFocus"
+                      @blur="onInputBlur"
+                    />
+                  </div>
+                </div>
+                <el-button 
+                  @click="register" 
+                  class="btn btn-primary"
+                  :loading="loading"
+                >
+                  {{ $t('loginRegister.register') }}
+                </el-button>
+                <div class="toregister">
+                  {{ $t('loginRegister.hasAccount') }}
+                  <span @click="countIn">{{ $t('loginRegister.loginNow') }}</span>
+                </div>
+              </div>
+            </transition>
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script>
 import { ref, getCurrentInstance } from 'vue'
 import { useStore } from 'vuex'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
@@ -48,8 +130,10 @@ export default {
     setup() {
         const store = useStore()
         const { proxy } = getCurrentInstance()
+        const { t } = useI18n()
         
         const countLog = ref(true)
+        const loading = ref(false)
         const count = ref({
             name: "",
             pwd: ""
@@ -62,6 +146,14 @@ export default {
         
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
+        
+        const onInputFocus = (e) => {
+            e.target.parentElement.classList.add('focused')
+        }
+        
+        const onInputBlur = (e) => {
+            e.target.parentElement.classList.remove('focused')
+        }
         
         const closeMask = () => {
             store.commit("closeMask")
@@ -97,13 +189,14 @@ export default {
             // 表单验证
             if (!count.value.name || !count.value.pwd) {
                 $message({
-                    message: '请输入邮箱和密码',
+                    message: t('loginRegister.enterEmailAndPassword'),
                     type: 'warning',
                     offset: 180,
                 })
                 return
             }
 
+            loading.value = true
             $http
                 .post(`/pb/login`, {
                     email: count.value.name, 
@@ -112,6 +205,7 @@ export default {
                     timeout: 15000 // 15秒超时
                 })
                 .then((response) => {
+                    loading.value = false
                     if (response.data.desc === "success") {
                         closeMask()
                         localStorage.setItem("token", response.data.message)
@@ -121,7 +215,7 @@ export default {
                         getUser(userid.value)
                     } else {
                         $message({
-                            message: '邮箱或密码错误',
+                            message: t('loginRegister.emailOrPasswordError'),
                             type: 'warning',
                             offset: 180,
                         })
@@ -129,14 +223,15 @@ export default {
                     }
                 })
                 .catch((error) => {
+                    loading.value = false
                     console.error('登录错误:', error)
-                    let errorMsg = '登录失败，请稍后重试'
+                    let errorMsg = t('loginRegister.loginFailed')
                     if (error.code === 'ECONNABORTED') {
-                        errorMsg = '请求超时，请检查网络连接'
+                        errorMsg = t('loginRegister.requestTimeout')
                     } else if (error.code === 'ERR_NETWORK') {
-                        errorMsg = '网络错误，请检查网络连接'
+                        errorMsg = t('loginRegister.networkError')
                     } else if (error.response) {
-                        errorMsg = error.response.data?.message || '登录失败'
+                        errorMsg = error.response.data?.message || t('loginRegister.loginFailedShort')
                     }
                     $message({
                         message: errorMsg,
@@ -151,13 +246,14 @@ export default {
             // 表单验证
             if (!emailCount.value.emailName || !emailCount.value.emailPwd) {
                 $message({
-                    message: '请输入邮箱和密码',
+                    message: t('loginRegister.enterEmailAndPassword'),
                     type: 'warning',
                     offset: 180,
                 })
                 return
             }
 
+            loading.value = true
             $http
                 .post(`/pb/regist/`, {
                     email: emailCount.value.emailName, 
@@ -166,30 +262,32 @@ export default {
                     timeout: 15000 // 15秒超时
                 })
                 .then((response) => {
+                    loading.value = false
                     if (response.data.desc === "success") {
                         countLog.value = true
                         $message({
-                            message: '注册成功，请登陆吧',
+                            message: t('loginRegister.registerSuccess'),
                             type: 'success',
                             offset: 180,
                         })
                     } else {
                         $message({
-                            message: response.data?.message || '出错啦，请再试一次',
+                            message: response.data?.message || t('loginRegister.tryAgain'),
                             type: 'warning',
                             offset: 180,
                         })
                     }
                 })
                 .catch((error) => {
+                    loading.value = false
                     console.error('注册错误:', error)
-                    let errorMsg = '注册失败，请稍后重试'
+                    let errorMsg = t('loginRegister.registerFailed')
                     if (error.code === 'ECONNABORTED') {
-                        errorMsg = '请求超时，请检查网络连接'
+                        errorMsg = t('loginRegister.requestTimeout')
                     } else if (error.code === 'ERR_NETWORK') {
-                        errorMsg = '网络错误，请检查网络连接'
+                        errorMsg = t('loginRegister.networkError')
                     } else if (error.response) {
-                        errorMsg = error.response.data?.message || '注册失败'
+                        errorMsg = error.response.data?.message || t('loginRegister.registerFailedShort')
                     }
                     $message({
                         message: errorMsg,
@@ -208,20 +306,58 @@ export default {
             count,
             userid,
             emailCount,
+            loading,
             closeMask,
             countIn,
             getUser,
             login,
             register,
-            toregister
+            toregister,
+            onInputFocus,
+            onInputBlur
         }
     }
 }
 </script>
 
 <style scoped>
+/* 模态框背景动画 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* 模态框内容动画 */
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+}
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px) scale(0.95);
+}
+
+/* 表单切换动画 */
+.form-fade-enter-active, .form-fade-leave-active {
+  transition: all 0.3s ease;
+}
+.form-fade-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+.form-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
 .container {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   width: 100vw;
   height: 100vh;
@@ -232,108 +368,334 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.box {
-  width: 820px;
-  height: 440px;
-  position: relative;
-   color:#505050;
-  border-radius: 8px;
-  box-shadow: 0 0 6px rgb(0 0 0 / 10%);
-  padding: 52px 65px 29px 92px;
+  padding: 20px;
   box-sizing: border-box;
-  background-color: #fff;
-  background-image: url('../assets/images/login.png');
-  background-position: 100% 100%, 100% 100%;
-  background-repeat: no-repeat, no-repeat;
-  background-size: 100%;
+}
+
+.box {
+  width: 100%;
+  max-width: 820px;
+  min-height: 440px;
+  position: relative;
+  color: #505050;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 40px 60px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   user-select: none;
+  overflow: hidden;
 }
-.box .close{
-    font-size:22px;
-    position: absolute;
-    top:20px;
-    right:20px;
-    cursor: pointer;
+
+.box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('../assets/images/login.png');
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
 }
-.box .close:hover{
-    color:#4fa5d9;
+
+.box::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(129, 103, 169, 0.03) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0.6) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.box > * {
+  position: relative;
+  z-index: 2;
+}
+
+.box .close {
+  font-size: 24px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  color: #909399;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.box .close:hover {
+  color: #8167a9;
+  background-color: rgba(129, 103, 169, 0.1);
+  transform: rotate(90deg);
 }
 
 .box .left {
   width: 173px;
   height: 281px;
+  flex-shrink: 0;
 }
-.box .divider {
-  width: 0px;
-  height: 200px;
-  border: 1px dashed #1d1d1f;
-  margin: auto 45px;
-}
+
 .box .right {
-  width: 400px;
-  height: 281px;
+  width: 100%;
+  max-width: 400px;
+  flex: 1;
 }
-.box .right .title{
-    list-style: none;
-    display: flex;
-    justify-content:center;
-    margin-bottom: 20px;
-    margin-top:20px;
+
+.box .right .title {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  margin-top: 10px;
+  gap: 20px;
 }
-.curLogin{
-    color:#4fa5d9;
-}
-.box .right .title li{
-    font-size:18px;
-    width:80px;
-   height:20px;
-   line-height: 20px;
-    text-align: center;
-    cursor: pointer;
-}
-.form{
-display: flex;
-    flex-direction: column;
-    min-width: 100%;
-    margin:0 auto;
-}
-.form .logLine{
-    width:400px;
-    height: 40px;
-    display: flex;
-    border: 1px solid #e7e7e7;
-    border-radius: 4px;
-    margin-bottom: 16px;
-    padding:0 20px;
-    font-size:14px;
-    align-items: center;
-}
-.form .logLine span{
-     height: 40px;
-     line-height: 40px;
-    
-     color:#212121;
-     margin-right: 20px;
-}
-.form .logLine input{
-    width:230px;
-    border:none;
-    box-shadow: none;
-   font-size:14px;
-    color:#212121;
-    
-}
-.toregister{
+
+.title-item {
+  font-size: 18px;
+  font-weight: 500;
+  padding: 8px 20px;
   text-align: center;
-  margin-top:12px;
+  cursor: pointer;
+  color: #909399;
+  position: relative;
+  transition: all 0.3s ease;
+  border-radius: 4px;
 }
-.toregister span{
+
+.title-item:hover {
+  color: #8167a9;
+  background-color: rgba(129, 103, 169, 0.05);
+}
+
+.title-item.active {
+  color: #8167a9;
+  font-weight: 600;
+}
+
+.title-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 3px;
+  background: linear-gradient(90deg, #9d8bb8, #8167a9);
+  border-radius: 2px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    width: 0;
+  }
+  to {
+    width: 30px;
+  }
+}
+
+.divider-wrapper {
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 48px;
+  border: 2px solid #e7e7e7;
+  border-radius: 8px;
+  padding: 0 16px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-wrapper:hover {
+  border-color: #c0c4cc;
+}
+
+.input-wrapper.focused {
+  border-color: #8167a9;
+  box-shadow: 0 0 0 3px rgba(129, 103, 169, 0.1);
+  transform: translateY(-1px);
+}
+
+.input-icon {
+  font-size: 18px;
+  color: #909399;
+  margin-right: 12px;
+  transition: color 0.3s ease;
+}
+
+.input-wrapper.focused .input-icon {
+  color: #8167a9;
+}
+
+.input-wrapper .input {
+  flex: 1;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  font-size: 14px;
+  color: #212121;
+  background: transparent;
+  padding: 0;
+  height: 100%;
+}
+
+.input-wrapper .input::placeholder {
+  color: #c0c4cc;
+}
+
+.btn {
+  width: 100%;
+  height: 48px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
   cursor: pointer;
 }
-.toregister span:hover{
-  color:#4fa5d9;
+
+.btn-primary {
+  background: linear-gradient(135deg, #9d8bb8 0%, #8167a9 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(129, 103, 169, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #8167a9 0%, #6b5490 100%);
+  box-shadow: 0 6px 16px rgba(129, 103, 169, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(129, 103, 169, 0.3);
+}
+
+.toregister {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #909399;
+}
+
+.toregister span {
+  cursor: pointer;
+  color: #8167a9;
+  font-weight: 500;
+  margin-left: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.toregister span::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #4fa5d9;
+  transition: width 0.3s ease;
+}
+
+.toregister span:hover {
+  color: #6b5490;
+}
+
+.toregister span:hover::after {
+  width: 100%;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .box {
+    max-width: 100%;
+    padding: 30px 20px;
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .box .left {
+    display: none;
+  }
+
+  .box .right {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .title-item {
+    font-size: 16px;
+    padding: 6px 16px;
+  }
+
+  .input-wrapper {
+    height: 44px;
+  }
+
+  .btn {
+    height: 44px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
+
+  .box {
+    padding: 25px 15px;
+    border-radius: 12px;
+  }
+
+  .box .close {
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
 }
 </style>

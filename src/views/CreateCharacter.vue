@@ -22,18 +22,16 @@
                                     :on-remove="handlePhotoRemove"
                                     :limit="1"
                                     accept="image/jpeg,image/jpg,image/png">
-                                    <div class="upload-step">1：上传照片（可选）</div>
+                                    <div class="upload-step">{{ $t('createCharacter.uploadPhotoStep') }}</div>
                                   
-                                    <div class="el-upload__text-secondary">
-                                        将文件拖到此处，或<em>点击上传</em>
-                                    </div>
+                                    <div class="el-upload__text-secondary" v-html="$t('createCharacter.dragUpload')"></div>
                                     <template #tip>
                                         <div class="el-upload__tip">
-                                            支持 JPG、PNG 格式，建议大小不超过 5MB
+                                            {{ $t('createCharacter.uploadTip') }}
                                             <br />
-                                            为保证生成效果，请上传半身照，确保人物面部清晰完整。
+                                            {{ $t('createCharacter.uploadTipDetail') }}
                                             <br />
-                                            <span style="color: #909399;">提示：也可以不上传照片，仅使用提示词生成角色</span>
+                                            <span style="color: #909399;">{{ $t('createCharacter.uploadTipOptional') }}</span>
                                         </div>
                                     </template>
                                 </el-upload>
@@ -43,11 +41,11 @@
                             <div v-if="photoPreviewUrl" class="uploaded-content">
                                 <!-- 照片预览 -->
                                 <div class="photo-preview-wrapper">
-                                    <div class="step-label">1：上传的照片</div>
+                                    <div class="step-label">{{ $t('createCharacter.uploadedPhoto') }}</div>
                                     <div class="photo-preview">
                                         <el-image 
                                             :src="photoPreviewUrl" 
-                                            alt="上传照片" 
+                                            :alt="$t('createCharacter.photoAlt')" 
                                             class="photo-image"
                                             fit="contain"
                                             :preview-src-list="[photoPreviewUrl]">
@@ -58,7 +56,7 @@
                                             icon="el-icon-refresh" 
                                             @click="handleRemovePhoto"
                                             size="small">
-                                            重新上传
+                                            {{ $t('createCharacter.reupload') }}
                                         </el-button>
                                     </div>
                                 </div>
@@ -70,7 +68,7 @@
 
                                 <!-- 步骤2：角色信息输入 -->
                                 <div class="character-info-section">
-                                    <div class="step-label">2：角色信息</div>
+                                    <div class="step-label">{{ $t('createCharacter.characterInfo') }}</div>
                                     <prompt-fill 
                                         v-model="form.prompt"
                                         template-id="character-detail"
@@ -95,13 +93,13 @@
                                         @click="handleCreateCharacter"
                                         class="btn-generate">
                                         <i class="el-icon-magic-stick"></i>
-                                        {{ processing ? '正在生成中...' : '生成角色' }}
+                                        {{ processing ? $t('createCharacter.generating') : $t('createCharacter.generateCharacter') }}
                                     </el-button>
                                     <el-button 
                                         @click="handleReset"
                                         :disabled="processing">
                                         <i class="el-icon-refresh"></i>
-                                        重置
+                                        {{ $t('createCharacter.reset') }}
                                     </el-button>
                         </div>
                     </div>
@@ -121,17 +119,17 @@
                           
                         <div v-if="!resultImageUrl && !processing" class="result-placeholder">
                             <i class="el-icon-picture-outline"></i>
-                            <p>生成的角色形象将显示在这里</p>
+                            <p>{{ $t('createCharacter.resultPlaceholder') }}</p>
                         </div>
                         <div v-if="processing" class="result-loading">
                             <i class="el-icon-loading"></i>
-                            <p>正在生成中，请稍候...</p>
+                            <p>{{ $t('createCharacter.generatingWait') }}</p>
                            
                         </div>
                         <div v-if="resultImageUrl && !processing" class="result-image-wrapper">
                             <el-image 
                                 :src="displayImageUrl" 
-                                alt="生成的角色形象" 
+                                :alt="$t('createCharacter.resultImageAlt')" 
                                 class="result-image"
                                 fit="contain"
                                 :preview-src-list="[displayImageUrl]">
@@ -140,20 +138,20 @@
                                 <el-button 
                                     type="primary" 
                                     @click="collectCharacter">
-                                    <i class="el-icon-star-on"></i> 收集角色
+                                    <i class="el-icon-star-on"></i> {{ $t('createCharacter.collectCharacter') }}
                                 </el-button>
                                 <el-button 
                                     @click="downloadResult" 
                                     :loading="downloading">
-                                    <i class="el-icon-download"></i> 下载角色
+                                    <i class="el-icon-download"></i> {{ $t('createCharacter.downloadCharacter') }}
                                 </el-button>
                     <el-button 
                                         @click="useInIllustration">
-                                        <i class="el-icon-edit"></i> 创作插画
+                                        <i class="el-icon-edit"></i> {{ $t('createCharacter.createIllustration') }}
                     </el-button>
                     <el-button 
                                         @click="useInCreation">
-                                        <i class="el-icon-edit"></i> 创作组图
+                                        <i class="el-icon-edit"></i> {{ $t('createCharacter.createGroupImages') }}
                     </el-button>
                                 </div>
                             </div>
@@ -254,13 +252,13 @@ export default {
             const isLt5M = file.raw.size / 1024 / 1024 < 5;
             
             if (!isImage) {
-                ElMessage.error('只能上传图片文件！');
+                ElMessage.error(this.$t('createCharacter.onlyImageFiles'));
                 this.handlePhotoRemove();
                 return;
             }
             
             if (!isLt5M) {
-                ElMessage.error('图片大小不能超过 5MB！');
+                ElMessage.error(this.$t('createCharacter.imageSizeLimit'));
                 this.handlePhotoRemove();
                 return;
             }
@@ -277,7 +275,7 @@ export default {
                 });
             };
             reader.onerror = () => {
-                ElMessage.error('读取图片失败，请重试');
+                ElMessage.error(this.$t('createCharacter.readImageFailed'));
             };
             reader.readAsDataURL(file.raw);
         },
@@ -298,7 +296,7 @@ export default {
         // 抠图处理
         async handleSegment() {
             if (!this.photoFile) {
-                ElMessage.warning('请先上传照片');
+                ElMessage.warning(this.$t('createCharacter.pleaseUploadPhoto'));
                 return;
             }
             
@@ -353,7 +351,7 @@ export default {
                     if (imageUrl) {
                         this.segmentedImageUrl = imageUrl;
                         this.segmentedImageData = result;
-                        ElMessage.success('抠图成功！');
+                        ElMessage.success(this.$t('createCharacter.segmentSuccess'));
                     } else {
                         throw new Error('未找到抠图结果');
                     }
@@ -506,7 +504,7 @@ export default {
         async handleCreateCharacter() {
             if (!this.canGenerate) {
                 if (!this.form.character_name && !this.form.prompt) {
-                    ElMessage.warning('请填写角色名称或提示词');
+                    ElMessage.warning(this.$t('createCharacter.fillCharacterNameOrPrompt'));
                 }
                 return;
             }
@@ -541,7 +539,7 @@ export default {
                     if (this.form.prompt && this.form.prompt.trim()) {
                         finalPrompt = this.form.prompt.trim();
                     } else {
-                        throw new Error('请填写提示词');
+                        throw new Error(this.$t('createCharacter.fillPrompt'));
                     }
                 }
                 
@@ -611,7 +609,7 @@ export default {
                     };
                     
                     // 显示成功消息
-                    ElMessage.success('角色创建成功！');
+                    ElMessage.success(this.$t('createCharacter.characterCreateSuccess'));
                     
                     // 优先使用 image_url，其次使用 character_image_url，最后使用 base64
                     if (result.image_url) {
@@ -676,32 +674,32 @@ export default {
                     this.saveCharacterToLocalStorage();
                 } else if (responseData.statuscode === 'lackOfParameters' || responseData.code !== 0) {
                     // 参数缺失错误或其他错误
-                    const errorMsg = responseData.message || responseData.desc || '创作失败，请重试';
+                    const errorMsg = responseData.message || responseData.desc || this.$t('createCharacter.creationFailed');
                     throw new Error(errorMsg);
                 } else {
                     // 其他错误响应
-                    const errorMsg = responseData.message || responseData.desc || '创建失败，请重试';
+                    const errorMsg = responseData.message || responseData.desc || this.$t('createCharacter.createFailed');
                     throw new Error(errorMsg);
                 }
             } catch (error) {
                 console.error('创建角色失败:', error);
                 
                 // 处理特定错误
-                let errorMessage = '创建角色失败，请重试';
+                let errorMessage = this.$t('createCharacter.createCharacterFailed');
                 
                 if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-                    errorMessage = '请求超时，请检查网络连接或稍后重试';
+                    errorMessage = this.$t('createCharacter.requestTimeout');
                 } else if (error.message.includes('ECONNREFUSED') || error.message.includes('127.0.0.1')) {
-                    errorMessage = '后端服务未启动，请检查服务是否运行';
+                    errorMessage = this.$t('createCharacter.backendNotRunning');
                 } else if (error.response) {
                     // 后端返回的错误
                     const errorData = error.response.data;
                     if (errorData && errorData.message) {
                         errorMessage = errorData.message;
                     } else if (error.response.status === 413) {
-                        errorMessage = '图片文件过大，请上传小于5MB的图片';
+                        errorMessage = this.$t('createCharacter.imageTooLarge');
                     } else if (error.response.status === 400) {
-                        errorMessage = '图片格式不正确，请上传JPG或PNG格式的图片';
+                        errorMessage = this.$t('createCharacter.imageFormatError');
                     }
                 } else if (error.message) {
                     errorMessage = error.message;
@@ -874,7 +872,7 @@ export default {
         // 收集角色：跳转到上传页面确认信息后保存
         async collectCharacter() {
             if (!this.resultImageUrl) {
-                ElMessage.warning('没有可收集的角色图片');
+                ElMessage.warning(this.$t('createCharacter.noCharacterImage'));
                 return;
             }
             
@@ -908,14 +906,14 @@ export default {
                 });
             } catch (error) {
                 console.error('收集角色失败:', error);
-                ElMessage.error('收集角色失败: ' + (error.message || '请重试'));
+                ElMessage.error(this.$t('createCharacter.collectCharacterFailed', { message: error.message || this.$t('common.error') }));
             }
         },
         
         // 下载结果
         async downloadResult() {
             if (!this.resultImageUrl) {
-                ElMessage.warning('没有可下载的图片');
+                ElMessage.warning(this.$t('createCharacter.noImageToDownload'));
                 return;
             }
             
@@ -1019,10 +1017,10 @@ export default {
                     }
                 }
                 
-                ElMessage.success('下载成功');
+                ElMessage.success(this.$t('createCharacter.downloadSuccess'));
             } catch (error) {
                 console.error('下载失败:', error);
-                ElMessage.error('下载失败: ' + (error.message || '请重试'));
+                ElMessage.error(this.$t('createCharacter.downloadFailed', { message: error.message || this.$t('common.error') }));
             } finally {
                 this.downloading = false;
             }
@@ -1031,12 +1029,12 @@ export default {
         // 用于创作插画
         async useInIllustration() {
             if (!this.resultImageUrl) {
-                ElMessage.warning('没有可用的角色图片');
+                ElMessage.warning(this.$t('createCharacter.noAvailableImage'));
                 return;
             }
             
             try {
-                ElMessage.info('正在处理角色图片...');
+                ElMessage.info(this.$t('createCharacter.processingImage'));
                 
                 // 获取角色信息
                 const result = this.resultImageData || {};
@@ -1071,11 +1069,11 @@ export default {
                                 localStorage.setItem('lastCharacterId', String(characterId));
                             }
                         } else {
-                            throw new Error(createResponse.data?.message || '创建角色失败');
+                            throw new Error(createResponse.data?.message || this.$t('createCharacter.createCharacterFailed'));
                         }
                     } catch (error) {
                         console.error('创建角色失败:', error);
-                        ElMessage.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                        ElMessage.error(this.$t('createCharacter.createCharacterFailedError', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
                         return;
                     }
                 }
@@ -1097,25 +1095,25 @@ export default {
                 localStorage.setItem('characterImage', segmentedImageUrl);
                 
                 // 提示角色已保存
-                ElMessage.success('角色已保存到"我的角色"');
+                ElMessage.success(this.$t('createCharacter.characterSaved'));
                 
                 // 跳转到创作插画页面
                 this.$router.push('/creation');
             } catch (error) {
                 console.error('创作插画失败:', error);
-                ElMessage.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                ElMessage.error(this.$t('createCharacter.processFailed', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
             }
         },
         
         // 用于创作组图
         async useInCreation() {
             if (!this.resultImageUrl) {
-                ElMessage.warning('没有可用的角色图片');
+                ElMessage.warning(this.$t('createCharacter.noAvailableImage'));
                 return;
             }
             
             try {
-                ElMessage.info('正在处理角色图片...');
+                ElMessage.info(this.$t('createCharacter.processingImage'));
                 
                 // 获取角色信息
                 const result = this.resultImageData || {};
@@ -1150,11 +1148,11 @@ export default {
                                 localStorage.setItem('lastCharacterId', String(characterId));
                             }
                         } else {
-                            throw new Error(createResponse.data?.message || '创建角色失败');
+                            throw new Error(createResponse.data?.message || this.$t('createCharacter.createCharacterFailed'));
                         }
                     } catch (error) {
                         console.error('创建角色失败:', error);
-                        ElMessage.error('创建角色失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                        ElMessage.error(this.$t('createCharacter.createCharacterFailedError', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
                         return;
                     }
                 }
@@ -1176,13 +1174,13 @@ export default {
                 localStorage.setItem('characterImage', segmentedImageUrl);
                 
                 // 提示角色已保存
-                ElMessage.success('角色已保存到"我的角色"');
+                ElMessage.success(this.$t('createCharacter.characterSaved'));
                 
                 // 跳转到创作组图页面
                 this.$router.push('/create-group-images');
             } catch (error) {
                 console.error('创作组图失败:', error);
-                ElMessage.error('处理失败: ' + (error.response?.data?.message || error.message || '请重试'));
+                ElMessage.error(this.$t('createCharacter.processFailed', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
             }
         },
         
@@ -1243,7 +1241,7 @@ export default {
                     console.error('result:', result);
                     console.error('resultImageData:', this.resultImageData);
                     console.error('resultImageUrl:', this.resultImageUrl);
-                    throw new Error('无法获取角色图片URL，请确保图片已成功生成');
+                    throw new Error(this.$t('createCharacter.cannotGetImageUrl'));
                 }
                 
                 // 检查是否是 base64 格式
@@ -1257,7 +1255,7 @@ export default {
                 
                 const characterName = result.character_name || this.form.character_name;
                 if (!characterName) {
-                    throw new Error('角色名称不能为空');
+                    throw new Error(this.$t('createCharacter.characterNameRequired'));
                 }
                 
                 // 构建请求数据（符合API规范）

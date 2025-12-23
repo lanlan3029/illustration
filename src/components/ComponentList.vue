@@ -8,7 +8,7 @@
             :data-index="index"
             @click="handleClick(index)"
         >
-            <el-tooltip class="item" effect="dark" content="点击添加到画布中心" placement="top-start">
+            <el-tooltip class="item" effect="dark" :content="$t('componentList.clickToAddCenter')" placement="top-start">
             <label class="text">{{ item.label }}</label></el-tooltip>
         </div>
     </div>
@@ -23,12 +23,20 @@ import { ElMessage } from 'element-plus'
 export default {
     data() {
         return {
-            componentList,
+            rawComponentList: componentList, // 保存原始列表
         }
     },
     computed: {
         editor() {
             return this.$store.state.editor
+        },
+        // 国际化的组件列表
+        componentList() {
+            return this.rawComponentList.map(item => ({
+                ...item,
+                label: this.$t(item.label), // 翻译 label
+                propValue: this.$t(item.propValue) // 翻译 propValue
+            }))
         }
     },
     methods: {
@@ -49,6 +57,14 @@ export default {
                 const rectInfo = this.editor.getBoundingClientRect()
                 const component = deepCopy(componentList[index])
                 
+                // 翻译 label 和 propValue（如果它们是翻译键）
+                if (component.label && component.label.startsWith('componentList.')) {
+                    component.label = this.$t(component.label)
+                }
+                if (component.propValue && component.propValue.startsWith('componentList.')) {
+                    component.propValue = this.$t(component.propValue)
+                }
+                
                 // 计算画布中心位置（相对于画布本身，不是视口）
                 // 画布中心在画布坐标系中的位置
                 const centerX = rectInfo.width / 2
@@ -62,7 +78,7 @@ export default {
                 this.$store.commit("addComponent", {component})
                 
             } else {
-                ElMessage.warning('画布未初始化，请稍后再试')
+                ElMessage.warning(this.$t('componentList.canvasNotInitialized'))
             }
         }
     },

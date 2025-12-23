@@ -39,7 +39,11 @@
         而:disabled则是在元素上添加或移除disabled属性，从而控制该元素是否可以被交互。 -->
      <div v-else class="classify">
     <ul class="menu">
-        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type,item.num)"  :class="{'active':item.id===selectIndex }"><i :class="item.icon"></i></li>
+        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type,item.num)"  :class="{'active':item.id===selectIndex }">
+          <el-tooltip :content="getTypeLabel(item.type)" placement="right" effect="dark">
+            <i :class="item.icon"></i>
+          </el-tooltip>
+        </li>
     </ul>
     <div
       ref="scrollContainer"
@@ -130,6 +134,10 @@ export default {
         "curComponent"
     ]),
     methods:{
+        // 获取类型的国际化标签
+        getTypeLabel(type) {
+            return this.$t(`leftMenu.${type}`);
+        },
         // 确保滚动容器在内容不足时也能触发加载，直到出现滚动条或无更多数据
         ensureScrollable(containerSelector, loadMethod, disabledFlag){
           const container = this.$el.querySelector(containerSelector)

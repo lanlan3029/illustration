@@ -1,8 +1,8 @@
 <template>
   <div class="utility-tools-container">
     <div class="header">
-      <h1 class="page-title">智能抠图</h1>
-      <p class="page-description">请上传主体清晰的图片</p>
+      <h1 class="page-title">{{ $t('utilityTools.pageTitle') }}</h1>
+      <p class="page-description">{{ $t('utilityTools.pageDescription') }}</p>
     </div>
 
     <div class="tool-content">
@@ -10,7 +10,7 @@
         <div class="images-layout">
           <!-- 左侧：上传区域或原图 -->
           <div class="image-section left-section">
-            <h3 class="section-title">{{ originalImageUrl ? '原图' : '上传图片' }}</h3>
+            <h3 class="section-title">{{ originalImageUrl ? $t('utilityTools.originalImage') : $t('utilityTools.uploadImage') }}</h3>
             <div class="image-wrapper">
               <!-- 没有图片时显示上传框 -->
               <div v-if="!originalImageUrl" class="upload-area">
@@ -24,9 +24,9 @@
                   accept=".png, .jpg, .jpeg, .JPG, .JPEG"
                 >
                   <i class="el-icon-upload"></i>
-                  <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                  <div class="el-upload__text" v-html="$t('utilityTools.dragUpload')"></div>
                   <template #tip>
-                    <div class="el-upload__tip">只能上传jpg/png文件</div>
+                    <div class="el-upload__tip">{{ $t('utilityTools.uploadTip') }}</div>
                   </template>
                 </el-upload>
               </div>
@@ -45,7 +45,7 @@
                   size="small"
                   class="delete-btn"
                   @click="handleDeleteOriginal"
-                  title="删除图片"
+                  :title="$t('utilityTools.deleteImage')"
                 ></el-button>
               </div>
             </div>
@@ -58,17 +58,17 @@
               class="segment-btn"
               size="medium"
             >
-              {{ processing ? '处理中...' : '开始分割' }}
+              {{ processing ? $t('utilityTools.processing') : $t('utilityTools.startSegment') }}
             </el-button>
           </div>
 
           <!-- 右侧：分割结果 -->
           <div class="image-section right-section">
-            <h3 class="section-title">分割结果</h3>
+            <h3 class="section-title">{{ $t('utilityTools.segmentResult') }}</h3>
             <div class="image-wrapper">
               <div v-if="!segmentedImageUrl" class="placeholder">
                 <i class="el-icon-picture-outline"></i>
-                <p>分割结果将显示在这里</p>
+                <p>{{ $t('utilityTools.resultPlaceholder') }}</p>
               </div>
               <el-image 
                 v-else
@@ -94,7 +94,7 @@
                 @click="downloadImage"
                 size="medium"
               >
-                下载图片
+                {{ $t('utilityTools.downloadImage') }}
               </el-button>
               <el-button 
                 type="primary" 
@@ -102,7 +102,7 @@
                 @click="showAddToCharacterDialog = true"
                 size="medium"
               >
-                添加到我的角色
+                {{ $t('utilityTools.addToCharacter') }}
               </el-button>
             </div>
           </div>
@@ -293,9 +293,9 @@ export default {
     
     // 删除原图
     handleDeleteOriginal() {
-      this.$confirm('确定要删除原图吗？删除后需要重新上传。', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      this.$confirm(this.$t('utilityTools.confirmDelete'), this.$t('utilityTools.tip'), {
+        confirmButtonText: this.$t('utilityTools.confirm'),
+        cancelButtonText: this.$t('utilityTools.cancel'),
         type: 'warning'
       }).then(() => {
         this.originalFile = null;
@@ -303,7 +303,7 @@ export default {
         this.segmentedImageUrl = '';
         this.segmentedImageId = null;
         this.saveToLocalStorage();
-        ElMessage.success('已删除原图');
+        ElMessage.success(this.$t('utilityTools.originalDeleted'));
       }).catch(() => {
         // 用户取消删除
       });
@@ -325,7 +325,7 @@ export default {
     // 图像分割
     async handleSegment() {
       if (!this.originalFile) {
-        ElMessage.warning('请先上传图片');
+        ElMessage.warning(this.$t('utilityTools.pleaseUploadImage'));
         return;
       }
 
@@ -335,7 +335,7 @@ export default {
       try {
         const token = localStorage.getItem('token') || '';
         if (!token) {
-          ElMessage.error('请先登录');
+          ElMessage.error(this.$t('utilityTools.pleaseLogin'));
           this.processing = false;
           return;
         }
@@ -414,20 +414,20 @@ export default {
             this.saveToLocalStorage();
             // 强制更新视图
             this.$forceUpdate();
-            ElMessage.success('图像分割成功！');
+            ElMessage.success(this.$t('utilityTools.segmentSuccess'));
             
             // 自动下载图片
             await this.autoDownloadImage();
           } else {
             console.error('完整响应数据:', JSON.stringify(response.data, null, 2));
-            throw new Error('未获取到分割后的图片，请检查响应数据');
+            throw new Error(this.$t('utilityTools.noImageData'));
           }
         } else {
           // 检查是否是文件内容错误
           const errorMsg = response.data?.message || response.data?.desc || '';
           if (errorMsg.includes('InvalidFile.Content') || errorMsg.includes('阿里云API错误: InvalidFile.Content')) {
             ElMessage({
-              message: '上传文件不规范，请上传 单人、完整、清晰 的图片；视频首帧需包含 清晰、完整、占比较大 的人体（部分模型要求全身）。',
+              message: this.$t('utilityTools.invalidFile'),
               type: 'error',
               duration: 6000,
               showClose: true
@@ -450,7 +450,7 @@ export default {
             showClose: true
           });
         } else {
-          ElMessage.error(errorMessage || '图像分割失败，请重试');
+          ElMessage.error(errorMessage || this.$t('utilityTools.segmentFailed'));
         }
       } finally {
         this.processing = false;
@@ -506,7 +506,7 @@ export default {
               // 删除失败不影响下载
             }
 
-            ElMessage.success('下载成功！');
+            ElMessage.success(this.$t('utilityTools.downloadSuccess'));
           } catch (error) {
             console.warn('后端下载失败，使用前端下载:', error);
             // 后端下载失败，使用前端下载方式
@@ -556,7 +556,7 @@ export default {
     // 手动下载图片（用户点击下载按钮）
     async downloadImage() {
       if (!this.segmentedImageUrl) {
-        ElMessage.warning('没有可下载的图片');
+        ElMessage.warning(this.$t('utilityTools.noImageToDownload'));
         return;
       }
 
@@ -566,12 +566,12 @@ export default {
     // 添加到我的角色
     async addToCharacter() {
       if (!this.characterForm.name || !this.characterForm.category) {
-        ElMessage.warning('请填写角色名称和类别');
+        ElMessage.warning(this.$t('utilityTools.fillNameAndCategory'));
         return;
       }
 
       if (!this.segmentedImageUrl) {
-        ElMessage.warning('没有可保存的图片');
+        ElMessage.warning(this.$t('utilityTools.noImageToSave'));
         return;
       }
 
@@ -580,7 +580,7 @@ export default {
       try {
         const token = localStorage.getItem('token') || '';
         if (!token) {
-          ElMessage.error('请先登录');
+          ElMessage.error(this.$t('utilityTools.pleaseLogin'));
           this.savingCharacter = false;
           return;
         }
@@ -612,14 +612,14 @@ export default {
           });
 
           if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
-            ElMessage.success('角色保存成功！');
+            ElMessage.success(this.$t('utilityTools.characterSaveSuccess'));
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
             this.$router.push('/user?tab=2');
             return;
           } else {
-            throw new Error(createResponse.data?.message || '保存角色失败');
+            throw new Error(createResponse.data?.message || this.$t('utilityTools.saveCharacterFailed'));
           }
         }
 
@@ -657,7 +657,7 @@ export default {
             this.$router.push('/user?tab=2');
             return;
           } else {
-            throw new Error(segmentResponse.data?.message || '保存角色失败');
+            throw new Error(segmentResponse.data?.message || this.$t('utilityTools.saveCharacterFailed'));
           }
         } else {
           // 使用URL创建角色
@@ -684,18 +684,18 @@ export default {
           });
 
           if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
-            ElMessage.success('角色保存成功！');
+            ElMessage.success(this.$t('utilityTools.characterSaveSuccess'));
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
             this.$router.push('/user?tab=2');
           } else {
-            throw new Error(createResponse.data?.message || '创建角色失败');
+            throw new Error(createResponse.data?.message || this.$t('utilityTools.createCharacterFailed'));
           }
         }
       } catch (error) {
         console.error('保存角色失败:', error);
-        const errorMessage = error.response?.data?.message || error.message || '保存角色失败，请重试';
+        const errorMessage = error.response?.data?.message || error.message || this.$t('utilityTools.saveCharacterFailedRetry');
         ElMessage.error(errorMessage);
       } finally {
         this.savingCharacter = false;

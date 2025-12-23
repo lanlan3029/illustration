@@ -27,7 +27,7 @@
               size="small" 
               @click="handleFollowClick(authorDetails._id)">
               <span class="follow-btn-text">
-                {{ attentionArr && attentionArr.includes(authorDetails._id) ? '已关注' : '+ 关注' }}
+                {{ attentionArr && attentionArr.includes(authorDetails._id) ? $t('originalBookDetails.followed') : $t('originalBookDetails.follow') }}
               </span>
             </el-button>
           </div>
@@ -55,7 +55,7 @@
             @click="downPDF"
             :disabled="disabled"
           >
-            下载
+            {{ $t('originalBookDetails.download') }}
           </el-button>
         </div>
       </div>
@@ -73,7 +73,7 @@
                 <div v-if="getCurrentPageContent()" class="page-image-wrapper">
                   <div v-if="isImageId(getCurrentPageContent())" class="image-loading">
                     <i class="el-icon-loading"></i>
-                    <p>加载中...</p>
+                    <p>{{ $t('originalBookDetails.loading') }}</p>
                   </div>
                   <el-image 
                     v-else
@@ -85,13 +85,13 @@
                     <template #placeholder>
                       <div class="image-loading">
                         <i class="el-icon-loading"></i>
-                        <p>加载中...</p>
+                        <p>{{ $t('originalBookDetails.loading') }}</p>
                       </div>
                     </template>
                     <template #error>
                       <div class="image-error">
                         <i class="el-icon-picture-outline"></i>
-                        <p>加载失败</p>
+                        <p>{{ $t('originalBookDetails.loadFailed') }}</p>
                       </div>
                     </template>
                   </el-image>
@@ -151,7 +151,7 @@
                   <div v-if="getCurrentSpreadContent().left" class="page-image-wrapper">
                     <div v-if="isImageId(getCurrentSpreadContent().left)" class="image-loading">
                       <i class="el-icon-loading"></i>
-                      <p>加载中...</p>
+                      <p>{{ $t('originalBookDetails.loading') }}</p>
                     </div>
                     <el-image 
                       v-else
@@ -163,19 +163,19 @@
                       <template #placeholder>
                         <div class="image-loading">
                           <i class="el-icon-loading"></i>
-                          <p>加载中...</p>
+                          <p>{{ $t('originalBookDetails.loading') }}</p>
                         </div>
                       </template>
                       <template #error>
                         <div class="image-error">
                           <i class="el-icon-picture-outline"></i>
-                          <p>加载失败</p>
+                          <p>{{ $t('originalBookDetails.loadFailed') }}</p>
                         </div>
                       </template>
                     </el-image>
                   </div>
                   <div v-else class="page-empty">
-                    <p>封面</p>
+                    <p>{{ $t('originalBookDetails.cover') }}</p>
                   </div>
                   <div class="page-edge left-edge"></div>
                 </div>
@@ -185,7 +185,7 @@
                   <div v-if="getCurrentSpreadContent().right" class="page-image-wrapper">
                     <div v-if="isImageId(getCurrentSpreadContent().right)" class="image-loading">
                       <i class="el-icon-loading"></i>
-                      <p>加载中...</p>
+                      <p>{{ $t('originalBookDetails.loading') }}</p>
                     </div>
                     <el-image 
                       v-else
@@ -197,19 +197,19 @@
                       <template #placeholder>
                         <div class="image-loading">
                           <i class="el-icon-loading"></i>
-                          <p>加载中...</p>
+                          <p>{{ $t('originalBookDetails.loading') }}</p>
                         </div>
                       </template>
                       <template #error>
                         <div class="image-error">
                           <i class="el-icon-picture-outline"></i>
-                          <p>加载失败</p>
+                          <p>{{ $t('originalBookDetails.loadFailed') }}</p>
                         </div>
                       </template>
                     </el-image>
                   </div>
                   <div v-else class="page-empty">
-                    <p>封底</p>
+                    <p>{{ $t('originalBookDetails.backCover') }}</p>
                   </div>
                   <div class="page-edge right-edge"></div>
                 </div>
@@ -267,7 +267,7 @@
             <span class="current-page">{{ (currentPageIndex * 2) + 1 }}-{{ Math.min((currentPageIndex * 2) + 2, allPages.length) }}</span>
             <span class="separator">/</span>
             <span class="total-pages">{{ allPages.length }}</span>
-            <span class="spread-hint">（双页）</span>
+            <span class="spread-hint">{{ $t('originalBookDetails.spreadMode') }}</span>
           </template>
           <template v-else>
             <span class="current-page">{{ currentPageIndex + 1 }}</span>
@@ -390,12 +390,12 @@ export default {
     // 类型标签映射
     typeLabel() {
       const typeMap = {
-        'reading': '儿童读物',
-        'habit': '习惯养成',
-        'english': '英语启蒙',
-        'math': '数学启蒙',
-        'knowledge': '科普百科',
-        'others': '其他'
+        'reading': this.$t('originalBookDetails.typeReading'),
+        'habit': this.$t('originalBookDetails.typeHabit'),
+        'english': this.$t('originalBookDetails.typeEnglish'),
+        'math': this.$t('originalBookDetails.typeMath'),
+        'knowledge': this.$t('originalBookDetails.typeKnowledge'),
+        'others': this.$t('originalBookDetails.typeOthers')
       };
       return typeMap[this.bookDetails.type] || this.bookDetails.type;
     }
@@ -545,7 +545,7 @@ export default {
         this.loading = false
         console.log(err)
         ElMessage({
-          message: '抱歉，出错了！',
+          message: this.$t('originalBookDetails.sorryError'),
           type: 'error'
         });
       }
@@ -690,18 +690,18 @@ export default {
               //把该用户ID到用户已关注数组
               this.$store.commit("myAttention",id)
               ElMessage({
-    message: '关注成功',
+    message: this.$t('originalBookDetails.followSuccess'),
     type: 'success',
     plain: true,
     offset:100,
   })
           } else {
-              ElMessage.warning(response.data.message || '关注失败');
+              ElMessage.warning(response.data.message || this.$t('originalBookDetails.followFailed'));
           }
         })
         .catch((error) => {
           console.error('关注失败:', error);
-          ElMessage.error('关注失败，请重试');
+          ElMessage.error(this.$t('originalBookDetails.followFailedRetry'));
         });
    },
     //取消关注
@@ -719,18 +719,18 @@ export default {
               //把该用户ID到用户已关注数组
               this.$store.commit("cancelAttention",id)
               ElMessage({
-    message: '已取消关注',
+    message: this.$t('originalBookDetails.unfollowed'),
     type: 'info',
     plain: true,
     offset:150,
   })
           } else {
-              ElMessage.warning(response.data.message || '取消关注失败');
+              ElMessage.warning(response.data.message || this.$t('originalBookDetails.unfollowFailed'));
           }
         })
         .catch((error) => {
           console.error('取消关注失败:', error);
-          ElMessage.error('取消关注失败，请重试');
+          ElMessage.error(this.$t('originalBookDetails.unfollowFailedRetry'));
         });
    },
    //点击喜欢绘本
@@ -790,14 +790,14 @@ collectBookFun(id) {
         // 如果没有返回收藏记录ID，重新获取收藏记录列表
         this.loadCollectIdMap();
       }
-      ElMessage.success('收藏成功');
+      ElMessage.success(this.$t('originalBookDetails.collectSuccess'));
     } else {
-      ElMessage.warning(response.data.message || '收藏失败');
+      ElMessage.warning(response.data.message || this.$t('originalBookDetails.collectFailed'));
     }
   })
   .catch((error) => {
     console.error('收藏失败:', error);
-    ElMessage.error('收藏失败，请重试');
+    ElMessage.error(this.$t('originalBookDetails.collectFailedRetry'));
   });
 },
 
@@ -812,7 +812,7 @@ cancelCollectBook(bookId) {
       if (recordId) {
         this.performCancelCollect(bookId, recordId);
       } else {
-        ElMessage.error('找不到收藏记录');
+        ElMessage.error(this.$t('originalBookDetails.collectRecordNotFound'));
       }
     });
     return;
@@ -893,7 +893,7 @@ async loadCollectIdMap() {
 
     downPDF() {
       this.disabled = true;
-      ElMessage("正在下载，请勿重复点击");
+      ElMessage(this.$t('originalBookDetails.downloading'));
 
       // 创建一个临时容器来包含所有页面内容用于PDF生成
       const tempContainer = document.createElement('div');
@@ -968,7 +968,7 @@ async loadCollectIdMap() {
         }).catch((error) => {
           document.body.removeChild(tempContainer);
           console.error('PDF生成失败:', error);
-          ElMessage.error('PDF生成失败，请重试');
+          ElMessage.error(this.$t('originalBookDetails.pdfGenerationFailed'));
           this.disabled = false;
         });
       }, 1000);

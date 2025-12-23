@@ -5,8 +5,8 @@
         <div class="selected-section">
             <div v-if="checkedImage.length > 0">
                 <div class="selected-header">
-                    <span class="selected-count">已选择 {{ checkedImage.length }} 张插画</span>
-                    <el-button size="small" type="text" @click="clearSelected">清空</el-button>
+                    <span class="selected-count">{{ $t('composeIllustration.selectedCount', { count: checkedImage.length }) }}</span>
+                    <el-button size="small" type="text" @click="clearSelected">{{ $t('composeIllustration.clear') }}</el-button>
                 </div>
                 <div class="selected-preview" @dragover.prevent @drop.prevent>
                     <div 
@@ -40,10 +40,10 @@
             <!-- 操作栏 -->
             <div class="action-bar">
                 <span class="selected-info" v-if="checkedImage.length > 0">
-                    已选择 {{ checkedImage.length }} 张，点击合成按钮继续
+                    {{ $t('composeIllustration.selectedInfo', { count: checkedImage.length }) }}
                 </span>
                 <span class="selected-info" v-else>
-                    请选择要合成的插画
+                    {{ $t('composeIllustration.pleaseSelect') }}
                 </span>
                 <el-button 
                     @click="toPDF" 
@@ -52,7 +52,7 @@
                     :disabled="checkedImage.length === 0"
                     class="compose-btn">
                     <i class="el-icon-document"></i>
-                    合成绘本
+                    {{ $t('composeIllustration.composeBook') }}
                 </el-button>
             </div>
         </div>

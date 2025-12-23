@@ -16,7 +16,7 @@
            @dragstart是拖拽哪一个元素：在ComponentList.vue中
           -->
            <div class="aspect-ratio-selector-top">
-             <span class="aspect-label">画布比例：</span>
+             <span class="aspect-label">{{ $t('creation.canvasRatio') }}</span>
              <el-select 
                v-model="selectedAspectRatio" 
                @change="handleAspectRatioChange"
@@ -52,9 +52,9 @@
        <!-- 右侧属性列表 -->
        <section class="right">
          <el-tabs v-model="activeName">
-            <el-tab-pane label="属性" name="attr">
+            <el-tab-pane :label="$t('creation.attributes')" name="attr">
                 <AttrList v-if="curComponent" />
-                <p v-else class="placeholder">请选择一个元素</p>
+                <p v-else class="placeholder">{{ $t('creation.selectElement') }}</p>
             </el-tab-pane>
         
         </el-tabs>
@@ -193,6 +193,15 @@ export default {
       const rectInfo = this.editor.getBoundingClientRect()
       if(index){
         const component = deepCopy(componentList[index])
+        
+        // 翻译 label 和 propValue（如果它们是翻译键）
+        if (component.label && component.label.startsWith('componentList.')) {
+            component.label = this.$t(component.label)
+        }
+        if (component.propValue && component.propValue.startsWith('componentList.')) {
+            component.propValue = this.$t(component.propValue)
+        }
+        
         component.style.top = e.clientY - rectInfo.y
         component.style.left = e.clientX - rectInfo.x
         component.id = generateID()
@@ -293,7 +302,7 @@ export default {
 
         // 显示提示信息，持续1秒
         ElMessage({
-          message: "正在下载,请勿重复点击",
+          message: this.$t('creation.downloading'),
           duration: 1000
         });
         
@@ -331,7 +340,7 @@ export default {
         this.saveBase64(url)
       } catch (error) {
         console.error('下载失败:', error);
-        ElMessage.error('下载失败，请重试');
+        ElMessage.error(this.$t('creation.downloadFailed'));
       } finally {
         // 下载完成，恢复按钮状态
         this.downloading = false;
@@ -434,7 +443,7 @@ export default {
             this.$router.push('/user/upload/style-transfer');
          }).catch((error) => {
             console.error('导出图片失败:', error);
-            ElMessage.error('导出图片失败，请重试');
+            ElMessage.error(this.$t('creation.exportFailed'));
          });
        },
        

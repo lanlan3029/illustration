@@ -9,7 +9,7 @@
             :key="template.id"
             :label="template.id"
             class="template-radio">
-            {{ template.name }}
+            {{ getTemplateName(template) }}
           </el-radio>
         </el-radio-group>
       </div>
@@ -44,7 +44,7 @@
               <!-- 输入框（始终显示，与选中值绑定） -->
               <el-input
                 v-model="varValues[varItem.key]"
-                :placeholder="`请输入或选择${getVarLabel(varItem.name)}`"
+                :placeholder="$t('promptFill.enterOrSelect', { label: getVarLabel(varItem.name) })"
                 size="small"
                 class="var-input"
                 @input="onInputChange(varItem, $event)"
@@ -70,7 +70,7 @@
                   :class="{ 'tag-selected': varValues[varItem.key] === option }"
                   @click="selectOption(varItem, option)"
                   effect="plain">
-                  {{ option }}
+                  {{ getTranslatedOption(varItem.name, option) }}
                 </el-tag>
               </div>
             </div>
@@ -86,13 +86,13 @@
           v-model="customPromptText"
           type="textarea"
           :rows="4"
-          placeholder="请输入角色描述（如：穿背带裤的小男孩，开心地笑着）"
+          :placeholder="$t('promptFill.enterCharacterDescription')"
           @input="onCustomPromptInput">
         </el-input>
       </div>
       <!-- 风格选择（简单描述模式下只显示风格） -->
       <div class="style-select-section">
-        <div class="style-label">风格选择：</div>
+        <div class="style-label">{{ $t('promptFill.styleSelection') }}</div>
         <div class="style-tags">
           <el-tag
             v-for="option in getVarOptions('art_style')"
@@ -103,7 +103,7 @@
             :class="{ 'tag-selected': varValues['art_style-0'] === option }"
             @click="selectStyleOption(option)"
             effect="plain">
-            {{ option }}
+            {{ getTranslatedOption('art_style', option) }}
           </el-tag>
         </div>
       </div>
@@ -112,25 +112,25 @@
     <!-- 最终预览 -->
     <div v-if="selectedTemplate" class="preview-section">
       <div class="preview-header">
-        <span class="preview-label">最终提示词预览：</span>
+        <span class="preview-label">{{ $t('promptFill.finalPromptPreview') }}</span>
         <el-button 
           type="text" 
           size="mini" 
           @click="copyPrompt"
           v-if="finalPrompt">
-          <i class="el-icon-document-copy"></i> 复制
+          <i class="el-icon-document-copy"></i> {{ $t('promptFill.copy') }}
         </el-button>
       </div>
       <div class="preview-content">
         <div v-if="finalPrompt" class="rendered-text">{{ finalPrompt }}</div>
-        <div v-else class="empty-hint">请完成上方各项填写</div>
+        <div v-else class="empty-hint">{{ $t('promptFill.pleaseComplete') }}</div>
       </div>
     </div>
     
     <!-- 调试信息（开发时可见） -->
     <div v-if="!selectedTemplate && showTemplateSelector" style="padding: 20px; color: #909399; text-align: center;">
-      <p>正在加载模板...</p>
-      <p style="font-size: 12px; margin-top: 8px;">模板数量: {{ templates.length }}</p>
+      <p>{{ $t('promptFill.loadingTemplates') }}</p>
+      <p style="font-size: 12px; margin-top: 8px;">{{ $t('promptFill.templateCount', { count: templates.length }) }}</p>
     </div>
   </div>
 </template>
@@ -225,9 +225,9 @@ export default {
           let displayName = this.categories[catId]?.name || catId;
           // 将 visual 分类显示为"风格"
           if (catId === 'visual') {
-            displayName = '风格';
+            displayName = this.$t('promptFill.style');
           } else if (catId === 'character') {
-            displayName = '角色';
+            displayName = this.$t('promptFill.character');
           }
           return {
             id: catId,
@@ -289,6 +289,7 @@ export default {
       const systemIds = ['character-detail', 'character-simple'];
       return this.templates.filter(t => systemIds.includes(t.id));
     },
+    
     
     // 自定义模板（用户添加的）
     customTemplates() {
@@ -374,6 +375,19 @@ export default {
   },
   methods: {
     ...mapActions('prompt', ['selectValue']),
+    
+    // 获取国际化的模板名称
+    getTemplateName(template) {
+      if (!template) return '';
+      // 系统模板使用国际化
+      if (template.id === 'character-detail') {
+        return this.$t('promptBanks.templates.characterDetail');
+      } else if (template.id === 'character-simple') {
+        return this.$t('promptBanks.templates.characterSimple');
+      }
+      // 自定义模板使用原始名称
+      return template.name || '';
+    },
     
     onTemplateChange(templateId) {
       const template = this.templateById(templateId);
@@ -507,7 +521,36 @@ export default {
     
     getVarLabel(varName) {
       const bank = this.bankById(varName);
-      return bank ? (bank.name || bank.label || varName) : varName;
+      if (!bank) return varName;
+      
+      // 优先使用国际化翻译
+      const i18nKey = `promptBanks.labels.${varName}`;
+      const translatedLabel = this.$t(i18nKey);
+      
+      // 如果翻译存在且不是 key 本身（说明翻译成功），使用翻译
+      if (translatedLabel && translatedLabel !== i18nKey) {
+        return translatedLabel;
+      }
+      
+      // 否则使用 bank 中的 name 或 label
+      return bank.name || bank.label || varName;
+    },
+    
+    // 获取翻译后的选项文本（用于显示）
+    getTranslatedOption(varName, option) {
+      if (!option) return option;
+      
+      // 尝试获取翻译
+      const i18nKey = `promptBanks.options.${varName}.${option}`;
+      const translatedOption = this.$t(i18nKey);
+      
+      // 如果翻译存在且不是 key 本身（说明翻译成功），使用翻译
+      if (translatedOption && translatedOption !== i18nKey) {
+        return translatedOption;
+      }
+      
+      // 否则返回原始选项（可能是自定义选项或未翻译的选项）
+      return option;
     },
     
     isVarFilled(varName) {
@@ -551,7 +594,7 @@ export default {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        ElMessage.success('已复制到剪贴板');
+        ElMessage.success(this.$t('promptFill.copiedToClipboard'));
       }
     },
     
@@ -577,16 +620,16 @@ export default {
     
     handleTemplateAction(command) {
       if (command === 'clear') {
-        this.$confirm('确定要清除所有自定义模板吗？此操作无法撤销。', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+        this.$confirm(this.$t('promptFill.confirmClearTemplates'), this.$t('promptFill.tip'), {
+          confirmButtonText: this.$t('promptFill.confirm'),
+          cancelButtonText: this.$t('promptFill.cancel'),
           type: 'warning'
         }).then(() => {
           // 只保留系统模板
           const systemIds = ['character-detail', 'character-simple'];
           const systemTemplates = this.templates.filter(t => systemIds.includes(t.id));
           this.$store.commit('prompt/setTemplates', systemTemplates);
-          ElMessage.success('已清除所有自定义模板');
+          ElMessage.success(this.$t('promptFill.clearedAllCustomTemplates'));
           // 如果当前选中的是自定义模板，切换到第一个系统模板
           if (this.selectedTemplateId && !systemIds.includes(this.selectedTemplateId)) {
             this.selectedTemplateId = systemIds[0];
@@ -598,16 +641,16 @@ export default {
     
     deleteCustomTemplate(templateId) {
       const template = this.templateById(templateId);
-      const templateName = template ? template.name : '此模板';
-      
-      this.$confirm(`确定要删除"${templateName}"吗？此操作无法撤销。`, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      const templateName = template ? template.name : this.$t('promptFill.thisTemplate');
+
+      this.$confirm(this.$t('promptFill.confirmDeleteTemplate', { name: templateName }), this.$t('promptFill.tip'), {
+        confirmButtonText: this.$t('promptFill.confirm'),
+        cancelButtonText: this.$t('promptFill.cancel'),
         type: 'warning'
       }).then(() => {
         // 删除模板
         this.$store.commit('prompt/removeTemplate', templateId);
-        ElMessage.success('已删除模板');
+        ElMessage.success(this.$t('promptFill.templateDeleted'));
         
         // 如果当前选中的是被删除的模板，切换到第一个系统模板
         const systemIds = ['character-detail', 'character-simple'];

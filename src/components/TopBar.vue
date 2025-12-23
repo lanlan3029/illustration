@@ -12,34 +12,34 @@
         <ul class="navbar-nav">
           <!-- 菜单项 -->
           <li class="nav-item" :class="{ 'active': route.path === '/' }">
-            <router-link to="/" class="nav-link" @click="closeSubmenu">AI插画</router-link>
+            <router-link to="/" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiIllustration') }}</router-link>
           </li>
           <li class="nav-item" :class="{ 'active': route.path === '/AIbooks' }">
-            <router-link to="/AIbooks" class="nav-link" @click="closeSubmenu">AI绘本</router-link>
+            <router-link to="/AIbooks" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiBooks') }}</router-link>
           </li>
 
           <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation' }">
             <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('creation')">
-              创作
+              {{ $t('nav.creation') }}
             </a>
             <ul class="dropdown-menu">
-              <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">创作角色</router-link></li>
-              <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">创作组图</router-link></li>
-              <li><router-link to="/creation" class="dropdown-item" @click="closeSubmenu">创作插画</router-link></li>
-              <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click="closeSubmenu">合成绘本</router-link></li>
+              <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createCharacter') }}</router-link></li>
+              <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createGroupImages') }}</router-link></li>
+              <li><router-link to="/creation" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createIllustration') }}</router-link></li>
+              <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.composeBook') }}</router-link></li>
             </ul>
           </li>
 
           <li class="nav-item" :class="{ 'active': route.path === '/user/upload' }">
-            <router-link to="/user/upload" class="nav-link" @click="closeSubmenu">上传</router-link>
+            <router-link to="/user/upload" class="nav-link" @click="closeSubmenu">{{ $t('common.upload') }}</router-link>
           </li>
 
           <li class="nav-item" :class="{ 'active': route.path === '/books' }">
-            <router-link to="/books" class="nav-link" @click="closeSubmenu">绘本</router-link>
+            <router-link to="/books" class="nav-link" @click="closeSubmenu">{{ $t('common.books') }}</router-link>
           </li>
 
           <li class="nav-item" :class="{ 'active': route.path === '/utility-tools' }">
-            <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">工具</router-link>
+            <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">{{ $t('common.tools') }}</router-link>
           </li>
 
           <!-- 搜索框 -->
@@ -52,16 +52,30 @@
                 v-model="searchValue" 
                 name="search" 
                 autocomplete="off" 
-                placeholder="搜索绘本" 
+                :placeholder="$t('common.search') + ' ' + $t('common.books')" 
                 @keyup.enter="searchFun(searchValue)"
                 @click.stop
               >
             </div>
           </li>
 
+          <!-- 语言切换 -->
+          <li class="nav-item language-switcher-item">
+            <el-radio-group 
+              v-model="currentLanguage" 
+              size="small" 
+              fill="#8167a9"
+              @change="handleLanguageChange"
+              class="language-radio-group"
+            >
+              <el-radio-button label="zh" value="zh">中文</el-radio-button>
+              <el-radio-button label="en" value="en">EN</el-radio-button>
+            </el-radio-group>
+          </li>
+
           <!-- 用户登录/头像 -->
           <li v-if="!isLogin" class="nav-item">
-            <a @click.prevent="showMask" class="nav-link">登陆</a>
+            <a @click.prevent="showMask" class="nav-link">{{ $t('common.login') }}</a>
           </li>
 
           <li v-else class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'user' }">
@@ -85,23 +99,23 @@
             <ul class="dropdown-menu">
               <li><a @click.prevent="toMyHomePage(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-a-collection"></i>
-                <span>我的创作</span>
+                <span>{{ $t('nav.myWorks') }}</span>
               </a></li>
               <li><a @click.prevent="toProfile(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-zhanghu"></i>
-                <span>账户设置</span>
+                <span>{{ $t('nav.accountSettings') }}</span>
               </a></li>
               <li><a @click.prevent="toMemberRecharge(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-dingyue"></i>
-                <span>订阅管理</span>
+                <span>{{ $t('nav.subscription') }}</span>
               </a></li>
               <li><a @click.prevent="logout(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-tuichudenglu-"></i>
-                <span>退出登陆</span>
+                <span>{{ $t('common.logout') }}</span>
               </a></li>
               <li><a @click.prevent="contactUs(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-lianxiwomen1"></i>
-                <span>联系我们</span>
+                <span>{{ $t('nav.connection') }}</span>
               </a></li>
             </ul>
           </li>
@@ -115,6 +129,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, getCurrentInstance } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
@@ -125,6 +140,7 @@ export default {
         const router = useRouter()
         const route = useRoute()
         const { proxy } = getCurrentInstance()
+        const { locale, t } = useI18n()
         
         const logoUrl = require('../assets/logo/logo.png')
         const userid = ref(localStorage.getItem("id"))
@@ -136,6 +152,30 @@ export default {
         
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
+        
+        // 当前语言（使用 ref 以便双向绑定）
+        const currentLanguage = ref(locale.value)
+        
+        // 监听 locale 变化，同步到 currentLanguage
+        watch(() => locale.value, (newVal) => {
+            currentLanguage.value = newVal
+        })
+        
+        // 处理语言切换
+        const handleLanguageChange = (value) => {
+            locale.value = value
+            localStorage.setItem('lang', value)
+            // 更新 HTML lang 属性
+            if (typeof document !== 'undefined') {
+                document.documentElement.lang = value
+            }
+        }
+        
+        // 切换语言（保留以兼容其他可能的调用）
+        const toggleLanguage = () => {
+            const newLocale = locale.value === 'zh' ? 'en' : 'zh'
+            handleLanguageChange(newLocale)
+        }
         
         // 从 store 获取状态
         const userInfo = computed(() => store.state.userInfo)
@@ -222,11 +262,20 @@ export default {
             return $http.post(`/user/iflogin`, {}, {
                 headers: {
                     "Authorization": "Bearer " + localStorage.getItem("token")
-                }
+                },
+                timeout: 10000 // 10秒超时
             })
             .then((response) => {
                 if (response.data.desc == "success") {
                     store.commit("hasLogin", true)
+                } else {
+                    store.commit('showMask')
+                }
+            })
+            .catch((error) => {
+                // 超时或网络错误时静默处理，不强制显示登录框
+                if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message?.includes('timeout')) {
+                    console.log('登录检查超时或网络错误，跳过')
                 } else {
                     store.commit('showMask')
                 }
@@ -258,12 +307,16 @@ export default {
         }
         //获取用户收藏的绘本
         const getCollectionBook = () => {
+            if (!userid.value) {
+                return Promise.resolve() // 如果没有用户ID，直接返回
+            }
             return $http
                 .get(`/user/list/collect`, {
                     params: { category: "book", id: userid.value },
                     headers: {
                         "Authorization": "Bearer " + localStorage.getItem("token")
-                    }
+                    },
+                    timeout: 10000 // 10秒超时
                 })
                 .then((response) => {
                     if (response.data.desc === "success") {
@@ -275,17 +328,26 @@ export default {
                         store.commit("collectBook", tool)
                     }
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => {
+                    // 静默处理错误，避免影响页面加载
+                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
+                        console.log('获取收藏绘本失败:', error)
+                    }
+                })
         }
 
         //获取用户喜欢的绘本
         const getLikeBook = () => {
+            if (!userid.value) {
+                return Promise.resolve() // 如果没有用户ID，直接返回
+            }
             return $http
                 .get(`/user/list/like`, {
                     params: { category: "book", id: userid.value },
                     headers: {
                         "Authorization": "Bearer " + localStorage.getItem("token")
-                    }
+                    },
+                    timeout: 10000 // 10秒超时
                 })
                 .then((response) => {
                     if (response.data.desc === "success") {
@@ -297,17 +359,26 @@ export default {
                         store.commit("likeBook", tool)
                     }
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => {
+                    // 静默处理错误，避免影响页面加载
+                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
+                        console.log('获取喜欢绘本失败:', error)
+                    }
+                })
         }
 
         //获取用户收藏的插画
         const getCollectionIllus = () => {
+            if (!userid.value) {
+                return Promise.resolve() // 如果没有用户ID，直接返回
+            }
             return $http
                 .get(`/user/list/collect`, {
                     params: { category: "illustration", id: userid.value },
                     headers: {
                         "Authorization": "Bearer " + localStorage.getItem("token")
-                    }
+                    },
+                    timeout: 10000 // 10秒超时
                 })
                 .then((response) => {
                     if (response.data.desc === "success") {
@@ -319,7 +390,12 @@ export default {
                         store.commit("collectIllus", tool)
                     }
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => {
+                    // 静默处理错误，避免影响页面加载
+                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
+                        console.log('获取收藏插画失败:', error)
+                    }
+                })
         }
 
         //获取用户喜欢的插画
@@ -346,12 +422,16 @@ export default {
 
         //获取用户关注的人
         const getAttention = () => {
+            if (!userid.value) {
+                return Promise.resolve() // 如果没有用户ID，直接返回
+            }
             return $http
                 .get(`/user/list/fllow`, {
                     params: { id: userid.value },
                     headers: {
                         "Authorization": "Bearer " + localStorage.getItem("token")
-                    }
+                    },
+                    timeout: 10000 // 10秒超时
                 })
                 .then((response) => {
                     if (response.data.desc === "success") {
@@ -364,17 +444,26 @@ export default {
                         console.log(tool)
                     }
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => {
+                    // 静默处理错误，避免影响页面加载
+                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
+                        console.log('获取关注列表失败:', error)
+                    }
+                })
         }
 
         //获取粉丝
         const getFans = () => {
+            if (!userid.value) {
+                return Promise.resolve() // 如果没有用户ID，直接返回
+            }
             return $http
                 .get(`/user/list/fllow`, {
                     params: { id: userid.value, sign: "item" },
                     headers: {
                         "Authorization": "Bearer " + localStorage.getItem("token")
-                    }
+                    },
+                    timeout: 10000 // 10秒超时
                 })
                 .then((response) => {
                     if (response.data.desc === "success") {
@@ -387,19 +476,31 @@ export default {
                         console.log(tool)
                     }
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => {
+                    // 静默处理错误，避免影响页面加载
+                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
+                        console.log('获取粉丝列表失败:', error)
+                    }
+                })
         }
         
         // 初始化
         onMounted(async () => {
-            await tokenFail()
-            await getUser()
-            await getCollectionBook()
-            await getLikeBook()
-            await getCollectionIllus()
-            await getLikeIllus()
-            await getAttention()
-            await getFans()
+            try {
+                await Promise.allSettled([
+                    tokenFail(),
+                    getUser(),
+                    getCollectionBook(),
+                    getLikeBook(),
+                    getCollectionIllus(),
+                    getLikeIllus(),
+                    getAttention(),
+                    getFans()
+                ])
+            } catch (error) {
+                // 所有请求都使用 Promise.allSettled，即使有失败也不会抛出错误
+                console.log('初始化请求完成（部分可能失败）')
+            }
             
             // 点击外部关闭子菜单
             document.addEventListener('click', handleClickOutside)
@@ -443,6 +544,9 @@ export default {
             attentionArr,
             searchArry,
             route,
+            currentLanguage,
+            toggleLanguage,
+            handleLanguageChange,
             handleScroll,
             toggleSubmenu,
             closeSubmenu,
@@ -589,7 +693,7 @@ export default {
 	position: absolute;
 	top: 100%;
 	left: 0;
-	min-width: 180px;
+	min-width: 240px;
 	z-index: 1000;
 }
 
@@ -638,6 +742,47 @@ export default {
 
 .dropdown-item i {
 	font-size: 16px;
+}
+
+/* 语言切换器样式 */
+.language-switcher-item {
+	display: flex;
+	align-items: center;
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+.language-radio-group {
+	display: flex;
+}
+
+.language-radio-group :deep(.el-radio-button__inner) {
+	padding: 6px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	border-radius: 4px;
+	transition: all 0.3s ease;
+}
+
+.language-radio-group :deep(.el-radio-button:first-child .el-radio-button__inner) {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+
+.language-radio-group :deep(.el-radio-button:last-child .el-radio-button__inner) {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+
+.language-radio-group :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+	background-color: #409eff;
+	border-color: #409eff;
+	color: #fff;
+	box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
+}
+
+.language-radio-group :deep(.el-radio-button__inner:hover) {
+	color: #409eff;
 }
 
 /* 搜索框样式 */

@@ -6,8 +6,8 @@
                 <div class="icon-wrapper">
                     <el-icon class="card-icon"><UploadPictureIcon /></el-icon>
                 </div>
-                <h3 class="card-title">上传插画</h3>
-                <p class="card-desc">上传插画，打造自己的AI创意库</p>
+                <h3 class="card-title">{{ $t('upload.uploadIllustration') }}</h3>
+                <p class="card-desc">{{ $t('upload.uploadIllustrationDesc') }}</p>
             </div>
             <div class="card-overlay"></div>
         </router-link>
@@ -16,8 +16,8 @@
                 <div class="icon-wrapper">
                     <el-icon class="card-icon"><UploadReadingIcon /></el-icon>
                 </div>
-                <h3 class="card-title">上传绘本</h3>
-                <p class="card-desc">上传绘本，让好故事触手可及</p>
+                <h3 class="card-title">{{ $t('upload.uploadBook') }}</h3>
+                <p class="card-desc">{{ $t('upload.uploadBookDesc') }}</p>
             </div>
             <div class="card-overlay"></div>
         </router-link>

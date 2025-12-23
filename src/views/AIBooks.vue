@@ -5,27 +5,27 @@
             <!-- 左侧：提示词 -->
             <div class="prompt-container">
                 <el-scrollbar class="scrollbar-container">
-                    <h2 class="section-title">创作绘本</h2>
+                    <h2 class="section-title">{{ $t('aibooks.title') }}</h2>
                     
                     <el-form :model="form" class="book-form">
-                        <el-form-item label="提示词">
+                        <el-form-item :label="$t('aibooks.prompt')">
                             <el-input
                                 v-model="form.prompt"
                                 type="textarea"
                                 :rows="4"
-                                placeholder="请输入您的创作想法，例如：一个小女孩在森林里遇到了一只友好的小兔子，他们一起探索神秘的花园"
+                                :placeholder="$t('aibooks.promptPlaceholder')"
                                 class="prompt-input">
                             </el-input>
                         </el-form-item>
 
-                        <el-form-item label="风格">
+                        <el-form-item :label="$t('aibooks.style')">
                             <div class="style-tags-container">
                                 <el-check-tag
                                     v-for="style in styles"
-                                    :key="style.artStyle"
-                                    :checked="form.artStyle === style.artStyle"
+                                    :key="style.key"
+                                    :checked="form.artStyle === style.key"
                                     type="primary"
-                                    @change="(checked) => handleStyleChange(style.artStyle, checked)"
+                                    @change="(checked) => handleStyleChange(style.key, checked)"
                                     class="style-tag">
                                     {{ style.artStyle }}
                                 </el-check-tag>
@@ -41,7 +41,7 @@
                                 :loading="generating"
                                 :disabled="!form.prompt || !form.prompt.trim() || generating"
                                 class="generate-btn">
-                                {{ generating ? '生成中...' : '生成提示词' }}
+                                {{ generating ? $t('aibooks.generating') : $t('aibooks.generate') }}
                             </el-button>
                         </el-form-item>
                     </el-form>
@@ -58,18 +58,18 @@
 
                     <!-- 图片生成提示词编辑区域 -->
                     <div v-if="!generating && imagePrompts && imagePrompts.length > 0" class="prompts-editor">
-                        <h3 class="prompts-title">编辑图片生成提示词</h3>
+                        <h3 class="prompts-title">{{ $t('aibooks.editPrompts') }}</h3>
                         <div class="prompts-list">
                             <div
                                 v-for="(prompt, index) in imagePrompts"
                                 :key="index"
                                 class="prompt-item">
-                                <div class="prompt-label">第 {{ index + 1 }} 页：</div>
+                                <div class="prompt-label">{{ $t('aibooks.page', { page: index + 1 }) }}：</div>
                                 <el-input
                                     v-model="imagePrompts[index]"
                                     type="textarea"
                                     :rows="3"
-                                    :placeholder="`请输入第 ${index + 1} 页的图片生成提示词`"
+                                    :placeholder="$t('aibooks.page', { page: index + 1 }) + ' ' + $t('aibooks.promptPlaceholder')"
                                     class="prompt-textarea">
                                 </el-input>
                             </div>
@@ -80,7 +80,7 @@
                             :loading="generatingImages"
                             :disabled="generatingImages || !imagePrompts || imagePrompts.length === 0"
                             class="generate-images-btn">
-                            {{ generatingImages ? '生成中...' : '开始生成绘本' }}
+                            {{ generatingImages ? $t('aibooks.generating') : $t('aibooks.startGenerate') }}
                         </el-button>
                     </div>
                 </el-scrollbar>
@@ -91,7 +91,7 @@
                 <el-scrollbar class="scrollbar-container">
                     <div v-if="!bookData && !generating" class="empty-state">
                         <i class="el-icon-picture-outline"></i>
-                        <p>请在左侧输入提示词并生成绘本</p>
+                        <p>{{ $t('aibooks.emptyState') }}</p>
                     </div>
 
                     <div v-if="bookData" class="book-content">
@@ -109,7 +109,7 @@
                                 :disabled="!bookData.images || bookData.images.length === 0 || downloading"
                                 class="download-btn">
                                 <el-icon><Download /></el-icon>
-                                下载所有图片
+                                {{ $t('aibooks.downloadAll') }}
                             </el-button>
                         </div>
 
@@ -152,7 +152,7 @@
                                             type="primary"
                                             size="small"
                                             @click="collectIllustration(bookData.images[index], index)">
-                                            收集插画
+                                            {{ $t('aibooks.collectIllustration') }}
                                         </el-button>
                                     </div>
                                 </div>
@@ -167,7 +167,8 @@
 
 <script>
 import { ElMessage } from 'element-plus'
-import { getCurrentInstance } from 'vue'
+import { getCurrentInstance, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { Download } from '@element-plus/icons-vue'
 
@@ -178,8 +179,39 @@ export default {
     },
     setup() {
         const { proxy } = getCurrentInstance()
+        const { t, locale } = useI18n()
+        
+        // 风格键名数组，用于保持顺序
+        const styleKeys = [
+            'healingWatercolor',
+            'penLineArt',
+            'colorfulOutlineRomanticism',
+            'crayonNoiseHandDrawn',
+            'vintageSketch',
+            'pixarStyle',
+            'engravingLines',
+            'pencilSketch3D',
+            'feltCollage',
+            'collageIllustration',
+            'doodleSoul',
+            'abstractFlatDesign',
+            'simpleCartoon',
+            'oilPainting'
+        ]
+        
+        // 根据当前语言动态获取风格列表
+        const styles = computed(() => {
+            return styleKeys.map(key => ({
+                key: key,
+                artStyle: t(`aibooks.styles.${key}.artStyle`),
+                elementDetails: t(`aibooks.styles.${key}.elementDetails`)
+            }))
+        })
+        
         return {
-            $http: proxy?.$http || axios
+            $http: proxy?.$http || axios,
+            styles,
+            locale
         }
     },
     data() {
@@ -187,71 +219,8 @@ export default {
             downloading: false,
             form: {
                 prompt: '',
-                artStyle: '治愈系水彩'
+                artStyle: 'healingWatercolor' // 使用 key 作为默认值
             },
-            styles: [
-            {
-                    artStyle: '治愈系水彩',
-                    elementDetails: '水彩质感，清新柔和的色调，营造平静、治愈的氛围。'
-                },
-                {
-                    artStyle: '钢笔线稿插画',
-                    elementDetails: '细节丰富，黑白线条，饱满构图，明亮的光线。'
-                },
-                {
-                    artStyle: '彩色轮廓浪漫主义',
-                    elementDetails: '彩色轮廓插图，无拘无束的氛围，生动的色彩和宽松的笔触，嬉戏和无忧无虑的场景。'
-                },
-                {
-                    artStyle: '蜡笔噪点手绘',
-                    elementDetails: '采用蜡笔笔触风格，粗糙颗粒质感与不规则边缘，简约手绘感。暖柔色调为基础，画面添加噪点效果，以颗粒密度替代渐变。'
-                },
-                {
-                    artStyle: '复古绘本草图',
-                    elementDetails: '手绘彩色草图，粗略的线条，粗重质感笔触，米黄色暖调背景，复古儿童读物风格。'
-                },
-                {
-                    artStyle: '皮克斯风格动画',
-                    elementDetails: '高质量3D渲染，柔和的材质，影棚效果，生动的表情和动作。'
-                },
-                {
-                    artStyle: '凹版印刷线条',
-                    elementDetails: '彩色图片，精致的线条，0.01毫米线条，以点线表现明暗关系，大师级排线，细致的细节，高清画质。'
-                },
-                {
-                    artStyle: '铅笔素描3D图',
-                    elementDetails: '手绘铅笔素描风格，3D 设计图视角，主体居中构图。'
-                },
-                {
-                    artStyle: '薄片毛毡拼贴画',
-                    elementDetails: '手工质感，色彩鲜艳，带有波点、条纹等装饰性图案，黄色带白色波点的背景，材质呈现毛毡的纹理与厚度，角色造型卡通夸张。'
-                },
-             
-                {
-                    artStyle: '拼贴风格插画',
-                    elementDetails: '纸张拼贴画风格，通过使用清晰的形状和色块来展现平面的透视感和纹理。整体氛围欢快愉悦，色彩明亮，风格活泼俏皮。'
-                },
-             
-             
-                {
-                    artStyle: '绘本涂鸦/灵魂画手',
-                    elementDetails: '背景白色，极简，九宫格布局，手绘线稿，涂鸦风格，普鲁士蓝色线勾勒，彩铅与水彩混合创作，手稿质感，趣味，雷蒙德·布里格斯风格。'
-                },
-             
-                {
-                    artStyle: '抽象平面设计',
-                    elementDetails: '风格化的形状，色彩鲜艳，卡通般的视觉效果，柔和的米色天空，光线均匀分布，平静温馨的氛围，简约风格。'
-                },
-                {
-                    artStyle: '简洁卡通插画',
-                    elementDetails: '简洁明快，色彩柔和，纯白色背景，物体/角色拥有圆润的身形和短小的四肢。'
-                },
-                
-                {
-                    artStyle: '油画风格',
-                    elementDetails: '浓厚笔触的油画风格，童趣绘本，炫彩光影，清晰的笔触，复杂的画面，极致的细节，超高清，32k。'
-                }
-            ],
             generating: false,
             progressPercentage: 0,
             progressStatus: '', // '' | 'success' | 'exception' | 'warning'
@@ -282,16 +251,16 @@ export default {
     },
     methods: {
         // 处理风格选择（单选模式），并将风格信息写入提示词
-        handleStyleChange(styleName, checked) {
+        handleStyleChange(styleKey, checked) {
             if (!checked) {
                 // 单选模式下，取消勾选不改变当前选中风格
                 return;
             }
-            // 更新当前选中的风格
-            this.form.artStyle = styleName;
+            // 更新当前选中的风格（使用 key）
+            this.form.artStyle = styleKey;
 
             // 在 styles 数组中找到对应的风格说明
-            const style = this.styles.find(s => s.artStyle === styleName);
+            const style = this.styles.find(s => s.key === styleKey);
             if (!style) return;
 
             const styleText = `【画风：${style.artStyle}】${style.elementDetails}`;
@@ -435,7 +404,10 @@ export default {
             const messages = []
             
             // 构建用户消息，包含选中的风格
-            const stylePrompt = this.form.artStyle ? `\n\n画风要求：${this.form.artStyle}` : ''
+            const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
+            const styleName = selectedStyle ? selectedStyle.artStyle : ''
+            const styleDetails = selectedStyle ? selectedStyle.elementDetails : ''
+            const stylePrompt = styleName && styleDetails ? `\n\n画风要求：${styleName}。${styleDetails}` : ''
             messages.push({
                 role: 'user',
                 content: `请创作一个绘本故事。${stylePrompt}\n\n用户提示词：${this.form.prompt}`
@@ -673,7 +645,11 @@ export default {
                     
                     // 在提示词中添加风格信息
                     if (this.form.artStyle) {
-                        requestData.prompt = `${requestData.prompt}\n\n画风：${this.form.artStyle}`
+                        const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
+                        if (selectedStyle) {
+                            const styleInfo = `${selectedStyle.artStyle}。${selectedStyle.elementDetails}`
+                            requestData.prompt = `${requestData.prompt}\n\n画风：${styleInfo}`
+                        }
                     }
                     
                     // 调用创建角色API（与 CreateCharacter.vue 使用相同的API）

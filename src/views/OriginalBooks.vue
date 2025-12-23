@@ -24,7 +24,7 @@
 
         <div class="box">
           <div v-if="loading" class="loading">
-            <span class="text">故事正在加载</span>
+            <span class="text">{{ $t('books.loading') }}</span>
             <i class="el-icon-loading" :size="32"></i>
           </div>
           <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
@@ -82,9 +82,27 @@ import { ElMessage } from 'element-plus'
 
 export default {
   name: "OriginalBooks",
-  computed:mapState([
-        "books", "collectBookArr",
-    ]),
+  computed: {
+    ...mapState(["books", "collectBookArr"]),
+    sortList() {
+      return [
+        { value: "default", label: this.$t('books.sortDefault') },
+        { value: "hot", label: this.$t('books.sortHot') },
+        { value: "time", label: this.$t('books.sortTime') },
+      ]
+    },
+    categoryOptions() {
+      return [
+        { label: this.$t('books.categoryAll'), value: "" },
+        { label: this.$t('upload.categoryReading'), value: "reading" },
+        { label: this.$t('upload.categoryHabit'), value: "habit" },
+        { label: this.$t('upload.categoryEnglish'), value: "english" },
+        { label: this.$t('upload.categoryMath'), value: "math" },
+        { label: this.$t('upload.categoryKnowledge'), value: "knowledge" },
+        { label: this.$t('upload.categoryOthers'), value: "others" },
+      ]
+    }
+  },
   data() {
     return {
       userid:localStorage.getItem("id"),
@@ -93,22 +111,8 @@ export default {
       loading:true,
       loadControl:false,
       scrollDisabled:false,
-      sortList: [
-        { value: "default", label: "默认" },
-        { value: "hot", label: "热度" },
-        { value: "time", label: "时间" },
-      ],
       sortType: "default",
       button2: "",
-      categoryOptions: [
-        { label: "不限", value: "" },
-        { label: "儿童读物", value: "reading" },
-        { label: "习惯养成", value: "habit" },
-        { label: "英语启蒙", value: "english" },
-        { label: "数学启蒙", value: "math" },
-        { label: "科普百科", value: "knowledge" },
-        { label: "其他", value: "others" },
-      ],
       collectingIds: [],
       collectIdMap: {},
     };
@@ -146,7 +150,7 @@ export default {
         this.loading=false 
         console.log(err)
         ElMessage({
-          message: '抱歉，出错了！',
+          message: this.$t('books.errorOccurred'),
           type: 'error'
         });
       }
@@ -203,7 +207,7 @@ export default {
 
     handleCollectClick(id) {
       if (!id) {
-        ElMessage.error('绘本ID无效');
+        ElMessage.error(this.$t('books.invalidBookId'));
         return;
       }
       
@@ -227,13 +231,13 @@ export default {
 
     collectBookFun(id) {
       if (!id) {
-        ElMessage.error('绘本ID无效');
+        ElMessage.error(this.$t('books.invalidBookId'));
         return;
       }
       
       const token = localStorage.getItem("token");
       if (!token) {
-        ElMessage.warning('请先登录');
+        ElMessage.warning(this.$t('books.pleaseLogin'));
         return;
       }
       
@@ -252,13 +256,13 @@ export default {
           } else {
             this.loadCollectIdMap();
           }
-          ElMessage.success('收藏成功');
+          ElMessage.success(this.$t('books.collectSuccess'));
         } else {
-          ElMessage.warning(response.data.message || '收藏失败');
+          ElMessage.warning(response.data.message || this.$t('books.collectFailed'));
         }
       })
       .catch(() => {
-        ElMessage.error('收藏失败，请重试');
+        ElMessage.error(this.$t('books.collectFailedRetry'));
       });
     },
 
@@ -270,7 +274,7 @@ export default {
           if (recordId) {
             this.performCancelCollect(bookId, recordId);
           } else {
-            ElMessage.error('找不到收藏记录');
+            ElMessage.error(this.$t('books.collectRecordNotFound'));
           }
         });
         return;
@@ -289,13 +293,13 @@ export default {
         if (response.data.desc === "success" || response.data.code === 0) {
           this.$store.commit("cancelCoBook", bookId);
           delete this.collectIdMap[bookId];
-          ElMessage.success('已取消收藏');
+          ElMessage.success(this.$t('books.cancelCollectSuccess'));
         } else {
-          ElMessage.warning(response.data.message || '取消收藏失败');
+          ElMessage.warning(response.data.message || this.$t('books.cancelCollectFailed'));
         }
       })
       .catch(() => {
-        ElMessage.error('取消收藏失败，请重试');
+        ElMessage.error(this.$t('books.cancelCollectFailedRetry'));
       });
     },
 

@@ -3,7 +3,7 @@
 <div class="box">
 
 <el-form ref="form" :model="form" label-width="100px">
-    <el-form-item label="上传作品">
+  <el-form-item :label="$t('upload.uploadWork')">
     <el-upload
         ref="upload"
         action="https://api.kidstory.cc/picture/"
@@ -24,31 +24,31 @@
     </el-upload>
     <div class="upload-tip" v-if="uploadFileList.length > 1">
       <el-icon><InfoFilled /></el-icon>
-      <span>提示：可以拖动图片进行排序</span>
+      <span>{{ $t('upload.dragSortTip') }}</span>
     </div>
     <el-dialog v-model="dialogVisible" width="80%" :close-on-click-modal="true">
       <el-image :src="dialogImageUrl" alt="" fit="contain"></el-image>
 </el-dialog>
   </el-form-item>
-  <el-form-item label="作品名称">
+  <el-form-item :label="$t('upload.workName')">
     <el-input v-model="form.name"></el-input>
   </el-form-item>
-  <el-form-item label="类别"> 
-    <el-select v-model="form.category" placeholder="请选择绘本类别">
-      <el-option label="儿童读物" value="reading"></el-option>
-      <el-option label="习惯养成" value="habit"></el-option>
-      <el-option label="英语启蒙" value="english"></el-option>
-      <el-option label="数学启蒙" value="math"></el-option>
-      <el-option label="科普百科" value="knowledge"></el-option>
-      <el-option label="其他" value="others"></el-option>
+  <el-form-item :label="$t('upload.category')"> 
+    <el-select v-model="form.category" :placeholder="$t('upload.selectCategory')">
+      <el-option :label="$t('upload.categoryReading')" value="reading"></el-option>
+      <el-option :label="$t('upload.categoryHabit')" value="habit"></el-option>
+      <el-option :label="$t('upload.categoryEnglish')" value="english"></el-option>
+      <el-option :label="$t('upload.categoryMath')" value="math"></el-option>
+      <el-option :label="$t('upload.categoryKnowledge')" value="knowledge"></el-option>
+      <el-option :label="$t('upload.categoryOthers')" value="others"></el-option>
     </el-select>
   </el-form-item>
-  <el-form-item label="绘本描述">
+  <el-form-item :label="$t('upload.bookDescription')">
     <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
    <el-form-item>
     <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">
-      {{ isEditMode ? '更新' : '上传' }}
+      {{ isEditMode ? $t('upload.updateButton') : $t('upload.uploadButton') }}
     </el-button>
    
   </el-form-item>
@@ -326,7 +326,7 @@ export default {
           // 验证表单
           if (!this.form.name || !this.form.category) {
               ElMessage({
-              message: '作品名称、类别不能为空',
+              message: this.$t('upload.validationErrorBook'),
               type: 'warning',
               offset: 100
         });
@@ -336,7 +336,7 @@ export default {
           // 验证图片：编辑模式下如果没有新文件，至少要有已有图片；新建模式下必须有文件
           if (!this.isEditMode && this.fileList.length === 0) {
             ElMessage({
-              message: '请至少上传一张图片',
+              message: this.$t('upload.uploadAtLeastOne'),
               type: 'warning',
               offset: 100
             });
@@ -345,7 +345,7 @@ export default {
           
           if (this.isEditMode && this.fileList.length === 0 && this.uploadFileList.length === 0) {
             ElMessage({
-              message: '请至少保留一张图片',
+              message: this.$t('upload.keepAtLeastOne'),
               type: 'warning',
               offset: 100
             });
@@ -364,7 +364,7 @@ export default {
             
             if (this.isEditMode) {
               // 编辑模式：先更新基本信息
-              ElMessage.info('正在更新绘本...');
+              ElMessage.info(this.$t('upload.updatingBook'));
               
               try {
                 // 更新基本信息（title, description, type）
@@ -383,13 +383,13 @@ export default {
                   // 如果有新上传的图片，需要单独处理（可能需要删除旧图片并上传新图片）
                   if (this.fileList.length > 0) {
                     ElMessage.warning({
-                      message: '图片更新功能暂未实现，仅更新了基本信息',
+                      message: this.$t('upload.imageUpdateNotImplemented'),
                       type: 'warning',
                       offset: 100
                     });
                   } else {
                     ElMessage.success({
-                      message: '绘本更新成功！',
+                      message: this.$t('upload.bookUpdateSuccess'),
                       type: 'success',
                       offset: 100
                     });
@@ -400,7 +400,7 @@ export default {
                     this.$router.push('/user/upload/submit-res/');
                   }, 1500);
                 } else {
-                  const errorMsg = updateResponse.data?.message || updateResponse.data?.desc || '更新绘本失败';
+                  const errorMsg = updateResponse.data?.message || updateResponse.data?.desc || this.$t('upload.bookUpdateFailed');
                   ElMessage.error({
                     message: errorMsg,
                     offset: 100
@@ -409,7 +409,7 @@ export default {
                 }
               } catch (error) {
                 console.error('更新失败:', error);
-                const errorMsg = error.response?.data?.message || error.message || '更新失败，请稍后重试';
+                const errorMsg = error.response?.data?.message || error.message || this.$t('upload.updateFailedRetry');
                 ElMessage.error({
                   message: errorMsg,
                   offset: 100
@@ -422,7 +422,7 @@ export default {
                 formData.append('pictures', file);
               });
               
-              ElMessage.info('正在上传绘本...');
+              ElMessage.info(this.$t('upload.uploadingBook'));
               
               const response = await this.$http.post(`/book/`, formData, {
                 headers: {
@@ -436,7 +436,7 @@ export default {
                 const illustrationCount = bookData?.illustration_count || bookData?.illustration_ids?.length || this.fileList.length;
                 
                 ElMessage.success({
-                  message: `绘本创建成功！共上传 ${illustrationCount} 张图片`,
+                  message: this.$t('upload.bookCreateSuccess', { count: illustrationCount }),
                   type: 'success',
                   offset: 100
                 });
@@ -444,7 +444,7 @@ export default {
                 // 跳转到提交结果页面
                 this.$router.push('/user/upload/submit-res/');
               } else {
-                const errorMsg = response.data?.message || response.data?.desc || '创建绘本失败';
+                const errorMsg = response.data?.message || response.data?.desc || this.$t('upload.bookCreateFailed');
                 ElMessage.error({
                   message: errorMsg,
                   offset: 100
@@ -454,7 +454,7 @@ export default {
             }
           } catch (error) {
             console.error(this.isEditMode ? '更新失败:' : '上传失败:', error);
-            const errorMsg = error.response?.data?.message || error.message || (this.isEditMode ? '更新失败，请稍后重试' : '上传失败，请稍后重试');
+            const errorMsg = error.response?.data?.message || error.message || (this.isEditMode ? this.$t('upload.updateFailedRetry') : this.$t('upload.uploadFailedRetry'));
             ElMessage.error({
               message: errorMsg,
               offset: 100
@@ -467,7 +467,7 @@ export default {
       async loadBookData(bookId) {
         try {
           this.disabled = true;
-          ElMessage.info('正在加载绘本数据...');
+          ElMessage.info(this.$t('upload.loadingBookData'));
           
           // 根据其他文件的实现，API路径是 /book/ + id
           const response = await this.$http.get(`/book/` + bookId, {
@@ -551,23 +551,23 @@ export default {
               });
               
               ElMessage.success({
-                message: `已加载 ${this.uploadFileList.length} 张图片`,
+                message: this.$t('upload.loadedImages', { count: this.uploadFileList.length }),
                 type: 'success',
                 offset: 100
               });
             } else {
               console.warn('绘本没有图片内容');
-              ElMessage.warning('该绘本没有图片');
+              ElMessage.warning(this.$t('upload.noImages'));
             }
           } else {
             console.error('API响应格式错误:', response.data);
-            ElMessage.error('加载绘本数据失败：响应格式错误');
+            ElMessage.error(this.$t('upload.loadBookDataFailed'));
           }
         } catch (error) {
           console.error('加载绘本数据失败:', error);
           console.error('错误详情:', error.response);
           ElMessage.error({
-            message: error.response?.data?.message || error.message || '加载绘本数据失败，请稍后重试',
+            message: error.response?.data?.message || error.message || this.$t('upload.loadBookDataFailedRetry'),
             offset: 100
           });
         } finally {

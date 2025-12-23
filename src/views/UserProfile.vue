@@ -2,7 +2,7 @@
 <div class="container">
 <div class="box">
 <el-form ref="form" :model="form" label-width="120px" label-position="left">
-    <el-form-item label="头像">
+    <el-form-item :label="$t('userProfile.avatar')">
       <div v-if="form.avatar && form.avatar.trim()" class="hasImg">
         <el-avatar shape="square" :size="120" :src="form.avatar"></el-avatar>
         <span class="editIcon" @click="editAvatar">
@@ -24,7 +24,7 @@
           <template #default>
             <div class="upload-trigger">
               <i class="el-icon-plus"></i>
-              <span class="upload-text">上传头像</span>
+              <span class="upload-text">{{ $t('userProfile.uploadAvatar') }}</span>
             </div>
           </template>
         </el-upload>
@@ -33,25 +33,25 @@
         </el-dialog>
       </div>
     </el-form-item>
-  <el-form-item label="用户名">
+  <el-form-item :label="$t('userProfile.username')">
     <el-input v-model="form.name"></el-input>
   </el-form-item>
   
-    <el-form-item label="性别" >
+    <el-form-item :label="$t('userProfile.gender')" >
         <el-radio-group v-model="form.gender">
-    <el-radio label="male">男</el-radio>
-      <el-radio label="female">女</el-radio></el-radio-group>
+    <el-radio label="male">{{ $t('userProfile.male') }}</el-radio>
+      <el-radio label="female">{{ $t('userProfile.female') }}</el-radio></el-radio-group>
   </el-form-item>
-   <el-form-item label="出生年月" prop="date">
-     <el-date-picker type="date" placeholder="选择日期" v-model="form.birthday" style="width: 100%;"></el-date-picker>
+   <el-form-item :label="$t('userProfile.birthday')" prop="date">
+     <el-date-picker type="date" :placeholder="$t('userProfile.selectDate')" v-model="form.birthday" style="width: 100%;"></el-date-picker>
   </el-form-item>
  
-  <el-form-item prop="email" label="邮箱">
+  <el-form-item prop="email" :label="$t('userProfile.email')">
     <el-input v-model="form.email"></el-input>
   </el-form-item>
 
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn" :disabled="!hasFormChanged || disabled">提交修改</el-button>
+    <el-button type="primary" @click="onSubmit" class="btn" :disabled="!hasFormChanged || disabled">{{ $t('userProfile.submitChanges') }}</el-button>
    
   </el-form-item>
 
@@ -219,7 +219,7 @@ export default {
                 });
               }
             } catch (error) {
-              ElMessage.error('图片处理失败，请重试');
+              ElMessage.error(this.$t('userProfile.imageProcessFailed'));
               this.uploadFileList = [];
               if (this.$refs.upload) {
                 this.$refs.upload.clearFiles();
@@ -334,7 +334,7 @@ export default {
           if (isSuccess) {
             // 先弹出成功提示（在异步操作之前）
             ElMessage({
-              message: 'Congrats, 用户信息修改成功',
+              message: this.$t('userProfile.updateSuccess'),
               type: 'success',
               offset: 100,
             });
@@ -345,7 +345,7 @@ export default {
             // 更新表单显示（会同时更新原始数据）
             this.setInfo();
           } else {
-            const errorMsg = response.data.message || response.data.desc || '修改失败';
+            const errorMsg = response.data.message || response.data.desc || this.$t('userProfile.updateFailed');
             ElMessage({
               message: errorMsg,
               type: 'error',
@@ -356,7 +356,7 @@ export default {
         .catch(() => {
           this.disabled = false;
           ElMessage({
-            message: '修改失败，请重试。',
+            message: this.$t('userProfile.updateFailedRetry'),
             type: 'error',
             offset: 100,
           });

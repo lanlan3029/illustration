@@ -6,6 +6,7 @@ import store from './store'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import '@/assets/iconfont/iconfont.css'
+import i18n from './i18n'
 
 import '@/styles/reset.css'
 import '@/styles/cropper.css'
@@ -18,6 +19,7 @@ const app = createApp(App)
 
 app.use(router)
 app.use(store)
+app.use(i18n)
 app.use(ElementPlus)
 app.use(customComponents)
 

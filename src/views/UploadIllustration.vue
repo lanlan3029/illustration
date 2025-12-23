@@ -2,7 +2,7 @@
     <div class="container">
 <div class="box">
 <el-form ref="form" :model="form" label-width="100px">
-    <el-form-item label="上传作品">
+    <el-form-item :label="$t('upload.uploadWork')">
       <!-- 如果有从store来的图片，显示它 -->
       <div v-if="imgUrl && !localFile" class="image-preview">
     <el-image :src="imgUrl" style="width:100%;" fit="contain"/>
@@ -36,35 +36,32 @@
           accept=".png, .jpg, .jpeg, .JPG, .JPEG"
         >
           <template #trigger>
-            <el-button type="primary">选择图片</el-button>
+            <el-button type="primary">{{ $t('upload.selectImage') }}</el-button>
           </template>
           <template #tip>
-            <div class="el-upload__tip">只能上传jpg/png文件</div>
+            <div class="el-upload__tip">{{ $t('upload.imageFormatTip') }}</div>
           </template>
         </el-upload>
       </div>
   </el-form-item>
-  <el-form-item label="插画名称">
+  <el-form-item :label="$t('upload.illustrationName')">
     <el-input v-model="form.name"></el-input>
   </el-form-item>
-  <el-form-item label="插画类别">
-    <el-select v-model="form.category" placeholder="请选择插画类别">
-      <el-option label="生活日常" value="daily"></el-option>
-        <el-option label="欢庆节日" value="festival"></el-option>
-         <el-option label="校园生活" value="school"></el-option>
-          <el-option label="动物世界" value="animal"></el-option>
-          <el-option label="奇幻想象" value="fantasy"></el-option>
-          <el-option label="数学知识" value="math"></el-option> 
-          <el-option label="文学知识" value="literature"></el-option>
-          <el-option label="英语学习" value="english"></el-option>
-          <el-option label="其他" value="others"></el-option>
+  <el-form-item :label="$t('upload.illustrationCategory')">
+    <el-select v-model="form.category" :placeholder="$t('upload.selectCategory')">
+      <el-option :label="$t('upload.categoryReading')" value="reading"></el-option>
+      <el-option :label="$t('upload.categoryHabit')" value="habit"></el-option>
+      <el-option :label="$t('upload.categoryEnglish')" value="english"></el-option>
+      <el-option :label="$t('upload.categoryMath')" value="math"></el-option>
+      <el-option :label="$t('upload.categoryKnowledge')" value="knowledge"></el-option>
+      <el-option :label="$t('upload.categoryOthers')" value="others"></el-option>
     </el-select>
   </el-form-item>
-  <el-form-item label="插画描述">
+  <el-form-item :label="$t('upload.illustrationDescription')">
     <el-input type="textarea" v-model="form.desc" :rows="4"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">上传</el-button>
+    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">{{ $t('upload.uploadButton') }}</el-button>
   </el-form-item>
 </el-form>
 
@@ -142,7 +139,7 @@ export default {
         }
          } else {
               ElMessage({
-          message: '插画、插画名称、类别不能为空',
+          message: this.$t('upload.validationError'),
           type: 'warning',
           offset:'300'
         });
@@ -166,15 +163,15 @@ export default {
        });
        
        if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
-         ElMessage.success('上传成功');
+         ElMessage.success(this.$t('upload.uploadSuccess'));
          this.$router.push('/user/upload/submit-res/');
        } else {
-         ElMessage.error('上传失败');
+         ElMessage.error(this.$t('upload.uploadFailed'));
          this.disabled = false;
        }
      } catch (error) {
        console.error('上传失败:', error);
-       ElMessage.error('上传失败，请稍后重试');
+       ElMessage.error(this.$t('upload.uploadFailedRetry'));
        this.disabled = false;
      }
    },
@@ -210,15 +207,15 @@ export default {
        });
        
        if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
-         ElMessage.success('上传成功');
+         ElMessage.success(this.$t('upload.uploadSuccess'));
          this.$router.push('/user/upload/submit-res/');
        } else {
-         ElMessage.error('上传失败');
+         ElMessage.error(this.$t('upload.uploadFailed'));
          this.disabled = false;
        }
      } catch (error) {
        console.error('上传失败:', error);
-       ElMessage.error('上传失败，请稍后重试');
+       ElMessage.error(this.$t('upload.uploadFailedRetry'));
        this.disabled = false;
      }
    },

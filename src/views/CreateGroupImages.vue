@@ -6,7 +6,7 @@
                 <el-card class="panel-card" shadow="hover">
                     <template #header>
                         <div class="card-header">
-                            <span>创作组图</span>
+                            <span>{{ $t('createGroupImages.title') }}</span>
                         </div>
                     </template>
                     <div class="panel-content-wrapper">
@@ -31,10 +31,10 @@
                                     :limit="1"
                                     accept="image/jpeg,image/jpg,image/png">
                                     <i class="el-icon-upload"></i>
-                                    <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                                    <div class="el-upload__text" v-html="$t('createGroupImages.dragUpload')"></div>
                                     <template #tip>
                                         <div class="el-upload__tip">
-                                            支持 JPG、PNG 格式，建议大小不超过 5MB
+                                            {{ $t('createGroupImages.uploadTip') }}
                                         </div>
                                     </template>
                                 </el-upload>
@@ -45,10 +45,10 @@
                                         type="primary" 
                                         plain
                                             @click="goToMyCharacters">
-                                           从我的角色页面导入
+                                           {{ $t('createGroupImages.importFromCharacters') }}
                                     </el-button>
                                     <div v-if="!hasCharacterImage" class="import-tip">
-                                        还没有角色，快去创作吧！
+                                        {{ $t('createGroupImages.noCharacters') }}
                                     </div>
                                 </div>
                             </div>
@@ -71,7 +71,7 @@
                                     <el-button 
                                         size="small" 
                                         @click="handleReferenceRemove">
-                                        <i class="el-icon-delete"></i> 删除
+                                        <i class="el-icon-delete"></i> {{ $t('createGroupImages.delete') }}
                                     </el-button>
                                 </div>
                             </div>
@@ -87,7 +87,7 @@
                                     v-model="prompts[index]"
                                     type="textarea"
                                     :rows="3"
-                                    placeholder="将人物的动物、衣服、表情改为······"
+                                    :placeholder="$t('createGroupImages.promptPlaceholder')"
                                     class="prompt-input"
                                     maxlength="200"
                                     show-word-limit>
@@ -104,7 +104,7 @@
                                 @click="handleSubmit"
                                 :loading="processing"
                                 :disabled="!canSubmit">
-                                <i class="el-icon-magic-stick"></i> 开始生成
+                                <i class="el-icon-magic-stick"></i> {{ $t('createGroupImages.startGenerate') }}
                             </el-button>
                         </div>
                     </div>
@@ -116,17 +116,17 @@
                 <el-card class="result-card" shadow="hover">
                     <template #header>
                         <div class="card-header">
-                            <span>生成结果</span>
+                            <span>{{ $t('createGroupImages.resultTitle') }}</span>
                         </div>
                     </template>
                     <div class="result-content">
                         <div v-if="!filteredResultImages.length && !processing" class="result-placeholder">
                             <i class="el-icon-picture-outline"></i>
-                            <p>开始创建组图吧！</p>
+                            <p>{{ $t('createGroupImages.startCreating') }}</p>
                         </div>
                         <div v-if="processing" class="result-loading">
                             <i class="el-icon-loading"></i>
-                            <p>正在生成中，请稍候...</p>
+                            <p>{{ $t('createGroupImages.generating') }}</p>
                         </div>
                         <el-scrollbar v-if="filteredResultImages.length > 0 && !processing" class="result-scrollbar">
                             <div class="result-images">
@@ -149,13 +149,13 @@
                                 </el-image>
                             </div>
                                     <div class="card-content">
-                                <h3 class="card-title">{{ characterTitle }} - 第 {{ getDisplayOrder(image, index) }} 张</h3>
+                                <h3 class="card-title">{{ characterTitle }} - {{ $t('createGroupImages.imageNumber', { number: getDisplayOrder(image, index) }) }}</h3>
                                         <div class="card-actions">
                                             <el-button 
                                                 type="primary" 
                                                 size="small" 
                                                 @click="collectIllustration(image, index)">
-                                                收集插画
+                                                {{ $t('createGroupImages.collectIllustration') }}
                                             </el-button>
                         </div>
                     </div>
@@ -218,7 +218,7 @@ export default {
         },
         // 角色标题前缀
         characterTitle() {
-            return this.characterName || '组图插画';
+            return this.characterName || this.$t('createGroupImages.groupIllustration');
         }
     },
     mounted() {
@@ -357,10 +357,10 @@ export default {
                     console.log('导入后的 referenceImageUrl:', this.referenceImageUrl ? '已设置' : '未设置');
                     console.log('导入的图片格式:', characterImage.startsWith('data:') ? 'Base64' : 'URL');
                     console.log('导入的图片预览:', characterImage.substring(0, 100) + '...');
-                    ElMessage.success('已成功导入角色图片');
+                    ElMessage.success(this.$t('createGroupImages.importSuccess'));
                 });
             } else {
-                ElMessage.warning('未找到角色图片，请先在创作角色页面点击"创作插画"或"创作组图"按钮');
+                ElMessage.warning(this.$t('createGroupImages.noCharacterImage'));
                 console.warn('localStorage中没有characterImage，请检查是否已生成角色并保存');
             }
         },
@@ -490,7 +490,7 @@ export default {
                     // 保存生成的组图到localStorage
                     this.saveGroupImagesToLocalStorage(this.resultImages);
                 } else {
-                    const errorMsg = responseData.message || responseData.desc || '生成失败，请重试';
+                    const errorMsg = responseData.message || responseData.desc || this.$t('createGroupImages.generateFailed');
                     throw new Error(errorMsg);
                 }
             } catch (error) {
@@ -810,7 +810,7 @@ export default {
             try {
                 const displayOrder = this.getDisplayOrder(imageUrl, index);
                 const pictureUrl = imageUrl && imageUrl.url ? imageUrl.url : imageUrl;
-                ElMessage.info(`正在保存第 ${displayOrder} 张插画...`);
+                ElMessage.info(this.$t('createGroupImages.savingImage', { number: displayOrder }));
                 
                 // 处理URL格式
                 let pictureValue = pictureUrl;
@@ -847,7 +847,7 @@ export default {
                 // 获取token
                 const token = localStorage.getItem('token') || '';
                 if (!token) {
-                    ElMessage.error('请先登录');
+                    ElMessage.error(this.$t('createGroupImages.pleaseLogin'));
                     return;
                 }
                 
@@ -869,14 +869,14 @@ export default {
                     await this.$nextTick();
                     this.$forceUpdate();
                     
-                    ElMessage.success(`第 ${index + 1} 张插画已保存到"我的插画"`);
+                    ElMessage.success(this.$t('createGroupImages.imageSaved', { number: index + 1 }));
                 } else {
-                    throw new Error(response.data?.message || '保存失败');
+                    throw new Error(response.data?.message || this.$t('createGroupImages.saveFailed'));
                 }
             } catch (error) {
                 console.error('收集插画失败:', error);
-                const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
-                ElMessage.error(`收集插画失败: ${errorMessage}`);
+                const errorMessage = error.response?.data?.message || error.message || this.$t('createGroupImages.saveFailedRetry');
+                ElMessage.error(this.$t('createGroupImages.collectFailed', { message: errorMessage }));
             }
         },
         
