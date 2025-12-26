@@ -1,8 +1,8 @@
 <template>
   <transition name="fade">
-    <div class="container" @click.self="closeMask">
+    <div v-if="true" class="container" @click.self="closeMask">
       <transition name="slide-up">
-        <div class="box" @click.stop>
+        <div v-if="true" class="box" @click.stop>
           <div class="close" @click="closeMask">
             <i class="el-icon-close"></i>
           </div>
@@ -382,10 +382,11 @@ export default {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   padding: 40px 60px;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: #fff;
+  background-image: url('../assets/images/login.png');
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -400,30 +401,13 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('../assets/images/login.png');
-  background-position: 100% 100%;
-  background-repeat: no-repeat;
-  background-size: auto 100%;
-  opacity: 0.15;
+  background: linear-gradient(135deg, rgba(129, 103, 169, 0.05) 0%, rgba(255, 255, 255, 0.95) 50%);
   z-index: 0;
-  pointer-events: none;
-}
-
-.box::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(129, 103, 169, 0.03) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0.6) 100%);
-  z-index: 1;
-  pointer-events: none;
 }
 
 .box > * {
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .box .close {

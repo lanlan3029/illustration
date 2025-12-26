@@ -24,8 +24,7 @@
 
         <div class="box">
           <div v-if="loading" class="loading">
-            <span class="text">{{ $t('books.loading') }}</span>
-            <i class="el-icon-loading" :size="32"></i>
+            <book-loading :text="$t('books.loading')" />
           </div>
           <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
             <div class="item" v-for="(item, index) in books" :key="item._id || index">
@@ -77,11 +76,15 @@
 </template>
 
 <script>
+import BookLoading from '@/components/BookLoading.vue'
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
 
 export default {
   name: "OriginalBooks",
+  components: {
+    BookLoading
+  },
   computed: {
     ...mapState(["books", "collectBookArr"]),
     sortList() {

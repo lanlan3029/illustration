@@ -162,7 +162,7 @@ export default {
     name: 'InspirationLibrary',
     setup() {
         const { proxy } = getCurrentInstance()
-        const { t } = useI18n()
+        const { t, locale } = useI18n()
         
         // 风格配置：包含 key、id 和对应的图片路径
         const styleConfigs = [
@@ -200,7 +200,8 @@ export default {
         return {
             $http: proxy?.$http || axios,
             $message: proxy?.$message || ElMessage,
-            styles
+            styles,
+            locale
         }
     },
     data() {
@@ -228,6 +229,22 @@ export default {
             const elementDetails = this.editableElementDetails.trim() || (this.selectedStyle ? this.selectedStyle.elementDetails : '');
             return `${this.subjectScene.trim()}，${artStyle}，${elementDetails}`;
         },
+    },
+    watch: {
+        // 监听 selectedStyle 变化（当语言切换时，styles 会重新计算，selectedStyle 也会更新）
+        selectedStyle: {
+            handler(newStyle) {
+                // 如果已选择风格且风格数据更新，同步更新编辑字段
+                if (newStyle && this.selectedStyleId !== null) {
+                    // 只有当编辑字段与当前风格值不同时才更新（避免覆盖用户手动编辑的内容）
+                    // 但如果用户没有手动编辑，则应该更新为新语言的值
+                    // 这里我们总是更新，因为语言切换时应该显示新语言的内容
+                    this.editableArtStyle = newStyle.artStyle;
+                    this.editableElementDetails = newStyle.elementDetails;
+                }
+            },
+            immediate: false
+        }
     },
     mounted() {
         // 默认选中第一个风格
@@ -637,8 +654,10 @@ export default {
     color: #303133;
     margin: 0;
     line-height: 1.5;
-    word-break: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
     display: block;
 }
 

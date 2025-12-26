@@ -205,6 +205,11 @@
     "noCharacters": "No characters created yet, start creating!",
     "noIllustrations": "No illustrations created yet, start creating!",
     "noBooks": "No books created yet, start creating!",
+    "bookStatus": {
+      "published": "Published",
+      "pending": "Pending Review",
+      "rejected": "Rejected"
+    },
     "createGroupImages": "Create Group Images",
     "viewGroupImages": "View Group Images",
     "edit": "Edit",
@@ -949,5 +954,13 @@
     "registerFailed": "Registration failed, please try again later",
     "registerFailedShort": "Registration failed",
     "tryAgain": "Something went wrong, please try again"
+  },
+  "bookSteps": {
+    "step1": "Step 1",
+    "step1Desc": "Edit Content",
+    "step2": "Step 2",
+    "step2Desc": "Upload Files",
+    "step3": "Step 3",
+    "step3Desc": "Complete"
   }
 }

@@ -144,7 +144,16 @@
               </el-image>
             </div>
             <div class="card-content">
-              <h3 class="card-title">{{item.title || $t('myHomePage.unnamedBook')}}</h3>
+              <div class="card-header">
+                <h3 class="card-title">{{item.title || $t('myHomePage.unnamedBook')}}</h3>
+                <el-tag 
+                  :type="getBookStatusType(item.status)" 
+                  size="small" 
+                  class="book-status-tag"
+                >
+                  {{ getBookStatusLabel(item.status) }}
+                </el-tag>
+              </div>
               <p class="card-description">{{item.description || $t('myHomePage.noDescription')}}</p>
               
              
@@ -292,6 +301,38 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         name: 'upload-local-book',
         query: { bookId: id, mode: 'edit' }
       });
+    },
+    
+    // 获取绘本状态标签文本
+    getBookStatusLabel(status) {
+      // 如果 status 未定义或为 null，默认为 1（待审核）
+      const bookStatus = status !== undefined && status !== null ? status : 1;
+      
+      if (bookStatus === 0) {
+        return this.$t('myHomePage.bookStatus.published');
+      } else if (bookStatus === 1) {
+        return this.$t('myHomePage.bookStatus.pending');
+      } else if (bookStatus === -1) {
+        return this.$t('myHomePage.bookStatus.rejected');
+      }
+      // 默认返回待审核
+      return this.$t('myHomePage.bookStatus.pending');
+    },
+    
+    // 获取绘本状态标签类型（用于 el-tag 的 type 属性）
+    getBookStatusType(status) {
+      // 如果 status 未定义或为 null，默认为 1（待审核）
+      const bookStatus = status !== undefined && status !== null ? status : 1;
+      
+      if (bookStatus === 0) {
+        return 'success'; // 已发布 - 绿色
+      } else if (bookStatus === 1) {
+        return 'warning'; // 待审核 - 橙色
+      } else if (bookStatus === -1) {
+        return 'danger'; // 审核未通过 - 红色
+      }
+      // 默认返回 warning
+      return 'warning';
     },
     async goEdition(item){
         try {
@@ -1268,14 +1309,30 @@ overflow: hidden;
   flex-direction: column;
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0;
   color: #303133;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.book-status-tag {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
 }
 
 .card-description {

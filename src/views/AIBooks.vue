@@ -90,8 +90,7 @@
             <div class="generated-book">
                 <el-scrollbar class="scrollbar-container">
                     <div v-if="!bookData && !generating" class="empty-state">
-                        <i class="el-icon-picture-outline"></i>
-                        <p>{{ $t('aibooks.emptyState') }}</p>
+                        <img src="@/assets/images/AIbookflow.png" alt="AI绘本流程" class="flow-image" />
                     </div>
 
                     <div v-if="bookData" class="book-content">
@@ -172,10 +171,11 @@ import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { Download } from '@element-plus/icons-vue'
 
+
 export default {
     name: 'AIBooks',
     components: {
-        Download
+        Download,
     },
     setup() {
         const { proxy } = getCurrentInstance()
@@ -1384,6 +1384,15 @@ export default {
     height: 100%;
     color: #c0c4cc;
     padding: 60px 20px;
+}
+
+.flow-image {
+    max-width: 300px;
+    max-height: 600px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    opacity: 0.4;
 }
 
 .empty-state i {

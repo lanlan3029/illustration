@@ -55,8 +55,8 @@
         "elementDetails": "细节丰富，黑白线条，饱满构图，明亮的光线。"
       },
       "colorfulOutlineRomanticism": {
-        "artStyle": "彩色轮廓浪漫主义",
-        "elementDetails": "彩色轮廓插图，无拘无束的氛围，生动的色彩和宽松的笔触，嬉戏和无忧无虑的场景。"
+        "artStyle": "梦幻童话风格",
+        "elementDetails": "彩色轮廓插图，无拘无束的氛围，浪漫、生动的色彩和宽松的笔触，嬉戏和无忧无虑的场景。"
       },
       "crayonNoiseHandDrawn": {
         "artStyle": "蜡笔噪点手绘",
@@ -205,6 +205,11 @@
     "noCharacters": "还没有创建角色，快去创作吧！",
     "noIllustrations": "还没有创建插画，快去创作吧！",
     "noBooks": "还没有创建绘本，快去创作吧！",
+    "bookStatus": {
+      "published": "已发布",
+      "pending": "待审核",
+      "rejected": "审核未通过"
+    },
     "createGroupImages": "创作组图",
     "viewGroupImages": "查看组图",
     "edit": "编辑",
@@ -949,5 +954,13 @@
     "registerFailed": "注册失败，请稍后重试",
     "registerFailedShort": "注册失败",
     "tryAgain": "出错啦，请再试一次"
+  },
+  "bookSteps": {
+    "step1": "填写故事梗概",
+    "step1Desc": "填写故事梗概",
+    "step2": "编辑提示词",
+    "step2Desc": "编辑提示词",
+    "step3": "生成绘本",
+    "step3Desc": "生成绘本"
   }
 }

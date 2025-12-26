@@ -140,7 +140,7 @@ export default {
         const router = useRouter()
         const route = useRoute()
         const { proxy } = getCurrentInstance()
-        const { locale, t } = useI18n()
+        const { locale } = useI18n()
         
         const logoUrl = require('../assets/logo/logo.png')
         const userid = ref(localStorage.getItem("id"))

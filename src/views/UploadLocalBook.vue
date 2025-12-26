@@ -361,6 +361,8 @@ export default {
             formData.append('title', this.form.name);
             formData.append('description', this.form.desc || '');
             formData.append('type', this.form.category);
+            // 默认状态为 1（待审核）
+            formData.append('status', '1');
             
             if (this.isEditMode) {
               // 编辑模式：先更新基本信息
