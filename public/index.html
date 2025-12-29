@@ -41,6 +41,14 @@
     <!-- Web Manifest -->
     <link rel="manifest" href="<%= BASE_URL %>site.webmanifest">
     
+    <!-- 关键 CSS 内联（首屏渲染必需，减少渲染阻塞） -->
+    <style>
+      html, body { height: 100%; overflow-y: auto; margin: 0; padding: 0; box-sizing: border-box; }
+      body { overflow: hidden; }
+      #app { font-family: "PingFang SC", "Lantinghei SC", "Microsoft YaHei", "HanHei SC", "Helvetica Neue", "Open Sans", Arial, "Hiragino Sans GB", 微软雅黑, STHeiti, "WenQuanYi Micro Hei", SimSun, sans-serif, HYWenHei-GEW; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-align: center; color: #2c3e50; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+      .app-main { flex: 1; width: 100%; overflow: hidden; padding-top: 50px; }
+    </style>
+    
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body>

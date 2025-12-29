@@ -299,10 +299,13 @@ import html2Canvas from "html2canvas";
 import JsPDF from "jspdf";
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
+import { ArrowRightBold, ArrowLeftBold } from '@element-plus/icons-vue'
 
 export default {
   name: "OriginalBookDetails",
   components: {
+    ArrowRightBold,
+    ArrowLeftBold
   },
   props: {
     bookId: {

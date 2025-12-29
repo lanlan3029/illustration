@@ -90,7 +90,21 @@
             <div class="generated-book">
                 <el-scrollbar class="scrollbar-container">
                     <div v-if="!bookData && !generating" class="empty-state">
-                        <img src="@/assets/images/AIbookflow.png" alt="AI绘本流程" class="flow-image" />
+                        <el-empty :image-size="80" :description="$t('aibooks.step1')">
+                            <template #image>
+                                <el-icon :size="80"><Edit /></el-icon>
+                            </template>
+                        </el-empty>
+                        <el-empty :image-size="80" :description="$t('aibooks.step2')">
+                            <template #image>
+                                <el-icon :size="80"><DocumentCopy /></el-icon>
+                            </template>
+                        </el-empty>
+                        <el-empty :image-size="80" :description="$t('aibooks.step3')">
+                            <template #image>
+                                <el-icon :size="80"><Reading /></el-icon>
+                            </template>
+                        </el-empty>
                     </div>
 
                     <div v-if="bookData" class="book-content">
@@ -169,12 +183,15 @@ import { ElMessage } from 'element-plus'
 import { getCurrentInstance, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
-import { Download } from '@element-plus/icons-vue'
+import { Download, Edit, DocumentCopy, Reading } from '@element-plus/icons-vue'
 
 
 export default {
     name: 'AIBooks',
     components: {
+        Edit,
+        DocumentCopy,
+        Reading,
         Download,
     },
     setup() {

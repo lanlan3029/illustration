@@ -8,12 +8,15 @@ import 'element-plus/dist/index.css'
 import '@/assets/iconfont/iconfont.css'
 import i18n from './i18n'
 
+// 关键 CSS - 立即加载
 import '@/styles/reset.css'
-import '@/styles/cropper.css'
-import 'animate.css/animate.css'
+
+// 非关键 CSS - 延迟加载
+// cropper.css 和 animate.css 在需要时动态导入
+// import '@/styles/cropper.css'
+// import 'animate.css/animate.css'
 import '@/assets/lefticon/iconfont.css'
 import axios from 'axios'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 const app = createApp(App)
 
@@ -35,18 +38,5 @@ app.config.globalProperties.$message = ElementPlus.ElMessage
 
 app.mount('#app')
 
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-    // 跳过 Picture，因为自定义组件已经注册了 Picture
-    if (key !== 'Picture') {
-        app.component(key, component)
-    }
-  }
-//百度统计
-var _hmt = _hmt || [];
-window._hmt = _hmt;
-(function () {
-    var hm = document.createElement("script");
-    hm.src = "https://hm.baidu.com/hm.js?0d659afc1e301d15807bbc3442ccbeae";
-    var s = document.getElementsByTagName("script")[0];
-    s.parentNode.insertBefore(hm, s);
-})();
+// 图标按需导入，不再全局注册所有图标
+// 各组件需要使用时自行导入所需的图标组件

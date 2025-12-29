@@ -1,7 +1,14 @@
 <template>
   <footer class="box">
     <a href="https://beian.miit.gov.cn/#/Integrated/index" class="message" target="_blank" rel="noopener">
-      <img src="../assets/images/record.png" alt="备案" />
+      <img 
+        src="../assets/images/record-14x14.png" 
+        alt="备案" 
+        width="14" 
+        height="14" 
+        loading="lazy"
+        decoding="async"
+      />
       <span>鲁ICP备2023000705号-1</span>
    </a>
   </footer>
@@ -40,5 +47,7 @@ export default {
 .box a img{
   width: 14px;
   height: 14px;
+  object-fit: contain;
+  display: block;
 }
 </style>

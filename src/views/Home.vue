@@ -27,7 +27,13 @@
                                 :src="style.image"
                                 :alt="style.artStyle"
                                 fit="cover"
-                                class="style-image">
+                                class="style-image"
+                                :lazy="true">
+                                <template #placeholder>
+                                    <div class="image-loading">
+                                        <i class="el-icon-loading"></i>
+                                    </div>
+                                </template>
                                 <template #error>
                                     <div class="image-slot">
                                         <i class="el-icon-picture-outline"></i>
@@ -53,50 +59,43 @@
                     </div>
 
                     <div v-else class="detail-content">
-                        <!-- 风格示意图预览 - 生成时隐藏 -->
-                        <div v-if="!generating && !generatedImageUrl" class="style-preview">
-                            <el-image
-                                :src="selectedStyle.image"
-                                :alt="selectedStyle.artStyle"
-                                fit="contain"
-                                class="preview-image">
-                                <template #error>
-                                    <div class="image-slot">
-                                        <i class="el-icon-picture-outline"></i>
-                                    </div>
-                                </template>
-                            </el-image>
-                        </div>
-                        
-                        <!-- 生成进度提示 -->
-                        <div v-if="generating" class="generating-progress">
-                            <div class="progress-container">
-                                <el-progress
-                                    :percentage="100"
-                                    status="active"
-                                    :stroke-width="12"
-                                    class="progress-bar">
-                                </el-progress>
-                                <p class="progress-text">
-                                    <i class="el-icon-loading"></i>
-                                    {{ $t('home.generating') }}
-                                </p>
+                        <!-- 图片展示区域：空白框或生成结果 -->
+                        <div class="image-display-area">
+                            <!-- 生成进度提示 -->
+                            <div v-if="generating" class="generating-progress">
+                                <div class="progress-container">
+                                    <el-progress
+                                        :percentage="100"
+                                        status="active"
+                                        :stroke-width="12"
+                                        class="progress-bar">
+                                    </el-progress>
+                                    <p class="progress-text">
+                                        <i class="el-icon-loading"></i>
+                                        {{ $t('home.generating') }}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <!-- 生成结果展示 - 显示在进度条位置 -->
-                        <div v-if="generatedImageUrl && !generating" class="generated-result">
-                            <h3 class="result-title">{{ $t('home.generateIllustration') }}</h3>
-                            <el-image
-                                :src="generatedImageUrl"
-                                fit="contain"
-                                class="result-image">
-                                <template #error>
-                                    <div class="image-slot">
-                                        <i class="el-icon-picture-outline"></i>
-                                    </div>
-                                </template>
-                            </el-image>
+                            
+                            <!-- 生成结果展示 -->
+                            <div v-else-if="generatedImageUrl" class="generated-result">
+                                <el-image
+                                    :src="generatedImageUrl"
+                                    fit="contain"
+                                    class="result-image">
+                                    <template #error>
+                                        <div class="image-slot">
+                                            <i class="el-icon-picture-outline"></i>
+                                        </div>
+                                    </template>
+                                </el-image>
+                            </div>
+                            
+                            <!-- 空白框（未生成时显示） -->
+                            <div v-else class="empty-image-box">
+                                
+                                <p>生成的图片将显示在这里</p>
+                            </div>
                         </div>
                         
                         <div class="style-info">
@@ -127,7 +126,7 @@
                             <el-input
                                 v-model="subjectScene"
                                 type="textarea"
-                                :rows="2"
+                                :rows="3"
                                 :placeholder="$t('home.subjectPlaceholder')"
                                 class="subject-input">
                             </el-input>
@@ -153,10 +152,11 @@
 </template>
 
 <script>
-import { getCurrentInstance, computed } from 'vue'
+import { getCurrentInstance, computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { checkWebPSupport } from '@/utils/imageOptimizer'
 
 export default {
     name: 'InspirationLibrary',
@@ -164,7 +164,12 @@ export default {
         const { proxy } = getCurrentInstance()
         const { t, locale } = useI18n()
         
+        // WebP 支持检测
+        const supportsWebP = ref(false)
+        
         // 风格配置：包含 key、id 和对应的图片路径
+        // 使用压缩后的 PNG 图片（已从 76MB 压缩到约 8MB）
+        // 通过 el-image 的 lazy 属性实现懒加载
         const styleConfigs = [
             { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.png') },
             { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.png') },
@@ -185,6 +190,11 @@ export default {
             { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.png') },
             { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.png') }
         ]
+        
+        // 检测 WebP 支持
+        onMounted(async () => {
+            supportsWebP.value = await checkWebPSupport()
+        })
         
         // 根据当前语言动态获取风格列表
         const styles = computed(() => {
@@ -536,11 +546,11 @@ export default {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 72px - 50px - 48px - 64px);
+    min-height: calc(100vh - 50px - 40px - 80px);
     
 }
 .style-list-container-scroll{
-    height: calc(100vh - 72px - 50px - 48px - 64px);
+    height: calc(100vh - 50px - 40px - 80px);
 }
 .section-title {
     font-size: 18px;
@@ -633,6 +643,30 @@ export default {
     aspect-ratio: 4 / 3;
 }
 
+.image-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: #f5f7fa;
+    color: #909399;
+}
+
+.image-loading i {
+    font-size: 24px;
+    animation: rotating 2s linear infinite;
+}
+
+@keyframes rotating {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 .image-slot {
     display: flex;
     justify-content: center;
@@ -704,28 +738,39 @@ export default {
     gap: 16px;
 }
 
-.style-preview {
+.image-display-area {
     width: 100%;
+    height: 400px;
     background-color: #f5f7fa;
     border-radius: 8px;
-    overflow: hidden;
     border: 1px solid #ebeef5;
-    min-height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
-.preview-image {
+.empty-image-box {
     width: 100%;
-    max-height: 300px;
+    height: 100%;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #909399;
+    gap: 12px;
 }
 
-.preview-image :deep(.el-image__inner) {
-    width: 100%;
-    height: auto;
-    max-height: 300px;
-    object-fit: contain;
+.empty-image-box i {
+    font-size: 48px;
+    color: #c0c4cc;
+}
+
+.empty-image-box p {
+    margin: 0;
+    font-size: 14px;
+    color: #909399;
 }
 
 .generating-progress {
@@ -860,11 +905,13 @@ export default {
 }
 
 .generated-result {
-    margin-top: 20px;
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 16px;
-    background-color: #f5f7fa;
-    border-radius: 8px;
-    border: 1px solid #ebeef5;
 }
 
 .result-title {

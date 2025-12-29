@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import Home from '../views/Home.vue'
 import store from '../store'
 
 
@@ -7,7 +6,7 @@ import store from '../store'
 const routes = [{
         path: '/',
         name: 'Home',
-        component: Home
+        component: () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
     },
     {
         path: '/AIbooks',
@@ -300,12 +299,6 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    if (window._hmt) {
-        if (to.path) {
-            window._hmt.push(['_trackPageview', '/#' + to.fullPath])
-        }
-    }
-    
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
         const cango = (to.name == 'Home' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')

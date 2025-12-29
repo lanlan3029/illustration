@@ -45,6 +45,9 @@
     "page": "第 {page} 页",
     "emptyState": "请在左侧输入提示词并生成绘本",
     "loading": "加载中...",
+    "step1": "1.输入故事梗概，生成故事分镜",
+    "step2": "2.修改故事分镜，生成绘本",
+    "step3": "3.下载或上传绘本",
     "styles": {
       "healingWatercolor": {
         "artStyle": "治愈系水彩",

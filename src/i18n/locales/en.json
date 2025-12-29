@@ -45,6 +45,9 @@
     "page": "Page {page}",
     "emptyState": "Please enter a prompt on the left and generate a picture book",
     "loading": "Loading...",
+    "step1": "1. Enter story outline, generate story scenes",
+    "step2": "2. Edit story scenes, generate picture book",
+    "step3": "3. Download or upload picture book",
     "styles": {
       "healingWatercolor": {
         "artStyle": "Healing Watercolor",
