@@ -19,11 +19,14 @@
                 fit="cover"
                 style="width:6vw; height:8vh"
                 :src="`https://static.kidstory.cc/` + item.content"
-                lazy
+                :lazy="true"
+                loading="lazy"
+                decoding="async"
+                :preview-src-list="[]"
                 :scroll-container="$refs.scrollContainer"
               >
                 <template #placeholder>
-                  <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
+                  <div class="img-ph"><i class="el-icon-loading"></i></div>
                 </template>
                 <template #error>
                   <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
@@ -61,11 +64,14 @@
               style="width:6vw; height:8vh; display: block; margin: 0 auto;"
               :src="getImageSrc(item)"
               :key="`img-${selectType}-${selectIndex}-${item._id || item.content || index}-${Date.now()}`"
-              lazy
+              :lazy="true"
+              loading="lazy"
+              decoding="async"
+              :preview-src-list="[]"
               :scroll-container="$refs.scrollContainer"
             >
               <template #placeholder>
-                <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
+                <div class="img-ph"><i class="el-icon-loading"></i></div>
               </template>
               <template #error>
                 <div class="img-ph"><i class="el-icon-picture-outline"></i></div>
@@ -539,13 +545,13 @@ export default {
                       let IMAGE= new Image()
                       const self=this
                       IMAGE.onload=function(){
-                        // 检查图片尺寸，如果超过1200*900，按比例缩小到800*600以内
+                        // 检查图片尺寸，如果超过600*450，按比例缩小到600*450以内
                         let finalWidth = IMAGE.width
                         let finalHeight = IMAGE.height
-                        const maxWidth = 1200
-                        const maxHeight = 900
-                        const targetWidth = 800
-                        const targetHeight = 600
+                        const maxWidth = 600
+                        const maxHeight = 450
+                        const targetWidth = 600
+                        const targetHeight = 450
                         
                         // 如果宽度或高度超过限制，需要缩小
                         if (finalWidth > maxWidth || finalHeight > maxHeight) {
@@ -745,6 +751,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* 防止布局偏移 */
+    min-height: 8vh;
+    aspect-ratio: 6.5 / 8;
+    position: relative;
+    overflow: hidden;
 }
 .element:hover{
     background-color:#fafafa ;
@@ -752,11 +763,43 @@ export default {
 .img-ph{
     width:100%;
     height:100%;
+    min-height: 8vh;
     display:flex;
     align-items:center;
     justify-content:center;
     background:#fafafa;
     color:#c0c4cc;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.img-ph i {
+    font-size: 20px;
+}
+.img-ph .el-icon-loading {
+    animation: rotating 1.5s linear infinite;
+}
+@keyframes rotating {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+.element :deep(.el-image) {
+    width: 100%;
+    height: 100%;
+    background-color: #f5f6fa;
+}
+.element :deep(.el-image__inner) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: opacity 0.3s ease;
+}
+.element :deep(.el-image__placeholder) {
+    background-color: #fafafa;
 }
 .emptyResult{
     width:19.5vw;

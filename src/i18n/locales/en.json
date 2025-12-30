@@ -28,7 +28,8 @@
     "myWorks": "My Works",
     "accountSettings": "Account Settings",
     "subscription": "Subscription",
-    "connection": "Connection"
+    "connection": "Connection",
+    "promptFill": "PromptTool"
   },
   "aibooks": {
     "title": "Create Picture Book",
@@ -138,6 +139,7 @@
     "elementDetailsPlaceholder": "Please enter element details"
   },
   "upload": {
+    "title": "Upload Content",
     "uploadIllustration": "Upload Illustration",
     "uploadIllustrationDesc": "Upload illustrations to build your own AI creative library",
     "uploadBook": "Upload Book",
@@ -471,6 +473,12 @@
     "others": "Others"
   },
   "promptFill": {
+    "title": "Prompt Fill",
+    "description": "Quickly generate high-quality AI prompts by filling in prompt templates",
+    "template": "Template Selection",
+    "banks": "Prompt Banks",
+    "templateContent": "Template Content:",
+    "simpleDescription": "Simple Description Mode",
     "character": "Character",
     "style": "Style",
     "enterOrSelect": "Please enter or select {label}",
@@ -965,5 +973,11 @@
     "step2Desc": "Upload Files",
     "step3": "Step 3",
     "step3Desc": "Complete"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Sorry, the page you are looking for does not exist or has been removed",
+    "backHome": "Back to Home",
+    "goBack": "Go Back"
   }
 }

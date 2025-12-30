@@ -1136,7 +1136,7 @@ overflow: hidden;
 /* 卡片网格布局 - 一行三个 */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   width: 100%;
   position: relative;

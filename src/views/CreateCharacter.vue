@@ -70,6 +70,7 @@
                                 <div class="character-info-section">
                                     <div class="step-label">{{ $t('createCharacter.characterInfo') }}</div>
                                     <prompt-fill 
+                                        ref="promptFill"
                                         v-model="form.prompt"
                                         template-id="character-detail"
                                         :show-template-selector="true"
@@ -194,7 +195,6 @@ export default {
             
             // 表单数据
             form: {
-                character_name: '', // 角色名称
                 prompt: '', // 用户输入的自定义提示词
                 character_type: '', // 角色类型
                
@@ -223,10 +223,11 @@ export default {
     },
     computed: {
         canGenerate() {
-            // 需要：(角色名称或提示词) + 不在处理中
+            // 需要：提示词 + 不在处理中
             // 照片是可选的，可以只用提示词生成
-            const hasCharacterInfo = !!(this.form.character_name || this.form.prompt);
-            return hasCharacterInfo && !this.processing;
+            const promptStr = this.form.prompt ? (typeof this.form.prompt === 'string' ? this.form.prompt.trim() : String(this.form.prompt).trim()) : '';
+            const hasPrompt = !!promptStr;
+            return hasPrompt && !this.processing;
         },
         // 获取正确的图片显示URL
         displayImageUrl() {
@@ -503,8 +504,8 @@ export default {
         // 生成最终角色
         async handleCreateCharacter() {
             if (!this.canGenerate) {
-                if (!this.form.character_name && !this.form.prompt) {
-                    ElMessage.warning(this.$t('createCharacter.fillCharacterNameOrPrompt'));
+                if (!this.form.prompt) {
+                    ElMessage.warning(this.$t('createCharacter.fillPrompt'));
                 }
                 return;
             }
@@ -519,11 +520,6 @@ export default {
             try {
                 // 构建请求参数（JSON格式）
                 const requestData = {};
-                
-                // character_name 和 prompt 至少提供一个
-                if (this.form.character_name) {
-                    requestData.character_name = this.form.character_name;
-                }
                 
                 // 拼接用户输入的提示词
                 let finalPrompt = '';
@@ -541,6 +537,13 @@ export default {
                     } else {
                         throw new Error(this.$t('createCharacter.fillPrompt'));
                     }
+                }
+                
+                // 判断用户输入是否包含人物相关关键词，如果是则添加肢体准确性描述
+                const promptStr = this.form.prompt ? String(this.form.prompt) : '';
+                if (promptStr && this.isCharacterInput(promptStr)) {
+                    const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。';
+                    finalPrompt = `${finalPrompt}，${characterAccuracy}`;
                 }
                 
                 if (finalPrompt) {
@@ -598,7 +601,6 @@ export default {
                     
                     // 保存角色信息（包括base64数据，用于后续导入到创作组图）
                     this.resultImageData = {
-                        character_name: result.character_name,
                         character_type: result.character_type,
                         prompt: result.prompt,
                         size: '1280x960',
@@ -744,7 +746,7 @@ export default {
         },
         
         // 图像分割：抠图只保留主体
-        // 支持角色相关参数：character_id, character_name, character_type, description, tags, is_public
+        // 支持角色相关参数：character_id, character_type, description, tags, is_public
         async segmentImage(imageUrl, characterParams = {}) {
             const token = localStorage.getItem('token') || '';
             
@@ -754,9 +756,6 @@ export default {
             const params = {};
             if (characterParams.character_id) {
                 params.character_id = characterParams.character_id;
-            }
-            if (characterParams.character_name) {
-                params.character_name = characterParams.character_name;
             }
             if (characterParams.character_type) {
                 params.character_type = characterParams.character_type;
@@ -879,7 +878,6 @@ export default {
             try {
                 // 获取当前的角色数据
                 const result = this.resultImageData || {};
-                const characterName = this.form.character_name || result.character_name || '';
                 const characterType = this.form.character_type || result.character_type || '';
                 const description = this.form.prompt || result.prompt || result.description || '';
                 
@@ -890,7 +888,6 @@ export default {
                 const characterDataForUpload = {
                     mode: 'character', // 标识这是角色模式
                     image_url: segmentedImageUrl, // 使用分割后的图片
-                    character_name: characterName,
                     character_type: characterType,
                     description: description,
                     full_response: result.full_response,
@@ -1038,7 +1035,6 @@ export default {
                 
                 // 获取角色信息
                 const result = this.resultImageData || {};
-                const characterName = this.form.character_name || result.character_name || '未命名角色';
                 const characterType = this.form.character_type || result.character_type || '通用';
                 const description = this.form.prompt || result.prompt || result.description || '';
                 
@@ -1049,7 +1045,6 @@ export default {
                     try {
                         const token = localStorage.getItem('token') || '';
                         const createResponse = await this.$http.post('/character', {
-                            character_name: characterName,
                             character_type: characterType,
                             description: description,
                             image_url: this.resultImageUrl, // 先使用原图作为占位
@@ -1080,7 +1075,6 @@ export default {
                 
                 // 调用图像分割接口，传递角色ID和相关参数（会更新该角色）
                 const characterParams = {
-                    character_name: characterName,
                     character_type: characterType,
                     description: description,
                     is_public: 1
@@ -1117,7 +1111,6 @@ export default {
                 
                 // 获取角色信息
                 const result = this.resultImageData || {};
-                const characterName = this.form.character_name || result.character_name || '未命名角色';
                 const characterType = this.form.character_type || result.character_type || '通用';
                 const description = this.form.prompt || result.prompt || result.description || '';
                 
@@ -1128,7 +1121,6 @@ export default {
                     try {
                         const token = localStorage.getItem('token') || '';
                         const createResponse = await this.$http.post('/character', {
-                            character_name: characterName,
                             character_type: characterType,
                             description: description,
                             image_url: this.resultImageUrl, // 先使用原图作为占位
@@ -1159,7 +1151,6 @@ export default {
                 
                 // 调用图像分割接口，传递角色ID和相关参数（会更新该角色）
                 const characterParams = {
-                    character_name: characterName,
                     character_type: characterType,
                     description: description,
                     is_public: 1
@@ -1253,15 +1244,9 @@ export default {
                     console.log('保存角色：使用外部URL:', imageUrl.substring(0, 100) + '...');
                 }
                 
-                const characterName = result.character_name || this.form.character_name;
-                if (!characterName) {
-                    throw new Error(this.$t('createCharacter.characterNameRequired'));
-                }
-                
                 // 构建请求数据（符合API规范）
                 const saveData = {
                     // 必需参数
-                    character_name: characterName,
                     image_url: imageUrl,
                     
                     // 可选参数
@@ -1346,7 +1331,6 @@ export default {
                     resultImageData: this.resultImageData,
                     savedCharacterId: this.savedCharacterId, // 保存已保存的角色ID
                     form: {
-                        character_name: this.form.character_name,
                         prompt: this.form.prompt,
                         character_type: this.form.character_type
                     },
@@ -1377,9 +1361,6 @@ export default {
                         
                         // 恢复表单数据（如果存在）
                         if (characterData.form) {
-                            if (characterData.form.character_name) {
-                                this.form.character_name = characterData.form.character_name;
-                            }
                             if (characterData.form.prompt) {
                                 this.form.prompt = characterData.form.prompt;
                             }
@@ -1429,7 +1410,6 @@ export default {
             this.handlePhotoRemove();
             this.segmentedImageUrl = null;
             this.segmentedImageData = null;
-            this.form.character_name = '';
             this.form.prompt = '';
             this.form.character_type = '';
             this.form.stylePreset = 'default';
@@ -1441,6 +1421,49 @@ export default {
             
             // 清理 localStorage
             this.clearCharacterFromLocalStorage();
+            
+            // 先清除 Vuex store 中的 prompt selections
+            this.$store.commit('prompt/clearSelections');
+            
+            // 使用 $nextTick 确保 DOM 更新后再清除组件内部状态
+            this.$nextTick(() => {
+                // 确保 PromptFill 组件能够响应 value 的变化
+                if (this.$refs.promptFill) {
+                    // 强制清除组件内部状态
+                    this.$refs.promptFill.varValues = {};
+                    this.$refs.promptFill.customPromptText = '';
+                    // 强制更新组件
+                    this.$refs.promptFill.$forceUpdate();
+                }
+            });
+        },
+        
+        // 判断输入内容是否包含人物相关关键词
+        isCharacterInput(input) {
+            // 检查输入是否为字符串类型
+            if (!input || typeof input !== 'string') {
+                return false;
+            }
+            
+            const trimmed = input.trim();
+            if (!trimmed) {
+                return false;
+            }
+            
+            const text = trimmed.toLowerCase();
+            
+            // 人物相关关键词列表
+            const characterKeywords = [
+                '人', '人物', '角色', '角色', '角色',
+                '男孩', '女孩', '男人', '女人', '小孩', '儿童', '孩子', '小朋友',
+                '小动物', '小精灵', '小公主', '王子', '魔法师', '骑士',
+                '老人', '老人', '老年', '青年', '少年', '少女',
+                'baby', 'child', 'children', 'boy', 'girl', 'man', 'woman', 'person', 'people', 'character',
+                'kid', 'kids', 'adult', 'elderly', 'teenager', 'teen'
+            ];
+            
+            // 检查是否包含人物关键词
+            return characterKeywords.some(keyword => text.includes(keyword));
         }
     }
 };

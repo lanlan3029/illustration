@@ -70,6 +70,12 @@ const routes = [{
         component: () =>
             import ( /* webpackChunkName: "utility-tools" */ '../views/UtilityTools.vue'),
     },
+    {
+        path: '/prompt-fill',
+        name: 'prompt-fill',
+        component: () =>
+            import ( /* webpackChunkName: "prompt-fill" */ '../views/PromptFill.vue'),
+    },
 
     {
         path: '/user',

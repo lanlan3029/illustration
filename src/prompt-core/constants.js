@@ -16,6 +16,13 @@ export const INITIAL_TEMPLATES_CONFIG = [
     content: '',
     category: 'character'
   },
+  {
+    id: 'complete-prompt',
+    name: '完整提示词',
+    // 按照：人物 -> 动作 -> 物品 -> 地点 -> 画面 -> 其他 的顺序组织
+    content: '{{#role}}{{role}}{{/role}}{{#expressions}}，表情{{expressions}}{{/expressions}}{{#body_type}}，{{body_type}}体型{{/body_type}}{{#pose}}，{{pose}}{{/pose}}{{#hair_style}}，{{hair_style}}{{/hair_style}}{{#hair_color}}，{{hair_color}}发色{{/hair_color}}{{#character_traits}}，{{character_traits}}{{/character_traits}}{{#character_companion}}，与{{character_companion}}一起{{/character_companion}}{{#grid_pose}}，{{grid_pose}}{{/grid_pose}}{{#action_detail}}，正在{{action_detail}}{{/action_detail}}{{#action_pose}}，{{action_pose}}{{/action_pose}}{{#clothing}}，穿着{{clothing}}{{/clothing}}{{#clothing_male}}，穿着{{clothing_male}}{{/clothing_male}}{{#clothing_female}}，穿着{{clothing_female}}{{/clothing_female}}{{#accessories}}，佩戴{{accessories}}{{/accessories}}{{#bag_content}}，背着{{bag_content}}{{/bag_content}}{{#cosmetics}}，拿着{{cosmetics}}{{/cosmetics}}{{#private_items}}，带着{{private_items}}{{/private_items}}{{#toy_companion}}，抱着{{toy_companion}}{{/toy_companion}}{{#fashion_deconstruct}}，{{fashion_deconstruct}}{{/fashion_deconstruct}}{{#sticker_core}}，{{sticker_core}}{{/sticker_core}}{{#sticker_decor}}，{{sticker_decor}}{{/sticker_decor}}{{#classic_scene}}，在{{classic_scene}}{{/classic_scene}}{{#background_scene}}，在{{background_scene}}{{/background_scene}}{{#position}}，{{position}}{{/position}}{{#layout_focus}}，{{layout_focus}}{{/layout_focus}}{{#camera_angle}}，{{camera_angle}}{{/camera_angle}}{{#special_view}}，{{special_view}}{{/special_view}}{{#lens_param}}，{{lens_param}}{{/lens_param}}{{#art_style}}，{{art_style}}{{/art_style}}{{#background_style}}，{{background_style}}{{/background_style}}{{#render_style}}，{{render_style}}{{/render_style}}{{#lighting}}，{{lighting}}{{/lighting}}{{#texture_zoom}}，{{texture_zoom}}{{/texture_zoom}}{{#ratio}}，{{ratio}}{{/ratio}}{{#connectors}}，{{connectors}}{{/connectors}}',
+    category: 'complete'
+  }
 
 ];
 

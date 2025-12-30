@@ -86,6 +86,10 @@ export default {
       state.selections[key] = value;
       persist(state);
     },
+    clearSelections(state) {
+      state.selections = {};
+      persist(state);
+    },
     addCustomOption(state, { bankId, option }) {
       if (!state.banks[bankId]) {
         state.banks[bankId] = { name: bankId, category: 'other', options: [] };

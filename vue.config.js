@@ -24,6 +24,16 @@ module.exports = defineConfig({
                 return args
             })
         }
+        
+        // 配置 webpack-bundle-analyzer（仅在分析时使用）
+        if (process.env.ANALYZE === 'true') {
+            const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+            config.plugin('bundle-analyzer').use(BundleAnalyzerPlugin, [{
+                analyzerMode: 'static',
+                openAnalyzer: true,
+                reportFilename: 'bundle-report.html'
+            }])
+        }
     },
     devServer: {
         // 配置 host，允许所有接口访问

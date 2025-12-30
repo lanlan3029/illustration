@@ -28,7 +28,8 @@
     "myWorks": "我的创作",
     "accountSettings": "账户设置",
     "subscription": "订阅管理",
-    "connection": "联系我们"
+    "connection": "联系我们",
+    "promptFill": "提示词填空器"
   },
   "aibooks": {
     "title": "创作绘本",
@@ -138,6 +139,7 @@
     "elementDetailsPlaceholder": "请输入元素细节"
   },
   "upload": {
+    "title": "上传内容",
     "uploadIllustration": "上传插画",
     "uploadIllustrationDesc": "上传插画，打造自己的AI创意库",
     "uploadBook": "上传绘本",
@@ -471,6 +473,12 @@
     "others": "其他"
   },
   "promptFill": {
+    "title": "提示词填充",
+    "description": "通过填充提示词模板，快速生成高质量的AI提示词",
+    "template": "模板选择",
+    "banks": "提示词词库",
+    "templateContent": "模板内容：",
+    "simpleDescription": "简单描述模式",
     "character": "角色",
     "style": "风格",
     "enterOrSelect": "请输入或选择{label}",
@@ -965,5 +973,11 @@
     "step2Desc": "编辑提示词",
     "step3": "生成绘本",
     "step3Desc": "生成绘本"
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "description": "抱歉，您访问的页面不存在或已被移除",
+    "backHome": "返回首页",
+    "goBack": "返回上一页"
   }
 }

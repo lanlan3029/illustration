@@ -20,6 +20,16 @@ npm run build
 npm run lint
 ```
 
+### Build for production
+```
+npm run build
+```
+
+构建后的文件在 `dist/` 目录中。
+
+### Deployment
+详细的部署说明请参考 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 

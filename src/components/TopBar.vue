@@ -42,6 +42,8 @@
             <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">{{ $t('common.tools') }}</router-link>
           </li>
 
+        
+
           <!-- 搜索框 -->
           <li class="nav-item search-item">
             <div class="search-wrapper">

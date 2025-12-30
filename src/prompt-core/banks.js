@@ -182,16 +182,7 @@ export const INITIAL_BANKS = {
       "3D像素风格"
     ]
   },
-  company: {
-    label: "公司",
-    category: "location",
-    options: [
-      "Apple",
-      "任天堂（Nintendo）",
-      "SONY",
-      "宜家（IKEA）"
-    ]
-  },
+
   ratio: {
     label: "画幅比例",
     category: "visual",
@@ -249,39 +240,39 @@ export const INITIAL_BANKS = {
 };
 
 export const INITIAL_DEFAULTS = {
-  role: "儿童插画师",
-  subject: "小男孩",
-  character_companion: "小兔子",
-  layout_focus: "全身立绘",
-  camera_angle: "正面特写",
-  connectors: "手绘箭头或引导线",
-  clothing: "彩色T恤",
-  clothing_male: "蓝色T恤",
-  clothing_female: "粉色连衣裙",
-  expressions: "开心大笑",
-  texture_zoom: "柔软的布料",
-  action_detail: "奔跑",
-  special_view: "正面视角",
-  bag_content: "小书包",
-  cosmetics: "彩色铅笔",
-  private_items: "小玩具",
-  art_style: "卡通插画风格",
-  background_style: "纯色背景",
-  fashion_deconstruct: "整齐折叠的衣服",
-  toy_companion: "泰迪熊",
-  classic_scene: "幼儿园",
-  render_style: "Pixar 卡通渲染",
-  position: "顶部中央",
-  company: "任天堂（Nintendo）",
-  ratio: "3:4竖构图",
+  role: "",
+  subject: "",
+  character_companion: "",
+  layout_focus: "",
+  camera_angle: "",
+  connectors: "",
+  clothing: "",
+  clothing_male: "",
+  clothing_female: "",
+  expressions: "",
+  texture_zoom: "",
+  action_detail: "",
+  special_view: "",
+  bag_content: "",
+  cosmetics: "",
+  private_items: "",
+  art_style: "",
+  background_style: "",
+  fashion_deconstruct: "",
+  toy_companion: "",
+  classic_scene: "",
+  render_style: "",
+  position: "",
+  company: "",
+  ratio: "",
   
   // 体型和姿态
-  body_type: "匀称",
-  pose: "站立",
+  body_type: "",
+  pose: "",
   
   // 发型和发色
-  hair_style: "短发",
-  hair_color: "黑色",
+  hair_style: "",
+  hair_color: "",
   
   // 配饰
   accessories: "",
@@ -290,14 +281,14 @@ export const INITIAL_DEFAULTS = {
   character_traits: "",
   
   // Grid defaults
-  grid_pose: "开心地挥手",
+  grid_pose: "",
   
   // Legacy defaults
-  lens_param: "85mm, f/1.8",
-  lighting: "自然光",
-  sticker_core: "小朋友的照片",
-  sticker_decor: "手绘爱心",
-  action_pose: "手拉手",
-  background_scene: "幼儿园教室"
+  lens_param: "",
+  lighting: "",
+  sticker_core: "",
+  sticker_decor: "",
+  action_pose: "",
+  background_scene: ""
 };
 

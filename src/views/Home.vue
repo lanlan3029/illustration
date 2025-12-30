@@ -89,6 +89,28 @@
                                         </div>
                                     </template>
                                 </el-image>
+                                <div class="result-actions">
+                                    <el-button 
+                                        type="primary" 
+                                        size="small"
+                                        @click="collectIllustration"
+                                        :loading="collecting">
+                                        <i class="el-icon-star-on"></i> 收集插画
+                                    </el-button>
+                                    <el-button 
+                                        type="success" 
+                                        size="small"
+                                        @click="downloadIllustration"
+                                        :loading="downloading">
+                                        <i class="el-icon-download"></i> 下载插画
+                                    </el-button>
+                                    <el-button 
+                                        type="danger" 
+                                        size="small"
+                                        @click="clearGeneratedImage">
+                                        <i class="el-icon-delete"></i> 清除
+                                    </el-button>
+                                </div>
                             </div>
                             
                             <!-- 空白框（未生成时显示） -->
@@ -223,6 +245,8 @@ export default {
             copySuccess: false,
             generating: false,
             generatedImageUrl: null,
+            collecting: false,
+            downloading: false,
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
         };
     },
@@ -237,7 +261,17 @@ export default {
             // 组合：主体场景 + 艺术风格 + 元素细节
             const artStyle = this.editableArtStyle.trim() || (this.selectedStyle ? this.selectedStyle.artStyle : '');
             const elementDetails = this.editableElementDetails.trim() || (this.selectedStyle ? this.selectedStyle.elementDetails : '');
-            return `${this.subjectScene.trim()}，${artStyle}，${elementDetails}`;
+            let prompt = `${this.subjectScene.trim()}，${artStyle}，${elementDetails}`;
+            
+            // 判断用户输入是否包含人物相关关键词
+            const subjectSceneStr = this.subjectScene ? String(this.subjectScene) : '';
+            if (subjectSceneStr && this.isCharacterInput(subjectSceneStr)) {
+                // 如果是人物，添加肢体准确性描述
+                const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。';
+                prompt = `${prompt}，${characterAccuracy}`;
+            }
+            
+            return prompt;
         },
     },
     watch: {
@@ -263,6 +297,9 @@ export default {
             this.editableArtStyle = this.styles[0].artStyle;
             this.editableElementDetails = this.styles[0].elementDetails;
         }
+        
+        // 恢复最近生成的插画
+        this.restoreLatestGeneratedImage();
     },
     methods: {
         selectStyle(styleId) {
@@ -363,6 +400,8 @@ export default {
                     
                     if (imageUrl) {
                         this.generatedImageUrl = imageUrl;
+                        // 保存到 localStorage
+                        this.saveGeneratedImageToLocalStorage(imageUrl);
                         ElMessage.success('插画生成成功！');
                     } else {
                         throw new Error('响应中未找到图片URL');
@@ -404,6 +443,214 @@ export default {
             } finally {
                 this.generating = false;
             }
+        },
+        
+        // 收集插画到"我的插画"
+        async collectIllustration() {
+            if (!this.generatedImageUrl) {
+                ElMessage.warning('图片尚未生成，请稍候');
+                return;
+            }
+            
+            // 检查登录状态
+            const token = localStorage.getItem('token') || '';
+            if (!token) {
+                ElMessage.error('请先登录');
+                return;
+            }
+            
+            this.collecting = true;
+            
+            try {
+                // 处理URL格式
+                let pictureValue = this.generatedImageUrl;
+                
+                // 如果是相对路径，转换为完整URL
+                if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
+                    pictureValue = `https://static.kidstory.cc/${pictureValue}`;
+                }
+                
+                // 构建请求数据
+                const requestData = {
+                    picture: pictureValue, // 支持 URL 或 base64
+                    title: this.generatedPrompt || '生成的插画',
+                    description: this.generatedPrompt || '从灵感库生成的插画',
+                    type: 'others' // 默认类别为"其他"
+                };
+                
+                // 发送请求到服务器
+                const response = await this.$http.post('/ill/', requestData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                // 检查响应
+                if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
+                    ElMessage.success('插画已保存到"我的插画"');
+                } else {
+                    throw new Error(response.data?.message || '保存失败');
+                }
+            } catch (error) {
+                console.error('收集插画失败:', error);
+                const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
+                ElMessage.error(`收集插画失败: ${errorMessage}`);
+            } finally {
+                this.collecting = false;
+            }
+        },
+        
+        // 下载插画
+        async downloadIllustration() {
+            if (!this.generatedImageUrl) {
+                ElMessage.warning('图片尚未生成，请稍候');
+                return;
+            }
+            
+            this.downloading = true;
+            
+            try {
+                // 创建一个临时的 a 标签用于下载
+                const link = document.createElement('a');
+                link.href = this.generatedImageUrl;
+                
+                // 设置下载文件名
+                const timestamp = new Date().getTime();
+                const filename = `illustration_${timestamp}.jpg`;
+                link.download = filename;
+                
+                // 如果是跨域图片，需要先转换为 blob
+                if (this.generatedImageUrl.startsWith('http://') || this.generatedImageUrl.startsWith('https://')) {
+                    try {
+                        const response = await fetch(this.generatedImageUrl);
+                        const blob = await response.blob();
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        link.href = blobUrl;
+                        
+                        // 触发下载
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        // 清理 blob URL
+                        setTimeout(() => {
+                            window.URL.revokeObjectURL(blobUrl);
+                        }, 100);
+                        
+                        ElMessage.success('插画下载成功');
+                    } catch (fetchError) {
+                        console.error('下载图片失败:', fetchError);
+                        // 如果 fetch 失败，尝试直接打开链接
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        ElMessage.info('已在新窗口打开图片，请右键保存');
+                    }
+                } else {
+                    // 本地图片或 base64 图片，直接下载
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    ElMessage.success('插画下载成功');
+                }
+            } catch (error) {
+                console.error('下载插画失败:', error);
+                ElMessage.error('下载失败，请重试');
+            } finally {
+                this.downloading = false;
+            }
+        },
+        
+        // 保存生成的插画到 localStorage（只保存最新的一张，覆盖之前的）
+        saveGeneratedImageToLocalStorage(imageUrl) {
+            try {
+                const imageData = {
+                    url: imageUrl,
+                    prompt: this.generatedPrompt || '',
+                    artStyle: this.selectedStyle?.artStyle || '',
+                    timestamp: Date.now()
+                };
+                
+                // 直接保存最新的一张插画，覆盖之前的
+                localStorage.setItem('home_generated_image', JSON.stringify(imageData));
+                console.log('插画已保存到 localStorage');
+            } catch (error) {
+                console.error('保存插画到 localStorage 失败:', error);
+                // 如果存储失败（可能是存储空间不足），尝试清除旧数据
+                try {
+                    localStorage.removeItem('home_generated_image');
+                    const imageData = {
+                        url: imageUrl,
+                        prompt: this.generatedPrompt || '',
+                        artStyle: this.selectedStyle?.artStyle || '',
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem('home_generated_image', JSON.stringify(imageData));
+                } catch (e) {
+                    console.error('清除旧数据后重新保存失败:', e);
+                }
+            }
+        },
+        
+        // 恢复最近生成的插画
+        restoreLatestGeneratedImage() {
+            try {
+                const saved = localStorage.getItem('home_generated_image');
+                if (saved) {
+                    const imageData = JSON.parse(saved);
+                    if (imageData && imageData.url) {
+                        this.generatedImageUrl = imageData.url;
+                        console.log('已恢复最近生成的插画');
+                    }
+                }
+            } catch (error) {
+                console.error('恢复插画失败:', error);
+            }
+        },
+        
+        // 清除生成的插画（删除 localStorage 中的数据并清空显示）
+        clearGeneratedImage() {
+            try {
+                // 删除 localStorage 中的数据
+                localStorage.removeItem('home_generated_image');
+                // 清空当前显示的图片
+                this.generatedImageUrl = null;
+                ElMessage.success('已清除插画数据');
+                console.log('已清除插画数据');
+            } catch (error) {
+                console.error('清除插画数据失败:', error);
+                ElMessage.error('清除失败，请重试');
+            }
+        },
+        
+        // 判断输入内容是否包含人物相关关键词
+        isCharacterInput(input) {
+            // 检查输入是否为字符串类型
+            if (!input || typeof input !== 'string') {
+                return false;
+            }
+            
+            const trimmed = input.trim();
+            if (!trimmed) {
+                return false;
+            }
+            
+            const text = trimmed.toLowerCase();
+            
+            // 人物相关关键词列表
+            const characterKeywords = [
+                '人', '人物', '角色', '角色', '角色',
+                '男孩', '女孩', '男人', '女人', '小孩', '儿童', '孩子', '小朋友',
+                '小动物', '小精灵', '小公主', '王子', '魔法师', '骑士',
+                '老人', '老人', '老年', '青年', '少年', '少女',
+                'baby', 'child', 'children', 'boy', 'girl', 'man', 'woman', 'person', 'people', 'character',
+                'kid', 'kids', 'adult', 'elderly', 'teenager', 'teen'
+            ];
+            
+            // 检查是否包含人物关键词
+            return characterKeywords.some(keyword => text.includes(keyword));
         },
         
         // 压缩图片
@@ -527,7 +774,7 @@ export default {
 /* 主内容区域 */
 .library-main {
     flex: 1;
-    max-width: 1400px;
+    max-width: 80vw;
     margin: 0 auto;
     padding: 24px;
     display: flex;
@@ -909,9 +1156,17 @@ export default {
     height: 100%;
     min-height: 400px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 16px;
+    gap: 16px;
+}
+
+.result-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
 }
 
 .result-title {
@@ -923,16 +1178,14 @@ export default {
 
 .result-image {
     width: 100%;
-    max-height: 500px;
+    aspect-ratio: 4 / 3;
     border-radius: 8px;
     overflow: hidden;
-    background-color: #fff;
 }
 
 .result-image :deep(.el-image__inner) {
     width: 100%;
-    height: auto;
-    max-height: 500px;
+    height: 100%;
     object-fit: contain;
 }
 

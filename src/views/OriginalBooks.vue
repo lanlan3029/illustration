@@ -33,12 +33,14 @@
                   :src="(`https://static.kidstory.cc/`+item.cover)"
                   class="image"
                   fit="cover"
-                  lazy
+                  :lazy="true"
+                  loading="lazy"
+                  :preview-src-list="[]"
                   @click="toDetail(item._id)"
                 >
                   <template #placeholder>
                     <div class="img-placeholder">
-                      <i class="el-icon-picture-outline"></i>
+                      <i class="el-icon-loading"></i>
                     </div>
                   </template>
                   <template #error>
@@ -147,7 +149,7 @@ export default {
         }
         let res=await this.$http.get(url)
         //对象数组，对象包含绘本的name\id\content\description等
-        this.toolArry=res.data.message
+        this.toolArry=res.data.message || []
         
       }catch(err){
         this.loading=false 
@@ -160,20 +162,29 @@ export default {
 
     },
 
-//获取绘本的封面图片
+//获取绘本的封面图片（优化：批量请求，使用 Promise.allSettled 避免单个失败影响整体）
    async getImgUrl(){
     const promises = this.toolArry.map((book, idx) => {
       const firstId = Array.isArray(book.content) ? book.content[0] : null;
-      if (!firstId) return Promise.resolve();
+      if (!firstId) {
+        // 如果没有封面ID，设置默认占位符
+        this.toolArry[idx].cover = '';
+        return Promise.resolve();
+      }
       return this.$http.get(`/ill/` + firstId)
         .then(res => {
-          this.toolArry[idx].cover = res.data.message.content;
+          if (res.data && res.data.message && res.data.message.content) {
+            this.toolArry[idx].cover = res.data.message.content;
+          }
         })
         .catch(err => {
-          console.log(err);
+          console.log(`获取封面失败 (idx: ${idx}):`, err);
+          // 失败时设置空字符串，显示占位符
+          this.toolArry[idx].cover = '';
         });
     });
-    await Promise.all(promises);
+    // 使用 allSettled 确保所有请求都完成，即使部分失败
+    await Promise.allSettled(promises);
    },
     setBooks(){
       this.$store.commit("addBooks",this.toolArry)
@@ -196,8 +207,11 @@ export default {
             this.scrollDisabled = true
             this.loadControl = false
           } else {
-            this.toolArry = books
-            await this.getImgUrl();
+            // 追加到现有数组，而不是替换（无限滚动）
+            const currentLength = this.toolArry.length
+            this.toolArry = [...this.toolArry, ...books]
+            // 只获取新加载的图片URL，避免重复请求
+            await this.getImgUrlForRange(currentLength, books.length);
             await this.setBooks();
             this.num = nextPage;
             this.loadControl=false
@@ -206,6 +220,30 @@ export default {
           this.loadControl = false
         }
       }
+    },
+    
+    // 获取指定范围的图片URL（优化：只加载新数据）
+    async getImgUrlForRange(startIndex, count) {
+      const endIndex = startIndex + count
+      const promises = this.toolArry.slice(startIndex, endIndex).map((book, relativeIdx) => {
+        const idx = startIndex + relativeIdx
+        const firstId = Array.isArray(book.content) ? book.content[0] : null;
+        if (!firstId) {
+          this.toolArry[idx].cover = '';
+          return Promise.resolve();
+        }
+        return this.$http.get(`/ill/` + firstId)
+          .then(res => {
+            if (res.data && res.data.message && res.data.message.content) {
+              this.toolArry[idx].cover = res.data.message.content;
+            }
+          })
+          .catch(err => {
+            console.log(`获取封面失败 (idx: ${idx}):`, err);
+            this.toolArry[idx].cover = '';
+          });
+      });
+      await Promise.allSettled(promises);
     },
 
     handleCollectClick(id) {
@@ -427,11 +465,23 @@ export default {
 }
 .image {
   width: 100%;
-  aspect-ratio: 3 / 2; /* 稳定比例，避免高度不一致 */
+  aspect-ratio: 3 / 2; /* 稳定比例，避免高度不一致，防止 CLS */
   object-fit: cover;
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #f5f6fa;
+}
+
+.image :deep(.el-image__inner) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.image :deep(.el-image__placeholder) {
+  background-color: #f5f6fa;
 }
 
 .item:hover .image {
@@ -440,11 +490,27 @@ export default {
 .img-placeholder, .img-error{
   width: 100%;
   height: 100%;
+  min-height: 200px;
   display:flex;
   align-items:center;
   justify-content:center;
   background:#f5f6fa;
   color:#c0c4cc;
+  aspect-ratio: 3 / 2;
+}
+
+.img-placeholder i {
+  font-size: 24px;
+  animation: rotating 1.5s linear infinite;
+}
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .text {
   margin:1vh 0;

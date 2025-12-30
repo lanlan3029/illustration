@@ -3,6 +3,8 @@ import App from './App.vue'
 import router from './router'
 import customComponents from '@/custom-component' // 注册自定义组件
 import store from './store'
+// Element Plus - 保持全量导入以确保兼容性
+// 如需按需导入，建议使用 unplugin-vue-components（需要额外配置）
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import '@/assets/iconfont/iconfont.css'

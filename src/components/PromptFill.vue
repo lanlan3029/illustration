@@ -247,21 +247,30 @@ export default {
     // 合并后的选择值（用于渲染）
     mergedSelections() {
       const result = {};
-      // 从 store 获取
+      // 从 store 获取（只获取有值的）
       Object.keys(this.$store.state.prompt.selections).forEach(key => {
-        result[key] = this.$store.state.prompt.selections[key];
+        const value = this.$store.state.prompt.selections[key];
+        // 只添加非空值
+        if (value && typeof value === 'string' && value.trim()) {
+          result[key] = value.trim();
+        }
       });
-      // 从本地 varValues 获取（优先级更高）
+      // 从本地 varValues 获取（优先级更高，只获取有值的）
       Object.keys(this.varValues).forEach(key => {
-        const varName = key.split('-')[0];
-        result[varName] = this.varValues[key];
+        const value = this.varValues[key];
+        if (value && typeof value === 'string' && value.trim()) {
+          const varName = key.split('-')[0];
+          result[varName] = value.trim();
+        }
       });
       return result;
     },
     
     renderedPrompt() {
-      if (!this.templateContent) return this.value || '';
-      return renderTemplate(this.templateContent, this.mergedSelections);
+      if (!this.templateContent) return '';
+      const rendered = renderTemplate(this.templateContent, this.mergedSelections);
+      // 如果渲染结果为空或只包含空白字符，返回空字符串
+      return rendered && rendered.trim() ? rendered.trim() : '';
     },
     
     // 最终提示词（简单描述模式：用户输入 + 风格；详细描述模式：模板渲染）
@@ -303,18 +312,49 @@ export default {
     }
   },
   watch: {
+    // 监听 value prop 的变化，当它变为空字符串时，清除内部状态
+    value: {
+      handler(newVal) {
+        if (!newVal || (typeof newVal === 'string' && newVal.trim() === '')) {
+          // 如果 value 变为空，清除所有内部状态和 store 中的 selections
+          this.varValues = {};
+          this.customPromptText = '';
+          // 清除 store 中所有相关的 selections
+          if (this.tokens && this.tokens.length > 0) {
+            this.tokens.forEach(token => {
+              if (token.type === 'var') {
+                this.$store.commit('prompt/setSelection', {
+                  key: token.name,
+                  value: ''
+                });
+              }
+            });
+          }
+        }
+      },
+      immediate: false
+    },
     finalPrompt: {
       handler(newVal) {
-        if (newVal !== this.value) {
-          this.$emit('input', newVal);
+        // 确保空字符串也能正确 emit
+        const finalValue = (newVal && typeof newVal === 'string' && newVal.trim()) ? newVal.trim() : '';
+        const currentValue = (this.value && typeof this.value === 'string' && this.value.trim()) ? this.value.trim() : '';
+        if (finalValue !== currentValue) {
+          this.$emit('input', finalValue);
         }
       },
       immediate: true
     },
     renderedPrompt: {
       handler(newVal) {
-        if (newVal !== this.value && this.selectedTemplate && this.selectedTemplate.id !== 'character-simple') {
-          this.$emit('input', newVal);
+        // 只在详细描述模式下处理
+        if (this.selectedTemplate && this.selectedTemplate.id !== 'character-simple') {
+          // 确保空字符串也能正确 emit
+          const finalValue = (newVal && typeof newVal === 'string' && newVal.trim()) ? newVal.trim() : '';
+          const currentValue = (this.value && typeof this.value === 'string' && this.value.trim()) ? this.value.trim() : '';
+          if (finalValue !== currentValue) {
+            this.$emit('input', finalValue);
+          }
         }
       },
       immediate: true
@@ -330,13 +370,27 @@ export default {
       handler(newSelections) {
         if (this.tokens && this.tokens.length > 0) {
           this.tokens.forEach(token => {
-            if (token.type === 'var' && newSelections[token.name]) {
-              this.varValues[token.key] = newSelections[token.name];
+            if (token.type === 'var') {
+              const value = newSelections[token.name];
+              if (value && typeof value === 'string' && value.trim()) {
+                // 如果有值，更新 varValues
+                this.varValues[token.key] = value;
+              } else {
+                // 如果没有值或为空，清除 varValues 中的对应项
+                // Vue 3 中可以直接使用 delete 操作符
+                if (Object.prototype.hasOwnProperty.call(this.varValues, token.key)) {
+                  delete this.varValues[token.key];
+                }
+              }
             }
           });
+        } else {
+          // 如果没有 tokens，清空所有 varValues
+          this.varValues = {};
         }
       },
-      deep: true
+      deep: true,
+      immediate: false
     },
     // 当 subject 改变时，如果正在选择 clothing，需要更新选项
     '$store.state.prompt.selections.subject'() {
@@ -447,6 +501,11 @@ export default {
     onInputChange(varItem, value) {
       // 实时更新本地值，但不立即同步到 store（等 blur 时同步）
       this.varValues[varItem.key] = value;
+      // 实时更新 finalPrompt，触发 emit
+      this.$nextTick(() => {
+        const finalValue = this.finalPrompt;
+        this.$emit('input', finalValue);
+      });
     },
     
     // 输入框失去焦点时同步到 store
@@ -458,8 +517,8 @@ export default {
         // 检查是否是预设选项，如果不是则作为自定义选项
         const isPresetOption = this.getVarOptions(varItem.name).includes(trimmedValue);
         this.syncToStore(varItem, trimmedValue, !isPresetOption);
-      } else if (!value) {
-        // 如果输入框为空，清除 store 中的值
+      } else {
+        // 如果输入框为空或只有空格，清除 store 中的值
         this.clearVarValue(varItem);
       }
     },
