@@ -31,7 +31,7 @@
                                     :limit="1"
                                     accept="image/jpeg,image/jpg,image/png">
                                     <i class="el-icon-upload"></i>
-                                    <div class="el-upload__text" v-html="$t('createGroupImages.dragUpload')"></div>
+                                    <div class="el-upload__text">{{ $t('createGroupImages.dragUpload') }}</div>
                                     <template #tip>
                                         <div class="el-upload__tip">
                                             {{ $t('createGroupImages.uploadTip') }}
@@ -140,7 +140,10 @@
                             :src="image.url || image" 
                                             fit="cover"
                                             class="cover-image"
-                            :preview-src-list="filteredResultImageUrls">
+                            :preview-src-list="filteredResultImageUrls"
+                            :preview-teleported="true"
+                            :hide-on-click-modal="true"
+                            :z-index="3000">
                                             <template #error>
                                                 <div class="image-slot">
                                                     <i class="el-icon-picture-outline"></i>
@@ -216,9 +219,14 @@ export default {
         filteredResultImageUrls() {
             return (this.resultImages || []).map(img => img.url || img);
         },
-        // 角色标题前缀
+        // 角色标题前缀（只有在有角色ID时才使用角色名称）
         characterTitle() {
-            return this.characterName || this.$t('createGroupImages.groupIllustration');
+            const characterId = localStorage.getItem('lastCharacterId') || localStorage.getItem('viewCharacterId');
+            // 只有在有角色ID的情况下才使用角色名称，否则使用默认名称
+            if (characterId && this.characterName) {
+                return this.characterName;
+            }
+            return this.$t('createGroupImages.groupIllustration');
         }
     },
     mounted() {
@@ -294,7 +302,7 @@ export default {
             try {
                 if (images && images.length > 0) {
                     localStorage.setItem('groupImages', JSON.stringify(images));
-                    console.log('组图已保存到localStorage，共', images.length, '张');
+                    
                 } else {
                     // 如果没有图片，清除localStorage
                     localStorage.removeItem('groupImages');
@@ -383,6 +391,9 @@ export default {
             this.referenceFile = file.raw;
             this.referenceFileList = fileList;
             
+            // 用户上传图片后，清除localStorage中的角色相关信息
+            this.clearCharacterRelatedLocalStorage();
+            
             // 生成预览URL
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -392,6 +403,18 @@ export default {
                 // 读取图片失败
             };
             reader.readAsDataURL(file.raw);
+        },
+        
+        // 清除localStorage中与角色相关的信息
+        // 当用户上传新图片时调用，表示不再使用之前的角色信息
+        clearCharacterRelatedLocalStorage() {
+            // 清除角色图片
+            localStorage.removeItem('characterImage');
+            // 清除角色名称
+            this.characterName = '';
+            localStorage.removeItem('lastCharacterName');
+            // 清除角色ID（因为用户上传的图片与角色无关）
+            localStorage.removeItem('lastCharacterId');
         },
         
         // 删除参考图
@@ -420,10 +443,12 @@ export default {
             
             try {
                 // 过滤掉空的prompt，并在每个prompt前拼接前缀
-                const prefix = '填充简约背景，卡通风格，温馨可爱，大师级作品，人物不要出现畸形，同时将人物做如下修改，';
+                const prefix = this.$t('createGroupImages.promptPrefix');
+                // 根据当前语言环境使用不同的分隔符
+                const separator = this.$i18n.locale.value === 'zh' ? '，' : ', ';
                 const validPrompts = this.prompts
                     .filter(p => p && p.trim())
-                    .map(p => `${prefix}，${p.trim()}`);
+                    .map(p => `${prefix}${separator}${p.trim()}`);
                 
                 // 将参考图转换为Base64（带压缩）
                 let referenceImageBase64 = null;
@@ -822,7 +847,9 @@ export default {
                 
                 // 获取角色ID
                 const characterId = localStorage.getItem('lastCharacterId') || localStorage.getItem('viewCharacterId');
-                const characterTitle = this.characterTitle;
+                // 只有在有角色ID的情况下才使用角色名称，否则使用默认名称
+                const defaultTitle = this.$t('createGroupImages.groupIllustration');
+                const titlePrefix = characterId && this.characterName ? this.characterName : defaultTitle;
                 
                 // 构建请求数据
                 // 后端支持三种方式：
@@ -831,10 +858,10 @@ export default {
                 // 3. URL（新增）- picture 字段为 URL 字符串（自动下载并保存）
                 const requestData = {
                     picture: pictureValue, // 使用 picture 字段，支持 URL 或 base64
-                    title: `${characterTitle} - 第 ${displayOrder} 张`,
-                    description: `${characterTitle} 的第 ${displayOrder} 张插画`,
+                    title: `${titlePrefix} - 第 ${displayOrder} 张`,
+                    description: `${titlePrefix} 的第 ${displayOrder} 张插画`,
                     type: 'others', // 默认类别为"其他"
-                    character_id: characterId || undefined // 直接关联角色ID
+                    character_id: characterId || undefined // 直接关联角色ID（只有在有角色ID时才关联）
                 };
                 
                 // 移除 undefined 的字段
@@ -979,6 +1006,44 @@ export default {
     width: 240px;
     height: 180px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #d9d9d9;
+    border-radius: 8px;
+    background-color: #fafafa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-demo  :deep(.el-upload-dragger:hover) {
+    border-color: #409eff;
+    background-color: #f0f9ff;
+}
+
+.upload-demo  :deep(.el-upload-dragger .el-icon-upload) {
+    font-size: 48px;
+    color: #8c939d;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.upload-demo  :deep(.el-upload-dragger .el-upload__text) {
+    color: #606266;
+    font-size: 14px;
+    text-align: center;
+    line-height: 1.5;
+    margin: 0;
+    display: block;
+}
+
+.upload-demo  :deep(.el-upload__tip) {
+    text-align: center;
+    margin-top: 12px;
+    color: #909399;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .import-section {
@@ -1133,12 +1198,41 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 .cover-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.cover-image :deep(.el-image__inner) {
+    transition: transform 0.3s ease;
+    will-change: transform;
+}
+
+.cover-image :deep(.el-image__preview-wrapper) {
+    will-change: transform, opacity;
+}
+
+/* 优化预览遮罩层，防止闪烁 */
+:deep(.el-image-viewer__wrapper) {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+}
+
+:deep(.el-image-viewer__mask) {
+    transition: opacity 0.3s ease;
+    will-change: opacity;
+}
+
+:deep(.el-image-viewer__canvas) {
+    transition: transform 0.3s ease;
+    will-change: transform;
 }
 
 .image-slot {

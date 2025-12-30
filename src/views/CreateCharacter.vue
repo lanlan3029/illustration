@@ -3,11 +3,11 @@
         <div class="main-layout">
             <!-- 左侧：上传照片、抠图结果和风格选择 -->
             <div class="left-panel">
-                <!-- 上传孩子照片 -->
+                <!-- 上传角色图片 -->
             <div class="panel-box">
                 <el-card class="panel-card" shadow="hover">
                     <div class="panel-content">
-                            <!-- 步骤1：上传照片 -->
+                            <!-- 步骤1：上传角色图片 -->
                             <div v-if="!photoPreviewUrl" class="upload-wrapper">
                                
                                 <el-upload
@@ -24,7 +24,7 @@
                                     accept="image/jpeg,image/jpg,image/png">
                                     <div class="upload-step">{{ $t('createCharacter.uploadPhotoStep') }}</div>
                                   
-                                    <div class="el-upload__text-secondary" v-html="$t('createCharacter.dragUpload')"></div>
+                                    <div class="el-upload__text-secondary">{{ $t('createCharacter.dragUpload') }}</div>
                                     <template #tip>
                                         <div class="el-upload__tip">
                                             {{ $t('createCharacter.uploadTip') }}
@@ -88,9 +88,9 @@
                                 <div class="generate-actions">
                                     <el-button 
                                         type="primary"
-                                        size="medium"
+                                        size="default"
                                         :loading="processing" 
-                                        :disabled="!canGenerate"
+                                    
                                         @click="handleCreateCharacter"
                                         class="btn-generate">
                                         <i class="el-icon-magic-stick"></i>
@@ -187,9 +187,6 @@ export default {
             segmentedImageUrl: null, // 抠图后的图片URL
             segmentedImageData: null, // 抠图后的图片数据（base64或File）
             
-            // 默认参考图（固定使用 r11.png）
-            defaultReferenceImage: require('@/assets/images/r11.png'),
-            
             // 角色分类选项（中文）
        
             
@@ -201,8 +198,7 @@ export default {
             },
             
             // 默认的系统提示词（不显示给用户，会与用户输入的提示词拼接）
-            // 图一：用户上传的图片，图二：参考图
-            defaultPrompt: '将图二的头部替换为图一，“完整呈现角色从头到脚”，全身像，不要影子，图像风格保持不变，画面只保留人物，白色背景，大师级作品',
+            defaultPrompt: '参考图片的人物形象，创作插画角色，完整呈现角色从头到脚，全身像，不要影子，画面只保留人物，白色背景，大师级作品',
             
             // 处理状态
             processing: false, // 风格迁移处理中
@@ -221,12 +217,29 @@ export default {
         // 页面加载时，从 localStorage 恢复角色信息
         this.loadCharacterFromLocalStorage();
     },
+    watch: {
+        'form.prompt'(newVal, oldVal) {
+            console.log('[CreateCharacter] form.prompt changed:', {
+                newVal,
+                oldVal,
+                newValType: typeof newVal,
+                newValLength: newVal ? newVal.length : 0
+            });
+        }
+    },
     computed: {
         canGenerate() {
             // 需要：提示词 + 不在处理中
             // 照片是可选的，可以只用提示词生成
             const promptStr = this.form.prompt ? (typeof this.form.prompt === 'string' ? this.form.prompt.trim() : String(this.form.prompt).trim()) : '';
             const hasPrompt = !!promptStr;
+            console.log('canGenerate check:', {
+                formPrompt: this.form.prompt,
+                promptStr,
+                hasPrompt,
+                processing: this.processing,
+                result: hasPrompt && !this.processing
+            });
             return hasPrompt && !this.processing;
         },
         // 获取正确的图片显示URL
@@ -503,10 +516,82 @@ export default {
         
         // 生成最终角色
         async handleCreateCharacter() {
-            if (!this.canGenerate) {
-                if (!this.form.prompt) {
-                    ElMessage.warning(this.$t('createCharacter.fillPrompt'));
+            // 检查是否正在处理中
+            if (this.processing) {
+                return;
+            }
+            
+            // 添加调试信息
+            console.log('=== handleCreateCharacter called ===');
+            console.log('form.prompt:', this.form.prompt);
+            console.log('form.prompt type:', typeof this.form.prompt);
+            console.log('hasPhoto:', !!this.photoFile);
+            
+            // 获取提示词（支持多种格式）
+            let promptStr = '';
+            if (this.form.prompt) {
+                if (typeof this.form.prompt === 'string') {
+                    promptStr = this.form.prompt.trim();
+                } else {
+                    promptStr = String(this.form.prompt).trim();
                 }
+            }
+            
+            console.log('promptStr after processing:', promptStr);
+            
+            // 构建最终提示词
+            let finalPrompt = '';
+            if (this.photoFile) {
+                // 如果有照片，使用默认提示词（用于图片替换）
+                if (promptStr) {
+                    finalPrompt = `${this.defaultPrompt} ${promptStr}`;
+                } else {
+                    finalPrompt = this.defaultPrompt;
+                }
+            } else {
+                // 如果没有照片，直接使用用户输入的提示词（纯文本生成）
+                // 如果没有提示词，不能生成
+                if (!promptStr) {
+                    console.warn('No prompt and no photo');
+                    ElMessage({
+                        message: this.$t('createCharacter.fillPrompt'),
+                        type: 'warning',
+                        offset: 150
+                    });
+                    return;
+                }
+                finalPrompt = promptStr;
+            }
+            
+            console.log('finalPrompt before character check:', finalPrompt);
+            
+            // 判断用户输入是否包含人物相关关键词，如果是则添加肢体准确性描述
+            if (promptStr && this.isCharacterInput(promptStr)) {
+                const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。';
+                finalPrompt = `${finalPrompt}，${characterAccuracy}`;
+            }
+            
+            console.log('finalPrompt after character check:', finalPrompt);
+            
+            // 最终检查 finalPrompt 是否有内容（去除首尾空格后检查）
+            const trimmedFinalPrompt = finalPrompt ? String(finalPrompt).trim() : '';
+            console.log('trimmedFinalPrompt:', trimmedFinalPrompt, 'length:', trimmedFinalPrompt.length);
+            
+            if (!trimmedFinalPrompt) {
+                // 添加调试信息
+                console.warn('finalPrompt is empty after trim:', {
+                    finalPrompt,
+                    trimmedFinalPrompt,
+                    promptStr,
+                    formPrompt: this.form.prompt,
+                    hasPhoto: !!this.photoFile,
+                    defaultPrompt: this.defaultPrompt
+                });
+                ElMessage({
+                    message: this.$t('createCharacter.fillPrompt'),
+                    type: 'warning',
+                    offset: 150
+                });
                 return;
             }
             
@@ -519,50 +604,19 @@ export default {
             
             try {
                 // 构建请求参数（JSON格式）
-                const requestData = {};
-                
-                // 拼接用户输入的提示词
-                let finalPrompt = '';
-                if (this.photoFile) {
-                    // 如果有照片，使用默认提示词（用于图片替换）
-                    if (this.form.prompt && this.form.prompt.trim()) {
-                        finalPrompt = `${this.defaultPrompt} ${this.form.prompt.trim()}`;
-                    } else {
-                        finalPrompt = this.defaultPrompt;
-                    }
-                } else {
-                    // 如果没有照片，直接使用用户输入的提示词（纯文本生成）
-                    if (this.form.prompt && this.form.prompt.trim()) {
-                        finalPrompt = this.form.prompt.trim();
-                    } else {
-                        throw new Error(this.$t('createCharacter.fillPrompt'));
-                    }
-                }
-                
-                // 判断用户输入是否包含人物相关关键词，如果是则添加肢体准确性描述
-                const promptStr = this.form.prompt ? String(this.form.prompt) : '';
-                if (promptStr && this.isCharacterInput(promptStr)) {
-                    const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。';
-                    finalPrompt = `${finalPrompt}，${characterAccuracy}`;
-                }
-                
-                if (finalPrompt) {
-                    requestData.prompt = finalPrompt;
-                }
+                const requestData = {
+                    prompt: trimmedFinalPrompt,
+                    response_format: 'b64_json',
+
+                };
                 
                 // 如果有照片，处理图片上传
                 if (this.photoFile) {
                     // 将用户上传的照片转换为Base64（压缩以减小文件大小）
                     const userImageBase64 = await this.fileToBase64(this.photoFile, true);
                     
-                    // 使用默认参考图 r11.png
-                    const presetImageBase64 = await this.imageUrlToBase64(this.defaultReferenceImage, true);
-                    
-                    // 组合两张图片，传递给后端
-                    requestData.image = [
-                        userImageBase64,      // 用户上传的图片（Base64）
-                        presetImageBase64     // 脚本预设的图片（Base64）
-                    ];
+                    // 传递用户上传的图片
+                    requestData.image = userImageBase64;
                 }
                 // 如果没有照片，不传递 image 参数，后端将根据提示词直接生成
                 
@@ -1493,7 +1547,7 @@ export default {
     padding-right: 24px;
 }
 
-/* 左侧面板：上传照片和抠图结果 */
+/* 左侧面板：上传图片和抠图结果  */
 .left-panel {
     flex: 0 0 30%;
     display: flex;

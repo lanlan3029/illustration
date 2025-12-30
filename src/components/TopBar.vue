@@ -666,6 +666,7 @@ export default {
 	transition: all 200ms linear;
 	position: relative;
 	padding: 5px 15px !important;
+	cursor: pointer;
 	display: inline-block;
 	text-decoration: none;
 }

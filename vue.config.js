@@ -46,6 +46,10 @@ module.exports = defineConfig({
                 warnings: false,
                 errors: true
             }
+        },
+        // 禁用缓存，确保开发时总是获取最新代码
+        headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
         }
     },
     configureWebpack: {

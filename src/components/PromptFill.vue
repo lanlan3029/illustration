@@ -115,7 +115,7 @@
         <span class="preview-label">{{ $t('promptFill.finalPromptPreview') }}</span>
         <el-button 
           type="text" 
-          size="mini" 
+          size="small" 
           @click="copyPrompt"
           v-if="finalPrompt">
           <i class="el-icon-document-copy"></i> {{ $t('promptFill.copy') }}
@@ -278,17 +278,33 @@ export default {
       if (this.selectedTemplate && this.selectedTemplate.id === 'character-simple') {
         // 简单描述模式：用户输入的内容 + 风格
         const styleText = this.mergedSelections.art_style || '';
+        const elementDetails = this.getElementDetailsForStyle(styleText);
         if (this.customPromptText && styleText) {
-          return `${this.customPromptText}，${styleText}`;
+          return elementDetails ? `${this.customPromptText}，${styleText}，${elementDetails}` : `${this.customPromptText}，${styleText}`;
         } else if (this.customPromptText) {
           return this.customPromptText;
         } else if (styleText) {
-          return styleText;
+          return elementDetails ? `${styleText}，${elementDetails}` : styleText;
         }
         return '';
       } else {
-        // 详细描述模式：使用模板渲染
-        return this.renderedPrompt;
+        // 详细描述模式：使用模板渲染，并在最后添加 elementDetails
+        const rendered = this.renderedPrompt;
+        const styleText = this.mergedSelections.art_style || '';
+        const elementDetails = this.getElementDetailsForStyle(styleText);
+        
+        console.log('[PromptFill] finalPrompt computed:', {
+          selectedTemplate: this.selectedTemplate?.id,
+          rendered,
+          styleText,
+          elementDetails,
+          mergedSelections: this.mergedSelections
+        });
+        
+        if (rendered && elementDetails) {
+          return `${rendered}，${elementDetails}`;
+        }
+        return rendered;
       }
     },
     
@@ -314,21 +330,31 @@ export default {
   watch: {
     // 监听 value prop 的变化，当它变为空字符串时，清除内部状态
     value: {
-      handler(newVal) {
+      handler(newVal, oldVal) {
+        console.log('[PromptFill] value watch:', {
+          newVal,
+          oldVal,
+          willClear: !newVal || (typeof newVal === 'string' && newVal.trim() === '')
+        });
+        
         if (!newVal || (typeof newVal === 'string' && newVal.trim() === '')) {
           // 如果 value 变为空，清除所有内部状态和 store 中的 selections
-          this.varValues = {};
-          this.customPromptText = '';
-          // 清除 store 中所有相关的 selections
-          if (this.tokens && this.tokens.length > 0) {
-            this.tokens.forEach(token => {
-              if (token.type === 'var') {
-                this.$store.commit('prompt/setSelection', {
-                  key: token.name,
-                  value: ''
-                });
-              }
-            });
+          // 但只有在确实是从有值变为空值时才清除（避免初始化时的误清除）
+          if (oldVal && oldVal.trim && oldVal.trim() !== '') {
+            console.log('[PromptFill] Clearing internal state because value became empty');
+            this.varValues = {};
+            this.customPromptText = '';
+            // 清除 store 中所有相关的 selections
+            if (this.tokens && this.tokens.length > 0) {
+              this.tokens.forEach(token => {
+                if (token.type === 'var') {
+                  this.$store.commit('prompt/setSelection', {
+                    key: token.name,
+                    value: ''
+                  });
+                }
+              });
+            }
           }
         }
       },
@@ -339,11 +365,24 @@ export default {
         // 确保空字符串也能正确 emit
         const finalValue = (newVal && typeof newVal === 'string' && newVal.trim()) ? newVal.trim() : '';
         const currentValue = (this.value && typeof this.value === 'string' && this.value.trim()) ? this.value.trim() : '';
+        
+        console.log('[PromptFill] finalPrompt watch:', {
+          newVal,
+          finalValue,
+          currentValue,
+          willEmit: finalValue !== currentValue
+        });
+        
+        // 只要值不同就 emit，确保父组件能接收到更新
+        // Vue 3 中 v-model 使用 update:modelValue，但为了兼容也 emit input
         if (finalValue !== currentValue) {
+          console.log('[PromptFill] Emitting input and update:modelValue:', finalValue);
           this.$emit('input', finalValue);
+          this.$emit('update:modelValue', finalValue);
         }
       },
-      immediate: true
+      immediate: true,
+      deep: false
     },
     renderedPrompt: {
       handler(newVal) {
@@ -354,6 +393,7 @@ export default {
           const currentValue = (this.value && typeof this.value === 'string' && this.value.trim()) ? this.value.trim() : '';
           if (finalValue !== currentValue) {
             this.$emit('input', finalValue);
+            this.$emit('update:modelValue', finalValue);
           }
         }
       },
@@ -495,6 +535,11 @@ export default {
     selectOption(varItem, option) {
       this.varValues[varItem.key] = option;
       this.syncToStore(varItem, option, false);
+      // 立即更新 finalPrompt 并 emit
+      this.$nextTick(() => {
+        const finalValue = this.finalPrompt;
+        this.$emit('input', finalValue);
+      });
     },
     
     // 输入框内容变化
@@ -520,6 +565,11 @@ export default {
       } else {
         // 如果输入框为空或只有空格，清除 store 中的值
         this.clearVarValue(varItem);
+        // 清除后也要更新 finalPrompt
+        this.$nextTick(() => {
+          const finalValue = this.finalPrompt;
+          this.$emit('input', finalValue);
+        });
       }
     },
     
@@ -530,6 +580,11 @@ export default {
         value: value,
         bankId: varItem.name,
         createOption: createOption
+      });
+      // 同步后立即更新 finalPrompt 并 emit
+      this.$nextTick(() => {
+        const finalValue = this.finalPrompt;
+        this.$emit('input', finalValue);
       });
     },
     
@@ -599,6 +654,11 @@ export default {
     getTranslatedOption(varName, option) {
       if (!option) return option;
       
+      // 对于 art_style，选项已经是中文（与首页一致），直接返回，不需要翻译
+      if (varName === 'art_style') {
+        return option;
+      }
+      
       // 尝试获取翻译
       const i18nKey = `promptBanks.options.${varName}.${option}`;
       const translatedOption = this.$t(i18nKey);
@@ -615,6 +675,49 @@ export default {
     isVarFilled(varName) {
       const value = this.$store.getters['prompt/selection'](varName) || this.varValues[`${varName}-0`];
       return value && value.trim() !== '';
+    },
+    
+    // 根据风格名称获取对应的 elementDetails
+    getElementDetailsForStyle(styleName) {
+      if (!styleName || !styleName.trim()) {
+        return '';
+      }
+      
+      // 风格 key 到 artStyle 名称的映射（从 Home.vue 的 styleConfigs 获取）
+      const styleKeyMap = {
+        'healingWatercolor': '治愈系水彩',
+        'penLineArt': '钢笔线稿插画',
+        'colorfulOutlineRomanticism': '梦幻童话风格',
+        'crayonNoiseHandDrawn': '蜡笔噪点手绘',
+        'vintageSketch': '复古绘本草图',
+        'pixarStyle': '皮克斯风格动画',
+        'engravingLines': '凹版印刷线条',
+        'pencilSketch3D': '铅笔素描3D图',
+        'feltCollage': '薄片毛毡拼贴画',
+        'collageIllustration': '拼贴风格插画',
+        'doodleSoul': '绘本涂鸦/灵魂画手',
+        'abstractFlatDesign': '抽象平面设计',
+        'simpleCartoon': '简洁卡通插画',
+        'oilPainting': '油画风格',
+        'blackWhiteDoodle': '黑白涂鸦风',
+        'rusticHandDrawn': '质朴手绘风格',
+        'maximalistCopperplate': '极繁铜版印刷',
+        'keithHaringDoodle': 'Keith Haring 涂鸦'
+      };
+      
+      // 通过 artStyle 名称找到对应的 key
+      const styleKey = Object.keys(styleKeyMap).find(key => styleKeyMap[key] === styleName.trim());
+      
+      if (styleKey) {
+        // 尝试获取国际化翻译
+        const elementDetails = this.$t(`aibooks.styles.${styleKey}.elementDetails`);
+        // 如果翻译存在且不是 key 本身，返回翻译
+        if (elementDetails && elementDetails !== `aibooks.styles.${styleKey}.elementDetails`) {
+          return elementDetails;
+        }
+      }
+      
+      return '';
     },
     
     getCategoryVars(categoryId) {
@@ -662,6 +765,7 @@ export default {
       this.customPromptText = value;
       // 实时更新最终提示词
       this.$emit('input', this.finalPrompt);
+      this.$emit('update:modelValue', this.finalPrompt);
     },
     
     // 简单描述模式下选择风格
@@ -675,6 +779,7 @@ export default {
       });
       // 更新最终提示词
       this.$emit('input', this.finalPrompt);
+      this.$emit('update:modelValue', this.finalPrompt);
     },
     
     handleTemplateAction(command) {

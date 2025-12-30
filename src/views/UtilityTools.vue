@@ -24,7 +24,7 @@
                   accept=".png, .jpg, .jpeg, .JPG, .JPEG"
                 >
                   <i class="el-icon-upload"></i>
-                  <div class="el-upload__text" v-html="$t('utilityTools.dragUpload')"></div>
+                  <div class="el-upload__text">{{ $t('utilityTools.dragUpload') }}</div>
                   <template #tip>
                     <div class="el-upload__tip">{{ $t('utilityTools.uploadTip') }}</div>
                   </template>

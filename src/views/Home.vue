@@ -63,18 +63,8 @@
                         <div class="image-display-area">
                             <!-- 生成进度提示 -->
                             <div v-if="generating" class="generating-progress">
-                                <div class="progress-container">
-                                    <el-progress
-                                        :percentage="100"
-                                        status="active"
-                                        :stroke-width="12"
-                                        class="progress-bar">
-                                    </el-progress>
-                                    <p class="progress-text">
                                         <i class="el-icon-loading"></i>
-                                        {{ $t('home.generating') }}
-                                    </p>
-                                </div>
+                                <p>{{ $t('home.generating') }}</p>
                             </div>
                             
                             <!-- 生成结果展示 -->
@@ -174,16 +164,14 @@
 </template>
 
 <script>
-import { getCurrentInstance, computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
 
 export default {
     name: 'InspirationLibrary',
     setup() {
-        const { proxy } = getCurrentInstance()
         const { t, locale } = useI18n()
         
         // WebP 支持检测
@@ -230,8 +218,6 @@ export default {
         })
         
         return {
-            $http: proxy?.$http || axios,
-            $message: proxy?.$message || ElMessage,
             styles,
             locale
         }
@@ -1021,36 +1007,27 @@ export default {
 }
 
 .generating-progress {
-    width: 100%;
-    background-color: #f5f7fa;
-    border-radius: 8px;
-    padding: 40px 20px;
-    border: 1px solid #ebeef5;
-    min-height: 200px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-.progress-container {
-    width: 100%;
-    max-width: 400px;
-}
-
-.progress-bar {
-    margin-bottom: 20px;
-}
-
-.progress-text {
     text-align: center;
-    color: #606266;
-    font-size: 14px;
-    margin: 0;
+    color: #909399;
+    width: 100%;
+    flex: 1;
 }
 
-.progress-text i {
-    margin-right: 8px;
+.generating-progress i {
+    font-size: 64px;
+    color: #c0c4cc;
+    margin-bottom: 16px;
+    display: block;
     animation: rotating 2s linear infinite;
+}
+
+.generating-progress p {
+    margin: 0;
+    text-align: center;
 }
 
 @keyframes rotating {
