@@ -18,18 +18,31 @@
     "warning": "Warning"
   },
   "nav": {
+    "home": "Home",
     "aiIllustration": "AI Illustration",
     "aiBooks": "AI Picture Book",
     "creation": "Creation",
     "createCharacter": "Create Character",
     "createGroupImages": "Create Group Images",
-    "createIllustration": "Create Illustration",
+    "createLayoutIllustration": "Layout Editor Creation",
+    "createIllustration": "DIY Illustration",
     "composeBook": "Compose Book",
     "myWorks": "My Works",
     "accountSettings": "Account Settings",
     "subscription": "Subscription",
     "connection": "Connection",
     "promptFill": "PromptTool"
+  },
+  "home": {
+    "welcomeTitle": "Welcome to Illustration Creation Platform",
+    "welcomeSubtitle": "Choose the creation feature you want to use",
+    "aiIllustrationDesc": "Generate beautiful illustrations quickly with AI technology",
+    "aiBooksDesc": "AI-powered storybook generation",
+    "createCharacterDesc": "Create your own character",
+    "createGroupImagesDesc": "Generate multiple images for characters",
+    "createIllustrationDesc": "Freely create illustration works",
+    "createLayoutIllustrationDesc": "Create multi-character illustrations with layout editor",
+    "composeBookDesc": "Compose illustrations into storybooks"
   },
   "aibooks": {
     "title": "Create Picture Book",
@@ -124,7 +137,7 @@
       }
     }
   },
-  "home": {
+  "aiPicture": {
     "title": "Art Style List",
     "generateIllustration": "Generate Illustration",
     "artStyle": "Art Style:",
@@ -270,6 +283,55 @@
     "saveFailedRetry": "Save failed, please try again",
     "promptPrefix": "Keep the image style unchanged, master-level work, (if there is a character, the character should not be deformed) the main subject is modified as follows: "
   },
+  "createLayoutIllustration": {
+    "myCharacters": "My Characters",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "noCharacters": "No characters yet",
+    "createCharacter": "Create Character",
+    "unnamedCharacter": "Unnamed Character",
+    "layoutEditor": "Layout Editor",
+    "promptSettings": "Prompt Settings",
+    "character": "Character {number}",
+        "promptPlaceholder": "Enter description for {character}...",
+        "dragCharacterHint": "Drag characters from the left to the layout editor",
+        "backgroundPrompt": "Other Prompt",
+        "backgroundPromptPlaceholder": "e.g., white background, clean and simple, no extra elements",
+       
+        "result": "Result",
+    "startGenerate": "Start Generate",
+    "generating": "Generating...",
+    "generatingWait": "Generating, please wait...",
+    "resultPlaceholder": "Generated result will be displayed here",
+    "save": "Save",
+    "download": "Download",
+    "pleaseLogin": "Please login first",
+    "loadCharactersFailed": "Failed to load character list",
+    "characterAdded": "Character added to layout",
+    "fillPrompt": "Please fill in prompt for each character",
+    "generateSuccess": "Generate successful",
+    "generateFailed": "Generation failed, please try again",
+    "noImageUrl": "No image URL received",
+    "savedTitle": "Layout Editor Creation",
+    "savedDescription": "Illustration created with layout editor",
+    "saveSuccess": "Save successful",
+    "saveFailed": "Save failed",
+    "downloadSuccess": "Download successful",
+    "downloadFailed": "Download failed",
+    "position": "Position",
+    "size": "Size",
+    "width": "Width",
+    "height": "Height",
+    "positionLeft": "Located on the left side of the image",
+    "positionRight": "Located on the right side of the image",
+    "positionCenter": "Located in the center of the image",
+    "positionTop": "top",
+    "positionBottom": "bottom",
+    "positionMiddle": "middle",
+    "sizeLarge": "large size",
+    "sizeSmall": "small size",
+    "sizeMedium": "medium size"
+  },
   "createCharacter": {
     "uploadPhoto": "Upload Image (Optional)",
     "uploadPhotoStep": "Step 1: Upload Image (Optional)",
@@ -317,7 +379,8 @@
     "processFailed": "Processing failed: {message}",
     "cannotGetImageUrl": "Cannot get character image URL, please ensure the image was generated successfully",
     "characterNameRequired": "Character name cannot be empty",
-    "creationFailed": "Creation failed, please try again"
+    "creationFailed": "Creation failed, please try again",
+    "defaultPrompt": "Based on the character image in the reference picture, create a single illustration character — a complete full-body portrait with clear details from the top of the head to the soles of the feet. The character should have well-proportioned limbs with no truncation, no shadows included, and only the character retained in the frame against a white background. A masterpiece-level work."
   },
   "creation": {
     "canvasRatio": "Canvas Ratio:",
@@ -349,7 +412,14 @@
     "saveFailedRetry": "Save failed, please try again",
     "canvasCleared": "Canvas cleared",
     "image": "Image",
-    "aiComposedImage": "AI Composed Image"
+    "aiComposedImage": "AI Composed Image",
+    "optimizedResult": "Optimized Result",
+    "addToCanvas": "Add to Canvas",
+    "download": "Download",
+    "downloadSuccess": "Download successful",
+    "imageAddedToCanvas": "Image added to canvas",
+    "optimizedIllustration": "Optimized Illustration",
+    "optimizedFromCanvas": "Optimized from canvas"
   },
   "componentList": {
     "insertText": "Insert Text",

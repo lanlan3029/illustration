@@ -198,7 +198,7 @@ export default {
             },
             
             // 默认的系统提示词（不显示给用户，会与用户输入的提示词拼接）
-            defaultPrompt: '参考图片的人物形象，创作插画角色，完整呈现角色从头到脚，全身像，不要影子，画面只保留人物，白色背景，大师级作品',
+            // 使用国际化，根据当前语言环境自动切换
             
             // 处理状态
             processing: false, // 风格迁移处理中
@@ -218,28 +218,17 @@ export default {
         this.loadCharacterFromLocalStorage();
     },
     watch: {
-        'form.prompt'(newVal, oldVal) {
-            console.log('[CreateCharacter] form.prompt changed:', {
-                newVal,
-                oldVal,
-                newValType: typeof newVal,
-                newValLength: newVal ? newVal.length : 0
-            });
-        }
     },
     computed: {
+        // 默认的系统提示词（根据当前语言环境自动切换）
+        defaultPrompt() {
+            return this.$t('createCharacter.defaultPrompt');
+        },
         canGenerate() {
             // 需要：提示词 + 不在处理中
             // 照片是可选的，可以只用提示词生成
             const promptStr = this.form.prompt ? (typeof this.form.prompt === 'string' ? this.form.prompt.trim() : String(this.form.prompt).trim()) : '';
             const hasPrompt = !!promptStr;
-            console.log('canGenerate check:', {
-                formPrompt: this.form.prompt,
-                promptStr,
-                hasPrompt,
-                processing: this.processing,
-                result: hasPrompt && !this.processing
-            });
             return hasPrompt && !this.processing;
         },
         // 获取正确的图片显示URL
@@ -284,9 +273,6 @@ export default {
             const reader = new FileReader();
             reader.onload = (e) => {
                 this.photoPreviewUrl = e.target.result;
-                this.$nextTick(() => {
-                    console.log('照片预览URL已设置:', this.photoPreviewUrl ? '已设置' : '未设置');
-                });
             };
             reader.onerror = () => {
                 ElMessage.error(this.$t('createCharacter.readImageFailed'));
@@ -374,8 +360,6 @@ export default {
                     throw new Error(errorMsg);
                 }
             } catch (error) {
-                console.error('抠图失败:', error);
-                
                 let errorMessage = '抠图失败，请重试';
                 
                 if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
@@ -473,7 +457,6 @@ export default {
                     reader.readAsDataURL(fileToConvert);
                 });
             } catch (error) {
-                console.error('转换文件为Base64失败:', error);
                 // 如果压缩失败，尝试不压缩直接转换
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -509,8 +492,8 @@ export default {
                     });
                 }
             } catch (error) {
-                console.error('转换图片URL为Base64失败:', error);
-              
+                // 图片URL转换失败，使用原始URL
+                return imageUrl;
             }
         },
         
@@ -521,12 +504,6 @@ export default {
                 return;
             }
             
-            // 添加调试信息
-            console.log('=== handleCreateCharacter called ===');
-            console.log('form.prompt:', this.form.prompt);
-            console.log('form.prompt type:', typeof this.form.prompt);
-            console.log('hasPhoto:', !!this.photoFile);
-            
             // 获取提示词（支持多种格式）
             let promptStr = '';
             if (this.form.prompt) {
@@ -536,8 +513,6 @@ export default {
                     promptStr = String(this.form.prompt).trim();
                 }
             }
-            
-            console.log('promptStr after processing:', promptStr);
             
             // 构建最终提示词
             let finalPrompt = '';
@@ -552,7 +527,6 @@ export default {
                 // 如果没有照片，直接使用用户输入的提示词（纯文本生成）
                 // 如果没有提示词，不能生成
                 if (!promptStr) {
-                    console.warn('No prompt and no photo');
                     ElMessage({
                         message: this.$t('createCharacter.fillPrompt'),
                         type: 'warning',
@@ -563,30 +537,16 @@ export default {
                 finalPrompt = promptStr;
             }
             
-            console.log('finalPrompt before character check:', finalPrompt);
-            
             // 判断用户输入是否包含人物相关关键词，如果是则添加肢体准确性描述
             if (promptStr && this.isCharacterInput(promptStr)) {
                 const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。';
                 finalPrompt = `${finalPrompt}，${characterAccuracy}`;
             }
             
-            console.log('finalPrompt after character check:', finalPrompt);
-            
             // 最终检查 finalPrompt 是否有内容（去除首尾空格后检查）
             const trimmedFinalPrompt = finalPrompt ? String(finalPrompt).trim() : '';
-            console.log('trimmedFinalPrompt:', trimmedFinalPrompt, 'length:', trimmedFinalPrompt.length);
             
             if (!trimmedFinalPrompt) {
-                // 添加调试信息
-                console.warn('finalPrompt is empty after trim:', {
-                    finalPrompt,
-                    trimmedFinalPrompt,
-                    promptStr,
-                    formPrompt: this.form.prompt,
-                    hasPhoto: !!this.photoFile,
-                    defaultPrompt: this.defaultPrompt
-                });
                 ElMessage({
                     message: this.$t('createCharacter.fillPrompt'),
                     type: 'warning',
@@ -626,7 +586,7 @@ export default {
                 }
                 
                 // 可选：图片尺寸
-                requestData.size = '1280x960';
+                requestData.size = '960x1280';
                 
                 // 调用创建角色API
                 const apiUrl = this.apiBaseUrl 
@@ -723,7 +683,7 @@ export default {
                     }
                     
                     if (!this.resultImageUrl) {
-                        console.warn('未找到图片URL，但角色创建成功');
+                        // 未找到图片URL，但角色创建成功
                     }
                     
                     // 保存角色信息到 localStorage，以便页面切换后恢复
@@ -738,8 +698,6 @@ export default {
                     throw new Error(errorMsg);
                 }
             } catch (error) {
-                console.error('创建角色失败:', error);
-                
                 // 处理特定错误
                 let errorMessage = this.$t('createCharacter.createCharacterFailed');
                 
@@ -769,7 +727,6 @@ export default {
         
         // 将base64转换为File对象
         base64ToFile(base64String, filename = 'image.png') {
-            try {
                 // 处理data URI格式
                 let base64Data = base64String;
                 let mimeType = 'image/png';
@@ -793,10 +750,6 @@ export default {
                 
                 // 创建File对象
                 return new File([byteArray], filename, { type: mimeType });
-            } catch (error) {
-                console.error('Base64转File失败:', error);
-                throw error;
-            }
         },
         
         // 图像分割：抠图只保留主体
@@ -851,8 +804,6 @@ export default {
                     });
                 } catch (fileError) {
                     // 如果File转换失败，使用JSON方式发送base64
-                    console.warn('File转换失败，使用JSON方式发送base64:', fileError);
-                    
                     // 提取base64数据（去掉data:image/xxx;base64,前缀）
                     let base64Data = imageUrl;
                     if (imageUrl.includes(',')) {
@@ -956,7 +907,6 @@ export default {
                     query: { mode: 'character' }
                 });
             } catch (error) {
-                console.error('收集角色失败:', error);
                 ElMessage.error(this.$t('createCharacter.collectCharacterFailed', { message: error.message || this.$t('common.error') }));
             }
         },
@@ -1056,7 +1006,6 @@ export default {
                         window.URL.revokeObjectURL(url);
                     } catch (fetchError) {
                         // 如果fetch失败（可能是CORS问题），尝试直接打开链接
-                        console.warn('Fetch失败，尝试直接下载:', fetchError);
                         const link = document.createElement('a');
                         link.href = imageUrl;
                         link.download = `character_${Date.now()}.jpg`;
@@ -1070,7 +1019,6 @@ export default {
                 
                 ElMessage.success(this.$t('createCharacter.downloadSuccess'));
             } catch (error) {
-                console.error('下载失败:', error);
                 ElMessage.error(this.$t('createCharacter.downloadFailed', { message: error.message || this.$t('common.error') }));
             } finally {
                 this.downloading = false;
@@ -1121,7 +1069,6 @@ export default {
                             throw new Error(createResponse.data?.message || this.$t('createCharacter.createCharacterFailed'));
                         }
                     } catch (error) {
-                        console.error('创建角色失败:', error);
                         ElMessage.error(this.$t('createCharacter.createCharacterFailedError', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
                         return;
                     }
@@ -1148,7 +1095,6 @@ export default {
                 // 跳转到创作插画页面
                 this.$router.push('/creation');
             } catch (error) {
-                console.error('创作插画失败:', error);
                 ElMessage.error(this.$t('createCharacter.processFailed', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
             }
         },
@@ -1197,7 +1143,6 @@ export default {
                             throw new Error(createResponse.data?.message || this.$t('createCharacter.createCharacterFailed'));
                         }
                     } catch (error) {
-                        console.error('创建角色失败:', error);
                         ElMessage.error(this.$t('createCharacter.createCharacterFailedError', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
                         return;
                     }
@@ -1224,14 +1169,12 @@ export default {
                 // 跳转到创作组图页面
                 this.$router.push('/create-group-images');
             } catch (error) {
-                console.error('创作组图失败:', error);
                 ElMessage.error(this.$t('createCharacter.processFailed', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
             }
         },
         
         // 保存角色到后台
         async saveCharacter(result) {
-            try {
                 // 获取图片URL，优先使用外部URL（API要求必需参数）
                 let imageUrl = result.image_url || result.character_image_url || this.resultImageUrl || '';
                 
@@ -1268,7 +1211,6 @@ export default {
                 // 如果还是没有外部URL，尝试使用 base64（某些后端可能支持）
                 // 但优先记录警告
                 if (!imageUrl || imageUrl.startsWith('data:')) {
-                    console.warn('未找到外部URL，尝试使用base64格式保存');
                     // 如果确实只有 base64，使用 base64
                     if (this.resultImageUrl && this.resultImageUrl.startsWith('data:')) {
                         imageUrl = this.resultImageUrl;
@@ -1282,20 +1224,7 @@ export default {
                 
                 // 验证必需参数
                 if (!imageUrl) {
-                    console.error('保存角色失败：无法获取图片URL');
-                    console.error('result:', result);
-                    console.error('resultImageData:', this.resultImageData);
-                    console.error('resultImageUrl:', this.resultImageUrl);
                     throw new Error(this.$t('createCharacter.cannotGetImageUrl'));
-                }
-                
-                // 检查是否是 base64 格式
-                const isBase64 = imageUrl.startsWith('data:');
-                if (isBase64) {
-                    console.warn('保存角色：使用 base64 格式的图片URL（后端可能不支持）');
-                    console.warn('imageUrl 长度:', imageUrl.length);
-                } else {
-                    console.log('保存角色：使用外部URL:', imageUrl.substring(0, 100) + '...');
                 }
                 
                 // 构建请求数据（符合API规范）
@@ -1330,11 +1259,6 @@ export default {
                     ? `${this.apiBaseUrl}/character`
                     : '/character';
                 
-                console.log('保存角色请求URL:', apiUrl);
-                console.log('保存角色请求数据:', {
-                    ...saveData,
-                    image_url: isBase64 ? `[Base64, 长度: ${imageUrl.length}]` : saveData.image_url
-                });
                 
                 const response = await this.$http.post(apiUrl, saveData, {
                     headers: {
@@ -1352,12 +1276,10 @@ export default {
                         localStorage.setItem('lastCharacterId', String(characterId));
                         // 记录已保存的角色ID，避免重复保存
                         this.savedCharacterId = characterId;
-                        console.log('角色保存成功，ID:', characterId);
                     }
                     
                     // 如果后端返回了保存后的角色信息（包括 image_url），使用后端返回的URL
                     if (savedCharacter.image_url && !savedCharacter.image_url.startsWith('data:')) {
-                        console.log('使用后端返回的图片URL:', savedCharacter.image_url.substring(0, 100) + '...');
                         // 更新 resultImageData 和 resultImageUrl，确保后续使用正确的URL
                         if (this.resultImageData) {
                             this.resultImageData.image_url = savedCharacter.image_url;
@@ -1369,11 +1291,6 @@ export default {
                     return true; // 保存成功，返回 true
                 } else {
                     throw new Error(response.data?.message || '保存角色失败');
-                }
-            } catch (error) {
-                console.error('保存角色失败:', error);
-                
-                
             }
         },
         
@@ -1392,7 +1309,7 @@ export default {
                 };
                 localStorage.setItem('createCharacter_data', JSON.stringify(characterData));
             } catch (error) {
-                console.error('保存角色信息到 localStorage 失败:', error);
+                // localStorage 保存失败，静默处理（不影响主要功能）
             }
         },
         
@@ -1427,24 +1344,20 @@ export default {
                         // 优先使用 localStorage 中保存的 savedCharacterId
                         if (characterData.savedCharacterId) {
                             this.savedCharacterId = characterData.savedCharacterId;
-                            console.log('已恢复已保存的角色ID:', characterData.savedCharacterId);
                         } else {
                             // 如果没有，检查 lastCharacterId（向后兼容）
                             const lastCharacterId = localStorage.getItem('lastCharacterId');
                             if (lastCharacterId) {
                                 this.savedCharacterId = lastCharacterId;
-                                console.log('已恢复已保存的角色ID (从lastCharacterId):', lastCharacterId);
                             }
                         }
                         
-                        console.log('已从 localStorage 恢复角色信息');
                     } else {
                         // 数据过期，清理
                         localStorage.removeItem('createCharacter_data');
                     }
                 }
             } catch (error) {
-                console.error('从 localStorage 恢复角色信息失败:', error);
                 // 如果解析失败，清理损坏的数据
                 localStorage.removeItem('createCharacter_data');
             }
@@ -1455,7 +1368,7 @@ export default {
             try {
                 localStorage.removeItem('createCharacter_data');
             } catch (error) {
-                console.error('清理 localStorage 中的角色信息失败:', error);
+                // localStorage 删除失败，静默处理（不影响主要功能）
             }
         },
         

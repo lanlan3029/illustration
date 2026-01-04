@@ -39,7 +39,7 @@
             <div class="card-image" @click="goCharacterGroupImages(item.id || item._id)">
               <el-image
                 :src="getImageUrl(item.image_url)"
-                fit="cover"
+                fit="contain"
                 class="cover-image"
               >
                 <template #error>

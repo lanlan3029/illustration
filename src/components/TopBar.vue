@@ -12,7 +12,10 @@
         <ul class="navbar-nav">
           <!-- 菜单项 -->
           <li class="nav-item" :class="{ 'active': route.path === '/' }">
-            <router-link to="/" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiIllustration') }}</router-link>
+            <router-link to="/" class="nav-link" @click="closeSubmenu">{{ $t('nav.home') || '首页' }}</router-link>
+          </li>
+          <li class="nav-item" :class="{ 'active': route.path === '/ai-picture' }">
+            <router-link to="/ai-picture" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiIllustration') }}</router-link>
           </li>
           <li class="nav-item" :class="{ 'active': route.path === '/AIbooks' }">
             <router-link to="/AIbooks" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiBooks') }}</router-link>
@@ -25,6 +28,7 @@
             <ul class="dropdown-menu">
               <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createCharacter') }}</router-link></li>
               <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createGroupImages') }}</router-link></li>
+              <li><router-link to="/create-layout-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createLayoutIllustration') }}</router-link></li>
               <li><router-link to="/creation" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createIllustration') }}</router-link></li>
               <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.composeBook') }}</router-link></li>
             </ul>

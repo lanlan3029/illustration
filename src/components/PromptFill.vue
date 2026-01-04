@@ -293,14 +293,6 @@ export default {
         const styleText = this.mergedSelections.art_style || '';
         const elementDetails = this.getElementDetailsForStyle(styleText);
         
-        console.log('[PromptFill] finalPrompt computed:', {
-          selectedTemplate: this.selectedTemplate?.id,
-          rendered,
-          styleText,
-          elementDetails,
-          mergedSelections: this.mergedSelections
-        });
-        
         if (rendered && elementDetails) {
           return `${rendered}，${elementDetails}`;
         }
@@ -331,17 +323,10 @@ export default {
     // 监听 value prop 的变化，当它变为空字符串时，清除内部状态
     value: {
       handler(newVal, oldVal) {
-        console.log('[PromptFill] value watch:', {
-          newVal,
-          oldVal,
-          willClear: !newVal || (typeof newVal === 'string' && newVal.trim() === '')
-        });
-        
         if (!newVal || (typeof newVal === 'string' && newVal.trim() === '')) {
           // 如果 value 变为空，清除所有内部状态和 store 中的 selections
           // 但只有在确实是从有值变为空值时才清除（避免初始化时的误清除）
           if (oldVal && oldVal.trim && oldVal.trim() !== '') {
-            console.log('[PromptFill] Clearing internal state because value became empty');
             this.varValues = {};
             this.customPromptText = '';
             // 清除 store 中所有相关的 selections
@@ -366,17 +351,9 @@ export default {
         const finalValue = (newVal && typeof newVal === 'string' && newVal.trim()) ? newVal.trim() : '';
         const currentValue = (this.value && typeof this.value === 'string' && this.value.trim()) ? this.value.trim() : '';
         
-        console.log('[PromptFill] finalPrompt watch:', {
-          newVal,
-          finalValue,
-          currentValue,
-          willEmit: finalValue !== currentValue
-        });
-        
         // 只要值不同就 emit，确保父组件能接收到更新
         // Vue 3 中 v-model 使用 update:modelValue，但为了兼容也 emit input
         if (finalValue !== currentValue) {
-          console.log('[PromptFill] Emitting input and update:modelValue:', finalValue);
           this.$emit('input', finalValue);
           this.$emit('update:modelValue', finalValue);
         }

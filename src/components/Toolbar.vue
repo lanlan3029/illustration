@@ -28,10 +28,46 @@
             >{{ $t('toolbar.save') }}</label>
             <label class="insert" @click="deleteDraft">{{ $t('toolbar.clear') }}</label>
             <label class="export" @click="AICompose">{{ $t('toolbar.smartOptimize') }}</label>
-              
-           
-                          
         </div>
+        
+        <!-- 智能优化结果弹窗 -->
+        <el-dialog
+            :title="$t('toolbar.optimizedResult') || '智能优化结果'"
+            v-model="showOptimizedDialog"
+            width="800px"
+            :close-on-click-modal="false">
+            <div class="optimized-result-content">
+                <div v-if="optimizedImageUrl" class="result-image-wrapper">
+                    <el-image
+                        :src="optimizedImageUrl"
+                        fit="contain"
+                        class="optimized-image"
+                        :preview-src-list="[optimizedImageUrl]">
+                        <template #error>
+                            <div class="image-slot">
+                                <i class="el-icon-picture-outline"></i>
+                                <p>图片加载失败</p>
+                            </div>
+                        </template>
+                    </el-image>
+                    <div class="result-actions">
+                        <el-button 
+                            type="primary" 
+                            @click="addOptimizedImageToCanvas">
+                            <i class="el-icon-plus"></i> {{ $t('toolbar.addToCanvas') || '添加到画布' }}
+                        </el-button>
+                        <el-button 
+                            @click="downloadOptimizedImage">
+                            <i class="el-icon-download"></i> {{ $t('toolbar.download') || '下载' }}
+                        </el-button>
+                        <el-button 
+                            @click="saveOptimizedImage">
+                            <i class="el-icon-check"></i> {{ $t('toolbar.save') }}
+                        </el-button>
+                    </div>
+                </div>
+            </div>
+        </el-dialog>
     </div>
 </template>
 <script>
@@ -60,7 +96,10 @@ export default {
                 'borderWidth',
             ],
             draftArry:[],
-            isSaved: false // 是否已保存，用于控制保存按钮状态
+            isSaved: false, // 是否已保存，用于控制保存按钮状态
+            optimizedImageUrl: null, // 智能优化后的图片URL
+            showOptimizedDialog: false, // 是否显示优化结果弹窗
+            apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '' // API基础URL
         }
     },
     components:{
@@ -189,7 +228,7 @@ export default {
             const canvasBase64 = canvas.toDataURL("image/jpeg", 0.92);
             
             // 提示词
-            const prompt = "高清修复，4K 分辨率，绘图精细度 30，保留各图元原始特征；统一风格：儿童彩铅插画风格，色调柔和清新；智能优化：边缘过渡自然，消除拼接痕迹，比例协调，画面整体统一；negative prompt: 元素错位，边缘生硬，风格割裂，拼接痕迹明显，比例失衡";
+            const prompt = "高清修复，4K 分辨率，绘图精细度 30，保留各图元原始特征；统一风格：儿童插画风格，色调柔和清新；智能优化：边缘过渡自然，消除拼接痕迹，比例协调，画面整体统一；negative prompt: 元素错位，边缘生硬，风格割裂，拼接痕迹明显，比例失衡";
             
             // 更新加载提示
             loading.message = this.$t('toolbar.aiComposing');
@@ -244,33 +283,10 @@ export default {
                 }
                 
                 if (imageUrl) {
-                    // 将生成的图片添加到画布中
-                    const img = new Image();
-                    img.onload = () => {
-                        // 将图片数据传输到vuex中
-                        this.$store.commit("addComponent", {
-                            component: {
-                                ...commonAttr,
-                                id: generateID(),
-                                component: "Picture",
-                                label: this.$t('toolbar.aiComposedImage'),
-                                icon: "",
-                                propValue: imageUrl,
-                                style: {
-                                    ...commonStyle,
-                                    top: 0,
-                                    left: 0,
-                                    width: img.width,
-                                    height: img.height,
-                                }
-                            }
-                        });
-                        ElMessage.success('AI智能合成成功！图片已添加到画布');
-                    };
-                    img.onerror = () => {
-                        ElMessage.error('图片加载失败，请检查图片数据');
-                    };
-                    img.src = imageUrl;
+                    // 保存优化后的图片URL，显示在结果区域
+                    this.optimizedImageUrl = imageUrl;
+                    this.showOptimizedDialog = true;
+                    ElMessage.success('AI智能优化成功！');
                 } else {
                     throw new Error('响应中未找到图片数据');
                 }
@@ -456,6 +472,91 @@ export default {
         // 隐藏右键菜单
         this.$store.commit('hideContextMenu');
         ElMessage.success(this.$t('toolbar.canvasCleared'));
+       },
+       
+       // 将优化后的图片添加到画布
+       addOptimizedImageToCanvas() {
+           if (!this.optimizedImageUrl) return;
+           
+           const img = new Image();
+           img.onload = () => {
+               // 将图片数据传输到vuex中
+               this.$store.commit("addComponent", {
+                   component: {
+                       ...commonAttr,
+                       id: generateID(),
+                       component: "Picture",
+                       label: this.$t('toolbar.aiComposedImage'),
+                       icon: "",
+                       propValue: this.optimizedImageUrl,
+                       style: {
+                           ...commonStyle,
+                           top: 0,
+                           left: 0,
+                           width: img.width,
+                           height: img.height,
+                       }
+                   }
+               });
+               ElMessage.success(this.$t('toolbar.imageAddedToCanvas') || '图片已添加到画布');
+           };
+           img.onerror = () => {
+               ElMessage.error('图片加载失败，请检查图片数据');
+           };
+           img.src = this.optimizedImageUrl;
+       },
+       
+       // 下载优化后的图片
+       downloadOptimizedImage() {
+           if (!this.optimizedImageUrl) return;
+           
+           const link = document.createElement('a');
+           link.href = this.optimizedImageUrl;
+           link.download = `optimized-image-${Date.now()}.jpg`;
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+           ElMessage.success(this.$t('toolbar.downloadSuccess') || '下载成功');
+       },
+       
+       // 保存优化后的图片到"我的插画"
+       async saveOptimizedImage() {
+           if (!this.optimizedImageUrl) return;
+           
+           try {
+               const token = localStorage.getItem('token') || '';
+               if (!token) {
+                   ElMessage.warning(this.$t('toolbar.pleaseLogin'));
+                   return;
+               }
+               
+               // 构建请求数据
+               const requestData = {
+                   picture: this.optimizedImageUrl,
+                   title: this.$t('toolbar.optimizedIllustration') || '智能优化插画',
+                   description: this.$t('toolbar.optimizedFromCanvas') || '从画布智能优化生成',
+                   type: 'others'
+               };
+               
+               // 调用保存插画接口
+               const response = await this.$http.post('/ill/', requestData, {
+                   headers: {
+                       'Content-Type': 'application/json',
+                       'Authorization': 'Bearer ' + token
+                   }
+               });
+               
+               // 检查响应
+               if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
+                   ElMessage.success(this.$t('toolbar.saveSuccess'));
+               } else {
+                   throw new Error(response.data?.message || this.$t('toolbar.saveFailed'));
+               }
+           } catch (error) {
+               console.error('保存优化图片失败:', error);
+               const errorMessage = error.response?.data?.message || error.message || this.$t('toolbar.saveFailedRetry');
+               ElMessage.error(`${this.$t('toolbar.saveFailed')}: ${errorMessage}`);
+           }
        }
     }
 }
@@ -538,6 +639,46 @@ export default {
 .export:active{
     transform: translateY(0);
     box-shadow: 0 1px 2px rgba(113, 197, 99, 0.2);
+}
+
+.optimized-result-content {
+    text-align: center;
+}
+
+.result-image-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.optimized-image {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.result-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.image-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 300px;
+    background: #f5f7fa;
+    color: #909399;
+}
+
+.image-slot i {
+    font-size: 48px;
+    margin-bottom: 12px;
 }
 
 </style>

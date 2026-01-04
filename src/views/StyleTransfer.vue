@@ -163,23 +163,24 @@ export default {
             stylePreviewUrl: '',
             styleDialogVisible: false,
             selectedStyleIndex: null, // 当前选中的预设风格索引
-            // 预设风格图片列表 - 只保留三张
+            // 预设风格图片列表 - 使用占位符或移除
             stylePresets: [
-                {
-                    name: '参考图1',
-                    url: require('@/assets/images/reference1.jpg'),
-                    id: 'reference1'
-                },
-                {
-                    name: '参考图2',
-                    url: require('@/assets/images/reference2.jpg'),
-                    id: 'reference2'
-                },
-                {
-                    name: '参考图3',
-                    url: require('@/assets/images/reference3.jpg'),
-                    id: 'reference3'
-                }
+                // 如果图片文件不存在，可以移除这些预设或使用占位符
+                // {
+                //     name: '参考图1',
+                //     url: require('@/assets/images/reference1.jpg'),
+                //     id: 'reference1'
+                // },
+                // {
+                //     name: '参考图2',
+                //     url: require('@/assets/images/reference2.jpg'),
+                //     id: 'reference2'
+                // },
+                // {
+                //     name: '参考图3',
+                //     url: require('@/assets/images/reference3.jpg'),
+                //     id: 'reference3'
+                // }
             ],
             // 表单数据
             form: {
