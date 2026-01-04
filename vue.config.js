@@ -66,28 +66,50 @@ module.exports = defineConfig({
         optimization: {
             splitChunks: {
                 chunks: 'all',
+                minSize: 20000, // 最小 chunk 大小（20KB）
+                maxSize: 244000, // 最大 chunk 大小（244KB，符合推荐限制）
                 cacheGroups: {
                     // 将 Element Plus 单独打包
                     elementPlus: {
                         name: 'chunk-elementPlus',
                         test: /[\\/]node_modules[\\/]element-plus[\\/]/,
-                        priority: 20,
-                        chunks: 'all'
+                        priority: 30,
+                        chunks: 'all',
+                        enforce: true
                     },
                     // 将 Element Plus 图标单独打包
                     elementPlusIcons: {
                         name: 'chunk-elementPlusIcons',
                         test: /[\\/]node_modules[\\/]@element-plus[\\/]icons-vue[\\/]/,
-                        priority: 20,
-                        chunks: 'all'
+                        priority: 25,
+                        chunks: 'all',
+                        enforce: true
                     },
-                    // 将其他大型库单独打包
+                    // 将 Vue 相关库单独打包
+                    vue: {
+                        name: 'chunk-vue',
+                        test: /[\\/]node_modules[\\/](vue|vue-router|vuex|pinia)[\\/]/,
+                        priority: 20,
+                        chunks: 'all',
+                        enforce: true
+                    },
+                    // 将 Axios 等工具库单独打包
+                    utils: {
+                        name: 'chunk-utils',
+                        test: /[\\/]node_modules[\\/](axios|@vueuse)[\\/]/,
+                        priority: 15,
+                        chunks: 'all',
+                        enforce: true
+                    },
+                    // 将其他大型库单独打包（限制大小）
                     libs: {
                         name: 'chunk-libs',
                         test: /[\\/]node_modules[\\/]/,
                         priority: 10,
                         chunks: 'all',
-                        minChunks: 1
+                        minChunks: 1,
+                        maxSize: 244000, // 限制单个 chunk 大小
+                        reuseExistingChunk: true
                     },
                     // 公共代码
                     common: {

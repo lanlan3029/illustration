@@ -112,24 +112,24 @@ export default {
         return {
             // 风格图片配置（与 AIpicture.vue 中的 styleConfigs 保持一致）
             styleImages: [
-                { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.png') },
-                { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.png') },
-                { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.png') },
-                { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.png') },
-                { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.png') },
-                { key: 'engravingLines', id: 7, image: require('@/assets/prompt/7.png') },
-                { key: 'pencilSketch3D', id: 16, image: require('@/assets/prompt/16.png') },
-                { key: 'feltCollage', id: 18, image: require('@/assets/prompt/18.png') },
-                { key: 'blackWhiteDoodle', id: 2, image: require('@/assets/prompt/2.png') },
-                { key: 'collageIllustration', id: 4, image: require('@/assets/prompt/4.png') },
-                { key: 'rusticHandDrawn', id: 8, image: require('@/assets/prompt/8.png') },
-                { key: 'maximalistCopperplate', id: 9, image: require('@/assets/prompt/9.png') },
-                { key: 'doodleSoul', id: 10, image: require('@/assets/prompt/10.png') },
-                { key: 'keithHaringDoodle', id: 11, image: require('@/assets/prompt/11.png') },
-                { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.png') },
-                { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.png') },
-                { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.png') },
-                { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.png') }
+                { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.webp') },
+                { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.webp') },
+                { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.webp') },
+                { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.webp') },
+                { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.webp') },
+                { key: 'engravingLines', id: 7, image: require('@/assets/prompt/7.webp') },
+                { key: 'pencilSketch3D', id: 16, image: require('@/assets/prompt/16.webp') },
+                { key: 'feltCollage', id: 18, image: require('@/assets/prompt/18.webp') },
+                { key: 'blackWhiteDoodle', id: 2, image: require('@/assets/prompt/2.webp') },
+                { key: 'collageIllustration', id: 4, image: require('@/assets/prompt/4.webp') },
+                { key: 'rusticHandDrawn', id: 8, image: require('@/assets/prompt/8.webp') },
+                { key: 'maximalistCopperplate', id: 9, image: require('@/assets/prompt/9.webp') },
+                { key: 'doodleSoul', id: 10, image: require('@/assets/prompt/10.webp') },
+                { key: 'keithHaringDoodle', id: 11, image: require('@/assets/prompt/11.webp') },
+                { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.webp') },
+                { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.webp') },
+                { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp') },
+                { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') }
             ]
         };
     },
