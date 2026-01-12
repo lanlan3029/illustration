@@ -447,6 +447,18 @@ export default {
               ElMessage.info(this.$t('upload.updatingBook'));
               
               try {
+                // 获取 token
+                const token = localStorage.getItem('token');
+                if (!token || token === 'undefined') {
+                  ElMessage.error({
+                    message: this.$t('upload.loginRequired') || '请先登录',
+                    offset: 100
+                  });
+                  this.disabled = false;
+                  this.$router.push('/');
+                  return;
+                }
+                
                 // 更新基本信息（title, description, type）
                 const updateResponse = await this.$http.put(`/book/${this.bookId}`, {
                   title: this.form.name,
@@ -455,7 +467,7 @@ export default {
                 }, {
                   headers: {
                     'Content-Type': 'application/json',
-                    "Authorization": "Bearer " + localStorage.getItem("token")
+                    'Authorization': `Bearer ${token}`
                   }
                 });
                 
@@ -497,6 +509,18 @@ export default {
                 this.disabled = false;
               }
             } else {
+              // 获取 token
+              const token = localStorage.getItem('token');
+              if (!token || token === 'undefined') {
+                ElMessage.error({
+                  message: this.$t('upload.loginRequired') || '请先登录',
+                  offset: 100
+                });
+                this.disabled = false;
+                this.$router.push('/');
+                return;
+              }
+              
               // 新建模式：只添加新上传的文件
               this.fileList.forEach((file) => {
                 formData.append('pictures', file);
@@ -507,7 +531,7 @@ export default {
               const response = await this.$http.post(`/book/`, formData, {
                 headers: {
                   'Content-Type': 'multipart/form-data',
-                  "Authorization": "Bearer " + localStorage.getItem("token")
+                  'Authorization': `Bearer ${token}`
                 }
               });
               
@@ -549,10 +573,22 @@ export default {
           this.disabled = true;
           ElMessage.info(this.$t('upload.loadingBookData'));
           
+          // 获取 token
+          const token = localStorage.getItem('token');
+          if (!token || token === 'undefined') {
+            ElMessage.error({
+              message: this.$t('upload.loginRequired') || '请先登录',
+              offset: 100
+            });
+            this.disabled = false;
+            this.$router.push('/');
+            return;
+          }
+          
           // 根据其他文件的实现，API路径是 /book/ + id
           const response = await this.$http.get(`/book/` + bookId, {
             headers: {
-              'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+              'Authorization': `Bearer ${token}`
             }
           });
           
