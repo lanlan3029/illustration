@@ -749,7 +749,14 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     async getIll(){
       this.loadingIll = true; // 开始加载
       try{
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id)
+          // 获取 token 并添加到请求头
+          const token = localStorage.getItem('token');
+          const headers = {};
+          if (token && token !== 'undefined') {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id, { headers })
           // 根据API响应格式处理数据
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
             this.illArr = res.data.message || [];
@@ -770,7 +777,14 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     async getBook(){
       this.loadingBooks = true; // 开始加载
       try{
-          let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id)
+          // 获取 token 并添加到请求头
+          const token = localStorage.getItem('token');
+          const headers = {};
+          if (token && token !== 'undefined') {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id, { headers })
           // 根据API响应格式处理数据
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
             this.toolArr = res.data.message || [];
@@ -802,13 +816,20 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       this.loadingBookCovers = true;
       const coverPromises = [];
       
+      // 获取 token 并添加到请求头
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token && token !== 'undefined') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       for(let i = 0; i < this.toolArr.length; i++){
         const book = this.toolArr[i];
         if(book.content && book.content.length > 0 && typeof book.content[0] === 'string'){
           // 如果第一项是图片ID（字符串），需要获取URL
           const coverId = book.content[0];
           coverPromises.push(
-            this.$http.get(`/ill/${coverId}`)
+            this.$http.get(`/ill/${coverId}`, { headers })
               .then(res => {
                 if(res.data && res.data.message && res.data.message.content){
                   // 只更新封面（第一张图片）
@@ -829,6 +850,13 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     
     // 后台加载所有图片URL（不阻塞显示）
     async loadAllBookImages(){
+      // 获取 token 并添加到请求头
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token && token !== 'undefined') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       for(let i = 0; i < this.toolArr.length; i++){
         const book = this.toolArr[i];
         if(book.content && Array.isArray(book.content)){
@@ -837,7 +865,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
             if(typeof book.content[j] === 'string'){
               // 如果是图片ID（字符串），需要获取URL
               try{
-                const res = await this.$http.get(`/ill/${book.content[j]}`);
+                const res = await this.$http.get(`/ill/${book.content[j]}`, { headers });
                 if(res.data && res.data.message && res.data.message.content){
                   this.toolArr[i].content[j] = res.data.message.content;
                   // 更新store中的数据
@@ -854,6 +882,13 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
     
     //获取我的绘本的图片（保留原方法，以防需要）
     async getImgUrl(){
+      // 获取 token 并添加到请求头
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token && token !== 'undefined') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       for(var i=0;i<this.toolArr.length;i++){
         //获取绘本图片ID
         let tool=this.toolArr[i].content
@@ -862,7 +897,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           if(typeof tool[j] === 'string'){
             // 如果是图片ID（字符串），需要获取URL
             try{
-              let res=await this.$http.get(`/ill/`+tool[j])
+              let res=await this.$http.get(`/ill/`+tool[j], { headers })
               this.toolArr[i].content[j]=res.data.message.content
             } catch(err){
               console.log(err)

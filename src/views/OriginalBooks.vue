@@ -147,7 +147,15 @@ export default {
         if (this.button2 && this.button2.trim() !== '') {
           url += `&type=${this.button2}`;
         }
-        let res=await this.$http.get(url)
+        
+        // 获取 token 并添加到请求头
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token && token !== 'undefined') {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        let res=await this.$http.get(url, { headers })
         //对象数组，对象包含绘本的name\id\content\description等
         this.toolArry=res.data.message || []
         
@@ -164,6 +172,13 @@ export default {
 
 //获取绘本的封面图片（优化：批量请求，使用 Promise.allSettled 避免单个失败影响整体）
    async getImgUrl(){
+    // 获取 token 并添加到请求头
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const promises = this.toolArry.map((book, idx) => {
       const firstId = Array.isArray(book.content) ? book.content[0] : null;
       if (!firstId) {
@@ -171,7 +186,7 @@ export default {
         this.toolArry[idx].cover = '';
         return Promise.resolve();
       }
-      return this.$http.get(`/ill/` + firstId)
+      return this.$http.get(`/ill/` + firstId, { headers })
         .then(res => {
           if (res.data && res.data.message && res.data.message.content) {
             this.toolArry[idx].cover = res.data.message.content;
@@ -201,7 +216,15 @@ export default {
           if (this.button2 && this.button2.trim() !== '') {
             url += `&type=${this.button2}`;
           }
-          let res = await this.$http.get(url)
+          
+          // 获取 token 并添加到请求头
+          const token = localStorage.getItem('token');
+          const headers = {};
+          if (token && token !== 'undefined') {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          let res = await this.$http.get(url, { headers })
           const books = res.data?.message || res.data?.data || [];
           if (!Array.isArray(books) || books.length === 0) {
             this.scrollDisabled = true
@@ -224,6 +247,13 @@ export default {
     
     // 获取指定范围的图片URL（优化：只加载新数据）
     async getImgUrlForRange(startIndex, count) {
+      // 获取 token 并添加到请求头
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token && token !== 'undefined') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const endIndex = startIndex + count
       const promises = this.toolArry.slice(startIndex, endIndex).map((book, relativeIdx) => {
         const idx = startIndex + relativeIdx
@@ -232,7 +262,7 @@ export default {
           this.toolArry[idx].cover = '';
           return Promise.resolve();
         }
-        return this.$http.get(`/ill/` + firstId)
+        return this.$http.get(`/ill/` + firstId, { headers })
           .then(res => {
             if (res.data && res.data.message && res.data.message.content) {
               this.toolArry[idx].cover = res.data.message.content;
@@ -286,7 +316,7 @@ export default {
         type: "book"
       }, {
         headers: {
-          "Authorization": "Bearer " + token
+          'Authorization': `Bearer ${token}`
         }
       })
       .then((response) => {
@@ -325,9 +355,10 @@ export default {
     },
 
     performCancelCollect(bookId, collectRecordId) {
+      const token = localStorage.getItem('token');
       this.$http.delete(`/user/list/collect?id=${collectRecordId}`, {
         headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          'Authorization': `Bearer ${token}`
         }
       })
       .then((response) => {
@@ -353,7 +384,7 @@ export default {
         }
         const res = await this.$http.get(`/user/list/collect?id=${userId}&category=book`, {
           headers: {
-            "Authorization": "Bearer " + token
+            'Authorization': `Bearer ${token}`
           }
         });
         if (res.data.desc === "success" || res.data.code === 0) {

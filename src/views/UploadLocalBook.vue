@@ -627,7 +627,11 @@ export default {
                 // 如果是图片ID，需要获取URL
                 else if (typeof item === 'string' && !item.includes('/') && !item.includes('upload') && !item.startsWith('http')) {
                   try {
-                    const res = await this.$http.get(`/ill/${item}`);
+                    const res = await this.$http.get(`/ill/${item}`, {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    });
                     if (res.data && res.data.message && res.data.message.content) {
                       imageUrl = res.data.message.content;
                       console.log(`图片 ${i + 1}: 从ID获取URL`, item, '->', imageUrl);
