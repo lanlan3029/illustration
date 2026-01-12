@@ -28,6 +28,25 @@
 
             <transition name="form-fade" mode="out-in">
               <div v-if="countLog" key="login" class="form">
+                <!-- 微信登录按钮（首选） -->
+                <el-button 
+                  @click="wechatLogin" 
+                  class="btn btn-wechat"
+                  :loading="wechatLoading"
+                  type="primary"
+                >
+                  <i class="el-icon-message" style="margin-right: 8px;"></i>
+                  {{ $t('loginRegister.wechatLogin') }}
+                </el-button>
+                <div class="wechat-desc">{{ $t('loginRegister.wechatLoginDesc') }}</div>
+                
+                <!-- 分隔线 -->
+                <div class="divider-wrapper">
+                  <el-divider>
+                    <span class="divider-text">{{ $t('loginRegister.accountLogin') }}</span>
+                  </el-divider>
+                </div>
+
                 <div class="form-group">
                   <div class="input-wrapper">
                     <i class="el-icon-user input-icon"></i>
@@ -134,6 +153,7 @@ export default {
         
         const countLog = ref(true)
         const loading = ref(false)
+        const wechatLoading = ref(false)
         const count = ref({
             name: "",
             pwd: ""
@@ -146,6 +166,10 @@ export default {
         
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
+        
+        // 微信登录配置（需要替换为实际的 AppID）
+        const WECHAT_APPID = process.env.VUE_APP_WECHAT_APPID || 'YOUR_WECHAT_APPID'
+        const WECHAT_REDIRECT_URI = encodeURIComponent(`${window.location.origin}/wechat/callback`)
         
         const onInputFocus = (e) => {
             e.target.parentElement.classList.add('focused')
@@ -182,6 +206,30 @@ export default {
                     store.commit('showMask')
                 }
             }
+        }
+       
+        // 微信登录
+        const wechatLogin = () => {
+            if (!WECHAT_APPID || WECHAT_APPID === 'YOUR_WECHAT_APPID') {
+                $message({
+                    message: '微信登录配置未完成，请联系管理员',
+                    type: 'error',
+                    offset: 180,
+                })
+                return
+            }
+
+            wechatLoading.value = true
+            
+            // 生成 state 参数（用于防止 CSRF 攻击）
+            const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+            localStorage.setItem('wechat_state', state)
+            
+            // 构建微信授权 URL
+            const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${WECHAT_APPID}&redirect_uri=${WECHAT_REDIRECT_URI}&response_type=code&scope=snsapi_login&state=${state}#wechat_redirect`
+            
+            // 跳转到微信授权页面
+            window.location.href = wechatAuthUrl
         }
        
         //登陆
@@ -307,10 +355,12 @@ export default {
             userid,
             emailCount,
             loading,
+            wechatLoading,
             closeMask,
             countIn,
             getUser,
             login,
+            wechatLogin,
             register,
             toregister,
             onInputFocus,
@@ -499,12 +549,6 @@ export default {
   }
 }
 
-.divider-wrapper {
-  height: 20px;
-  display: flex;
-  align-items: center;
-}
-
 .form {
   display: flex;
   flex-direction: column;
@@ -577,6 +621,43 @@ export default {
   transition: all 0.3s ease;
   border: none;
   cursor: pointer;
+}
+
+/* 微信登录按钮样式 */
+.btn-wechat {
+  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+  margin-bottom: 12px;
+}
+
+.btn-wechat:hover {
+  background: linear-gradient(135deg, #06ad56 0%, #059948 100%);
+  box-shadow: 0 6px 16px rgba(7, 193, 96, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-wechat:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(7, 193, 96, 0.3);
+}
+
+.wechat-desc {
+  text-align: center;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 20px;
+}
+
+.divider-wrapper {
+  margin: 20px 0;
+}
+
+.divider-text {
+  color: #909399;
+  font-size: 12px;
+  padding: 0 10px;
+  background: #fff;
 }
 
 .btn-primary {

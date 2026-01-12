@@ -9,6 +9,11 @@ const routes = [{
         component: () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
     },
     {
+        path: '/wechat/callback',
+        name: 'WeChatCallback',
+        component: () => import(/* webpackChunkName: "wechat-callback" */ '../views/WeChatCallback.vue')
+    },
+    {
         path: '/ai-picture',
         name: 'AIPicture',
         component: () => import(/* webpackChunkName: "ai-picture" */ '../views/AIpicture.vue')

@@ -1017,6 +1017,8 @@
     }
   },
   "loginRegister": {
+    "wechatLogin": "微信登录",
+    "wechatLoginDesc": "使用微信扫码快速登录",
     "accountLogin": "账号登录",
     "register": "注册",
     "enterEmail": "请输入邮箱",
@@ -1031,6 +1033,7 @@
     "loginFailed": "登录失败，请稍后重试",
     "requestTimeout": "请求超时，请检查网络连接",
     "networkError": "网络错误，请检查网络连接",
+    "wechatLoginFailed": "微信登录失败，请稍后重试",
     "loginFailedShort": "登录失败",
     "registerSuccess": "注册成功，请登陆吧",
     "registerFailed": "注册失败，请稍后重试",
@@ -1050,5 +1053,12 @@
     "description": "抱歉，您访问的页面不存在或已被移除",
     "backHome": "返回首页",
     "goBack": "返回上一页"
+  },
+  "wechatCallback": {
+    "processing": "正在处理微信登录...",
+    "loginSuccess": "微信登录成功",
+    "loginFailed": "微信登录失败，请稍后重试",
+    "invalidState": "登录验证失败，请重新登录",
+    "noCode": "未获取到授权码，请重新登录"
   }
 }

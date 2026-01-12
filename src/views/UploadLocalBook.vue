@@ -9,13 +9,15 @@
         action="https://api.kidstory.cc/picture/"
         list-type="picture-card"
         :auto-upload="false"
+        :before-upload="beforeUpload"
         :on-change="fileChange"
         :on-preview="handlePictureCardPreview"
         :on-remove="handleRemove"
         :file-list="uploadFileList"
         accept=".png, .jpg, .jpeg, .JPG, .JPEG"
         multiple
-        :limit="30"
+        :limit="20"
+        :limit-size="31457280"
         class="upload-wrapper"
     >
       <template #default>
@@ -62,6 +64,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { InfoFilled, Plus } from '@element-plus/icons-vue'
+import imageCompression from 'browser-image-compression'
 
 export default {
   components: {
@@ -100,7 +103,82 @@ export default {
         this.dialogImageUrl = file.url;
         this.dialogVisible = true;
       },
-      fileChange(file, fileList) {
+      // 上传前的钩子，用于绕过默认的文件大小限制检查
+      beforeUpload(file) {
+        // 单文件大小限制：30MB
+        const maxSize = 30 * 1024 * 1024; // 30MB
+        if (file.size > maxSize) {
+          ElMessage.error({
+            message: `文件 "${file.name}" 大小超过 30MB，请选择较小的文件`,
+            offset: 100
+          });
+          return false; // 阻止上传
+        }
+        // 返回 true 允许继续处理（因为我们使用 :auto-upload="false"）
+        return true;
+      },
+      async fileChange(file, fileList) {
+        // 检查文件大小（30MB = 31457280 bytes）
+        if (file.raw) {
+          const maxSize = 30 * 1024 * 1024; // 30MB
+          if (file.raw.size > maxSize) {
+            ElMessage.error({
+              message: `文件 "${file.name}" 大小超过 30MB，请选择较小的文件`,
+              offset: 100
+            });
+            // 从文件列表中移除该文件
+            const index = fileList.findIndex(item => item.uid === file.uid);
+            if (index > -1) {
+              fileList.splice(index, 1);
+            }
+            this.updateFileLists(fileList);
+            return;
+          }
+          
+          // PNG 转 JPEG 压缩（大幅减小文件大小）
+          const isPNG = file.raw.type === 'image/png' || 
+                       file.name.toLowerCase().endsWith('.png');
+          
+          if (isPNG) {
+            try {
+              // 保存原始文件大小（用于计算压缩率）
+              const originalFileSize = file.raw.size;
+              const originalSize = (originalFileSize / 1024 / 1024).toFixed(2);
+              
+              // 压缩配置：PNG 转 JPEG，压缩到 1MB 以内
+              const options = {
+                maxSizeMB: 1,                    // 目标文件大小 1MB
+                maxWidthOrHeight: 1920,          // 最大尺寸 1920px
+                fileType: 'image/jpeg',          // 转换为 JPEG
+                initialQuality: 0.85,            // 初始质量 85%
+                useWebWorker: true               // 使用 Web Worker
+              };
+              
+              // 执行压缩
+              const compressedFile = await imageCompression(file.raw, options);
+              
+              // 更新文件对象
+              file.raw = compressedFile;
+              file.size = compressedFile.size;
+              
+              const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+              const reduction = ((1 - compressedFile.size / originalFileSize) * 100).toFixed(1);
+              
+              ElMessage.success({
+                message: `图片 "${file.name}" 已压缩：${originalSize}MB → ${compressedSize}MB (减少 ${reduction}%)`,
+                duration: 3000,
+                offset: 100
+              });
+            } catch (error) {
+              console.error('图片压缩失败:', error);
+              ElMessage.warning({
+                message: `图片 "${file.name}" 压缩失败，将使用原图`,
+                offset: 100
+              });
+            }
+          }
+        }
+        
         // 确保新文件有正确的格式
         if (file.raw && !file.url) {
           // 为新文件创建预览 URL

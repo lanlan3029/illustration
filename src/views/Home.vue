@@ -78,7 +78,7 @@
                 <p class="card-description">{{ $t('home.composeBookDesc') || '将插画合成为绘本' }}</p>
             </el-card>
                 </div>
-            </div>
+                            </div>
 
             <!-- 风格图片滚动区域 - 右侧显示 -->
             <div class="style-images-sidebar">
@@ -101,7 +101,7 @@
                     </template>
                 </div>
             </div>
-        </div>
+            </div>
     </div>
 </template>
 
@@ -140,7 +140,7 @@ export default {
             const imagesPerRow = 3;
             for (let i = 0; i < this.styleImages.length; i += imagesPerRow) {
                 rows.push(this.styleImages.slice(i, i + imagesPerRow));
-            }
+        }
             return rows;
         }
     },
@@ -165,7 +165,7 @@ export default {
         },
         goToComposeBook() {
             this.$router.push('/user/upload/compose-illustration');
-        }
+            }
     }
 }
 </script>
@@ -330,7 +330,7 @@ export default {
 
 /* AI绘本 - 书本图标 */
 .feature-card.icon-card-book :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23409eff' d='M832 384H576V128H192v768h640V384zm-26.496-64L640 154.496V320h165.504zM160 64h448l256 256v608a32 32 0 0 1-32 32H160a32 32 0 0 1-32-32V96a32 32 0 0 1 32-32zm160 448h384v64H320v-64zm0-192h192v64H320v-64zm0 384h384v64H320v-64z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M21.17 2.06A13 13 0 0 0 19 1.87a12.94 12.94 0 0 0-7 2.05a12.94 12.94 0 0 0-7-2a13 13 0 0 0-2.17.19a1 1 0 0 0-.83 1v12a1 1 0 0 0 1.17 1a10.9 10.9 0 0 1 8.25 1.91l.12.07h.11a.9.9 0 0 0 .7 0h.11l.12-.07A10.9 10.9 0 0 1 20.83 16A1 1 0 0 0 22 15V3a1 1 0 0 0-.83-.94M11 15.35a12.9 12.9 0 0 0-6-1.48H4v-10a9 9 0 0 1 1 0a10.86 10.86 0 0 1 6 1.8Zm9-1.44h-1a12.9 12.9 0 0 0-6 1.48V5.67a10.86 10.86 0 0 1 6-1.8a9 9 0 0 1 1 0Zm1.17 4.15a13 13 0 0 0-2.17-.19a12.94 12.94 0 0 0-7 2.05a12.94 12.94 0 0 0-7-2.05a13 13 0 0 0-2.17.19A1 1 0 0 0 2 19.21a1 1 0 0 0 1.17.79a10.9 10.9 0 0 1 8.25 1.91a1 1 0 0 0 1.16 0A10.9 10.9 0 0 1 20.83 20a1 1 0 0 0 1.17-.79a1 1 0 0 0-.83-1.15'/%3E%3C/svg%3E");
 }
 
 /* 创作角色 - 用户图标 */
@@ -340,13 +340,13 @@ export default {
 
 /* 创作组图 - 图片组图标 */
 .feature-card.icon-card-images :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23409eff' d='M160 832h704a32 32 0 1 1 0 64H160a32 32 0 1 1 0-64zm384-578.304V704h-64V247.296L237.248 490.944 188.608 442.24 512 128.896l323.392 313.344-48.64 48.704L544 253.696zM352 192a32 32 0 1 1 0 64 32 32 0 0 1 0-64z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M10 13H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1m-1 6H5v-4h4ZM20 3h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1m-1 6h-4V5h4Zm1 7h-2v-2a1 1 0 0 0-2 0v2h-2a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2a1 1 0 0 0 0-2M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1M9 9H5V5h4Z'/%3E%3C/svg%3E");
 }
 
 /* 创作插画 - 画板图标 */
 .feature-card.icon-card-edit :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23409eff' d='M832 64H192a96 96 0 0 0-96 96v704a96 96 0 0 0 96 96h640a96 96 0 0 0 96-96V160a96 96 0 0 0-96-96zM192 128h640a32 32 0 0 1 32 32v704a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32V160a32 32 0 0 1 32-32z'/%3E%3Cpath fill='%23409eff' d='M256 256h512v512H256V256zm64 64v384h384V320H320z'/%3E%3Cpath fill='%23409eff' d='M128 896h768a32 32 0 1 1 0 64H128a32 32 0 1 1 0-64z'/%3E%3C/svg%3E");
-}
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M7.42 15.54a1 1 0 0 0 0 1.41a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.41a1 1 0 0 0-1.42 0m0-8.49a1 1 0 0 0 0 1.41a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.41a1 1 0 0 0-1.42 0m4.95 10a1 1 0 1 0 1 1a1 1 0 0 0-1-1.05Zm-6-6a1 1 0 1 0 1 1a1 1 0 0 0-1-1.05Zm6-6a1 1 0 1 0 1 1a1 1 0 0 0-1-1.05Zm3.54 2.05a1 1 0 1 0 1.41 0a1 1 0 0 0-1.41-.05Zm6.3 0a11 11 0 1 0-7.85 15.74a3.87 3.87 0 0 0 2.5-1.65a4.2 4.2 0 0 0 .61-3.19a5.7 5.7 0 0 1-.1-1a5 5 0 0 1 3-4.56a3.84 3.84 0 0 0 2.06-2.25a4 4 0 0 0-.22-3.11Zm-1.7 2.44a1.9 1.9 0 0 1-1 1.09A7 7 0 0 0 15.37 17a7.3 7.3 0 0 0 .14 1.4a2.16 2.16 0 0 1-.31 1.65a1.8 1.8 0 0 1-1.21.8a8.7 8.7 0 0 1-1.62.15a9 9 0 0 1-9-9.28A9.05 9.05 0 0 1 11.85 3h.51a9 9 0 0 1 8.06 5a2 2 0 0 1 .09 1.52ZM12.37 11a1 1 0 1 0 1 1a1 1 0 0 0-1-1'/%3E%3C/svg%3E");
+    }
 
 /* 布局创作插画 - 网格布局图标 */
 .feature-card.icon-card-layout :deep(.el-card__body)::after {
@@ -355,7 +355,7 @@ export default {
 
 /* 合成绘本 - 组合/合成图标 */
 .feature-card.icon-card-compose :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23409eff' d='M832 384H576V128H192v768h640V384zm-26.496-64L640 154.496V320h165.504zM160 64h448l256 256v608a32 32 0 0 1-32 32H160a32 32 0 0 1-32-32V96a32 32 0 0 1 32-32zm160 448h384v64H320v-64zm0-192h192v64H320v-64zm0 384h384v64H320v-64z'/%3E%3Cpath fill='%23409eff' d='M832 512a32 32 0 1 1 64 0v352a32 32 0 0 1-32 32H160a32 32 0 0 1-32-32V160a32 32 0 0 1 32-32h352a32 32 0 0 1 0 64H192v640h640V512z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M13 9h-2V7a1 1 0 0 0-2 0v2H7a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2a1 1 0 0 0 0-2m5 6V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3M4 15V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1m17-9a1 1 0 0 0-1 1v10a3 3 0 0 1-3 3H7a1 1 0 0 0 0 2h10a5 5 0 0 0 5-5V7a1 1 0 0 0-1-1'/%3E%3C/svg%3E");
 }
 
 
@@ -381,8 +381,8 @@ export default {
 @media (max-width: 1200px) {
     .style-images-sidebar {
         display: none;
-    }
-    
+}
+
     .home-content-wrapper {
         flex-direction: column;
     }
@@ -399,17 +399,17 @@ export default {
 
     .subtitle {
         font-size: 16px;
-    }
+}
 
     .features-grid {
         grid-template-columns: 1fr;
         gap: 20px;
-    }
+}
 
     .card-icon {
         font-size: 48px;
         padding: 20px 0 15px;
-    }
+}
 
     .card-title {
         font-size: 18px;
