@@ -103,6 +103,11 @@
               </div>
             </a>
             <ul class="dropdown-menu">
+              <!-- 显示用户名 -->
+              <li class="dropdown-header" v-if="userInfo && userInfo.name">
+                <span class="user-name">{{ userInfo.name }}</span>
+              </li>
+              <li><hr class="dropdown-divider"></li>
               <li><a @click.prevent="toMyHomePage(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-a-collection"></i>
                 <span>{{ $t('nav.myWorks') }}</span>
@@ -290,24 +295,55 @@ export default {
 
         const getUser = async () => {
             try {
-                if (!userid.value) {
+                // 更新 userid（可能从 localStorage 中刚设置）
+                const currentUserId = localStorage.getItem("id")
+                if (!currentUserId) {
                     return // 如果没有用户ID，直接返回
                 }
-                let res = await $http.get(`/user/` + userid.value, {
-                    timeout: 10000 // 10秒超时
+                userid.value = currentUserId
+                
+                const token = localStorage.getItem("token")
+                if (!token) {
+                    console.warn('获取用户信息失败: 未找到token')
+                    return
+                }
+                
+                let res = await $http.get(`/user/` + currentUserId, {
+                    timeout: 10000, // 10秒超时
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
                 })
+                
                 let toolUser = res.data.message
-                store.commit("setUserInfo", toolUser)
-                // 获取用户积分
-                userPoints.value = toolUser.points || toolUser.credits || 0
+                if (toolUser) {
+                    store.commit("setUserInfo", toolUser)
+                    // 获取用户积分
+                    userPoints.value = toolUser.points || toolUser.credits || 0
+                } else {
+                    console.warn('获取用户信息失败: 响应数据为空', res.data)
+                }
             } catch(err) {
                 console.error('获取用户信息失败:', err)
-                // 只有非网络错误才显示登录框，避免后端服务不可用时强制弹出登录框
-                if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
-                    // 网络错误或超时，不强制显示登录框，静默失败
-                } else if (err.response && err.response.status === 401) {
-                    // 401未授权，显示登录框
-                    store.commit('showMask')
+                
+                // 详细的错误信息
+                if (err.response) {
+                    console.error('错误响应:', err.response.status, err.response.data)
+                    if (err.response.status === 401) {
+                        // 401未授权，清除登录状态
+                        localStorage.removeItem("token")
+                        localStorage.removeItem("id")
+                        store.commit("hasLogin", false)
+                        store.commit("setUserInfo", null)
+                        store.commit('showMask')
+                    } else if (err.response.status === 404) {
+                        console.warn('用户不存在或接口路径错误')
+                    }
+                } else if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || err.message?.includes('timeout')) {
+                    // 网络错误或超时，静默失败，不强制显示登录框
+                    console.warn('网络错误或超时，跳过获取用户信息')
+                } else {
+                    console.error('未知错误:', err)
                 }
             }
         }
@@ -490,6 +526,63 @@ export default {
                 })
         }
         
+        // 监听登录状态变化，当微信登录成功后自动获取用户信息
+        watch(() => isLogin.value, (newVal, oldVal) => {
+            // 当登录状态从false变为true时，重新获取用户信息
+            if (newVal && !oldVal) {
+                console.log('检测到登录状态变化，重新获取用户信息')
+                // 延迟一下，确保token和id已经保存到localStorage
+                setTimeout(() => {
+                    getUser()
+                }, 100)
+            }
+        }, { immediate: false })
+
+        // 监听store中userInfo的变化，确保用户名正确显示
+        watch(() => userInfo.value, (newVal, oldVal) => {
+            if (newVal && newVal.name) {
+                console.log('用户信息已更新，用户名:', newVal.name)
+                // 如果用户信息更新了，确保userid也更新
+                if (newVal._id || newVal.id) {
+                    const newUserId = newVal._id || newVal.id
+                    if (newUserId !== userid.value) {
+                        userid.value = newUserId
+                        localStorage.setItem('id', newUserId)
+                    }
+                }
+            } else if (!newVal && oldVal) {
+                // 用户信息被清空（登出）
+                console.log('用户信息已清空')
+            }
+        }, { deep: true })
+
+        // 监听路由变化，当从微信回调页面返回时重新获取用户信息
+        watch(() => route.path, (to, from) => {
+            closeSubmenu()
+            
+            // 如果从微信回调页面返回，且已登录，重新获取用户信息
+            if (from === '/wechat/callback' && to !== '/wechat/callback') {
+                // 检查是否有token和id
+                const token = localStorage.getItem('token')
+                const id = localStorage.getItem('id')
+                if (token && id && isLogin.value) {
+                    console.log('从微信回调页面返回，重新获取用户信息')
+                    // 延迟一下，确保store状态已更新
+                    setTimeout(() => {
+                        getUser()
+                    }, 200)
+                }
+            }
+            
+            // 如果跳转到 Creation 页面，重置滚动状态
+            if (to === '/creation') {
+                nextTick(() => {
+                    window.scrollTo(0, 0)
+                    isScrolled.value = false
+                })
+            }
+        })
+
         // 初始化
         onMounted(async () => {
             try {
@@ -518,17 +611,9 @@ export default {
                 handleScroll()
             })
             
-            // 监听路由变化，关闭下拉菜单并重置滚动状态
-            watch(() => route.path, (to) => {
-                closeSubmenu()
-                // 如果跳转到 Creation 页面，重置滚动状态
-                if (to === '/creation') {
-                    nextTick(() => {
-                        window.scrollTo(0, 0)
-                        isScrolled.value = false
-                    })
-                }
-            })
+            // 注意：storage事件只在其他窗口/tab页修改localStorage时触发
+            // 当前窗口修改localStorage不会触发storage事件
+            // 所以我们需要通过其他方式检测登录状态变化
         })
         
         onBeforeUnmount(() => {
@@ -907,6 +992,26 @@ export default {
 	border-radius: 50%;
 	object-fit: cover;
 	cursor: pointer;
+}
+
+/* 下拉菜单用户名显示 */
+.dropdown-header {
+	padding: 8px 16px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #212121;
+	background-color: #f8f9fa;
+	border-bottom: 1px solid #e9ecef;
+}
+
+.user-name {
+	color: #8167a9;
+	font-weight: 600;
+}
+
+.dropdown-divider {
+	margin: 4px 0;
+	border-top: 1px solid #e9ecef;
 }
 
 /* 响应式设计 */

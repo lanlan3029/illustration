@@ -97,7 +97,8 @@ export default {
         const isSuccess = response.data.code === 1000 || response.data.desc === 'success'
         
         if (isSuccess) {
-          // 登录成功
+          // 登录成功 - 第一次使用微信登录的用户信息存储流程
+          // 1. 提取并保存 token
           let token = null
           if (response.data.message?.token) {
             token = response.data.message.token
@@ -105,35 +106,74 @@ export default {
             token = response.data.message
           }
           
-          if (token) {
-            localStorage.setItem('token', token)
-            console.log('Token已保存到localStorage')
-          } else {
-            console.warn('未找到token，响应数据:', response.data)
+          if (!token) {
+            console.error('未找到token，响应数据:', response.data)
+            ElMessage.error('登录失败：未获取到token')
+            setTimeout(() => {
+              router.push('/')
+            }, 2000)
+            return
           }
           
+          // 保存 token 到 localStorage（持久化存储）
+          localStorage.setItem('token', token)
+          console.log('Token已保存到localStorage')
+          
+          // 2. 提取并保存 user_id
           const userId = response.data.user_id || response.data.message?.user_id
-          if (userId) {
-            localStorage.setItem('id', userId)
-            store.commit('hasLogin', true)
-            
-            // 获取用户信息
-            try {
-              const userRes = await $http.get(`/user/${userId}`, {
-                timeout: 10000
-              })
-              if (userRes.data.message) {
-                store.commit('setUserInfo', userRes.data.message)
+          if (!userId) {
+            console.error('未找到user_id，响应数据:', response.data)
+            ElMessage.error('登录失败：未获取到用户ID')
+            setTimeout(() => {
+              router.push('/')
+            }, 2000)
+            return
+          }
+          
+          // 保存 user_id 到 localStorage（持久化存储）
+          localStorage.setItem('id', userId)
+          console.log('User ID已保存到localStorage:', userId)
+          
+          // 3. 更新 Vuex store 中的登录状态
+          store.commit('hasLogin', true)
+          console.log('登录状态已更新到store')
+          
+          // 4. 获取并保存用户详细信息（包括第一次登录的新用户）
+          try {
+            const userRes = await $http.get(`/user/${userId}`, {
+              timeout: 10000,
+              headers: {
+                'Authorization': 'Bearer ' + token
               }
-            } catch (err) {
-              console.error('获取用户信息失败:', err)
-              // 即使获取用户信息失败，也不影响登录流程
+            })
+            
+            if (userRes.data && userRes.data.message) {
+              // 保存用户信息到 Vuex store（用于全局状态管理）
+              store.commit('setUserInfo', userRes.data.message)
+              console.log('用户信息已保存到store:', userRes.data.message)
+              
+              // 如果是新用户，后端可能返回了默认的用户信息
+              // 可以在这里处理新用户的特殊逻辑，比如显示欢迎信息等
+              if (userRes.data.message.is_new_user) {
+                console.log('检测到新用户，可以显示欢迎信息')
+              }
+            } else {
+              console.warn('用户信息响应格式异常:', userRes.data)
+            }
+          } catch (err) {
+            console.error('获取用户信息失败:', err)
+            // 即使获取用户信息失败，也不影响登录流程
+            // 因为 token 和 user_id 已经保存，用户已经登录成功
+            // 可以在后续页面加载时重新获取用户信息
+            if (err.response && err.response.status === 404) {
+              console.warn('用户信息不存在，可能是新用户，后端正在创建中')
             }
           }
           
+          // 5. 显示成功提示
           ElMessage.success(t('wechatCallback.loginSuccess'))
           
-          // 跳转到首页或之前的页面
+          // 6. 跳转到首页或之前的页面
           const redirect = localStorage.getItem('wechat_redirect') || route.query.redirect || '/'
           localStorage.removeItem('wechat_redirect')
           
