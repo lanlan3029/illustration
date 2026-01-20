@@ -270,9 +270,15 @@ export default {
         }
 
         const tokenFail = () => {
+            const token = localStorage.getItem("token")
+            if (!token) {
+                // 没有token，直接返回，不显示登录框（避免干扰正常浏览）
+                return Promise.resolve()
+            }
+            
             return $http.post(`/user/iflogin`, {}, {
                 headers: {
-                    "Authorization": "Bearer " + localStorage.getItem("token")
+                    "Authorization": "Bearer " + token
                 },
                 timeout: 10000 // 10秒超时
             })
@@ -280,15 +286,29 @@ export default {
                 if (response.data.desc == "success") {
                     store.commit("hasLogin", true)
                 } else {
-                    store.commit('showMask')
+                    // token无效，清除登录状态
+                    localStorage.removeItem("token")
+                    localStorage.removeItem("id")
+                    store.commit("hasLogin", false)
+                    store.commit("setUserInfo", null)
                 }
             })
             .catch((error) => {
+                // 处理401未授权错误
+                if (error.response && error.response.status === 401) {
+                    console.log('Token无效，清除登录状态')
+                    localStorage.removeItem("token")
+                    localStorage.removeItem("id")
+                    store.commit("hasLogin", false)
+                    store.commit("setUserInfo", null)
+                } 
                 // 超时或网络错误时静默处理，不强制显示登录框
-                if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message?.includes('timeout')) {
+                else if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message?.includes('timeout')) {
                     console.log('登录检查超时或网络错误，跳过')
+                    // 网络错误时不清除登录状态，可能是临时网络问题
                 } else {
-                    store.commit('showMask')
+                    // 其他错误，静默处理
+                    console.log('登录检查失败:', error.message)
                 }
             })
         }
@@ -585,20 +605,30 @@ export default {
 
         // 初始化
         onMounted(async () => {
+            // 先检查登录状态，再获取用户信息
+            // 使用 Promise.allSettled 确保即使某些请求失败也不影响页面加载
             try {
-                await Promise.allSettled([
-                    tokenFail(),
-                    getUser(),
-                    getCollectionBook(),
-                    getLikeBook(),
-                    getCollectionIllus(),
-                    getLikeIllus(),
-                    getAttention(),
-                    getFans()
-                ])
+                // 先检查token是否有效
+                await tokenFail()
+                
+                // 如果已登录，再获取用户信息和其他数据
+                if (store.state.isLogin && localStorage.getItem("token") && localStorage.getItem("id")) {
+                    // 并行获取用户相关数据，但不阻塞页面加载
+                    Promise.allSettled([
+                        getUser(),
+                        getCollectionBook(),
+                        getLikeBook(),
+                        getCollectionIllus(),
+                        getLikeIllus(),
+                        getAttention(),
+                        getFans()
+                    ]).then(() => {
+                        console.log('用户数据加载完成（部分可能失败）')
+                    })
+                }
             } catch (error) {
-                // 所有请求都使用 Promise.allSettled，即使有失败也不会抛出错误
-                console.log('初始化请求完成（部分可能失败）')
+                // 初始化错误，静默处理
+                console.log('初始化完成（部分可能失败）:', error.message)
             }
             
             // 点击外部关闭子菜单

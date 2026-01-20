@@ -225,6 +225,9 @@ export default {
                 // - 授权回调域名：www.kidstory.cc（在微信开放平台配置）
                 // - redirect_uri 必须使用 HTTPS（生产环境要求）
                 // - redirect_uri 的域名部分必须匹配授权回调域名
+                // 
+                // 注意：由于使用 hash 路由模式，回调地址需要使用 hash 格式
+                // 但微信回调不支持 hash，所以使用普通路径，组件会从 window.location.search 获取参数
                 const callbackUrl = `${window.location.origin}/wechat/callback`
                 
                 // 调用后端接口获取微信AppID

@@ -37,15 +37,32 @@ export default {
     onMounted(async () => {
       console.log('WeChatCallback 组件已挂载')
       console.log('当前URL:', window.location.href)
-      console.log('路由查询参数:', route.query)
+      console.log('完整URL:', window.location.href)
+      console.log('URL查询字符串:', window.location.search)
       
       try {
         // 根据微信官方文档：用户允许授权后，将会重定向到redirect_uri的网址上，并且带上code和state参数
         // 参考：https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
         
-        // 从 URL 查询参数中获取 code 和 state
-        const code = route.query.code
-        const state = route.query.state
+        // 重要：由于使用 hash 路由模式，需要直接从 window.location.search 获取参数
+        // 而不是依赖 route.query（因为路由可能无法正确匹配）
+        const urlParams = new URLSearchParams(window.location.search)
+        let code = urlParams.get('code')
+        let state = urlParams.get('state')
+        
+        // 如果从 search 中没找到，尝试从 hash 中获取（hash 路由模式）
+        if (!code && window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '')
+          code = code || hashParams.get('code')
+          state = state || hashParams.get('state')
+        }
+        
+        // 如果还是没找到，尝试从 route.query 获取（作为备用）
+        if (!code) {
+          code = route.query.code
+          state = route.query.state
+        }
+        
         const savedState = localStorage.getItem('wechat_state')
         
         console.log('从URL获取的参数 - code:', code, 'state:', state)
