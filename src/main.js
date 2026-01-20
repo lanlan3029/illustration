@@ -20,6 +20,17 @@ import '@/styles/reset.css'
 import '@/assets/lefticon/iconfont.css'
 import axios from 'axios'
 
+// 处理微信登录回调 - 必须在 Vue 应用创建之前执行
+// 因为微信回调 URL 是 /wechat/callback?code=xxx，但我们使用 hash 路由模式
+// 需要将参数转移到 hash 路由中
+if (window.location.pathname === '/wechat/callback') {
+  const search = window.location.search
+  if (search) {
+    // 重定向到 hash 路由格式
+    window.location.replace(`${window.location.origin}/#/wechat/callback${search}`)
+  }
+}
+
 const app = createApp(App)
 
 app.use(router)
@@ -38,21 +49,7 @@ app.config.globalProperties.$http = axios
 // 将 Element Plus 的 message 挂载到全局属性（为了兼容性）
 app.config.globalProperties.$message = ElementPlus.ElMessage
 
-// 挂载应用
 app.mount('#app')
-
-// 处理微信登录回调：如果 URL 包含 /wechat/callback 且没有 hash，跳转到 hash 路由
-// 因为路由使用 hash 模式（createWebHashHistory），但微信回调 URL 不包含 hash
-// 需要将 /wechat/callback?code=xxx 转换为 /#/wechat/callback?code=xxx
-// 在应用挂载后立即检查并跳转
-setTimeout(() => {
-  if (window.location.pathname === '/wechat/callback' && !window.location.hash) {
-    const search = window.location.search
-    // 跳转到 hash 路由，保留查询参数
-    // 使用 replace 避免在浏览器历史中留下记录
-    window.location.replace(`/#/wechat/callback${search}`)
-  }
-}, 0)
 
 // 图标按需导入，不再全局注册所有图标
 // 各组件需要使用时自行导入所需的图标组件

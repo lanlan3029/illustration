@@ -209,10 +209,10 @@ export default {
             wechatLoading.value = true
             
             try {
-                // 生成 state 参数（用于防止 CSRF 攻击）
-                const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-                localStorage.setItem('wechat_state', state)
-                
+            // 生成 state 参数（用于防止 CSRF 攻击）
+            const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+            localStorage.setItem('wechat_state', state)
+            
                 // 保存当前页面，用于登录后跳转
                 const currentPath = window.location.pathname + window.location.search
                 if (currentPath !== '/wechat/callback') {
@@ -225,10 +225,8 @@ export default {
                 // - 授权回调域名：www.kidstory.cc（在微信开放平台配置）
                 // - redirect_uri 必须使用 HTTPS（生产环境要求）
                 // - redirect_uri 的域名部分必须匹配授权回调域名
-                // 
-                // 注意：由于使用 hash 路由模式，回调地址需要使用 hash 格式
-                // 但微信回调不支持 hash，所以使用普通路径，组件会从 window.location.search 获取参数
-                const callbackUrl = `${window.location.origin}/wechat/callback`
+                // 注意：必须使用固定的生产域名，不能使用 window.location.origin（开发环境会是 localhost）
+                const callbackUrl = `https://www.kidstory.cc/wechat/callback`
                 
                 // 调用后端接口获取微信AppID
                 const appidResponse = await $http.get('/pb/auth/wechat/appid', {
@@ -272,9 +270,9 @@ export default {
                 const redirectUri = encodeURIComponent(callbackUrl)
                 const lang = 'cn' // 可以根据需要设置为 'en' 或其他语言
                 const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}&lang=${lang}#wechat_redirect`
-                
-                // 跳转到微信授权页面
-                window.location.href = wechatAuthUrl
+            
+            // 跳转到微信授权页面
+            window.location.href = wechatAuthUrl
             } catch (error) {
                 wechatLoading.value = false
                 console.error('微信登录失败:', error)
