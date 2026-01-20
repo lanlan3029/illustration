@@ -23,13 +23,27 @@ import axios from 'axios'
 // 处理微信登录回调 - 必须在 Vue 应用创建之前执行
 // 因为微信回调 URL 是 /wechat/callback?code=xxx，但我们使用 hash 路由模式
 // 需要将参数转移到 hash 路由中
-if (window.location.pathname === '/wechat/callback') {
-  const search = window.location.search
-  if (search) {
-    // 重定向到 hash 路由格式
-    window.location.replace(`${window.location.origin}/#/wechat/callback${search}`)
+(function handleWeChatCallback() {
+  // 检查是否是直接访问的微信回调URL（没有hash）
+  if (window.location.pathname === '/wechat/callback' && !window.location.hash.includes('/wechat/callback')) {
+    const search = window.location.search
+    console.log('[main.js] 检测到微信回调URL（无hash）:', window.location.href)
+    console.log('[main.js] pathname:', window.location.pathname, 'search:', search, 'hash:', window.location.hash)
+    
+    if (search) {
+      // 重定向到 hash 路由格式
+      const hashUrl = `${window.location.origin}/#/wechat/callback${search}`
+      console.log('[main.js] 重定向到 hash 路由:', hashUrl)
+      window.location.replace(hashUrl)
+      // 注意：执行 replace 后会立即跳转，后续代码不会执行
+      return // 阻止后续代码执行
+    } else {
+      console.warn('[main.js] 微信回调URL没有查询参数，可能不是有效的回调')
+    }
+  } else if (window.location.hash.includes('/wechat/callback')) {
+    console.log('[main.js] 检测到微信回调URL（hash路由）:', window.location.href)
   }
-}
+})()
 
 const app = createApp(App)
 

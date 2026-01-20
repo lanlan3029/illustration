@@ -35,18 +35,35 @@ export default {
     })
 
     onMounted(async () => {
+      console.log('=== WeChatCallback 组件已挂载 ===')
+      console.log('当前完整URL:', window.location.href)
+      console.log('window.location.pathname:', window.location.pathname)
+      console.log('window.location.search:', window.location.search)
+      console.log('window.location.hash:', window.location.hash)
+      console.log('route.path:', route.path)
+      console.log('route.query:', route.query)
+      
       try {
-        // 获取 URL 参数
-        const code = route.query.code
-        const state = route.query.state
+        // 获取 URL 参数 - 优先从 window.location.search 获取（因为可能路由还没完全匹配）
+        const urlParams = new URLSearchParams(window.location.search)
+        let code = urlParams.get('code') || route.query.code
+        let state = urlParams.get('state') || route.query.state
+        
+        console.log('提取的参数 - code:', code, 'state:', state)
+        
         const savedState = localStorage.getItem('wechat_state')
+        console.log('localStorage 中的 wechat_state:', savedState)
 
         // 验证 state 参数（防止 CSRF 攻击）
         if (!state || state !== savedState) {
+          console.error('State 验证失败:', { state, savedState })
           ElMessage.error(t('wechatCallback.invalidState'))
-          router.push('/')
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
           return
         }
+        console.log('State 验证通过')
 
         // 清除 state
         localStorage.removeItem('wechat_state')
@@ -63,6 +80,7 @@ export default {
         }
 
         if (!code) {
+          console.error('未找到 code 参数')
           ElMessage.error(t('wechatCallback.noCode'))
           setTimeout(() => {
             router.push('/')
@@ -70,6 +88,9 @@ export default {
           return
         }
 
+        console.log('开始调用后端接口 POST /pb/auth/wechat/callback')
+        console.log('请求参数:', { code, state })
+        
         // 调用后端接口，通过 code 换取 access_token 并登录
         const response = await $http.post('/pb/auth/wechat/callback', {
           code: code,
@@ -80,6 +101,8 @@ export default {
             'Content-Type': 'application/json'
           }
         })
+        
+        console.log('后端接口响应:', response.data)
 
         // 支持多种响应格式：{code: 1000, ...} 或 {desc: 'success', ...}
         const isSuccess = response.data.code === 1000 || response.data.desc === 'success'
