@@ -32,7 +32,7 @@
                 <el-image
                   :src="(`https://static.kidstory.cc/`+item.cover)"
                   class="image"
-                  fit="cover"
+                  fit="contain"
                   :lazy="true"
                   loading="lazy"
                   :preview-src-list="[]"
@@ -467,18 +467,20 @@ export default {
   height:auto;
   padding: 0 12px;
   margin-top:2vh;
-  display: flex;
-  flex-wrap: wrap;
-  align-content:flex-start;  
-  gap: 24px; /* 列间距 */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 四列网格 */
+  gap: 24px; /* 行列间距 */
+  align-items: start; /* 顶部对齐 */
 }
 .item {
   box-sizing: border-box;
-  flex: 0 0 calc((100% - 72px) / 4); /* 五列：四处gap共96px */
-  margin: 0; /* 通过 gap 控制间距 */
+  width: 100%;
+  height: 320px; /* 固定高度：图片区域 240px + 数据区域 40px + padding 24px + 边距 16px */
   border-radius: 8px;
   user-select: none;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
 }
 
 .item:hover {
@@ -486,8 +488,19 @@ export default {
 }
 .card{ 
   width: 100%; 
+  height: 100%; /* 占满 item 的固定高度 */
+  display: flex;
+  flex-direction: column; /* 垂直布局 */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateY(0);
+}
+
+.card :deep(.el-card__body) {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 .card:hover {
@@ -496,18 +509,26 @@ export default {
 }
 .image {
   width: 100%;
-  aspect-ratio: 3 / 2; /* 稳定比例，避免高度不一致，防止 CLS */
-  object-fit: cover;
+  height: 240px; /* 固定高度，确保所有图片区域相同 */
+  flex-shrink: 0; /* 防止被压缩 */
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: #f5f6fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image :deep(.el-image) {
+  width: 100%;
+  height: 100%;
 }
 
 .image :deep(.el-image__inner) {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* 改为 contain，完整显示图片 */
   transition: opacity 0.3s ease;
 }
 
@@ -520,14 +541,12 @@ export default {
 }
 .img-placeholder, .img-error{
   width: 100%;
-  height: 100%;
-  min-height: 200px;
+  height: 240px; /* 固定高度，与图片区域一致 */
   display:flex;
   align-items:center;
   justify-content:center;
   background:#f5f6fa;
   color:#c0c4cc;
-  aspect-ratio: 3 / 2;
 }
 
 .img-placeholder i {
@@ -565,30 +584,35 @@ export default {
 }
 .data{
   display: flex;
-  height:18px;
-justify-content: space-between;
-color:#606266;
-align-items: center;
-overflow: hidden;
-margin-top:8px;
-  
+  height: 40px; /* 固定高度，确保所有卡片一致 */
+  min-height: 40px; /* 最小高度 */
+  max-height: 40px; /* 最大高度，防止内容溢出 */
+  justify-content: space-between;
+  color:#606266;
+  align-items: center;
+  overflow: hidden;
+  margin-top: 12px; /* 固定间距，确保标题位置一致 */
+  flex-shrink: 0; /* 防止被压缩 */
 }
 .data .name{
-  width:11vw;
-  white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipse;
-font-size:14px;
-font-weight: 500;
-text-align: left;
+  flex: 1; /* 占据剩余空间 */
+  min-width: 0; /* 允许文本截断 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* 修复拼写错误 */
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  margin-right: 8px; /* 添加右边距 */
 }
 .data .icon{
-  width:4vw;
+  width: 32px; /* 固定宽度，使用 px 而不是 vw */
+  flex-shrink: 0; /* 防止被压缩 */
   display: inline-flex;
   justify-content: flex-end;
   align-items: center;
-  font-size:14px;
-  cursor:pointer;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .data .icon .collect-icon {

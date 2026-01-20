@@ -539,7 +539,14 @@ export default {
    //获取绘本详情
       async getBooks() {
       try {
-        let res = await this.$http.get(`/book/`+this.id)
+        // 获取 token 并添加到请求头
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token && token !== 'undefined') {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        let res = await this.$http.get(`/book/`+this.id, { headers })
         console.log(res)
         //对象数组，对象包含绘本的name\id\content\description等
         this.bookDetails = res.data.message
@@ -560,6 +567,13 @@ export default {
         let tool = this.bookDetails.content
         if (!tool || !Array.isArray(tool)) {
           return
+        }
+        
+        // 获取 token 并添加到请求头
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token && token !== 'undefined') {
+          headers['Authorization'] = `Bearer ${token}`;
         }
         
         //初始化图片加载状态和宽高比检测
@@ -584,7 +598,7 @@ export default {
           // 如果是图片ID（字符串且不包含/），需要获取URL
           if (typeof item === 'string' && !item.includes('/') && !item.includes('upload')) {
             try {
-              let res = await this.$http.get(`/ill/` + item)
+              let res = await this.$http.get(`/ill/` + item, { headers })
               if (res.data && res.data.message && res.data.message.content) {
                 this.bookDetails.content[i] = res.data.message.content
                 // 检测宽高比
@@ -878,7 +892,14 @@ async loadCollectIdMap() {
      //获取绘本作者
      async getAuthor(){
        try{
-         let res=await this.$http.get(`/user/`+this.authorId)
+         // 获取 token 并添加到请求头
+         const token = localStorage.getItem('token');
+         const headers = {};
+         if (token && token !== 'undefined') {
+           headers['Authorization'] = `Bearer ${token}`;
+         }
+         
+         let res=await this.$http.get(`/user/`+this.authorId, { headers })
          this.authorDetails=res.data.message 
        } catch(err){
          console.log(err)

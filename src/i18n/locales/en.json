@@ -189,7 +189,7 @@
     "bookUpdateFailed": "Failed to update book",
     "updateFailedRetry": "Update failed, please try again later",
     "uploadingBook": "Uploading book...",
-    "bookCreateSuccess": "Book created successfully! {count} images uploaded",
+    "bookCreateSuccess": "Book added successfully! Thank you for your sharing.",
     "bookCreateFailed": "Failed to create book",
     "loadingBookData": "Loading book data...",
     "loadedImages": "Loaded {count} images",
@@ -1019,6 +1019,12 @@
   "loginRegister": {
     "wechatLogin": "WeChat Login",
     "wechatLoginDesc": "Scan QR code to login quickly",
+    "wechatQRCodeLogin": "Login with QR Code",
+    "scanQRCode": "WeChat QR Code Login",
+    "scanQRCodeTip": "Use WeChat to scan the QR code to login",
+    "backToLogin": "Back to Account Login",
+    "wechatConfigError": "WeChat login configuration incomplete, please contact administrator",
+    "wechatScriptLoadError": "Failed to load WeChat login script, please refresh and try again",
     "accountLogin": "Account Login",
     "register": "Register",
     "enterEmail": "Please enter email",
@@ -1059,6 +1065,11 @@
     "loginSuccess": "WeChat login successful",
     "loginFailed": "WeChat login failed, please try again later",
     "invalidState": "Login verification failed, please login again",
-    "noCode": "Authorization code not received, please login again"
+    "noCode": "Authorization code not received, please login again",
+    "userCancel": "User cancelled authorization",
+    "invalidCode": "Invalid or expired authorization code, please login again",
+    "serverError": "Server error, please try again later",
+    "timeout": "Request timeout, please check your network connection",
+    "networkError": "Network error, please check your network connection"
   }
 }

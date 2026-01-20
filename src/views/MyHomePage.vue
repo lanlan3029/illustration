@@ -536,12 +536,18 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           if (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0') {
             // 等待动画完成后再从数组中移除
             setTimeout(() => {
-              // 从 toolArr 中移除
-              const index = this.toolArr.findIndex(item => item._id === bookId);
+              // 从 store 的 myBooks 中移除（通过 mutation）
+              const currentBooks = [...this.myBooks];
+              const index = currentBooks.findIndex(item => item._id === bookId);
               if (index !== -1) {
-                this.toolArr.splice(index, 1);
+                currentBooks.splice(index, 1);
                 // 更新 store
-                this.setBooks();
+                this.$store.commit("addMyBooks", currentBooks);
+                // 同时更新 toolArr 保持同步
+                const toolArrIndex = this.toolArr.findIndex(item => item._id === bookId);
+                if (toolArrIndex !== -1) {
+                  this.toolArr.splice(toolArrIndex, 1);
+                }
               }
               this.deletingBookId = null;
               ElMessage({
@@ -1220,7 +1226,7 @@ overflow: hidden;
 
 .card-list-leave-active {
   position: absolute;
-  width: calc(33.333% - 16px);
+  width: calc((100% - 72px) / 4); /* 4列布局：3个gap共72px */
   transition: all 0.3s ease;
 }
 

@@ -142,8 +142,7 @@ export default {
           if (isPNG) {
             try {
               // 保存原始文件大小（用于计算压缩率）
-              const originalFileSize = file.raw.size;
-              const originalSize = (originalFileSize / 1024 / 1024).toFixed(2);
+              // const originalFileSize = file.raw.size;
               
               // 压缩配置：PNG 转 JPEG，压缩到 1MB 以内
               const options = {
@@ -161,20 +160,15 @@ export default {
               file.raw = compressedFile;
               file.size = compressedFile.size;
               
-              const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
-              const reduction = ((1 - compressedFile.size / originalFileSize) * 100).toFixed(1);
+              // 压缩信息（可用于调试或日志）
+              // const originalSize = (originalFileSize / 1024 / 1024).toFixed(2);
+              // const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+              // const reduction = ((1 - compressedFile.size / originalFileSize) * 100).toFixed(1);
               
-              ElMessage.success({
-                message: `图片 "${file.name}" 已压缩：${originalSize}MB → ${compressedSize}MB (减少 ${reduction}%)`,
-                duration: 3000,
-                offset: 100
-              });
+       
             } catch (error) {
               console.error('图片压缩失败:', error);
-              ElMessage.warning({
-                message: `图片 "${file.name}" 压缩失败，将使用原图`,
-                offset: 100
-              });
+             
             }
           }
         }
@@ -542,7 +536,7 @@ export default {
                 ElMessage.success({
                   message: this.$t('upload.bookCreateSuccess', { count: illustrationCount }),
                   type: 'success',
-                  offset: 100
+                  offset: 200
                 });
                 
                 // 跳转到提交结果页面

@@ -36,64 +36,122 @@ export default {
 
     onMounted(async () => {
       try {
-        // 获取 URL 参数
+        // 根据微信官方文档：用户允许授权后，将会重定向到redirect_uri的网址上，并且带上code和state参数
+        // 参考：https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
         const code = route.query.code
         const state = route.query.state
         const savedState = localStorage.getItem('wechat_state')
 
         // 验证 state 参数（防止 CSRF 攻击）
+        // 官方文档说明：state参数用于保持请求和回调的状态，授权请求后原样带回给第三方
+        // 该参数可用于防止csrf攻击（跨站请求伪造攻击）
         if (!state || state !== savedState) {
           ElMessage.error(t('wechatCallback.invalidState'))
-          router.push('/')
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
           return
         }
 
-        // 清除 state
+        // 清除 state（验证后立即清除，防止重复使用）
         localStorage.removeItem('wechat_state')
 
+        // 根据官方文档：若用户禁止授权，则不会发生重定向
+        // 如果没有code参数，可能是用户取消了授权
         if (!code) {
-          ElMessage.error(t('wechatCallback.noCode'))
-          router.push('/')
+          // 检查是否是用户取消授权
+          if (route.query.error) {
+            ElMessage.warning(t('wechatCallback.userCancel'))
+          } else {
+            ElMessage.error(t('wechatCallback.noCode'))
+          }
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
           return
         }
 
         // 调用后端接口，通过 code 换取 access_token 并登录
-        const response = await $http.post('/auth/wechat/callback', {
+        // 根据官方文档：
+        // 1. code的超时时间为10分钟
+        // 2. 一个code只能成功换取一次access_token即失效
+        // 3. 通过code参数加上AppID和AppSecret，通过API换取access_token
+        // 注意：AppSecret必须存储在服务器端，不能暴露给客户端
+        const response = await $http.post('/pb/auth/wechat/callback', {
           code: code,
           state: state
+        }, {
+          timeout: 30000 // 30秒超时
         })
 
         if (response.data.desc === 'success') {
           // 登录成功
-          localStorage.setItem('token', response.data.message.token || response.data.message)
-          localStorage.setItem('id', response.data.user_id)
-          store.commit('hasLogin', true)
+          const token = response.data.message?.token || response.data.message
+          if (token) {
+            localStorage.setItem('token', token)
+          }
           
-          ElMessage.success(t('wechatCallback.loginSuccess'))
-          
-          // 获取用户信息
           if (response.data.user_id) {
+            localStorage.setItem('id', response.data.user_id)
+            store.commit('hasLogin', true)
+            
+            // 获取用户信息
             try {
-              const userRes = await $http.get(`/user/${response.data.user_id}`)
+              const userRes = await $http.get(`/user/${response.data.user_id}`, {
+                timeout: 10000
+              })
               if (userRes.data.message) {
                 store.commit('setUserInfo', userRes.data.message)
               }
             } catch (err) {
               console.error('获取用户信息失败:', err)
+              // 即使获取用户信息失败，也不影响登录流程
             }
           }
           
+          ElMessage.success(t('wechatCallback.loginSuccess'))
+          
           // 跳转到首页或之前的页面
-          const redirect = route.query.redirect || '/'
-          router.push(redirect)
+          const redirect = localStorage.getItem('wechat_redirect') || route.query.redirect || '/'
+          localStorage.removeItem('wechat_redirect')
+          
+          setTimeout(() => {
+            router.push(decodeURIComponent(redirect))
+          }, 500)
         } else {
-          ElMessage.error(response.data.message || t('wechatCallback.loginFailed'))
-          router.push('/')
+          const errorMsg = response.data.message || t('wechatCallback.loginFailed')
+          ElMessage.error(errorMsg)
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
         }
       } catch (error) {
         console.error('微信登录回调处理失败:', error)
-        ElMessage.error(error.response?.data?.message || t('wechatCallback.loginFailed'))
-        router.push('/')
+        
+        let errorMsg = t('wechatCallback.loginFailed')
+        
+        if (error.response) {
+          // 服务器返回了错误响应
+          const errorData = error.response.data
+          if (errorData?.message) {
+            errorMsg = errorData.message
+          } else if (errorData?.errmsg) {
+            errorMsg = errorData.errmsg
+          } else if (error.response.status === 400) {
+            errorMsg = t('wechatCallback.invalidCode')
+          } else if (error.response.status === 500) {
+            errorMsg = t('wechatCallback.serverError')
+          }
+        } else if (error.code === 'ECONNABORTED') {
+          errorMsg = t('wechatCallback.timeout')
+        } else if (error.code === 'ERR_NETWORK') {
+          errorMsg = t('wechatCallback.networkError')
+        }
+        
+        ElMessage.error(errorMsg)
+        setTimeout(() => {
+          router.push('/')
+        }, 2000)
       }
     })
 
