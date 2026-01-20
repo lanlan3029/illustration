@@ -77,27 +77,49 @@ export default {
         // 2. 一个code只能成功换取一次access_token即失效
         // 3. 通过code参数加上AppID和AppSecret，通过API换取access_token
         // 注意：AppSecret必须存储在服务器端，不能暴露给客户端
+        console.log('开始调用后端接口，code:', code, 'state:', state)
+        
         const response = await $http.post('/pb/auth/wechat/callback', {
           code: code,
           state: state
         }, {
-          timeout: 30000 // 30秒超时
+          timeout: 30000, // 30秒超时
+          headers: {
+            'Content-Type': 'application/json'
+          }
         })
 
-        if (response.data.desc === 'success') {
+        console.log('后端接口响应:', response.data)
+
+        // 支持两种响应格式：
+        // 格式1: {code: 1000, desc: "success", message: {token: "..."}, user_id: "..."}
+        // 格式2: {desc: "success", message: {token: "..."} 或 message: "token", user_id: "..."}
+        const isSuccess = response.data.code === 1000 || response.data.desc === 'success'
+        
+        if (isSuccess) {
           // 登录成功
-          const token = response.data.message?.token || response.data.message
-          if (token) {
-            localStorage.setItem('token', token)
+          let token = null
+          if (response.data.message?.token) {
+            token = response.data.message.token
+          } else if (typeof response.data.message === 'string') {
+            token = response.data.message
           }
           
-          if (response.data.user_id) {
-            localStorage.setItem('id', response.data.user_id)
+          if (token) {
+            localStorage.setItem('token', token)
+            console.log('Token已保存到localStorage')
+          } else {
+            console.warn('未找到token，响应数据:', response.data)
+          }
+          
+          const userId = response.data.user_id || response.data.message?.user_id
+          if (userId) {
+            localStorage.setItem('id', userId)
             store.commit('hasLogin', true)
             
             // 获取用户信息
             try {
-              const userRes = await $http.get(`/user/${response.data.user_id}`, {
+              const userRes = await $http.get(`/user/${userId}`, {
                 timeout: 10000
               })
               if (userRes.data.message) {
@@ -119,7 +141,8 @@ export default {
             router.push(decodeURIComponent(redirect))
           }, 500)
         } else {
-          const errorMsg = response.data.message || t('wechatCallback.loginFailed')
+          const errorMsg = response.data.message || response.data.errmsg || t('wechatCallback.loginFailed')
+          console.error('登录失败:', errorMsg, response.data)
           ElMessage.error(errorMsg)
           setTimeout(() => {
             router.push('/')
