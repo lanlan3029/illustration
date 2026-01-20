@@ -35,12 +35,21 @@ export default {
     })
 
     onMounted(async () => {
+      console.log('WeChatCallback 组件已挂载')
+      console.log('当前URL:', window.location.href)
+      console.log('路由查询参数:', route.query)
+      
       try {
         // 根据微信官方文档：用户允许授权后，将会重定向到redirect_uri的网址上，并且带上code和state参数
         // 参考：https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
+        
+        // 从 URL 查询参数中获取 code 和 state
         const code = route.query.code
         const state = route.query.state
         const savedState = localStorage.getItem('wechat_state')
+        
+        console.log('从URL获取的参数 - code:', code, 'state:', state)
+        console.log('localStorage中的state:', savedState)
 
         // 验证 state 参数（防止 CSRF 攻击）
         // 官方文档说明：state参数用于保持请求和回调的状态，授权请求后原样带回给第三方
@@ -77,33 +86,50 @@ export default {
         // 2. 一个code只能成功换取一次access_token即失效
         // 3. 通过code参数加上AppID和AppSecret，通过API换取access_token
         // 注意：AppSecret必须存储在服务器端，不能暴露给客户端
-        console.log('开始调用后端接口，code:', code, 'state:', state)
+        console.log('开始调用后端接口 POST /pb/auth/wechat/callback')
+        console.log('请求参数 - code:', code, 'state:', state)
         
-        const response = await $http.post('/pb/auth/wechat/callback', {
+        const requestData = {
           code: code,
           state: state
-        }, {
+        }
+        console.log('请求数据:', JSON.stringify(requestData))
+        
+        const response = await $http.post('/pb/auth/wechat/callback', requestData, {
           timeout: 30000, // 30秒超时
           headers: {
             'Content-Type': 'application/json'
           }
         })
+        
+        console.log('后端接口调用成功，响应状态:', response.status)
 
         console.log('后端接口响应:', response.data)
 
-        // 支持两种响应格式：
-        // 格式1: {code: 1000, desc: "success", message: {token: "..."}, user_id: "..."}
-        // 格式2: {desc: "success", message: {token: "..."} 或 message: "token", user_id: "..."}
+        // 支持多种响应格式：
+        // 格式1: {code: 1000, data: {token: "...", user_id: "..."}}
+        // 格式2: {code: 1000, desc: "success", message: {token: "..."}, user_id: "..."}
+        // 格式3: {desc: "success", message: {token: "..."} 或 message: "token", user_id: "..."}
         const isSuccess = response.data.code === 1000 || response.data.desc === 'success'
         
         if (isSuccess) {
           // 登录成功 - 第一次使用微信登录的用户信息存储流程
           // 1. 提取并保存 token
           let token = null
-          if (response.data.message?.token) {
+          let userId = null
+          
+          // 优先处理格式1: {code: 1000, data: {token, user_id}}
+          if (response.data.code === 1000 && response.data.data) {
+            token = response.data.data.token
+            userId = response.data.data.user_id || response.data.data.userId
+          } 
+          // 处理格式2和格式3
+          else if (response.data.message?.token) {
             token = response.data.message.token
+            userId = response.data.user_id || response.data.message?.user_id
           } else if (typeof response.data.message === 'string') {
             token = response.data.message
+            userId = response.data.user_id
           }
           
           if (!token) {
@@ -119,8 +145,6 @@ export default {
           localStorage.setItem('token', token)
           console.log('Token已保存到localStorage')
           
-          // 2. 提取并保存 user_id
-          const userId = response.data.user_id || response.data.message?.user_id
           if (!userId) {
             console.error('未找到user_id，响应数据:', response.data)
             ElMessage.error('登录失败：未获取到用户ID')
