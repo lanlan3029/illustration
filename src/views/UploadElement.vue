@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="header">
-            <p v-if="!isCharacterMode">上传单个 PNG 图元，用于创作页面左侧元素库。请确保画布透明，大小不超过 1MB。</p>
+            <p v-if="!isCharacterMode">上传 PNG 图元，用于创作页面左侧元素库。请确保画布透明，大小不超过 1MB。可一次上传多个图元，并逐个编辑信息。</p>
             <p v-else>确认角色信息并保存到"我的角色"。您可以修改名称、分类和描述等信息。</p>
         </div>
 
@@ -13,15 +13,15 @@
                         <el-upload
                             ref="element-upload"
                             action="https://api.kidstory.cc/picture/"
-                            list-type="picture-card"
-                            :on-preview="handlePictureCardPreview"
+                            :show-file-list="false"
                             :auto-upload="false"
                             :on-change="fileChange"
-                            :on-remove="handleRemove"
-                            :limit="1"
+                            :limit="20"
                             accept=".png"
-                            :class="objClass">
-                            <i class="el-icon-plus"></i>
+                            multiple>
+                            <el-button type="primary">
+                                <i class="el-icon-upload"></i> 选择图元文件
+                            </el-button>
                         </el-upload>
                         <div class="upload-hint">
                             <div class="badges">
@@ -29,12 +29,9 @@
                                 <span class="badge">≤ 1MB</span>
                                 <span class="badge">透明背景</span>
                             </div>
-                            <p>点击上传。上传后可预览，确认无误再提交。</p>
+                            <p>可一次选择多个文件，选择后将在下方表格中显示，请为每个图元编辑信息后单独上传。</p>
                         </div>
                     </div>
-                    <el-dialog v-model="dialogVisible" width="520px">
-                        <img width="100%" :src="dialogImageUrl" alt="preview">
-                    </el-dialog>
                 </el-form-item>
 
                 <!-- 角色模式：显示生成的图片 -->
@@ -49,53 +46,126 @@
                     </div>
                 </el-form-item>
 
-                <el-form-item :label="isCharacterMode ? '角色名称' : '图元名称'" prop="name">
-                    <el-input v-model="form.name" maxlength="30" show-word-limit :placeholder="isCharacterMode ? '请输入角色名称' : '请输入名称'"></el-input>
-                </el-form-item>
+                <!-- 图元模式：表格显示 -->
+                <template v-if="!isCharacterMode && elements.length > 0">
+                    <el-divider content-position="left">图元列表</el-divider>
+                    <el-table 
+                        :data="elements" 
+                        stripe
+                        border
+                        class="element-table">
+                        <el-table-column label="图片" width="120" align="center">
+                            <template #default="{ row }">
+                                <el-image 
+                                    :src="row.url" 
+                                    fit="contain"
+                                    class="table-image"
+                                    :preview-src-list="[row.url]">
+                                    <template #error>
+                                        <div class="image-slot">
+                                            <i class="el-icon-picture-outline"></i>
+                                        </div>
+                                    </template>
+                                </el-image>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="类别" width="150">
+                            <template #default="{ row }">
+                                <el-select 
+                                    v-model="row.category" 
+                                    placeholder="选择类别" 
+                                    size="small"
+                                    style="width: 100%">
+                                    <el-option label="场景" value="scene"></el-option>
+                                    <el-option label="人物" value="people"></el-option>
+                                    <el-option label="动物" value="animal"></el-option>
+                                    <el-option label="植物" value="plant"></el-option>
+                                    <el-option label="食物" value="food"></el-option>
+                                    <el-option label="玩具" value="toy"></el-option>
+                                    <el-option label="交通工具" value="vehicle"></el-option>
+                                    <el-option label="装饰" value="decoration"></el-option>
+                                    <el-option label="家居" value="furniture"></el-option>
+                                    <el-option label="其它" value="others"></el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="描述" min-width="200">
+                            <template #default="{ row }">
+                                <el-input 
+                                    v-model="row.desc" 
+                                    type="textarea" 
+                                    :rows="2"
+                                    size="small"
+                                    placeholder="可选，简要说明此图元的用途或风格">
+                                </el-input>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="120" align="center" fixed="right">
+                            <template #default="{ row }">
+                                <el-tooltip v-if="row.uploadStatus === 'success'" content="已上传" placement="top">
+                                    <el-button 
+                                        type="success"
+                                        size="small"
+                                        circle
+                                        disabled>
+                                        <el-icon><Check /></el-icon>
+                                    </el-button>
+                                </el-tooltip>
+                                <el-button 
+                                    v-else
+                                    type="primary"
+                                    size="small"
+                                    :loading="row.uploadStatus === 'uploading'"
+                                    :disabled="!row.name || !row.category || row.uploadStatus === 'uploading'"
+                                    @click="uploadSingleElement(row)">
+                                    {{ row.uploadStatus === 'uploading' ? '上传中' : '上传' }}
+                                </el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </template>
 
-                <el-form-item label="类别" prop="category">
-                    <el-select v-model="form.category" :placeholder="isCharacterMode ? '请选择角色分类' : '请选择图元类别'" class="full">
-                       
+                <!-- 角色模式：单个角色编辑表单 -->
+                <template v-if="isCharacterMode">
+                    <el-form-item :label="'角色名称'" prop="name">
+                        <el-input v-model="form.name" maxlength="30" show-word-limit :placeholder="'请输入角色名称'"></el-input>
+                    </el-form-item>
 
-                        <el-option v-if="isCharacterMode" label="人物" value="people"></el-option>
-                        <el-option v-if="isCharacterMode" label="动物" value="animal"></el-option>
-                        <el-option v-if="isCharacterMode" label="植物" value="plant"></el-option>
-                        <el-option v-if="isCharacterMode" label="食物" value="food"></el-option>
-                        <el-option v-if="isCharacterMode" label="玩具" value="toy"></el-option>
-                        <el-option v-if="isCharacterMode" label="交通工具" value="vehicle"></el-option>
-                        <el-option v-if="isCharacterMode" label="装饰" value="decoration"></el-option>
-                        <el-option v-if="isCharacterMode" label="家居" value="furniture"></el-option>
-                        <el-option v-if="isCharacterMode" label="其它" value="others"></el-option>
+                    <el-form-item label="类别" prop="category">
+                        <el-select v-model="form.category" :placeholder="'请选择角色分类'" class="full">
+                            <el-option label="人物" value="people"></el-option>
+                            <el-option label="动物" value="animal"></el-option>
+                            <el-option label="植物" value="plant"></el-option>
+                            <el-option label="食物" value="food"></el-option>
+                            <el-option label="玩具" value="toy"></el-option>
+                            <el-option label="交通工具" value="vehicle"></el-option>
+                            <el-option label="装饰" value="decoration"></el-option>
+                            <el-option label="家居" value="furniture"></el-option>
+                            <el-option label="其它" value="others"></el-option>
+                        </el-select>
+                    </el-form-item>
 
-                        <el-option v-if="!isCharacterMode" label="场景" value="scene"></el-option>
-                        <el-option v-if="!isCharacterMode" label="人物" value="people"></el-option>
-                        <el-option v-if="!isCharacterMode" label="动物" value="animal"></el-option>
-                        <el-option v-if="!isCharacterMode" label="植物" value="plant"></el-option>
-                        <el-option v-if="!isCharacterMode" label="食物" value="food"></el-option>
-                        <el-option v-if="!isCharacterMode" label="玩具" value="toy"></el-option>
-                        <el-option v-if="!isCharacterMode" label="交通工具" value="vehicle"></el-option>
-                        <el-option v-if="!isCharacterMode" label="装饰" value="decoration"></el-option>
-                        <el-option v-if="!isCharacterMode" label="家居" value="furniture"></el-option>
-                        <el-option v-if="!isCharacterMode" label="其它" value="others"></el-option>
-                    </el-select>
-                </el-form-item>
+                    <el-form-item :label="'角色描述'">
+                        <el-input type="textarea" :rows="3" v-model="form.desc" :placeholder="'可选，描述角色的特征或风格'"></el-input>
+                    </el-form-item>
+                    <el-form-item label="是否公开">
+                        <el-radio-group v-model="form.is_public">
+                            <el-radio :label="1">公开</el-radio>
+                            <el-radio :label="0">不公开</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                </template>
 
-                <el-form-item :label="isCharacterMode ? '角色描述' : '图元描述'">
-                    <el-input type="textarea" :rows="3" v-model="form.desc" :placeholder="isCharacterMode ? '可选，描述角色的特征或风格' : '可选，简要说明此图元的用途或风格'"></el-input>
-                </el-form-item>
-                <el-form-item label="是否公开">
-                    <el-radio-group v-model="form.is_public">
-                        <el-radio :label="1">公开</el-radio>
-                        <el-radio :label="0">不公开</el-radio>
-                    </el-radio-group>
-                </el-form-item>
-
-                <div class="actions">
-                    <el-button class="btn" type="primary" :loading="disabled" @click="onSubmit">
-                        <span>{{ isCharacterMode ? '保存角色' : '提交上传' }}</span>
+                <div class="actions" v-if="isCharacterMode">
+                    <el-button 
+                        class="btn" 
+                        type="primary" 
+                        :loading="disabled" 
+                        @click="onSubmit">
+                        <span>保存角色</span>
                     </el-button>
                     <el-button class="btn" @click="handleDelete">
-                        <i class="el-icon-delete"></i> 删除
+                        <i class="el-icon-delete"></i> 清空
                     </el-button>
                 </div>
             </el-form>
@@ -105,8 +175,12 @@
     
     <script>
     import { ElMessage } from 'element-plus'
+    import { Check } from '@element-plus/icons-vue'
     
     export default {
+      components: {
+        Check
+      },
        data() {
           return {
             dialogImageUrl: '',
@@ -129,11 +203,7 @@
             { required: true, message: '请选择类别', trigger: 'blur' },
           ],
         },
-            fileStore:{},
-            objClass:{
-          uploadShow:true,
-          uploadHide:false
-        },
+            elements: [], // 存储多个图元的数据 [{ file, url, name, category, desc, is_public, uid }]
           };
         },
         mounted() {
@@ -166,28 +236,126 @@
               this.$router.push('/create-character');
             }
           },
-          handleRemove(file, fileList) {
-            this.objClass.uploadShow=true;
-            this.objClass.uploadHide=false;
-            console.log(file, fileList);
+          handleRemove(file) {
+            // 从 elements 数组中移除对应的图元
+            const index = this.elements.findIndex(el => el.uid === file.uid);
+            if (index !== -1) {
+              this.elements.splice(index, 1);
+            }
           },
           handlePictureCardPreview(file) {
             this.dialogImageUrl = file.url;
             this.dialogVisible = true;
           },
   
-          fileChange(file){
-             const isLt1M = file.size / 1024 / 1024 < 1;
-             if (!isLt1M) {
-                 ElMessage.error('上传图片大小不能超过 1MB!');
-                 this.$refs['element-upload'].clearFiles()
-             } else {
-                 this.objClass.uploadHide=true;
-                 this.objClass.uploadShow=false;
-                 this.fileStore=file.raw
-             }
-             return isLt1M;
+          fileChange(file, fileList) {
+            // 检查文件大小
+            const isLt1M = file.size / 1024 / 1024 < 1;
+            if (!isLt1M) {
+                ElMessage.error(`文件 "${file.name}" 大小不能超过 1MB!`);
+                // 从文件列表中移除
+                const index = fileList.findIndex(f => f.uid === file.uid);
+                if (index !== -1) {
+                  fileList.splice(index, 1);
+                }
+                return false;
+            }
 
+            // 检查是否已存在（避免重复添加）
+            const exists = this.elements.some(el => el.uid === file.uid);
+            if (!exists && file.raw) {
+              // 创建预览 URL
+              const previewUrl = file.url || URL.createObjectURL(file.raw);
+              
+              // 添加到 elements 数组
+              this.elements.push({
+                file: file.raw,
+                url: previewUrl,
+                uid: file.uid,
+                name: file.name.replace(/\.png$/i, '') || '', // 默认使用文件名（去掉扩展名）
+                category: '',
+                desc: '',
+                is_public: 1,
+                uploadStatus: 'pending' // 上传状态：pending, uploading, success, error
+              });
+            }
+            
+            return true;
+          },
+          
+          // 移除单个图元
+          removeElement(index) {
+            const element = this.elements[index];
+            if (element.uploadStatus === 'uploading') {
+              ElMessage.warning('正在上传中，请稍候再删除');
+              return;
+            }
+            
+            this.$confirm('确定要删除这个图元吗？', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              // 从 elements 中移除
+              this.elements.splice(index, 1);
+              
+              // 从上传组件中移除对应的文件
+              if (this.$refs['element-upload']) {
+                const fileList = this.$refs['element-upload'].fileList || [];
+                const fileIndex = fileList.findIndex(f => f.uid === element.uid);
+                if (fileIndex !== -1) {
+                  this.$refs['element-upload'].handleRemove(fileList[fileIndex]);
+                }
+              }
+              
+              ElMessage.success('已删除');
+            }).catch(() => {
+              // 用户取消
+            });
+          },
+          
+          // 单个图元上传
+          async uploadSingleElement(element) {
+            // 验证必填项
+            if (!element.name || !element.category) {
+              ElMessage.warning('请填写图元名称和选择类别');
+              return;
+            }
+
+            // 设置上传状态
+            element.uploadStatus = 'uploading';
+            
+            try {
+              const token = localStorage.getItem('token');
+              const formdata = new window.FormData();
+              formdata.append('picture', element.file);
+              formdata.append('title', element.name);
+              formdata.append('description', element.desc || '');
+              formdata.append('type', element.category);
+              formdata.append('is_public', element.is_public);
+
+              const response = await this.$http.post(`/picture/`, formdata, {
+                headers: {
+                  'Content-Type': 'multipart/form-data',
+                  'Authorization': 'Bearer ' + token
+                }
+              });
+
+              if (response.data.desc === "success") {
+                // 上传成功
+                element.uploadStatus = 'success';
+                ElMessage.success(`图元 "${element.name}" 上传成功`);
+              } else {
+                // 上传失败
+                element.uploadStatus = 'error';
+                ElMessage.error(`图元 "${element.name}" 上传失败: ${response.data.message || '未知错误'}`);
+              }
+            } catch (error) {
+              // 上传失败
+              element.uploadStatus = 'error';
+              const errorMsg = error.response?.data?.message || error.message || '上传失败';
+              ElMessage.error(`图元 "${element.name}" 上传失败: ${errorMsg}`);
+            }
           },
           onSubmit(){
             if (this.isCharacterMode) {
@@ -308,48 +476,12 @@
             }
           },
           uploadElement() {
-            const hasFile = this.fileStore && Object.keys(this.fileStore).length !== 0;
-            const hasName = !!this.form.name;
-            const hasCategory = !!this.form.category;
-
-            if (hasFile && hasName && hasCategory) {
-                this.disabled = true;
-                const formdata = new window.FormData()
-                formdata.append('picture', this.fileStore)
-                formdata.append('title', this.form.name)
-                formdata.append('description', this.form.desc)
-                formdata.append('type', this.form.category)
-                formdata.append('is_public', this.form.is_public)
-
-                this.$http
-                    .post(`/picture/`, formdata, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            "Authorization": "Bearer " + localStorage.getItem("token")
-                        }
-                    })
-                    .then((response) => {
-                        if (response.data.desc === "success") {
-                            ElMessage({ message: '上传成功', type: 'success' })
-                            this.$router.push('/user/upload/submit-res/');
-                        } else {
-                            this.$router.push({ path: '/errorpage' });
-                        }
-                    })
-                    .catch((error) => console.log(error))
-                    .finally(() => {
-                        this.disabled = false
-                    })
-            } else {
-                ElMessage({
-                    message: '图元、图元名称、类别不能为空',
-                    type: 'warning',
-                    offset: '300'
-                });
-            }
+            // 图元模式现在使用单个上传，这个方法保留用于兼容
+            // 实际的上传逻辑在 uploadSingleElement 中
+            ElMessage.info('请使用表格中的"上传"按钮逐个上传图元');
           },
           handleDelete() {
-            this.$confirm('确定要删除吗？删除后数据将无法恢复。', '提示', {
+            this.$confirm('确定要清空所有数据吗？清空后数据将无法恢复。', '提示', {
               confirmButtonText: '确定',
               cancelButtonText: '取消',
               type: 'warning'
@@ -360,13 +492,13 @@
               this.form.category = '';
               this.form.is_public = 1;
               
+              // 清除所有图元
+              this.elements = [];
+              
               // 清除上传的文件
               if (this.$refs['element-upload']) {
                 this.$refs['element-upload'].clearFiles();
               }
-              this.fileStore = {};
-              this.objClass.uploadShow = true;
-              this.objClass.uploadHide = false;
               
               // 清除角色数据
               if (this.isCharacterMode) {
@@ -378,7 +510,7 @@
                 this.$router.push('/create-character');
               } else {
                 // 图元模式，只清除数据，留在当前页面
-                ElMessage.success('已清除');
+                ElMessage.success('已清空');
               }
             }).catch(() => {
               // 用户取消删除
@@ -392,11 +524,13 @@
     .container{
         width:100vw;
         min-height:calc(100vh - 72px - 80px);
+        max-height: calc(100vh - 72px - 80px);
         padding:32px 24px 64px;
         background: #f7f8fa;
         display: flex;
         flex-direction: column;
         align-items: center;
+        overflow: hidden;
     }
     .header{
         width:100%;
@@ -418,6 +552,37 @@
         max-width: 920px;
         border-radius: 16px;
         box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+        max-height: calc(100vh - 200px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .card :deep(.el-card__body) {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 24px;
+        max-height: calc(100vh - 250px);
+    }
+    
+    /* 自定义滚动条样式 */
+    .card :deep(.el-card__body)::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .card :deep(.el-card__body)::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .card :deep(.el-card__body)::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    
+    .card :deep(.el-card__body)::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
     }
     .upload-row{
         display: flex;
@@ -495,5 +660,86 @@
         width: 100%;
         height: auto;
         display: block;
+    }
+    
+    /* 多个图元编辑样式 */
+    .element-item {
+        margin-bottom: 24px;
+    }
+    .element-item:last-child {
+        margin-bottom: 0;
+    }
+    .element-card {
+        border: 1px solid #e4e7ed;
+        border-radius: 8px;
+    }
+    .element-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .element-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+    }
+    .element-preview {
+        width: 100%;
+        max-width: 200px;
+        height: 150px;
+        margin-bottom: 16px;
+        border: 1px solid #e4e7ed;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f5f7fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .element-preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    /* 表格样式 */
+    .element-table {
+        margin-top: 16px;
+        width: 100%;
+    }
+    
+    .table-image {
+        width: 100px;
+        height: 100px;
+        border-radius: 4px;
+        border: 1px solid #e4e7ed;
+        background: #f5f7fa;
+    }
+    
+    .table-image :deep(.el-image__inner) {
+        object-fit: contain;
+    }
+    
+    .image-slot {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        background: #f5f7fa;
+        color: #909399;
+        font-size: 24px;
+    }
+    
+    .element-table :deep(.el-table__cell) {
+        padding: 12px 0;
+    }
+    
+    .element-table :deep(.el-textarea__inner) {
+        min-height: 60px;
     }
 </style>

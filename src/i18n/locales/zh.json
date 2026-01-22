@@ -189,7 +189,7 @@
     "bookUpdateFailed": "更新绘本失败",
     "updateFailedRetry": "更新失败，请稍后重试",
     "uploadingBook": "正在上传绘本...",
-    "bookCreateSuccess": "绘本创建成功！共上传 {count} 张图片",
+    "bookCreateSuccess": "绘本添加成功！感谢您的分享。",
     "bookCreateFailed": "创建绘本失败",
     "loadingBookData": "正在加载绘本数据...",
     "loadedImages": "已加载 {count} 张图片",
@@ -1019,6 +1019,12 @@
   "loginRegister": {
     "wechatLogin": "微信登录",
     "wechatLoginDesc": "使用微信扫码快速登录",
+    "wechatQRCodeLogin": "使用二维码登录",
+    "scanQRCode": "微信扫码登录",
+    "scanQRCodeTip": "使用微信扫一扫功能扫描二维码登录",
+    "backToLogin": "返回账号登录",
+    "wechatConfigError": "微信登录配置未完成，请联系管理员",
+    "wechatScriptLoadError": "加载微信登录脚本失败，请刷新页面重试",
     "accountLogin": "账号登录",
     "register": "注册",
     "enterEmail": "请输入邮箱",
@@ -1059,6 +1065,11 @@
     "loginSuccess": "微信登录成功",
     "loginFailed": "微信登录失败，请稍后重试",
     "invalidState": "登录验证失败，请重新登录",
-    "noCode": "未获取到授权码，请重新登录"
+    "noCode": "未获取到授权码，请重新登录",
+    "userCancel": "用户取消授权",
+    "invalidCode": "授权码无效或已过期，请重新登录",
+    "serverError": "服务器错误，请稍后重试",
+    "timeout": "请求超时，请检查网络连接",
+    "networkError": "网络错误，请检查网络连接"
   }
 }
