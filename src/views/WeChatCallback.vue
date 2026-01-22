@@ -107,25 +107,48 @@ export default {
         
         console.log('后端接口响应:', response.data)
 
-        // 支持多种响应格式：{code: 1000, ...} 或 {desc: 'success', ...}
-        const isSuccess = response.data.code === 1000 || response.data.desc === 'success'
+        // 支持多种响应格式：
+        // 格式1: {code: 0, desc: 'success', message: {...}, user_id: '...'} - 后端实际返回格式
+        // 格式2: {code: 1000, data: {token, user_id}}
+        // 格式3: {desc: 'success', message: {token, ...}, user_id: ...}
+        // 格式4: {desc: 'success', message: "token", user_id: ...}
+        const isSuccess = response.data.code === 0 || response.data.code === 1000 || response.data.desc === 'success'
 
         if (isSuccess) {
           // 登录成功 - 提取 token 和 user_id
           let token = null
           let userId = null
 
-          // 优先处理格式1: {code: 1000, data: {token, user_id}}
-          if (response.data.code === 1000 && response.data.data) {
+          // 优先处理格式1: {code: 0, desc: 'success', message: {...}, user_id: '...'}
+          // 注意：后端返回的 message 可能是用户信息对象，token 可能在 message 中或单独返回
+          if (response.data.code === 0) {
+            // 如果 message 是字符串，则是 token
+            if (typeof response.data.message === 'string') {
+              token = response.data.message
+            } 
+            // 如果 message 是对象，可能包含 token 字段
+            else if (response.data.message?.token) {
+              token = response.data.message.token
+            }
+            // 也可能 token 在顶层
+            else if (response.data.token) {
+              token = response.data.token
+            }
+            
+            // user_id 可能在顶层或 message 中
+            userId = response.data.user_id || response.data.message?._id || response.data.message?.id
+          }
+          // 处理格式2: {code: 1000, data: {token, user_id}}
+          else if (response.data.code === 1000 && response.data.data) {
             token = response.data.data.token
             userId = response.data.data.user_id || response.data.data.userId
           } 
-          // 处理格式2: {desc: 'success', message: {token, ...}, user_id: ...}
+          // 处理格式3: {desc: 'success', message: {token, ...}, user_id: ...}
           else if (response.data.message?.token) {
             token = response.data.message.token
             userId = response.data.user_id || response.data.message?.user_id
           } 
-          // 处理格式3: {desc: 'success', message: "token", user_id: ...}
+          // 处理格式4: {desc: 'success', message: "token", user_id: ...}
           else if (typeof response.data.message === 'string') {
             token = response.data.message
             userId = response.data.user_id
@@ -138,24 +161,34 @@ export default {
             return
           }
 
-          // 保存 token 和 user_id
+          // 保存 token 和 user_id 到 localStorage
           localStorage.setItem('token', token)
-          localStorage.setItem('id', userId || response.data.user_id)
+          if (userId) {
+            localStorage.setItem('id', userId)
+          } else if (response.data.user_id) {
+            localStorage.setItem('id', response.data.user_id)
+          }
+          
+          // 更新登录状态
           store.commit('hasLogin', true)
           
           ElMessage.success(t('wechatCallback.loginSuccess'))
           
-          // 获取用户信息
-          if (userId || response.data.user_id) {
+          // 获取用户信息（如果后端返回了用户信息，直接使用；否则重新获取）
+          if (response.data.code === 0 && response.data.message && typeof response.data.message === 'object' && response.data.message._id) {
+            // 后端已经返回了用户信息，直接保存
+            console.log('使用后端返回的用户信息:', response.data.message)
+            store.commit('setUserInfo', response.data.message)
+          } else if (userId || response.data.user_id) {
+            // 后端没有返回用户信息，需要重新获取
             try {
               const userRes = await $http.get(`/user/${userId || response.data.user_id}`, {
-                timeout: 10000,
-                headers: {
-                  'Authorization': 'Bearer ' + token
-                }
+                timeout: 10000
+                // 注意：axios 拦截器会自动添加 Authorization header
               })
               if (userRes.data && userRes.data.message) {
                 store.commit('setUserInfo', userRes.data.message)
+                console.log('用户信息已保存到store:', userRes.data.message)
               }
             } catch (err) {
               console.error('获取用户信息失败:', err)

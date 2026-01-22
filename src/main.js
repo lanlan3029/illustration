@@ -61,6 +61,41 @@ axios.defaults.baseURL = 'https://api.kidstory.cc/'
 // 设置全局请求超时时间（30秒）
 axios.defaults.timeout = 30000
 
+// 添加请求拦截器：自动在请求头中添加 token
+axios.interceptors.request.use(
+  config => {
+    // 从 localStorage 获取 token
+    const token = localStorage.getItem('token')
+    if (token) {
+      // 自动添加 Authorization header
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  error => {
+    // 请求错误处理
+    return Promise.reject(error)
+  }
+)
+
+// 添加响应拦截器：处理 token 过期等情况
+axios.interceptors.response.use(
+  response => {
+    // 正常响应直接返回
+    return response
+  },
+  error => {
+    // 如果返回 401 未授权，可能是 token 过期，清除登录状态
+    if (error.response && error.response.status === 401) {
+      console.warn('Token 已过期或无效，清除登录状态')
+      localStorage.removeItem('token')
+      localStorage.removeItem('id')
+      // 可以在这里触发登出逻辑
+    }
+    return Promise.reject(error)
+  }
+)
+
 // 将 axios 挂载到全局属性
 app.config.globalProperties.$http = axios
 // 将 Element Plus 的 message 挂载到全局属性（为了兼容性）

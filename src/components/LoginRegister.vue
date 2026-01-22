@@ -265,10 +265,24 @@ export default {
                 const lang = 'cn' // 中文简体
                 const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}&lang=${lang}#wechat_redirect`
                 
+                // 调试信息：打印实际使用的 redirect_uri
+                console.log('=== 微信登录调试信息 ===')
+                console.log('AppID:', appid)
+                console.log('回调地址 (callbackUrl):', callbackUrl)
+                console.log('编码后的回调地址 (redirectUri):', redirectUri)
+                console.log('完整的授权URL:', wechatAuthUrl)
+                console.log('注意：微信授权成功后，会跳转到回调地址，格式为：', callbackUrl + '?code=CODE&state=' + state)
+                console.log('如果跳转到了 api.kidstory.cc，请检查：')
+                console.log('1. 是否使用了后端 /pb/auth/wechat/authorize 接口')
+                console.log('2. 微信开放平台配置的回调域名是否正确')
+                console.log('========================')
+                
                 // 6. 跳转到微信授权页面
                 // 用户扫码并确认授权后，微信会重定向到：
                 // redirect_uri?code=CODE&state=STATE
                 // 例如：https://www.kidstory.cc/wechat/callback?code=081L7Fll2dO52h4pKsml2baLOJ3L7FlE&state=3d6be0a40sssssxxxxx6624a415e
+                // ⚠️ 重要：如果实际跳转到了 https://api.kidstory.cc/pb/auth/wechat/callback
+                // 说明可能使用了后端的 /pb/auth/wechat/authorize 接口，或者微信开放平台配置有误
                 window.location.href = wechatAuthUrl
             } catch (error) {
                 wechatLoading.value = false
