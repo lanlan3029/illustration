@@ -233,21 +233,11 @@ export default {
           return;
         }
 
-        // 创建订单并获取微信支付 code_url
-        // 后端会调用微信支付 V3 Native 接口：POST /v3/pay/transactions/native
-        // 参考文档：https://pay.weixin.qq.com/doc/v3/merchant/4012791877
-        // 请求格式：
-        // POST https://api.kidstory.cc/payment/create-order
-        // Authorization: Bearer <JWT_TOKEN>
-        // Content-Type: application/json
-        // {
-        //   "product_type": "points",
-        //   "product_id": 100
-        // }
-        const orderData = {
-          product_type: 'points', // 产品类型：积分
-          product_id: 100 // 产品ID：100积分（对应9.9元）
-        };
+    
+          const orderData = {
+            product_type: 'points', // 产品类型：积分
+            product_id: 1 // 产品ID：1 → 100 积分，9.9 元（990 分）
+          };
 
         const apiUrl = this.apiBaseUrl 
           ? `${this.apiBaseUrl}/payment/create-order`
