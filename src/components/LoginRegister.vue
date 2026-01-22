@@ -204,17 +204,12 @@ export default {
             }
         }
        
-<<<<<<< HEAD
         // 微信登录 - 根据微信官方文档实现
         // 参考：https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
-=======
-        // 微信登录 - 使用获取appid方式构建授权URL
->>>>>>> 077d13217dbf78498106844e8dfded14274b6d2d
         const wechatLogin = async () => {
             wechatLoading.value = true
             
             try {
-<<<<<<< HEAD
                 // 1. 生成 state 参数（用于防止 CSRF 攻击）
                 // 根据官方文档：state参数用于保持请求和回调的状态，授权请求后原样带回给第三方
                 // 该参数可用于防止csrf攻击（跨站请求伪造攻击）
@@ -222,19 +217,11 @@ export default {
                 localStorage.setItem('wechat_state', state)
                 
                 // 2. 保存当前页面，用于登录后跳转
-=======
-            // 生成 state 参数（用于防止 CSRF 攻击）
-            const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-            localStorage.setItem('wechat_state', state)
-            
-                // 保存当前页面，用于登录后跳转
->>>>>>> 077d13217dbf78498106844e8dfded14274b6d2d
                 const currentPath = window.location.pathname + window.location.search
                 if (currentPath !== '/wechat/callback') {
                     localStorage.setItem('wechat_redirect', currentPath)
                 }
                 
-<<<<<<< HEAD
                 // 3. 构建回调地址
                 // 重要：根据微信官方文档，redirect_uri 的域名必须与微信开放平台配置的授权回调域名完全一致
                 // 必须使用固定的生产域名，不能使用 window.location.origin（开发环境会是 localhost）
@@ -267,45 +254,12 @@ export default {
                 // 5. 根据官方文档构建微信授权URL（第一步：请求CODE）
                 // URL格式：https://open.weixin.qq.com/connect/qrconnect?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=snsapi_login&state=STATE#wechat_redirect
                 // 参数说明：
-=======
-                // 构建回调地址
-                // 重要：微信开放平台配置的授权回调域为 www.kidstory.cc
-                // 根据微信官方文档，redirect_uri 的域名必须与配置的授权回调域名完全一致
-                // - 授权回调域名：www.kidstory.cc（在微信开放平台配置）
-                // - redirect_uri 必须使用 HTTPS（生产环境要求）
-                // - redirect_uri 的域名部分必须匹配授权回调域名
-                // 注意：必须使用固定的生产域名，不能使用 window.location.origin（开发环境会是 localhost）
-                const callbackUrl = `https://www.kidstory.cc/wechat/callback`
-                
-                // 调用后端接口获取微信AppID
-                const appidResponse = await $http.get('/pb/auth/wechat/appid', {
-                    timeout: 10000
-                })
-                
-                // 后端返回格式：{code: 1000, desc: "success", appid: "wx1234567890"}
-                let appid = null
-                if (appidResponse.data.desc === 'success' && appidResponse.data.appid) {
-                    appid = appidResponse.data.appid
-                } else if (appidResponse.data.code === 1000 && appidResponse.data.appid) {
-                    appid = appidResponse.data.appid
-                }
-                
-                if (!appid) {
-                    throw new Error('无法获取微信AppID，请检查后端配置')
-                }
-                
-                // 根据官方文档构建微信授权URL（第一步：请求CODE）
-                // 参考：https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
-                // 
-                // 参数说明（符合官方文档要求）：
->>>>>>> 077d13217dbf78498106844e8dfded14274b6d2d
                 // - appid: 应用唯一标识（必需）
                 // - redirect_uri: 授权后重定向的回调链接地址，使用urlEncode对链接进行处理（必需）
                 // - response_type: 返回类型，填code（必需）
                 // - scope: 应用授权作用域，网站应用目前仅填写snsapi_login（必需）
                 // - state: 用于保持请求和回调的状态，授权请求后原样带回给第三方，用于防止CSRF攻击（可选但建议使用）
                 // - lang: 界面语言，支持cn（中文简体）与en（英文），默认为cn（可选）
-<<<<<<< HEAD
                 const redirectUri = encodeURIComponent(callbackUrl)
                 const lang = 'cn' // 中文简体
                 const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}&lang=${lang}#wechat_redirect`
@@ -313,36 +267,12 @@ export default {
                 // 6. 跳转到微信授权页面
                 // 用户扫码并确认授权后，微信会重定向到 redirect_uri?code=CODE&state=STATE
                 window.location.href = wechatAuthUrl
-=======
-                // 
-                // 关于 scope 参数说明：
-                // - scope=snsapi_login 是网站应用微信登录的固定值，不需要"获取"
-                // - 这是微信开放平台为网站应用提供的标准授权作用域
-                // - 授权后，后端可以通过 access_token 获取用户实际授权的作用域信息
-                // - 如果后端需要返回scope信息，可以在 /pb/auth/wechat/callback 接口的响应中包含
-                // 
-                // 重要提示：如果遇到"Scope 参数错误或没有 Scope 权限"错误，请检查：
-                // 1. 微信开放平台中的应用类型是否为"网站应用"
-                // 2. 是否已申请并审核通过"微信登录"功能
-                // 3. AppID 是否来自网站应用（不是移动应用或其他类型）
-                // 4. redirect_uri的域名是否与审核时填写的授权域名一致
-                const redirectUri = encodeURIComponent(callbackUrl)
-                const lang = 'cn' // 可以根据需要设置为 'en' 或其他语言
-                const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}&lang=${lang}#wechat_redirect`
-            
-            // 跳转到微信授权页面
-            window.location.href = wechatAuthUrl
->>>>>>> 077d13217dbf78498106844e8dfded14274b6d2d
             } catch (error) {
                 wechatLoading.value = false
                 console.error('微信登录失败:', error)
                 let errorMsg = '微信登录配置未完成，请联系管理员'
                 
                 if (error.response) {
-<<<<<<< HEAD
-=======
-                    // 处理HTTP错误响应
->>>>>>> 077d13217dbf78498106844e8dfded14274b6d2d
                     if (error.response.status === 404) {
                         errorMsg = '微信登录接口未找到，请联系管理员检查后端配置'
                     } else if (error.response.data?.message) {
