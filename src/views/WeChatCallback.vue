@@ -172,6 +172,9 @@ export default {
           // 更新登录状态
           store.commit('hasLogin', true)
           
+          // 关闭登录弹窗（如果打开的话）
+          store.commit('closeMask')
+          
           ElMessage.success(t('wechatCallback.loginSuccess'))
           
           // 获取用户信息（如果后端返回了用户信息，直接使用；否则重新获取）

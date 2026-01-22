@@ -85,19 +85,16 @@
 
           <!-- 支付方式 -->
           <div class="payment-section">
-            <h3 class="section-title">选择支付方式</h3>
+            <h3 class="section-title">支付方式</h3>
             <div class="payment-methods">
               <div 
-                class="payment-method-item" 
-                :class="{ 'active': paymentMethod === 'alipay' }"
-                @click="paymentMethod = 'alipay'">
+                class="payment-method-item active">
                 <div class="payment-radio">
-                  <i class="el-icon-check" v-if="paymentMethod === 'alipay'"></i>
+                  <i class="el-icon-check"></i>
                 </div>
-                <img src="@/assets/logo/alipay.png" alt="支付宝" class="payment-logo" />
-                <span>支付宝</span>
+                <i class="el-icon-wallet"></i>
+                <span>微信支付</span>
               </div>
-             
             </div>
           </div>
 
@@ -107,7 +104,7 @@
               type="primary" 
               size="large"
               :loading="processing"
-              :disabled="!selectedPackage || !paymentMethod"
+              :disabled="!selectedPackage"
               @click="handleRecharge"
               class="recharge-btn">
               <i class="el-icon-wallet"></i>
@@ -132,7 +129,7 @@
           <div class="qrcode-wrapper">
             <img :src="qrCodeUrl" alt="支付二维码" class="qrcode-image" />
           </div>
-          <p class="qrcode-tip">请使用{{ paymentMethod === 'alipay' ? '支付宝' : '微信' }}扫描二维码完成支付</p>
+          <p class="qrcode-tip">请使用微信扫描二维码完成支付</p>
           <p class="qrcode-order">订单号：{{ currentOrderNo }}</p>
         </div>
         <template #footer>
@@ -154,7 +151,7 @@ export default {
   data() {
     return {
       selectedPackage: 'basic', // 当前选中的套餐
-      paymentMethod: 'alipay', // 支付方式：alipay 或 wepay
+      paymentMethod: 'wepay', // 支付方式：微信支付
       processing: false, // 是否正在处理
       userPoints: 0, // 用户当前积分
       currentOrderNo: null, // 当前订单号
@@ -214,8 +211,8 @@ export default {
 
     // 处理充值
     async handleRecharge() {
-      if (!this.selectedPackage || !this.paymentMethod) {
-        ElMessage.warning('请选择套餐和支付方式');
+      if (!this.selectedPackage) {
+        ElMessage.warning('请选择套餐');
         return;
       }
 
@@ -234,7 +231,7 @@ export default {
         const orderData = {
           amount: 9.9, // 充值金额
           points: 100, // 充值积分
-          payment_type: this.paymentMethod === 'alipay' ? 'alipay' : 'wepay' // 支付方式：alipay 或 wepay
+          payment_type: 'wepay' // 支付方式：微信支付
         };
 
         const apiUrl = this.apiBaseUrl 
@@ -334,8 +331,6 @@ export default {
       const ua = navigator.userAgent.toLowerCase();
       if (ua.includes('micromessenger')) {
         return 'wepay'; // 微信内浏览器
-      } else if (ua.includes('alipay')) {
-        return 'alipay'; // 支付宝客户端
       } else if (ua.includes('qq/')) {
         return 'qq'; // 手机QQ内浏览器
       } else if (/mobile|android|iphone|ipad/.test(ua)) {
