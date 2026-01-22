@@ -127,7 +127,13 @@
         :show-close="false">
         <div class="qrcode-container">
           <div class="qrcode-wrapper">
-            <img :src="qrCodeUrl" alt="支付二维码" class="qrcode-image" />
+            <!-- 如果 qrCodeUrl 是 code_url（微信支付格式），使用在线二维码生成服务 -->
+            <!-- 如果 qrCodeUrl 是图片 URL，直接显示 -->
+            <img 
+              :src="getQRCodeImageUrl(qrCodeUrl)" 
+              alt="支付二维码" 
+              class="qrcode-image"
+              @error="handleQRCodeError" />
           </div>
           <p class="qrcode-tip">请使用微信扫描二维码完成支付</p>
           <p class="qrcode-order">订单号：{{ currentOrderNo }}</p>
@@ -227,11 +233,20 @@ export default {
           return;
         }
 
-        // 步骤1：创建订单
+        // 创建订单并获取微信支付 code_url
+        // 后端会调用微信支付 V3 Native 接口：POST /v3/pay/transactions/native
+        // 参考文档：https://pay.weixin.qq.com/doc/v3/merchant/4012791877
+        // 请求格式：
+        // POST https://api.kidstory.cc/payment/create-order
+        // Authorization: Bearer <JWT_TOKEN>
+        // Content-Type: application/json
+        // {
+        //   "product_type": "points",
+        //   "product_id": 100
+        // }
         const orderData = {
-          amount: 9.9, // 充值金额
-          points: 100, // 充值积分
-          payment_type: 'wepay' // 支付方式：微信支付
+          product_type: 'points', // 产品类型：积分
+          product_id: 100 // 产品ID：100积分（对应9.9元）
         };
 
         const apiUrl = this.apiBaseUrl 
@@ -241,7 +256,7 @@ export default {
         const createResponse = await this.$http.post(apiUrl, orderData, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
+            'Authorization': 'Bearer ' + token // 包含 JWT token
           }
         });
 
@@ -250,17 +265,30 @@ export default {
         }
 
         const orderInfo = createResponse.data.message || createResponse.data.data || createResponse.data;
-        const orderNo = orderInfo.order_no || orderInfo.order_id;
+        
+        // 微信支付 V3 返回格式：{ "code_url": "weixin://wxpay/bizpayurl/up?pr=xxx" }
+        // 后端应该返回：{ order_no: "xxx", code_url: "weixin://wxpay/bizpayurl/up?pr=xxx" }
+        const orderNo = orderInfo.order_no || orderInfo.order_id || orderInfo.out_trade_no;
+        const codeUrl = orderInfo.code_url;
 
         if (!orderNo) {
           throw new Error('订单创建失败，未返回订单号');
         }
 
-        this.currentOrderNo = orderNo;
-        ElMessage.success('订单创建成功，正在跳转支付...');
+        if (!codeUrl) {
+          throw new Error('订单创建失败，未返回支付二维码链接');
+        }
 
-        // 步骤2：获取支付URL
-        await this.getPayUrlAndProcess(orderNo);
+        this.currentOrderNo = orderNo;
+        ElMessage.success('订单创建成功，请扫码支付');
+
+        // 直接使用返回的 code_url 显示二维码
+        this.qrCodeUrl = codeUrl;
+        this.showQRCode = true;
+        this.processing = false;
+        
+        // 开始轮询订单状态
+        this.startPollingOrderStatus(orderNo);
 
       } catch (error) {
         console.error('充值失败:', error);
@@ -269,62 +297,6 @@ export default {
       }
     },
 
-    // 获取支付URL并处理支付
-    async getPayUrlAndProcess(orderNo) {
-      try {
-        const token = localStorage.getItem('token');
-        
-        // 检测设备类型
-        const device = this.detectDevice();
-        
-        const apiUrl = this.apiBaseUrl 
-          ? `${this.apiBaseUrl}/payment/get-pay-url`
-          : '/payment/get-pay-url';
-
-        const response = await this.$http.post(apiUrl, {
-          order_no: orderNo,
-          method: 'web', // 使用web方式，后端会根据device自动判断
-          device: device
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          }
-        });
-
-        if (!response.data || (response.data.code !== 0 && response.data.code !== '0')) {
-          throw new Error(response.data?.message || '获取支付链接失败');
-        }
-
-        const payInfo = response.data.message || response.data.data || response.data;
-        const payType = payInfo.pay_type;
-        const payInfoUrl = payInfo.pay_info;
-
-        // 根据支付类型处理
-        if (payType === 'jump') {
-          // 跳转支付：直接跳转到支付页面
-          window.location.href = payInfoUrl;
-          // 开始轮询订单状态
-          this.startPollingOrderStatus(orderNo);
-        } else if (payType === 'qrcode') {
-          // 二维码支付：显示二维码
-          this.qrCodeUrl = payInfoUrl;
-          this.showQRCode = true;
-          this.processing = false;
-          // 开始轮询订单状态
-          this.startPollingOrderStatus(orderNo);
-        } else {
-          // 其他支付类型
-          ElMessage.warning(`不支持的支付类型: ${payType}`);
-          this.processing = false;
-        }
-
-      } catch (error) {
-        console.error('获取支付URL失败:', error);
-        ElMessage.error(error.response?.data?.message || error.message || '获取支付链接失败');
-        this.processing = false;
-      }
-    },
 
     // 检测设备类型
     detectDevice() {
@@ -404,6 +376,33 @@ export default {
           // 查询失败不中断轮询，继续尝试
         }
       }, 3000); // 每3秒查询一次
+    },
+
+    // 获取二维码图片 URL
+    // 如果传入的是 code_url（微信支付格式），使用在线二维码生成服务转换为图片
+    // 如果传入的是图片 URL，直接返回
+    getQRCodeImageUrl(codeUrl) {
+      if (!codeUrl) {
+        return '';
+      }
+      
+      // 判断是否是微信支付的 code_url 格式
+      // code_url 格式：weixin://wxpay/bizpayurl/up?pr=xxx
+      if (codeUrl.startsWith('weixin://')) {
+        // 使用在线二维码生成服务将 code_url 转换为二维码图片
+        // 使用 qrcode.js.org 的在线 API（免费、无需后端）
+        const encodedUrl = encodeURIComponent(codeUrl);
+        return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedUrl}`;
+      }
+      
+      // 如果已经是图片 URL，直接返回
+      return codeUrl;
+    },
+
+    // 处理二维码图片加载错误
+    handleQRCodeError(event) {
+      console.error('二维码图片加载失败:', event);
+      ElMessage.error('二维码加载失败，请刷新页面重试');
     },
 
     // 取消支付
