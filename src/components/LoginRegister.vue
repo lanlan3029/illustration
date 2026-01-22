@@ -167,10 +167,6 @@ export default {
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
         
-        // 微信登录配置（需要替换为实际的 AppID）
-        const WECHAT_APPID = process.env.VUE_APP_WECHAT_APPID || 'YOUR_WECHAT_APPID'
-        const WECHAT_REDIRECT_URI = encodeURIComponent(`${window.location.origin}/wechat/callback`)
-        
         const onInputFocus = (e) => {
             e.target.parentElement.classList.add('focused')
         }
@@ -208,28 +204,92 @@ export default {
             }
         }
        
-        // 微信登录
-        const wechatLogin = () => {
-            if (!WECHAT_APPID || WECHAT_APPID === 'YOUR_WECHAT_APPID') {
+        // 微信登录 - 根据微信官方文档实现
+        // 参考：https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
+        const wechatLogin = async () => {
+            wechatLoading.value = true
+            
+            try {
+                // 1. 生成 state 参数（用于防止 CSRF 攻击）
+                // 根据官方文档：state参数用于保持请求和回调的状态，授权请求后原样带回给第三方
+                // 该参数可用于防止csrf攻击（跨站请求伪造攻击）
+                const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+                localStorage.setItem('wechat_state', state)
+                
+                // 2. 保存当前页面，用于登录后跳转
+                const currentPath = window.location.pathname + window.location.search
+                if (currentPath !== '/wechat/callback') {
+                    localStorage.setItem('wechat_redirect', currentPath)
+                }
+                
+                // 3. 构建回调地址
+                // 重要：根据微信官方文档，redirect_uri 的域名必须与微信开放平台配置的授权回调域名完全一致
+                // 必须使用固定的生产域名，不能使用 window.location.origin（开发环境会是 localhost）
+                const callbackUrl = 'https://www.kidstory.cc/wechat/callback'
+                
+                // 4. 尝试从后端获取 AppID（如果后端提供了接口）
+                // 如果后端没有提供接口，可以使用环境变量作为备选
+                let appid = null
+                try {
+                    const appidResponse = await $http.get('/pb/auth/wechat/appid', {
+                        timeout: 10000
+                    })
+                    // 支持多种响应格式
+                    if (appidResponse.data.desc === 'success' && appidResponse.data.appid) {
+                        appid = appidResponse.data.appid
+                    } else if (appidResponse.data.code === 1000 && appidResponse.data.appid) {
+                        appid = appidResponse.data.appid
+                    }
+                } catch (err) {
+                    console.warn('无法从后端获取AppID，尝试使用环境变量:', err)
+                    // 如果后端接口不存在或失败，使用环境变量作为备选
+                    appid = process.env.VUE_APP_WECHAT_APPID
+                }
+                
+                // 如果仍然没有 AppID，使用用户提供的默认值
+                if (!appid) {
+                    appid = 'wx3893106e37688674' // 从用户提供的URL中获取的AppID
+                }
+                
+                // 5. 根据官方文档构建微信授权URL（第一步：请求CODE）
+                // URL格式：https://open.weixin.qq.com/connect/qrconnect?appid=APPID&redirect_uri=REDIRECT_URI&response_type=code&scope=snsapi_login&state=STATE#wechat_redirect
+                // 参数说明：
+                // - appid: 应用唯一标识（必需）
+                // - redirect_uri: 授权后重定向的回调链接地址，使用urlEncode对链接进行处理（必需）
+                // - response_type: 返回类型，填code（必需）
+                // - scope: 应用授权作用域，网站应用目前仅填写snsapi_login（必需）
+                // - state: 用于保持请求和回调的状态，授权请求后原样带回给第三方，用于防止CSRF攻击（可选但建议使用）
+                // - lang: 界面语言，支持cn（中文简体）与en（英文），默认为cn（可选）
+                const redirectUri = encodeURIComponent(callbackUrl)
+                const lang = 'cn' // 中文简体
+                const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}&lang=${lang}#wechat_redirect`
+                
+                // 6. 跳转到微信授权页面
+                // 用户扫码并确认授权后，微信会重定向到 redirect_uri?code=CODE&state=STATE
+                window.location.href = wechatAuthUrl
+            } catch (error) {
+                wechatLoading.value = false
+                console.error('微信登录失败:', error)
+                let errorMsg = '微信登录配置未完成，请联系管理员'
+                
+                if (error.response) {
+                    if (error.response.status === 404) {
+                        errorMsg = '微信登录接口未找到，请联系管理员检查后端配置'
+                    } else if (error.response.data?.message) {
+                        errorMsg = error.response.data.message
+                    } else if (error.response.data?.errmsg) {
+                        errorMsg = error.response.data.errmsg
+                    }
+                } else if (error.message) {
+                    errorMsg = error.message
+                }
+                
                 $message({
-                    message: '微信登录配置未完成，请联系管理员',
+                    message: errorMsg,
                     type: 'error',
                     offset: 180,
                 })
-                return
             }
-
-            wechatLoading.value = true
-            
-            // 生成 state 参数（用于防止 CSRF 攻击）
-            const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-            localStorage.setItem('wechat_state', state)
-            
-            // 构建微信授权 URL
-            const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${WECHAT_APPID}&redirect_uri=${WECHAT_REDIRECT_URI}&response_type=code&scope=snsapi_login&state=${state}#wechat_redirect`
-            
-            // 跳转到微信授权页面
-            window.location.href = wechatAuthUrl
         }
        
         //登陆
