@@ -21,17 +21,20 @@ import '@/assets/lefticon/iconfont.css'
 import axios from 'axios'
 
 // 处理微信登录回调 - 必须在 Vue 应用创建之前执行
-// 因为微信回调 URL 是 /wechat/callback?code=xxx，但我们使用 hash 路由模式
-// 需要将参数转移到 hash 路由中
+// 微信授权成功后，会跳转到：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
+// 但由于我们使用 hash 路由模式（createWebHashHistory），需要将参数转移到 hash 路由中
+// 将 /wechat/callback?code=xxx&state=xxx 转换为 /#/wechat/callback?code=xxx&state=xxx
 (function handleWeChatCallback() {
   // 检查是否是直接访问的微信回调URL（没有hash）
+  // 微信回调格式：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
   if (window.location.pathname === '/wechat/callback' && !window.location.hash.includes('/wechat/callback')) {
-    const search = window.location.search
+    const search = window.location.search // 包含 ?code=xxx&state=xxx
     console.log('[main.js] 检测到微信回调URL（无hash）:', window.location.href)
     console.log('[main.js] pathname:', window.location.pathname, 'search:', search, 'hash:', window.location.hash)
     
     if (search) {
-      // 重定向到 hash 路由格式
+      // 重定向到 hash 路由格式，保留所有查询参数
+      // 例如：/#/wechat/callback?code=081L7Fll2dO52h4pKsml2baLOJ3L7FlE&state=3d6be0a40sssssxxxxx6624a415e
       const hashUrl = `${window.location.origin}/#/wechat/callback${search}`
       console.log('[main.js] 重定向到 hash 路由:', hashUrl)
       window.location.replace(hashUrl)

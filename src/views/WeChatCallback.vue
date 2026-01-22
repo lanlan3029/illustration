@@ -44,7 +44,10 @@ export default {
       console.log('route.query:', route.query)
       
       try {
-        // 获取 URL 参数 - 优先从 window.location.search 获取（因为可能路由还没完全匹配）
+        // 获取 URL 参数
+        // 微信回调URL格式：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
+        // 例如：?code=081L7Fll2dO52h4pKsml2baLOJ3L7FlE&state=3d6be0a40sssssxxxxx6624a415e
+        // 优先从 window.location.search 获取（因为可能路由还没完全匹配）
         const urlParams = new URLSearchParams(window.location.search)
         let code = urlParams.get('code') || route.query.code
         let state = urlParams.get('state') || route.query.state

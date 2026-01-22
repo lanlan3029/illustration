@@ -225,6 +225,7 @@ export default {
                 // 3. 构建回调地址
                 // 重要：根据微信官方文档，redirect_uri 的域名必须与微信开放平台配置的授权回调域名完全一致
                 // 必须使用固定的生产域名，不能使用 window.location.origin（开发环境会是 localhost）
+                // 微信授权成功后，会跳转到：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
                 const callbackUrl = 'https://www.kidstory.cc/wechat/callback'
                 
                 // 4. 尝试从后端获取 AppID（如果后端提供了接口）
@@ -265,7 +266,9 @@ export default {
                 const wechatAuthUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_login&state=${state}&lang=${lang}#wechat_redirect`
                 
                 // 6. 跳转到微信授权页面
-                // 用户扫码并确认授权后，微信会重定向到 redirect_uri?code=CODE&state=STATE
+                // 用户扫码并确认授权后，微信会重定向到：
+                // redirect_uri?code=CODE&state=STATE
+                // 例如：https://www.kidstory.cc/wechat/callback?code=081L7Fll2dO52h4pKsml2baLOJ3L7FlE&state=3d6be0a40sssssxxxxx6624a415e
                 window.location.href = wechatAuthUrl
             } catch (error) {
                 wechatLoading.value = false
