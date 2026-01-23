@@ -490,6 +490,33 @@ export default {
                 })
         }
         
+        // 监听登录状态变化，当登录状态变为 true 时，更新 userid 并获取用户信息
+        watch(isLogin, async (newVal) => {
+            if (newVal) {
+                // 登录状态变为 true，从 localStorage 重新读取 userid
+                const newUserId = localStorage.getItem('id')
+                if (newUserId && newUserId !== userid.value) {
+                    userid.value = newUserId
+                    // 延迟一下，确保 localStorage 已更新
+                    await nextTick()
+                    setTimeout(async () => {
+                        await getUser()
+                        // 获取用户信息后，更新积分显示
+                        if (store.state.userInfo && store.state.userInfo.points !== undefined) {
+                            userPoints.value = store.state.userInfo.points || store.state.userInfo.credits || 0
+                        }
+                    }, 100)
+                }
+            }
+        }, { immediate: false })
+
+        // 监听用户信息变化，更新积分显示
+        watch(() => store.state.userInfo, (newUserInfo) => {
+            if (newUserInfo && newUserInfo.points !== undefined) {
+                userPoints.value = newUserInfo.points || newUserInfo.credits || 0
+            }
+        }, { deep: true })
+
         // 初始化
         onMounted(async () => {
             try {

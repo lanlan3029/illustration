@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { onMounted } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
@@ -199,10 +199,27 @@ export default {
             }
           }
           
+          // 等待 Vue 状态更新完成，确保所有组件都能获取到最新的登录状态
+          await nextTick()
+          
+          // 再等待一小段时间，确保 store 状态已完全同步到所有组件
+          await new Promise(resolve => setTimeout(resolve, 150))
+          
           // 跳转到首页或之前的页面（优先使用 localStorage 中保存的 redirect）
+          // 使用 replace 而不是 push，避免在历史记录中留下回调页面
           const redirect = localStorage.getItem('wechat_redirect') || route.query.redirect || '/'
           localStorage.removeItem('wechat_redirect')
-          router.push(decodeURIComponent(redirect))
+          
+          // 使用 router.replace 进行跳转，确保状态已更新
+          // 如果目标页面已经加载，强制刷新以确保获取最新状态
+          const targetPath = decodeURIComponent(redirect)
+          if (targetPath === '/' || targetPath === route.path) {
+            // 如果跳转到当前页面或首页，使用 location.replace 强制刷新
+            window.location.replace(`/#${targetPath}`)
+          } else {
+            // 跳转到其他页面，使用 router.replace
+            router.replace(targetPath)
+          }
         } else {
           const errorMsg = response.data.message || response.data.errmsg || t('wechatCallback.loginFailed')
           ElMessage.error(errorMsg)
