@@ -1,11 +1,6 @@
 <template>
   <div class="wechat-callback">
-    <div class="loading-container">
-      <el-icon class="is-loading" :size="40">
-        <Loading />
-      </el-icon>
-      <p>{{ $t('wechatCallback.processing') }}</p>
-    </div>
+    <!-- 微信登录回调处理中，页面将自动跳转 -->
   </div>
 </template>
 
@@ -15,14 +10,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 export default {
   name: 'WeChatCallback',
-  components: {
-    Loading
-  },
   setup() {
     const router = useRouter()
     const route = useRoute()
@@ -263,24 +254,6 @@ export default {
   justify-content: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.loading-container {
-  text-align: center;
-  padding: 40px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.loading-container p {
-  margin-top: 20px;
-  color: #606266;
-  font-size: 16px;
-}
-
-.is-loading {
-  color: #07c160;
 }
 </style>
 
