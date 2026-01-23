@@ -308,6 +308,11 @@ const routes = [{
         props: true,
     },
     {
+        path: '/forgot-password',
+        name: 'ForgotPassword',
+        component: () => import(/* webpackChunkName: "forgot-password" */ '../views/ForgotPassword.vue')
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
         component: () =>

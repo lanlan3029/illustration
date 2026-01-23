@@ -82,6 +82,11 @@
                 >
                   {{ $t('loginRegister.login') }}
                 </el-button>
+                <div class="forgot-password">
+                  <span @click="handleForgotPassword" class="forgot-password-link">
+                    {{ $t('loginRegister.forgotPassword') }}
+                  </span>
+                </div>
                 <div class="toregister">
                   {{ $t('loginRegister.noAccount') }}
                   <span @click="toregister">{{ $t('loginRegister.registerNow') }}</span>
@@ -140,6 +145,7 @@
 <script>
 import { ref, getCurrentInstance } from 'vue'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
@@ -148,6 +154,7 @@ export default {
     name: 'LoginRegister',
     setup() {
         const store = useStore()
+        const router = useRouter()
         const { proxy } = getCurrentInstance()
         const { t } = useI18n()
         
@@ -425,6 +432,11 @@ export default {
         const toregister = () => {
             countLog.value = false
         }
+
+        // 处理忘记密码 - 跳转到找回密码页面
+        const handleForgotPassword = () => {
+            router.push('/forgot-password')
+        }
         
         return {
             countLog,
@@ -440,6 +452,7 @@ export default {
             wechatLogin,
             register,
             toregister,
+            handleForgotPassword,
             onInputFocus,
             onInputBlur
         }
@@ -752,6 +765,26 @@ export default {
 .btn-primary:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(129, 103, 169, 0.3);
+}
+
+.forgot-password {
+  text-align: right;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.forgot-password-link {
+  color: #8167a9;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgot-password-link:hover {
+  color: #6b5490;
+  text-decoration: underline;
 }
 
 .toregister {
