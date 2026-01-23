@@ -151,8 +151,9 @@
 </template>
 
 <script>
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
@@ -161,6 +162,7 @@ export default {
   name: 'ForgotPassword',
   setup() {
     const router = useRouter()
+    const store = useStore()
     const { t } = useI18n()
     
     const step = ref(1) // 当前步骤：1-输入邮箱，2-输入验证码，3-设置密码，4-成功
@@ -354,16 +356,14 @@ export default {
       router.push('/')
       // 触发显示登录弹窗
       setTimeout(() => {
-        try {
-          const store = require('@/store').default
-          if (store && store.commit) {
-            store.commit('showMask')
-          }
-        } catch (e) {
-          console.warn('无法打开登录弹窗:', e)
-        }
+        store.commit('showMask')
       }, 100)
     }
+
+    // 组件挂载时关闭登录弹窗
+    onMounted(() => {
+      store.commit('closeMask')
+    })
 
     // 清理定时器
     onBeforeUnmount(() => {
