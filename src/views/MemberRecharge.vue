@@ -333,32 +333,37 @@ export default {
             }
           });
 
-          if (response.data && (response.data.code === 0 || response.data.code === '0')) {
-            const order = response.data.message || response.data.data || response.data;
-            
-            if (order.status === 1) {
+          // 后端在 sync=true 时会主动去微信查询订单状态
+          // 约定：response.data.message.success === true 表示支付成功
+          if (response.data) {
+            const msg = response.data.message || response.data.data || response.data;
+            const success = msg && msg.success === true;
+            const tradeState = msg && (msg.trade_state || msg.tradeState || msg.status_text);
+
+            if (success) {
               // 支付成功
               clearInterval(this.pollingInterval);
               this.pollingInterval = null;
               this.showQRCode = false;
               this.processing = false;
-              
+
               // 更新用户积分
               await this.getUserPoints();
-              
+
               ElMessage.success('支付成功！积分已到账');
-              
+
               // 跳转到成功页面或刷新
               setTimeout(() => {
                 this.$router.push('/member/recharge/success');
               }, 1500);
-            } else if (order.status === 2 || order.status === 3) {
-              // 已退款或已冻结
-              clearInterval(this.pollingInterval);
-              this.pollingInterval = null;
-              this.showQRCode = false;
-              this.processing = false;
-              ElMessage.warning(`订单状态：${order.status_text || '异常'}`);
+              return;
+            }
+
+            // 未成功，根据 trade_state 做不同提示（只提示一次，不打断轮询）
+            if (tradeState) {
+              // 常见取值：NOTPAY, CLOSED, PAYERROR 等
+              // 这里只记录日志，不每次都弹窗打扰用户
+              console.log('当前订单支付状态：', tradeState);
             }
           }
         } catch (error) {
