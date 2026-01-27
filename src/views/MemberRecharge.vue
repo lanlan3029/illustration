@@ -552,14 +552,14 @@ export default {
 }
 
 .package-item:hover {
-  border-color: #409eff;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  border-color: #07c160;
+  box-shadow: 0 4px 12px rgba(7, 193, 96, 0.2);
 }
 
 .package-item.active {
-  border-color: #409eff;
-  background: #ecf5ff;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  border-color: #07c160;
+  background: #e8f8f0;
+  box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
 }
 
 .package-header {
@@ -579,7 +579,7 @@ export default {
 .package-price {
   font-size: 24px;
   font-weight: 600;
-  color: #409eff;
+  color: #07c160;
 }
 
 .package-content {
@@ -621,7 +621,7 @@ export default {
   right: 12px;
   width: 24px;
   height: 24px;
-  background: #409eff;
+  background: #07c160;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -662,13 +662,13 @@ export default {
 }
 
 .payment-method-item:hover {
-  border-color: #409eff;
+  border-color: #07c160;
   background: #f5f7fa;
 }
 
 .payment-method-item.active {
-  border-color: #409eff;
-  background: #ecf5ff;
+  border-color: #07c160;
+  background: #e8f8f0;
 }
 
 .payment-radio {
@@ -684,8 +684,8 @@ export default {
 }
 
 .payment-method-item.active .payment-radio {
-  border-color: #409eff;
-  background: #409eff;
+  border-color: #07c160;
+  background: #07c160;
 }
 
 .payment-method-item.active .payment-radio i {
@@ -783,7 +783,7 @@ export default {
 }
 
 .info-list li i {
-  color: #409eff;
+  color: #07c160;
   font-size: 16px;
 }
 
