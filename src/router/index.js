@@ -255,6 +255,15 @@ const routes = [{
         }
     },
     {
+        path: '/newyear',
+        name: 'newyear',
+        component: () =>
+            import ( /* webpackChunkName: "newyear" */ '../views/NewYear.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
         path: '/member/recharge',
         name: 'member-recharge',
         component: () =>
