@@ -28,24 +28,6 @@
 
             <transition name="form-fade" mode="out-in">
               <div v-if="countLog" key="login" class="form">
-                <!-- 微信登录按钮（首选） -->
-                <el-button 
-                  @click="wechatLogin" 
-                  class="btn btn-wechat"
-                  :loading="wechatLoading"
-                  type="primary"
-                >
-                  <i class="el-icon-message" style="margin-right: 8px;"></i>
-                  {{ $t('loginRegister.wechatLogin') }}
-                </el-button>
-                <div class="wechat-desc">{{ $t('loginRegister.wechatLoginDesc') }}</div>
-                
-                <!-- 分隔线 -->
-                <div class="divider-wrapper">
-                  <el-divider>
-                    <span class="divider-text">{{ $t('loginRegister.accountLogin') }}</span>
-                  </el-divider>
-                </div>
 
                 <div class="form-group">
                   <div class="input-wrapper">
@@ -88,8 +70,14 @@
                   </span>
                 </div>
                 <div class="toregister">
-                  {{ $t('loginRegister.noAccount') }}
-                  <span @click="toregister">{{ $t('loginRegister.registerNow') }}</span>
+                  <span class="wechat-inline-login" @click="wechatLogin">
+                    <span class="wechat-inline-icon" aria-hidden="true">
+                      <img src="@/assets/logo/wepay.png" alt="" class="wechat-inline-icon-img" />
+                    </span>
+                    <span class="wechat-inline-text">微信登录</span>
+                  </span>
+                 
+                
                 </div>
               </div>
 
@@ -787,23 +775,60 @@ export default {
   text-decoration: underline;
 }
 
-.toregister {
-  text-align: center;
-  margin-top: 20px;
+.wechat-inline-login {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  color: #07c160;
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.wechat-inline-icon {
+  margin-right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #07c160;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.wechat-inline-icon-img {
+  width: 14px;
+  height: 14px;
+  display: block;
+  object-fit: contain;
+  /* 将图标强制变为白色（适配绿色圆底） */
+  filter: brightness(0) invert(1);
+}
+
+.wechat-inline-login:hover {
+  color: #059948;
+}
+
+.divider-dot {
+  margin: 0 4px;
+  color: #c0c4cc;
+}
+
+.register-text {
   font-size: 14px;
   color: #909399;
 }
 
-.toregister span {
-  cursor: pointer;
+.register-link {
   color: #8167a9;
-  font-weight: 500;
+  cursor: pointer;
   margin-left: 4px;
-  transition: all 0.3s ease;
   position: relative;
+  transition: all 0.3s ease;
 }
 
-.toregister span::after {
+.register-link::after {
   content: '';
   position: absolute;
   bottom: -2px;
@@ -814,12 +839,23 @@ export default {
   transition: width 0.3s ease;
 }
 
-.toregister span:hover {
+.register-link:hover {
   color: #6b5490;
 }
 
-.toregister span:hover::after {
+.register-link:hover::after {
   width: 100%;
+}
+
+.toregister {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #909399;
+}
+
+.toregister span {
+  font-weight: 400;
 }
 
 /* 响应式设计 */

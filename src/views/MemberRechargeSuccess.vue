@@ -39,7 +39,6 @@
 
 <script>
 import { mapState } from 'vuex'
-import { ElMessage } from 'element-plus'
 
 export default {
   name: 'MemberRechargeSuccess',
