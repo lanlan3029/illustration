@@ -18,7 +18,7 @@
         </p>
         <p>
           <span class="label">当前积分：</span>
-          <span class="value">{{ userPoints || 0 }} 积分</span>
+          <span class="value">{{ userPoints }} 积分</span>
         </p>
       </div>
 
@@ -39,9 +39,16 @@
 
 <script>
 import { mapState } from 'vuex'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'MemberRechargeSuccess',
+  data() {
+    return {
+      userPoints: 0, // 当前积分
+      loading: false
+    }
+  },
   computed: {
     ...mapState(['userInfo']),
     // 从路由 query 中获取订单号和本次积分（如果有传）
@@ -51,16 +58,61 @@ export default {
     points() {
       // 本次获得的积分，可以按产品固定值展示
       return 100
-    },
-    userPoints() {
-      if (this.userInfo && (this.userInfo.points || this.userInfo.credits)) {
-        return this.userInfo.points || this.userInfo.credits
-      }
-      // 兜底从 localStorage 或后端再取一次积分可以后续扩展
-      return 0
     }
   },
+  async mounted() {
+    // 页面加载时获取最新的用户积分
+    await this.getUserPoints()
+  },
   methods: {
+    // 获取用户积分
+    async getUserPoints() {
+      try {
+        const userId = localStorage.getItem('id')
+        if (!userId) {
+          // 如果没有用户ID，尝试从 store 中获取
+          if (this.userInfo && (this.userInfo.points || this.userInfo.credits)) {
+            this.userPoints = this.userInfo.points || this.userInfo.credits || 0
+          }
+          return
+        }
+
+        const token = localStorage.getItem('token')
+        if (!token) {
+          return
+        }
+
+        const response = await this.$http.get(`/user/${userId}`, {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        })
+
+        if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
+          const userData = response.data.data || response.data.message || response.data
+          const points = userData.points || userData.credits || 0
+          
+          // 更新本地数据
+          this.userPoints = points
+          
+          // 更新 store 中的用户信息，这样 TopBar 也会自动更新
+          if (userData) {
+            this.$store.commit('setUserInfo', {
+              ...this.userInfo,
+              ...userData,
+              points: points,
+              credits: points
+            })
+          }
+        }
+      } catch (error) {
+        console.error('获取用户积分失败:', error)
+        // 如果获取失败，尝试从 store 中获取
+        if (this.userInfo && (this.userInfo.points || this.userInfo.credits)) {
+          this.userPoints = this.userInfo.points || this.userInfo.credits || 0
+        }
+      }
+    },
     goToHome() {
       this.$router.push('/')
     },
