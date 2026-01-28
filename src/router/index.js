@@ -264,6 +264,15 @@ const routes = [{
         }
     },
     {
+        path: '/member/recharge/success',
+        name: 'member-recharge-success',
+        component: () =>
+            import ( /* webpackChunkName: "member-recharge-success" */ '../views/MemberRechargeSuccess.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
         path: '/user-g/:authorId',
         name: 'user-g',
         component: () =>
