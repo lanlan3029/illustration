@@ -616,6 +616,14 @@ export default {
                     // 成功响应
                     const result = responseData.message;
                     
+                    // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
+                    if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: result.points
+                        })
+                    }
+                    
                     // 保存角色信息（包括base64数据，用于后续导入到创作组图）
                     this.resultImageData = {
                         character_type: result.character_type,

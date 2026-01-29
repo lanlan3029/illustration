@@ -508,6 +508,14 @@ export default {
                 if (responseData.code === 0 || responseData.desc === 'success') {
                     const result = responseData.message || responseData.data || responseData;
                     
+                    // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
+                    if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: result.points
+                        })
+                    }
+                    
                     // 提取图片URL数组
                     if (result.images && Array.isArray(result.images)) {
                         this.resultImages = result.images.map((img, idx) => ({ url: img, order: idx + 1 }));

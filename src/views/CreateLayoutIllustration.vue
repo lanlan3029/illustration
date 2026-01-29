@@ -1231,6 +1231,14 @@ export default {
                 if (isSuccess && responseData.message) {
                     const result = responseData.message || responseData.data || responseData;
                     
+                    // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
+                    if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: result.points
+                        })
+                    }
+                    
                     // 提取图片URL（兼容多种响应格式）
                     // 优先使用 image_url，其次使用 character_image_url，最后使用 base64
                     if (result.image_url) {
