@@ -149,7 +149,8 @@
     "selectStyle": "请选择一个艺术风格",
     "styleInfo": "风格信息",
     "artStylePlaceholder": "请输入艺术风格",
-    "elementDetailsPlaceholder": "请输入元素细节"
+    "elementDetailsPlaceholder": "请输入元素细节",
+    "pointsHint": "生成需消耗2积分"
   },
   "upload": {
     "title": "上传内容",

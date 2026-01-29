@@ -16,13 +16,19 @@ const routes = [{
     {
         path: '/ai-picture',
         name: 'AIPicture',
-        component: () => import(/* webpackChunkName: "ai-picture" */ '../views/AIpicture.vue')
+        component: () => import(/* webpackChunkName: "ai-picture" */ '../views/AIpicture.vue'),
+        meta: {
+            requiresAuth: true
+        }
     },
     {
         path: '/AIbooks',
         name: 'AIbooks',
         component: () =>
             import ( /* webpackChunkName: "ai-books" */ '../views/AIBooks.vue'),
+        meta: {
+            requiresAuth: true
+        }
     },
     {
         path: '/creation',
@@ -349,7 +355,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const token = localStorage.getItem("token")
-        const cango = (to.name == 'Home' || to.name == 'AIPicture' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')
+        const cango = (to.name == 'Home' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')
         if ((!token || token == "undefined") && (!cango)) {
             store.state.isMask = true
         } else {

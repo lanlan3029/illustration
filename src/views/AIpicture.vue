@@ -162,14 +162,17 @@
                         </div>
 
                   
-                        <el-button
-                            type="primary"
-                            class="generate-button"
-                            @click="generateIllustration"
-                            :loading="generating"
-                            :disabled="!subjectScene || !subjectScene.trim() || generating">
-                            {{ generating ? $t('aiPicture.generating') : $t('aiPicture.generate') }}
-                        </el-button>
+                        <div class="generate-button-wrapper">
+                            <el-button
+                                type="primary"
+                                class="generate-button"
+                                @click="generateIllustration"
+                                :loading="generating"
+                                :disabled="!subjectScene || !subjectScene.trim() || generating">
+                                {{ generating ? $t('aiPicture.generating') : $t('aiPicture.generate') }}
+                            </el-button>
+                            <div class="points-hint">{{ $t('aiPicture.pointsHint') }}</div>
+                        </div>
                     </div>
                 </div>
                 </el-scrollbar>
@@ -1213,6 +1216,19 @@ export default {
     width: 100%;
     margin: 8px auto 0;
     
+}
+
+.generate-button-wrapper {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.points-hint {
+    font-size: 12px;
+    color: #909399;
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 .generated-result {

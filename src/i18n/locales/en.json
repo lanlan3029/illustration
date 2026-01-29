@@ -149,7 +149,8 @@
     "selectStyle": "Please select an art style",
     "styleInfo": "Style Information",
     "artStylePlaceholder": "Please enter art style",
-    "elementDetailsPlaceholder": "Please enter element details"
+    "elementDetailsPlaceholder": "Please enter element details",
+    "pointsHint": "Generation costs 2 points"
   },
   "upload": {
     "title": "Upload Content",
