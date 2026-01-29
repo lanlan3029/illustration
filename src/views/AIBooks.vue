@@ -367,88 +367,43 @@ export default {
         
         // 生成故事（调用 doubao-seed-1.6）
         async generateStory() {
-            const systemPrompt = `# 角色
-
-你是一位专注于固定画风创作的**资深绘本大师**，擅长根据读者群体定位打造统一视觉风格的儿童向治愈系水彩风、能全程保持角色形象（外貌、神态、性格特征）、绘画风格（色彩、光影、笔触、构图逻辑）高度连贯一致，具备成熟的绘本叙事能力。
-。
-
-## 任务
-
-贴合**少儿读者**，创作**情节线性连贯的、生动有趣的、充满情绪价值和温度的、有情感共鸣的、分镜-文案-画面严格顺序对应的绘本内容**：
-- 核心约束：**分镜拆分→文案（scenes）→画面描述（scenes_detail）必须1:1顺序绑定**，从故事开头到结尾，像「放电影」一样按时间线推进，绝无错位。
-
-## 工作流程
-
-1.  充分理解用户诉求。 优先按照用户的创作细节要求执行（如果有）
-2.  **故事构思:** 创作一个能够精准回应用户诉求、提供情感慰藉的故事脉络。整个故事必须围绕"共情"和"情绪价值"展开。
-3.  **分镜结构与数量:**
-    * 将故事浓缩成 **5~10** 个关键分镜，最多10个（不能超过10个）。
-    * 必须遵循清晰的叙事弧线：开端 → 发展 → 高潮 → 结局。
-4.  **文案与画面 (一一对应):**
-    * **文案 ("scenes"字段):** 为每个分镜创作具备情感穿透力的文案。文案必须与画面描述紧密贴合，共同服务于情绪的传递。**禁止在文案中使用任何英文引号 ("")**。不能超过10个。
-    * **画面 ("scenes_detail"字段):** 为每个分镜构思详细的画面。画风必须贴合用户诉求和故事氛围。描述需包含构图、光影、色彩、角色神态等关键视觉要素，达到可直接用于图片生成的标准。
-5.  **书名 ("title"字段):**
-    * 构思一个简洁、好记、有创意的书名。
-    * 书名必须能巧妙地概括故事精髓，并能瞬间"戳中"目标用户的情绪共鸣点。
-6.  **故事总结 ("summary"字段):**
-    * 创作一句**不超过30个汉字**的总结。
-    * 总结需高度凝练故事的核心思想与情感价值。
-7. 整合输出：将所有内容按指定 JSON 格式整理输出。
-
-## 安全限制
-生成的内容必须严格遵守以下规定：
-1.  **禁止暴力与血腥:** 不得包含任何详细的暴力、伤害、血腥或令人不适的画面描述。
-2.  **禁止色情内容:** 不得包含任何色情、性暗示或不适宜的裸露内容。
-3.  **禁止仇恨与歧视:** 不得包含针对任何群体（基于种族、宗教、性别、性取向等）的仇恨、歧视或攻击性言论。
-4.  **禁止违法与危险行为:** 不得描绘或鼓励任何非法活动、自残或危险行为。
-5.  **确保普遍适宜性:** 整体内容应保持在社会普遍接受的艺术创作范围内，避免极端争议性话题。
-
-## 输出格式要求
-整理成以下JSON格式，scenes 和 scenes_detail 要与分镜保持顺序一致，一一对应，最多10个（不能超过10个）：
-{  
-  "title": "书名",
-  "summary": "30字内的总结",
-  "scenes": [
-    "分镜1的文案，用50字篇幅传递情绪和情感，引发读者共鸣，语言风格需符合设定。",
-    "分镜2的文案"
-  ],
-  "scenes_detail": [
-    "图片1：这是第一页的画面描述。必须以'图片'+序号开头。要有强烈的视觉感，详细描述构图（如特写、远景）、光影、色彩、角色表情、动作和环境细节，符合生图提示词的要求。",
-    "图片2："
-  ]
-}`
-
-            const messages = []
-            
-            // 构建用户消息，包含选中的风格
-            const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
-            const styleName = selectedStyle ? selectedStyle.artStyle : ''
-            const styleDetails = selectedStyle ? selectedStyle.elementDetails : ''
-            const stylePrompt = styleName && styleDetails ? `\n\n画风要求：${styleName}。${styleDetails}` : ''
-            messages.push({
-                role: 'user',
-                content: `请创作一个绘本故事。${stylePrompt}\n\n用户提示词：${this.form.prompt}`
-            })
-            
-            const requestData = {
-                model: this.doubaoSeedModel,
-                max_completion_tokens: 65535,
-                messages: [
-                    {
-                        role: 'system',
-                        content: systemPrompt
-                    },
-                    ...messages
-                ],
-                reasoning_effort: 'medium'
+            // 构建风格提示词（可选）
+            let stylePrompt = ''
+            if (this.form.artStyle) {
+                const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
+                if (selectedStyle) {
+                    const styleName = selectedStyle.artStyle || ''
+                    const styleDetails = selectedStyle.elementDetails || ''
+                    if (styleName && styleDetails) {
+                        stylePrompt = `画风要求：${styleName}。${styleDetails}`
+                    }
+                }
             }
             
-            const response = await this.$http.post(this.doubaoSeedApiUrl, requestData, {
+            // 构建请求数据
+            const requestData = {
+                prompt: this.form.prompt.trim(),
+                model: this.doubaoSeedModel,
+                maxCompletionTokens: 65535,
+                reasoningEffort: 'medium'
+            }
+            
+            // 如果存在风格提示词，添加到请求中
+            if (stylePrompt) {
+                requestData.stylePrompt = stylePrompt
+            }
+            
+            // 调用后端接口
+            const apiUrl = this.apiBaseUrl 
+                ? `${this.apiBaseUrl}/generate-story`
+                : '/generate-story'
+            
+            const response = await this.$http.post(apiUrl, requestData, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.doubaoSeedApiKey}`
+                    'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
                 },
-                timeout: 120000
+                timeout: 120000 // 2分钟超时
             })
             
             // 解析响应
@@ -465,73 +420,81 @@ export default {
                 throw new Error(`API错误: ${responseData.error.message || responseData.error.code || '未知错误'}`)
             }
             
-            // 检查 choices 数组是否存在且有效
-            if (!responseData.choices || !Array.isArray(responseData.choices) || responseData.choices.length === 0) {
-                throw new Error('API响应中未找到有效的choices数组')
+            // 判断成功状态：code === 0 或 desc === 'success' 或 statuscode === 'success'
+            const isSuccess = (responseData.code === 0 || responseData.code === '0') 
+                || responseData.desc === 'success' 
+                || responseData.statuscode === 'success'
+            
+            if (!isSuccess) {
+                const errorMsg = responseData.desc || responseData.message || `code: ${responseData.code}`
+                throw new Error(`生成故事失败: ${errorMsg}`)
             }
             
-            const firstChoice = responseData.choices[0]
-            
-            // 检查 finish_reason 判断生成状态
-            if (firstChoice.finish_reason) {
-                if (firstChoice.finish_reason === 'stop') {
-                    // 正常完成
-                    console.log('故事生成完成')
-                } else if (firstChoice.finish_reason === 'length') {
-                    // 内容被截断
-                    console.warn('故事生成可能被截断，finish_reason: length')
-                } else if (firstChoice.finish_reason === 'content_filter') {
-                    // 内容被过滤
-                    throw new Error('生成的内容被安全过滤器拦截')
-                } else {
-                    console.warn(`未知的finish_reason: ${firstChoice.finish_reason}`)
-                }
-            }
-            
-            // 检查 message 是否存在
-            if (!firstChoice.message || !firstChoice.message.content) {
-                throw new Error('API响应中未找到有效的message内容')
-            }
-            
-            const content = firstChoice.message.content
-            
-            // 尝试提取 JSON（支持多行JSON格式）
-            let jsonMatch = content.match(/\{[\s\S]*\}/)
-            
-            // 如果没有找到，尝试查找被代码块包裹的JSON
-            if (!jsonMatch) {
-                jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
-                if (jsonMatch) {
-                    jsonMatch = [jsonMatch[1], jsonMatch[1]]
-                }
-            }
-            
-            if (jsonMatch && jsonMatch[0]) {
-                try {
-                    // 清理可能的代码块标记
-                    let jsonStr = jsonMatch[0]
-                        .replace(/```json\n?/g, '')
-                        .replace(/```\n?/g, '')
-                        .trim()
-                    
-                    storyJson = JSON.parse(jsonStr)
-                } catch (e) {
-                    console.error('JSON解析失败:', e)
-                    console.error('原始内容:', content)
-                    throw new Error('JSON解析失败: ' + e.message)
-                }
+            // 提取故事数据（支持多种响应格式）
+            // 格式1: { code: 0, desc: 'success', message: { title, summary, scenes, scenes_detail } }
+            // 格式2: { code: 0, data: { title, summary, scenes, scenes_detail } }
+            // 格式3: { title, summary, scenes, scenes_detail } (直接返回)
+            if (responseData.message && typeof responseData.message === 'object') {
+                storyJson = responseData.message
+            } else if (responseData.data && typeof responseData.data === 'object') {
+                storyJson = responseData.data
+            } else if (responseData.title && responseData.scenes) {
+                // 直接返回故事数据
+                storyJson = responseData
             } else {
-                console.error('未找到JSON内容，完整响应:', content)
-                throw new Error('响应中未找到有效的JSON格式')
+                // 尝试从 message 字段解析 JSON 字符串
+                if (responseData.message && typeof responseData.message === 'string') {
+                    try {
+                        storyJson = JSON.parse(responseData.message)
+                    } catch (e) {
+                        // 如果不是 JSON 字符串，尝试提取 JSON
+                        const jsonMatch = responseData.message.match(/\{[\s\S]*\}/)
+                        if (jsonMatch) {
+                            try {
+                                let jsonStr = jsonMatch[0]
+                                    .replace(/```json\n?/g, '')
+                                    .replace(/```\n?/g, '')
+                                    .trim()
+                                storyJson = JSON.parse(jsonStr)
+                            } catch (parseError) {
+                                console.error('JSON解析失败:', parseError)
+                                throw new Error('响应格式错误，无法解析故事数据')
+                            }
+                        } else {
+                            throw new Error('响应中未找到有效的故事数据')
+                        }
+                    }
+                } else {
+                    throw new Error('响应中未找到有效的故事数据')
+                }
             }
             
             // 验证数据格式
+            if (!storyJson || typeof storyJson !== 'object') {
+                throw new Error('故事数据格式错误')
+            }
+            
             if (!storyJson.title || !storyJson.summary || !storyJson.scenes || !storyJson.scenes_detail) {
-                throw new Error('生成的故事数据格式不完整')
+                throw new Error('生成的故事数据格式不完整，缺少必要字段')
+            }
+            
+            // 确保 scenes 和 scenes_detail 是数组
+            if (!Array.isArray(storyJson.scenes) || !Array.isArray(storyJson.scenes_detail)) {
+                throw new Error('scenes 和 scenes_detail 必须是数组')
             }
             
             if (storyJson.scenes.length !== storyJson.scenes_detail.length) {
                 throw new Error('文案和画面描述数量不匹配')
+            }
+            
+            if (storyJson.scenes.length === 0) {
+                throw new Error('生成的故事没有分镜内容')
+            }
+            
+            if (storyJson.scenes.length > 10) {
+                console.warn('生成的分镜数量超过10个，将截取前10个')
+                storyJson.scenes = storyJson.scenes.slice(0, 10)
+                storyJson.scenes_detail = storyJson.scenes_detail.slice(0, 10)
             }
             
             return storyJson

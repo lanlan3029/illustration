@@ -72,10 +72,27 @@
                                 <el-image
                                     :src="generatedImageUrl"
                                     fit="contain"
-                                    class="result-image">
+                                    class="result-image"
+                                    :loading="imageLoading"
+                                    @error="handleImageError"
+                                    @load="handleImageLoad">
                                     <template #error>
                                         <div class="image-slot">
                                             <i class="el-icon-picture-outline"></i>
+                                            <p class="error-text">图片加载失败</p>
+                                            <el-button 
+                                                type="primary" 
+                                                size="small" 
+                                                @click="retryLoadImage"
+                                                style="margin-top: 10px;">
+                                                重试加载
+                                            </el-button>
+                                        </div>
+                                    </template>
+                                    <template #placeholder>
+                                        <div class="image-slot">
+                                            <i class="el-icon-loading"></i>
+                                            <p>图片加载中...</p>
                                         </div>
                                     </template>
                                 </el-image>
@@ -233,6 +250,8 @@ export default {
             generatedImageUrl: null,
             collecting: false,
             downloading: false,
+            imageLoading: false,
+            imageLoadError: false,
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
         };
     },
@@ -386,6 +405,8 @@ export default {
                     
                     if (imageUrl) {
                         this.generatedImageUrl = imageUrl;
+                        this.imageLoading = true;
+                        this.imageLoadError = false;
                         // 保存到 localStorage
                         this.saveGeneratedImageToLocalStorage(imageUrl);
                         ElMessage.success('插画生成成功！');
@@ -596,6 +617,51 @@ export default {
             }
         },
         
+        // 处理图片加载错误
+        handleImageError(error) {
+            console.error('图片加载失败:', error);
+            this.imageLoadError = true;
+            this.imageLoading = false;
+            ElMessage.warning('图片加载失败，可能是网络问题或图片链接已过期');
+        },
+        
+        // 处理图片加载成功
+        handleImageLoad() {
+            this.imageLoading = false;
+            this.imageLoadError = false;
+        },
+        
+        // 重试加载图片
+        retryLoadImage() {
+            if (!this.generatedImageUrl) {
+                return;
+            }
+            
+            this.imageLoading = true;
+            this.imageLoadError = false;
+            
+            // 强制刷新图片：添加时间戳参数
+            try {
+                const url = new URL(this.generatedImageUrl);
+                url.searchParams.set('_retry', Date.now());
+                this.generatedImageUrl = url.toString();
+            } catch (e) {
+                // 如果 URL 解析失败（可能是相对路径），直接重新赋值触发重新加载
+                const currentUrl = this.generatedImageUrl;
+                this.generatedImageUrl = null;
+                this.$nextTick(() => {
+                    this.generatedImageUrl = currentUrl;
+                });
+            }
+            
+            // 10秒后检查是否仍然失败
+            setTimeout(() => {
+                if (this.imageLoadError) {
+                    ElMessage.error('图片加载失败，请检查网络连接或联系客服');
+                }
+            }, 10000);
+        },
+        
         // 清除生成的插画（删除 localStorage 中的数据并清空显示）
         clearGeneratedImage() {
             try {
@@ -603,10 +669,12 @@ export default {
                 localStorage.removeItem('home_generated_image');
                 // 清空当前显示的图片
                 this.generatedImageUrl = null;
+                this.imageLoading = false;
+                this.imageLoadError = false;
                 ElMessage.success('已清除插画数据');
-                console.log('已清除插画数据');
+            
             } catch (error) {
-                console.error('清除插画数据失败:', error);
+              
                 ElMessage.error('清除失败，请重试');
             }
         },
@@ -902,13 +970,32 @@ export default {
 
 .image-slot {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 100%;
     height: 100%;
+    min-height: 300px;
     background-color: #f5f7fa;
     color: #c0c4cc;
     font-size: 24px;
+    padding: 20px;
+}
+
+.image-slot i {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.image-slot p {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #909399;
+}
+
+.image-slot .error-text {
+    color: #f56c6c;
+    font-weight: 500;
 }
 
 

@@ -9,7 +9,8 @@
           </a>
         </div>
 
-        <ul class="navbar-nav">
+        <!-- 桌面导航 -->
+        <ul class="navbar-nav desktop-nav">
           <!-- 菜单项 -->
           <li class="nav-item" :class="{ 'active': route.path === '/' }">
             <router-link to="/" class="nav-link" @click="closeSubmenu">{{ $t('nav.home') || '首页' }}</router-link>
@@ -126,6 +127,95 @@
             </ul>
           </li>
         </ul>
+
+        <!-- 手机端汉堡菜单按钮 -->
+        <button class="hamburger-button" @click.stop="toggleMobileMenu">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+
+        <!-- 手机端全屏菜单 -->
+        <transition name="mobile-menu-fade">
+          <div v-if="mobileMenuVisible" class="mobile-menu-overlay" @click.self="closeMobileMenu">
+            <div class="mobile-menu-panel">
+              <div class="mobile-menu-header">
+                <a class="navbar-brand" @click.prevent="goHomeFromMobile">
+                  <img :src="logoUrl" alt="Logo" />
+                </a>
+                <button class="mobile-menu-close" @click="closeMobileMenu">×</button>
+              </div>
+              <ul class="mobile-menu-list">
+                <li :class="{ active: route.path === '/' }">
+                  <router-link to="/" @click="closeMobileMenu">{{ $t('nav.home') || '首页' }}</router-link>
+                </li>
+                <li :class="{ active: route.path === '/ai-picture' }">
+                  <router-link to="/ai-picture" @click="closeMobileMenu">{{ $t('nav.aiIllustration') }}</router-link>
+                </li>
+                <li :class="{ active: route.path === '/AIbooks' }">
+                  <router-link to="/AIbooks" @click="closeMobileMenu">{{ $t('nav.aiBooks') }}</router-link>
+                </li>
+                <li>
+                  <router-link to="/create-character" @click="closeMobileMenu">{{ $t('nav.createCharacter') }}</router-link>
+                </li>
+                <li>
+                  <router-link to="/create-group-images" @click="closeMobileMenu">{{ $t('nav.createGroupImages') }}</router-link>
+                </li>
+                <li>
+                  <router-link to="/create-layout-illustration" @click="closeMobileMenu">{{ $t('nav.createLayoutIllustration') }}</router-link>
+                </li>
+                <li>
+                  <router-link to="/creation" @click="closeMobileMenu">{{ $t('nav.createIllustration') }}</router-link>
+                </li>
+                <li>
+                  <router-link to="/user/upload/compose-illustration" @click="closeMobileMenu">{{ $t('nav.composeBook') }}</router-link>
+                </li>
+                <li :class="{ active: route.path === '/user/upload' }">
+                  <router-link to="/user/upload" @click="closeMobileMenu">{{ $t('common.upload') }}</router-link>
+                </li>
+                <li :class="{ active: route.path === '/books' }">
+                  <router-link to="/books" @click="closeMobileMenu">{{ $t('common.books') }}</router-link>
+                </li>
+                <li :class="{ active: route.path === '/utility-tools' }">
+                  <router-link to="/utility-tools" @click="closeMobileMenu">{{ $t('common.tools') }}</router-link>
+                </li>
+              </ul>
+              <div class="mobile-menu-footer">
+                <div class="mobile-language-switcher">
+                  <el-radio-group 
+                    v-model="currentLanguage" 
+                    size="small" 
+                    fill="#8167a9"
+                    @change="handleLanguageChange">
+                    <el-radio-button label="zh" value="zh">中文</el-radio-button>
+                    <el-radio-button label="en" value="en">EN</el-radio-button>
+                  </el-radio-group>
+                </div>
+                <div class="mobile-auth-section">
+                  <template v-if="!isLogin">
+                    <el-button type="primary" size="small" @click="handleMobileLogin">登录 / 注册</el-button>
+                  </template>
+                  <template v-else>
+                    <div class="mobile-user-info">
+                      <img :src="userInfo && userInfo.avatar" :alt="userInfo && userInfo.name" class="mobile-user-avatar" />
+                      <div class="mobile-user-meta">
+                        <div class="name">{{ (userInfo && userInfo.name) || '用户' }}</div>
+                        <div class="points">
+                          <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
+                          <span>{{ userPoints || 0 }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mobile-user-actions">
+                      <el-button size="small" @click="toMemberRechargeFromMobile">充值积分</el-button>
+                      <el-button size="small" type="danger" @click="logoutFromMobile">退出登录</el-button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
     </nav>
   </div>
@@ -155,6 +245,7 @@ export default {
         const showMemberDialog = ref(false) // 是否显示会员信息对话框
         const activeSubmenu = ref(null) // 当前激活的子菜单
         const isScrolled = ref(false) // 是否已滚动
+        const mobileMenuVisible = ref(false) // 手机端菜单是否可见
         
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
@@ -235,6 +326,34 @@ export default {
         const contactUs = () => {
             // 联系我们功能，可以跳转到联系页面或显示联系方式
             $message.info('请联系客服：support@kidstory.cc')
+        }
+        
+        const toggleMobileMenu = () => {
+            mobileMenuVisible.value = !mobileMenuVisible.value
+        }
+        
+        const closeMobileMenu = () => {
+            mobileMenuVisible.value = false
+        }
+        
+        const goHomeFromMobile = () => {
+            closeMobileMenu()
+            router.push('/')
+        }
+        
+        const handleMobileLogin = () => {
+            closeMobileMenu()
+            store.commit('showMask')
+        }
+        
+        const toMemberRechargeFromMobile = () => {
+            closeMobileMenu()
+            router.push('/member/recharge')
+        }
+        
+        const logoutFromMobile = () => {
+            closeMobileMenu()
+            logout()
         }
       
         const goToRecharge = () => {
@@ -447,7 +566,7 @@ export default {
                             tool.push(arr[i].fllowid)
                         }
                         store.commit("myAttention", tool)
-                        console.log(tool)
+            
                     }
                 })
                 .catch((error) => {
@@ -568,6 +687,13 @@ export default {
             userid,
             searchValue,
             userPoints,
+            mobileMenuVisible,
+            toggleMobileMenu,
+            closeMobileMenu,
+            goHomeFromMobile,
+            handleMobileLogin,
+            toMemberRechargeFromMobile,
+            logoutFromMobile,
             showMemberDialog,
             activeSubmenu,
             isScrolled,
@@ -684,6 +810,160 @@ export default {
 	margin: 0;
 	padding: 0;
 	gap: 30px;
+}
+
+/* 桌面端导航默认显示，移动端隐藏 */
+.desktop-nav {
+	display: flex;
+}
+
+/* 汉堡按钮（移动端显示） */
+.hamburger-button {
+	display: none;
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 32px;
+	height: 32px;
+	border: none;
+	background: transparent;
+	padding: 0;
+	cursor: pointer;
+	align-items: center;
+	justify-content: center;
+}
+
+.hamburger-line {
+	width: 20px;
+	height: 2px;
+	background-color: #212121;
+	border-radius: 2px;
+	margin: 2px 0;
+	display: block;
+}
+
+/* 手机端全屏菜单 */
+.mobile-menu-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 9999;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.mobile-menu-panel {
+	width: 80%;
+	max-width: 320px;
+	height: 100%;
+	background: #ffffff;
+	display: flex;
+	flex-direction: column;
+	box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-menu-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid #eeeeee;
+}
+
+.mobile-menu-header .navbar-brand img {
+	height: 28px;
+}
+
+.mobile-menu-close {
+	border: none;
+	background: transparent;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.mobile-menu-list {
+	list-style: none;
+	padding: 12px 16px;
+	margin: 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+.mobile-menu-list li {
+	margin-bottom: 8px;
+}
+
+.mobile-menu-list a {
+	display: block;
+	padding: 10px 8px;
+	border-radius: 6px;
+	color: #303133;
+	text-decoration: none;
+	font-size: 15px;
+}
+
+.mobile-menu-list li.active a,
+.mobile-menu-list a.router-link-exact-active {
+	background: #f0f4ff;
+	color: #8167a9;
+}
+
+.mobile-menu-footer {
+	padding: 12px 16px 16px;
+	border-top: 1px solid #eeeeee;
+}
+
+.mobile-language-switcher {
+	margin-bottom: 12px;
+}
+
+.mobile-auth-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.mobile-user-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.mobile-user-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.mobile-user-meta .name {
+	font-size: 14px;
+	color: #303133;
+}
+
+.mobile-user-meta .points {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 13px;
+	color: #606266;
+}
+
+.mobile-user-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.mobile-menu-fade-enter-active,
+.mobile-menu-fade-leave-active {
+	transition: opacity 0.2s ease;
+}
+
+.mobile-menu-fade-enter-from,
+.mobile-menu-fade-leave-to {
+	opacity: 0;
 }
 
 .nav-item {
@@ -938,6 +1218,15 @@ export default {
 
 /* 响应式设计 */
 @media (max-width: 767px) {
+	/* 小屏幕下隐藏桌面菜单，显示汉堡按钮 */
+	.desktop-nav {
+		display: none;
+	}
+
+	.hamburger-button {
+		display: inline-flex;
+	}
+
 	.nav-item:after {
 		display: none;
 	}
