@@ -27,7 +27,10 @@
                 :style="isSaved ? { cursor: 'not-allowed', opacity: 0.6 } : {}"
             >{{ $t('toolbar.save') }}</label>
             <label class="insert" @click="deleteDraft">{{ $t('toolbar.clear') }}</label>
-            <label class="export" @click="AICompose">{{ $t('toolbar.smartOptimize') }}</label>
+            <div class="export-wrapper">
+                <label class="export" @click="AICompose">{{ $t('toolbar.smartOptimize') }}</label>
+                <div class="points-hint">{{ $t('toolbar.pointsHint') }}</div>
+            </div>
         </div>
         
         <!-- 智能优化结果弹窗 -->
@@ -639,6 +642,22 @@ export default {
 .export:active{
     transform: translateY(0);
     box-shadow: 0 1px 2px rgba(113, 197, 99, 0.2);
+}
+
+.export-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.points-hint {
+    font-size: 11px;
+    color: #909399;
+    text-align: center;
+    margin-top: 4px;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .optimized-result-content {

@@ -347,16 +347,19 @@
                     <div class="result-content">
                         <!-- 生成按钮 -->
                         <div class="generate-section">
-                            <el-button 
-                                type="primary" 
-                                size="large"
-                                @click="handleGenerate"
-                                :loading="processing"
-                                :disabled="!canGenerate"
-                                class="generate-btn">
-                                <i class="el-icon-magic-stick"></i> 
-                                {{ processing ? $t('createLayoutIllustration.generating') : $t('createLayoutIllustration.startGenerate') }}
-                            </el-button>
+                            <div class="generate-btn-wrapper">
+                                <el-button 
+                                    type="primary" 
+                                    size="large"
+                                    @click="handleGenerate"
+                                    :loading="processing"
+                                    :disabled="!canGenerate"
+                                    class="generate-btn">
+                                    <i class="el-icon-magic-stick"></i> 
+                                    {{ processing ? $t('createLayoutIllustration.generating') : $t('createLayoutIllustration.startGenerate') }}
+                                </el-button>
+                                <div class="points-hint">{{ $t('createLayoutIllustration.pointsHint') }}</div>
+                            </div>
                         </div>
 
                         <!-- 生成中 -->
@@ -1986,8 +1989,22 @@ export default {
     text-align: center;
 }
 
+.generate-btn-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .generate-btn {
     width: 100%;
+}
+
+.points-hint {
+    font-size: 12px;
+    color: #909399;
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 .result-loading,

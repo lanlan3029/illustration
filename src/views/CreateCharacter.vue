@@ -86,16 +86,19 @@
 
                                 <!-- 生成角色按钮 -->
                                 <div class="generate-actions">
-                                    <el-button 
-                                        type="primary"
-                                        size="default"
-                                        :loading="processing" 
-                                    
-                                        @click="handleCreateCharacter"
-                                        class="btn-generate">
-                                        <i class="el-icon-magic-stick"></i>
-                                        {{ processing ? $t('createCharacter.generating') : $t('createCharacter.generateCharacter') }}
-                                    </el-button>
+                                    <div class="generate-btn-wrapper">
+                                        <el-button 
+                                            type="primary"
+                                            size="default"
+                                            :loading="processing" 
+                                        
+                                            @click="handleCreateCharacter"
+                                            class="btn-generate">
+                                            <i class="el-icon-magic-stick"></i>
+                                            {{ processing ? $t('createCharacter.generating') : $t('createCharacter.generateCharacter') }}
+                                        </el-button>
+                                        <div class="points-hint">{{ $t('createCharacter.pointsHint') }}</div>
+                                    </div>
                                     <el-button 
                                         @click="handleReset"
                                         :disabled="processing">
@@ -2472,10 +2475,24 @@ export default {
     padding: 8px 12px;
 }
 
+.generate-btn-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .btn-generate {
     min-width: 150px;
     height: 40px;
     font-size: 16px;
+}
+
+.points-hint {
+    font-size: 12px;
+    color: #909399;
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 /* 响应式设计 */

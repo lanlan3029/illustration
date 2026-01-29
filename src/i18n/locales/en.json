@@ -52,6 +52,7 @@
     "stylePlaceholder": "Please select a style",
     "generate": "Generate Prompt",
     "generating": "Generating...",
+    "pointsHint": "Generating one image costs 2 points",
     "editPrompts": "Edit Image Generation Prompts",
     "startGenerate": "Start Generating Book",
     "downloadAll": "Download All Images",
@@ -150,7 +151,7 @@
     "styleInfo": "Style Information",
     "artStylePlaceholder": "Please enter art style",
     "elementDetailsPlaceholder": "Please enter element details",
-    "pointsHint": "Generation costs 2 points"
+    "pointsHint": "Generating one image costs 2 points"
   },
   "upload": {
     "title": "Upload Content",
@@ -268,6 +269,7 @@
     "delete": "Delete",
     "promptPlaceholder": "Change the character's animal, clothes, expression to...",
     "startGenerate": "Start Generate",
+    "pointsHint": "Generating one image costs 2 points",
     "startCreating": "Start creating group images!",
     "generating": "Generating, please wait...",
     "imageNumber": "Image {number}",
@@ -302,6 +304,7 @@
         "result": "Result",
     "startGenerate": "Start Generate",
     "generating": "Generating...",
+    "pointsHint": "Generating one image costs 2 points",
     "generatingWait": "Generating, please wait...",
     "resultPlaceholder": "Generated result will be displayed here",
     "save": "Save",
@@ -346,6 +349,7 @@
     "characterInfo": "Step 2: Character Information",
     "generating": "Generating...",
     "generateCharacter": "Generate Character",
+    "pointsHint": "Generation costs 2 points",
     "reset": "Reset",
     "resultPlaceholder": "Generated character image will be displayed here",
     "generatingWait": "Generating, please wait...",
@@ -397,6 +401,7 @@
     "save": "Save",
     "clear": "Clear",
     "smartOptimize": "Smart Optimize",
+    "pointsHint": "Generating one image costs 2 points",
     "onlyImageFiles": "Only image files allowed",
     "canvasNotFound": "Canvas content not found, please add elements to canvas first",
     "gettingCanvas": "Getting canvas content...",

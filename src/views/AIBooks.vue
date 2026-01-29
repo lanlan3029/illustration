@@ -35,14 +35,17 @@
                    
 
                         <el-form-item>
-                            <el-button
-                                type="primary"
-                                @click="generateBook"
-                                :loading="generating"
-                                :disabled="!form.prompt || !form.prompt.trim() || generating"
-                                class="generate-btn">
-                                {{ generating ? $t('aibooks.generating') : $t('aibooks.generate') }}
-                            </el-button>
+                            <div class="generate-btn-wrapper">
+                                <el-button
+                                    type="primary"
+                                    @click="generateBook"
+                                    :loading="generating"
+                                    :disabled="!form.prompt || !form.prompt.trim() || generating"
+                                    class="generate-btn">
+                                    {{ generating ? $t('aibooks.generating') : $t('aibooks.generate') }}
+                                </el-button>
+                                <div class="points-hint">{{ $t('aibooks.pointsHint') }}</div>
+                            </div>
                         </el-form-item>
                     </el-form>
 
@@ -1277,10 +1280,22 @@ export default {
     text-align: center;
 }
 
+.generate-btn-wrapper {
+    width: 100%;
+}
+
 .generate-btn {
     width: 100%;
     height: 44px;
     font-size: 16px;
+}
+
+.points-hint {
+    font-size: 12px;
+    color: #909399;
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 .prompts-editor {

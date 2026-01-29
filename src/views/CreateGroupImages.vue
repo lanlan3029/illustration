@@ -98,14 +98,17 @@
 
                         <!-- 提交按钮 - 固定在底部 -->
                         <div class="submit-section">
-                            <el-button 
-                                type="primary" 
-                                size="large"
-                                @click="handleSubmit"
-                                :loading="processing"
-                                :disabled="!canSubmit">
-                                <i class="el-icon-magic-stick"></i> {{ $t('createGroupImages.startGenerate') }}
-                            </el-button>
+                            <div class="generate-btn-wrapper">
+                                <el-button 
+                                    type="primary" 
+                                    size="large"
+                                    @click="handleSubmit"
+                                    :loading="processing"
+                                    :disabled="!canSubmit">
+                                    <i class="el-icon-magic-stick"></i> {{ $t('createGroupImages.startGenerate') }}
+                                </el-button>
+                                <div class="points-hint">{{ $t('createGroupImages.pointsHint') }}</div>
+                            </div>
                         </div>
                     </div>
                 </el-card>
@@ -1116,6 +1119,20 @@ export default {
     border-top: 1px solid #ebeef5;
     background-color: #fff;
     flex-shrink: 0;
+}
+
+.generate-btn-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.points-hint {
+    font-size: 12px;
+    color: #909399;
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 /* 结果展示 */
