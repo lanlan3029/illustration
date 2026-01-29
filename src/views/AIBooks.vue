@@ -249,7 +249,7 @@ export default {
             // API 配置
             doubaoSeedApiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
             doubaoSeedApiKey: '9f3336c3-eb0e-4d80-9fd1-d05297237e7d',
-            doubaoSeedModel: 'doubao-seed-1-6-251015',
+            doubaoSeedModel: 'doubao-seed-1-6',
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
             autoSaveTimer: null // 自动保存定时器
         }
