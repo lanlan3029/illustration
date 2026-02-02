@@ -39,11 +39,7 @@ import axios from 'axios'
       window.location.replace(hashUrl)
       // 注意：执行 replace 后会立即跳转，后续代码不会执行
       return // 阻止后续代码执行
-    } else {
-     
     }
-  } else if (window.location.hash.includes('/wechat/callback')) {
-  
   }
 })()
 

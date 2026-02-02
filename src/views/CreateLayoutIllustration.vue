@@ -452,7 +452,7 @@ export default {
             selectedAspectRatio: '3:4', // 默认 3:4 (竖屏，适合插画)
             
             // 背景提示词
-            backgroundPrompt: '白色背景，简洁干净，无多余元素'
+            backgroundPrompt: '白色背景，简洁干净，无多余元素。'
         };
     },
     computed: {

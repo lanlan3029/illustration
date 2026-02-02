@@ -1,8 +1,24 @@
 <template>
   <div class="newyear-container">
+    <!-- 装饰性灯笼图标 -->
+    <div class="decoration-lantern decoration-lantern-left">🏮</div>
+    <div class="decoration-lantern decoration-lantern-right">🏮</div>
+    <div class="decoration-fu decoration-fu-top-left">福</div>
+    <div class="decoration-fu decoration-fu-top-right">福</div>
+    
+    <!-- 动态颗粒容器 -->
+    <canvas ref="particlesCanvas" class="particles-canvas"></canvas>
+    
     <div class="style-detail-container">
       <el-scrollbar class="style-list-container-scroll">
-        <h2 class="section-title">{{ $t('aiPicture.generateIllustration') }}</h2>
+     
+        <div class="gallery-link-wrapper">
+          <router-link to="/newyear/gallery" class="gallery-link-button">
+            <span class="button-icon"></span>
+            <span class="button-text">2026幻彩新春</span>
+            <span class="button-icon"></span>
+          </router-link>
+        </div>
         <div class="style-detail">
           <div class="detail-content">
             <!-- 图片展示区域：空白框或生成结果 -->
@@ -52,7 +68,7 @@
 
               <!-- 空白框（未生成时显示） -->
               <div v-else class="empty-image-box">
-                <p>生成的图片将显示在这里</p>
+                <p>新年您想记录的美好瞬间</p>
               </div>
             </div>
 
@@ -107,61 +123,20 @@
 </template>
 
 <script>
-import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { checkWebPSupport } from '@/utils/imageOptimizer'
 
 export default {
   name: 'NewYear',
   setup() {
-    const { t, locale } = useI18n()
-
-    const supportsWebP = ref(false)
-
-    const styleConfigs = [
-      { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.webp') },
-      { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.webp') },
-      { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.webp') },
-      { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.webp') },
-      { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.webp') },
-      { key: 'engravingLines', id: 7, image: require('@/assets/prompt/7.webp') },
-      { key: 'pencilSketch3D', id: 16, image: require('@/assets/prompt/16.webp') },
-      { key: 'feltCollage', id: 18, image: require('@/assets/prompt/18.webp') },
-      { key: 'blackWhiteDoodle', id: 2, image: require('@/assets/prompt/2.webp') },
-      { key: 'collageIllustration', id: 4, image: require('@/assets/prompt/4.webp') },
-      { key: 'rusticHandDrawn', id: 8, image: require('@/assets/prompt/8.webp') },
-      { key: 'maximalistCopperplate', id: 9, image: require('@/assets/prompt/9.webp') },
-      { key: 'doodleSoul', id: 10, image: require('@/assets/prompt/10.webp') },
-      { key: 'keithHaringDoodle', id: 11, image: require('@/assets/prompt/11.webp') },
-      { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.webp') },
-      { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.webp') },
-      { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp') },
-      { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') }
-    ]
-
-    onMounted(async () => {
-      supportsWebP.value = await checkWebPSupport()
-    })
-
-    const styles = computed(() => {
-      return styleConfigs.map(config => ({
-        id: config.id,
-        key: config.key,
-        artStyle: t(`aibooks.styles.${config.key}.artStyle`),
-        elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
-        image: config.image
-      }))
-    })
+    const { locale } = useI18n()
 
     return {
-      styles,
       locale
     }
   },
   data() {
     return {
-      selectedStyleId: null,
       subjectScene: '',
       editableArtStyle: '',
       editableElementDetails: '',
@@ -169,39 +144,40 @@ export default {
       generatedImageUrl: null,
       collecting: false,
       downloading: false,
-      apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
+      apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
+      particlesAnimationId: null,
+      particles: [],
+      resizeHandler: null
     }
   },
   computed: {
-    selectedStyle() {
-      return this.styles.find(s => s.id === this.selectedStyleId)
-    },
     generatedPrompt() {
       if (!this.subjectScene || !this.subjectScene.trim()) {
         return ''
       }
-      const artStyle = this.editableArtStyle.trim() || (this.selectedStyle ? this.selectedStyle.artStyle : '')
-      const elementDetails = this.editableElementDetails.trim() || (this.selectedStyle ? this.selectedStyle.elementDetails : '')
+      const artStyle = this.editableArtStyle.trim() || ''
+      const elementDetails = this.editableElementDetails.trim() || ''
       let prompt = `${this.subjectScene.trim()}，${artStyle}，${elementDetails}`
       return prompt
     }
   },
-  watch: {
-    selectedStyle: {
-      handler(newStyle) {
-        if (newStyle && this.selectedStyleId !== null) {
-          this.editableArtStyle = newStyle.artStyle
-          this.editableElementDetails = newStyle.elementDetails
-        }
-      },
-      immediate: false
-    }
-  },
   mounted() {
-    if (this.styles.length > 0) {
-      this.selectedStyleId = this.styles[0].id
-      this.editableArtStyle = this.styles[0].artStyle
-      this.editableElementDetails = this.styles[0].elementDetails
+    // 设置固定的默认风格：治愈系水彩
+    this.editableArtStyle = this.$t('aibooks.styles.healingWatercolor.artStyle')
+    this.editableElementDetails = this.$t('aibooks.styles.healingWatercolor.elementDetails')
+    
+    // 初始化动态颗粒效果
+    this.initParticles()
+  },
+  
+  beforeUnmount() {
+    // 清理动画
+    if (this.particlesAnimationId) {
+      cancelAnimationFrame(this.particlesAnimationId)
+    }
+    // 清理 resize 事件监听器
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler)
     }
   },
   methods: {
@@ -311,26 +287,313 @@ export default {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+    },
+    
+    // 初始化动态颗粒效果
+    initParticles() {
+      this.$nextTick(() => {
+        const canvas = this.$refs.particlesCanvas
+        if (!canvas) return
+        
+        const ctx = canvas.getContext('2d')
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+        
+        // 创建颗粒数组
+        const particleCount = 50
+        this.particles = []
+        
+        for (let i = 0; i < particleCount; i++) {
+          this.particles.push({
+            x: Math.random() * canvas.width,
+            y: canvas.height + Math.random() * 200, // 从底部开始
+            size: Math.random() * 3 + 1,
+            speed: Math.random() * 0.5 + 0.2,
+            opacity: Math.random() * 0.5 + 0.3,
+            glow: Math.random() * 0.3 + 0.2
+          })
+        }
+        
+        // 动画循环
+        const animate = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          
+          this.particles.forEach(particle => {
+            // 更新位置（向上移动）
+            particle.y -= particle.speed
+            
+            // 如果颗粒超出顶部，重新从底部开始
+            if (particle.y < -10) {
+              particle.y = canvas.height + Math.random() * 100
+              particle.x = Math.random() * canvas.width
+            }
+            
+            // 绘制颗粒（金色星光效果）
+            ctx.save()
+            ctx.globalAlpha = particle.opacity
+            
+            // 外发光
+            const gradient = ctx.createRadialGradient(
+              particle.x, particle.y, 0,
+              particle.x, particle.y, particle.size * 3
+            )
+            gradient.addColorStop(0, `rgba(255, 215, 0, ${particle.glow})`)
+            gradient.addColorStop(0.5, `rgba(255, 193, 7, ${particle.glow * 0.5})`)
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)')
+            
+            ctx.fillStyle = gradient
+            ctx.beginPath()
+            ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2)
+            ctx.fill()
+            
+            // 核心亮点
+            ctx.fillStyle = `rgba(255, 215, 0, ${particle.opacity})`
+            ctx.beginPath()
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
+            ctx.fill()
+            
+            // 十字星光效果
+            ctx.strokeStyle = `rgba(255, 215, 0, ${particle.opacity * 0.6})`
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.moveTo(particle.x - particle.size * 2, particle.y)
+            ctx.lineTo(particle.x + particle.size * 2, particle.y)
+            ctx.moveTo(particle.x, particle.y - particle.size * 2)
+            ctx.lineTo(particle.x, particle.y + particle.size * 2)
+            ctx.stroke()
+            
+            ctx.restore()
+          })
+          
+          this.particlesAnimationId = requestAnimationFrame(animate)
+        }
+        
+        animate()
+        
+        // 监听窗口大小变化
+        this.resizeHandler = () => {
+          canvas.width = window.innerWidth
+          canvas.height = window.innerHeight
+        }
+        window.addEventListener('resize', this.resizeHandler)
+      })
     }
   }
 }
 </script>
 
 <style scoped>
+/* 新年红色主题背景 */
 .newyear-container {
   min-height: 100vh;
   padding: 16px;
   box-sizing: border-box;
-  background: #f5f7fa;
+  background: linear-gradient(135deg, #dc143c 0%, #c41e3a 50%, #b22222 100%);
+  position: relative;
+  overflow: hidden;
 }
 
+/* 微光感：背景中心径向渐变光晕 */
+.newyear-container::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80vw;
+  height: 80vh;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 215, 0, 0.15) 0%,
+    rgba(255, 193, 7, 0.1) 30%,
+    rgba(220, 20, 60, 0.05) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* 装饰性灯笼 */
+.decoration-lantern {
+  position: fixed;
+  font-size: 60px;
+  opacity: 0.25;
+  z-index: 0;
+  animation: float 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.decoration-lantern-left {
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+
+.decoration-lantern-right {
+  top: 15%;
+  right: 5%;
+  animation-delay: 1.5s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+/* 装饰性福字 */
+.decoration-fu {
+  position: fixed;
+  font-size: 80px;
+  font-weight: bold;
+  color: rgba(255, 215, 0, 0.2);
+  font-family: 'KaiTi', '楷体', serif;
+  z-index: 0;
+  pointer-events: none;
+  transform: rotate(-15deg);
+}
+
+.decoration-fu-top-left {
+  top: 5%;
+  left: 8%;
+}
+
+.decoration-fu-top-right {
+  top: 8%;
+  right: 8%;
+  transform: rotate(15deg);
+}
+
+/* 背景装饰图案 - 灯笼和福字 */
+.newyear-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    /* 灯笼图案 */
+    radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 25%),
+    radial-gradient(circle at 90% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 25%),
+    radial-gradient(circle at 15% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 25%),
+    radial-gradient(circle at 85% 70%, rgba(255, 215, 0, 0.08) 0%, transparent 25%),
+    /* 福字装饰 */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 215, 0, 0.02) 10px,
+      rgba(255, 215, 0, 0.02) 20px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 动态颗粒 Canvas */
+.particles-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 磨砂玻璃效果 - 画板容器 */
 .style-detail-container {
   max-width: 600px;
   margin: 0 auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  /* 更暗的背景色，带纹理 */
+  background: 
+    /* 噪点纹理 */
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.1) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.05) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.1) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.05) 2px
+    ),
+    /* 渐变纹理 */
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(220, 20, 60, 0.15) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(255, 215, 0, 0.1) 0%,
+      transparent 50%
+    ),
+    /* 基础背景 */
+    rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 0 3px rgba(255, 215, 0, 0.2);
   overflow: hidden;
+  position: relative;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 灯笼装饰 */
+.style-detail-container::before {
+  content: '🏮';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 40px;
+  opacity: 0.3;
+  z-index: 0;
+  animation: lanternSwing 3s ease-in-out infinite;
+}
+
+.style-detail-container::after {
+  content: '🏮';
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 40px;
+  opacity: 0.3;
+  z-index: 0;
+  animation: lanternSwing 3s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+@keyframes lanternSwing {
+  0%, 100% {
+    transform: translateY(0) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
 }
 
 .style-list-container-scroll {
@@ -338,22 +601,135 @@ export default {
 }
 
 .section-title {
-  font-size: 18px;
-  font-weight: 600;
-  padding: 16px 16px 8px;
-  color: #303133;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 20px 16px 12px;
+  color: #fff;
+  text-align: center;
+  position: relative;
+
+ 
+  z-index: 1;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.section-title::before {
+  content: '🎊';
+  margin-right: 8px;
+  font-size: 24px;
+}
+
+.section-title::after {
+  content: '🎊';
+  margin-left: 8px;
+  font-size: 24px;
+}
+
+/* 2026幻彩新春按钮样式 */
+.gallery-link-wrapper {
+  padding: 12px 16px;
+  text-align: center;
+
+}
+
+.gallery-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #dc143c 50%, #c41e3a 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(220, 20, 60, 0.4);
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.gallery-link-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.gallery-link-button:hover::before {
+  left: 100%;
+}
+
+.gallery-link-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 20, 60, 0.6);
+  border-color: rgba(255, 215, 0, 0.9);
+}
+
+.gallery-link-button:active {
+  transform: translateY(0);
+}
+
+.button-icon {
+  font-size: 20px;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.button-icon:last-child {
+  animation-delay: 1s;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.8;
+  }
+}
+
+.button-text {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .style-detail {
   padding: 0 16px 16px;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .image-display-area {
-  border-radius: 8px;
-  border: 1px dashed #dcdfe6;
-  padding: 12px;
-  margin-bottom: 16px;
-  background: #fafafa;
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 215, 0, 0.5);
+  padding: 16px;
+  margin: 0 auto 16px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  width: 80%;
+}
+
+.image-display-area::before {
+  content: '🏮';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  opacity: 0.2;
 }
 
 .generating-progress {
@@ -362,7 +738,25 @@ export default {
   align-items: center;
   justify-content: center;
   min-height: 180px;
-  color: #606266;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.generating-progress i {
+  font-size: 32px;
+  color: rgba(255, 215, 0, 0.9);
+  animation: rotate 1s linear infinite;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .generated-result {
@@ -373,8 +767,10 @@ export default {
 
 .result-image {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(220, 20, 60, 0.2);
+  border: 2px solid rgba(255, 215, 0, 0.3);
 }
 
 .result-actions {
@@ -389,8 +785,29 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.empty-image-box::before {
+  content: '✨';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 20px;
+  opacity: 0.3;
+}
+
+.empty-image-box::after {
+  content: '✨';
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-size: 20px;
+  opacity: 0.3;
 }
 
 .style-info {
@@ -403,13 +820,22 @@ export default {
 
 .info-label {
   display: block;
-  font-size: 13px;
-  color: #606266;
-  margin-bottom: 4px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 6px;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .info-input :deep(.el-textarea__inner) {
   font-size: 13px;
+  border-color: rgba(220, 20, 60, 0.3);
+  transition: all 0.3s;
+}
+
+.info-input :deep(.el-textarea__inner):focus {
+  border-color: #dc143c;
+  box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.1);
 }
 
 .input-section {
@@ -418,27 +844,112 @@ export default {
 
 .input-label {
   display: block;
-  font-size: 13px;
-  color: #606266;
-  margin-bottom: 4px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 6px;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .subject-input :deep(.el-textarea__inner) {
   font-size: 13px;
+  border-color: rgba(220, 20, 60, 0.3);
+  transition: all 0.3s;
+}
+
+.subject-input :deep(.el-textarea__inner):focus {
+  border-color: #dc143c;
+  box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.1);
 }
 
 .generate-button {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #dc143c 0%, #c41e3a 100%);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  height: 48px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(220, 20, 60, 0.4);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
 }
 
+.generate-button::before {
+  content: '🎉';
+  margin-right: 8px;
+}
+
+.generate-button:hover {
+  background: linear-gradient(135deg, #c41e3a 0%, #b22222 100%);
+  box-shadow: 0 6px 20px rgba(220, 20, 60, 0.5);
+  transform: translateY(-2px);
+}
+
+.generate-button:active {
+  transform: translateY(0);
+}
+
+.generate-button:disabled {
+  background: #f1b8b8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 按钮样式覆盖 */
+.generate-button :deep(.el-button__inner) {
+  color: #fff;
+}
+
+/* 响应式设计 */
 @media (max-width: 480px) {
   .newyear-container {
     padding: 8px;
   }
 
   .style-detail-container {
-    border-radius: 8px;
+    border-radius: 12px;
+  }
+
+  .newyear-container::after {
+    font-size: 60px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    padding: 16px 12px 10px;
+  }
+
+  .decoration-lantern {
+    font-size: 40px;
+    opacity: 0.15;
+  }
+
+  .decoration-fu {
+    font-size: 50px;
+    opacity: 0.15;
+  }
+
+  .gallery-link-wrapper {
+    padding: 10px 12px;
+  }
+
+  .gallery-link-button {
+    padding: 10px 20px;
+    font-size: 14px;
+    gap: 6px;
+  }
+
+  .button-icon {
+    font-size: 18px;
+  }
+
+  .button-text {
+    font-size: 14px;
+    letter-spacing: 0.5px;
   }
 }
 </style>
