@@ -511,7 +511,7 @@ export default {
   padding: 40px 60px;
   box-sizing: border-box;
   background-color: #fff;
-  background-image: url('../assets/images/login.png');
+  background-image: url('../assets/images/login.webp');
   background-position: 100% 100%;
   background-repeat: no-repeat;
   background-size: auto 100%;

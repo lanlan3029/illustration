@@ -56,7 +56,7 @@ export default {
     },
     setup() {
         const router = useRouter()
-        const errorImg = ref(require('../assets/images/error.png'))
+        const errorImg = ref(require('../assets/images/error.webp'))
         
         const goHome = () => {
             router.push({ name: 'Home' })

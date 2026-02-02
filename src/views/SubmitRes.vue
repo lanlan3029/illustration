@@ -25,7 +25,7 @@
 export default {
   data(){
     return{
-      sumitImg:require('../assets/images/submit.png')
+      sumitImg:require('../assets/images/submit.webp')
     }
   },
   methods:{

@@ -322,7 +322,7 @@ export default {
       bookDetails:[],
       authorDetails:{},
       //存放请求到的绘本原始数据
-      codeImg:require('../assets/images/pdfCode.png'),
+      codeImg:require('../assets/images/pdfCode.webp'),
       loadingImages: true, // 图片加载状态
       imageLoadStatus: {}, // 每张图片的加载状态
       currentPageIndex: 0, // 当前页面索引

@@ -72,7 +72,7 @@ export default {
           // 审核与合规字段
           authorizationConfirmed: false
     },
-    codeImg:require('../assets/images/pdfCode.png'),
+    codeImg:require('../assets/images/pdfCode.webp'),
     pdfBase64:''
     }
   },

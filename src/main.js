@@ -29,22 +29,21 @@ import axios from 'axios'
   // 微信回调格式：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
   if (window.location.pathname === '/wechat/callback' && !window.location.hash.includes('/wechat/callback')) {
     const search = window.location.search // 包含 ?code=xxx&state=xxx
-    console.log('[main.js] 检测到微信回调URL（无hash）:', window.location.href)
-    console.log('[main.js] pathname:', window.location.pathname, 'search:', search, 'hash:', window.location.hash)
+    
     
     if (search) {
       // 重定向到 hash 路由格式，保留所有查询参数
       // 例如：/#/wechat/callback?code=081L7Fll2dO52h4pKsml2baLOJ3L7FlE&state=3d6be0a40sssssxxxxx6624a415e
       const hashUrl = `${window.location.origin}/#/wechat/callback${search}`
-      console.log('[main.js] 重定向到 hash 路由:', hashUrl)
+     
       window.location.replace(hashUrl)
       // 注意：执行 replace 后会立即跳转，后续代码不会执行
       return // 阻止后续代码执行
     } else {
-      console.warn('[main.js] 微信回调URL没有查询参数，可能不是有效的回调')
+     
     }
   } else if (window.location.hash.includes('/wechat/callback')) {
-    console.log('[main.js] 检测到微信回调URL（hash路由）:', window.location.href)
+  
   }
 })()
 
@@ -87,7 +86,7 @@ axios.interceptors.response.use(
   error => {
     // 如果返回 401 未授权，可能是 token 过期，清除登录状态
     if (error.response && error.response.status === 401) {
-      console.warn('Token 已过期或无效，清除登录状态')
+    
       localStorage.removeItem('token')
       localStorage.removeItem('id')
       // 可以在这里触发登出逻辑
