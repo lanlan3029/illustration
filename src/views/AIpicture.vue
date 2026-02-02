@@ -367,7 +367,9 @@ export default {
                 // 构建请求数据 - 文生图，不传图片
                 const requestData = {
                     prompt: this.generatedPrompt,
-                    size: '1280x960' // 图片尺寸
+                    size: '1280x960', // 图片尺寸
+                    response_format: 'b64_json',
+                    watermark: false    
                 };
                 
                 // 调用创建角色API（与CreateCharacter.vue使用相同的API）
@@ -402,16 +404,61 @@ export default {
                         })
                     }
                     
-                    // 提取图片URL（与CreateCharacter.vue相同的处理方式）
+                    // 提取图片URL，优先使用 Base64 格式（参照 AIBooks.vue 的处理方式）
+                    // 优先使用 image_url，其次使用 character_image_url，最后使用 base64
                     let imageUrl = null;
                     if (result.image_url) {
                         imageUrl = result.image_url;
                     } else if (result.character_image_url) {
                         imageUrl = result.character_image_url;
+                    } else if (result.image_base64) {
+                        // 处理 Base64 格式
+                        let base64Str = result.image_base64.trim();
+                        if (!base64Str.startsWith('data:')) {
+                            base64Str = base64Str.replace(/\s/g, '');
+                            base64Str = `data:image/jpeg;base64,${base64Str}`;
+                        }
+                        imageUrl = base64Str;
+                    } else if (result.character_image_base64) {
+                        // 处理 character_image_base64 格式
+                        let base64Str = result.character_image_base64.trim();
+                        if (!base64Str.startsWith('data:')) {
+                            base64Str = base64Str.replace(/\s/g, '');
+                            base64Str = `data:image/jpeg;base64,${base64Str}`;
+                        }
+                        imageUrl = base64Str;
                     } else if (result.image) {
                         imageUrl = result.image;
                     } else if (result.url) {
                         imageUrl = result.url;
+                    }
+                    
+                    // 如果还是没有图片URL，尝试从 full_response 中获取
+                    if (!imageUrl && result.full_response) {
+                        if (result.full_response.data && Array.isArray(result.full_response.data) && result.full_response.data.length > 0) {
+                            const firstData = result.full_response.data[0];
+                            // 处理 b64_json 格式
+                            if (firstData.b64_json) {
+                                const base64Str = firstData.b64_json.trim();
+                                imageUrl = `data:image/jpeg;base64,${base64Str}`;
+                            } else {
+                                imageUrl = firstData.url || firstData.ResultUrl || '';
+                            }
+                        }
+                        if (!imageUrl) {
+                            imageUrl = result.full_response.result_url || result.full_response.ResultUrl || result.full_response.url || '';
+                        }
+                    }
+                    
+                    // 尝试从其他字段获取
+                    if (!imageUrl) {
+                        imageUrl = result.character_image_oss_url || result.result_url || result.ResultUrl || '';
+                    }
+                    
+                    // 如果还是没有，尝试从 result 中直接获取 b64_json
+                    if (!imageUrl && result.b64_json) {
+                        const base64Str = result.b64_json.trim();
+                        imageUrl = `data:image/jpeg;base64,${base64Str}`;
                     }
                     
                     if (imageUrl) {
