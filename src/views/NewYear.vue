@@ -513,7 +513,7 @@ export default {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1;
+  z-index: 100;
 }
 
 /* 磨砂玻璃效果 - 画板容器 */
@@ -638,7 +638,7 @@ export default {
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #ff6b6b 0%, #dc143c 50%, #c41e3a 100%);
+  background: linear-gradient(135deg, rgba(180, 30, 50, 0.9) 0%, rgba(150, 20, 40, 0.95) 50%, rgba(120, 15, 30, 1) 100%);
   color: #fff;
   text-decoration: none;
   border-radius: 25px;
@@ -668,7 +668,8 @@ export default {
 
 .gallery-link-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(220, 20, 60, 0.6);
+  background: linear-gradient(135deg, rgba(200, 40, 60, 0.95) 0%, rgba(170, 30, 50, 1) 50%, rgba(140, 20, 40, 1) 100%);
+  box-shadow: 0 6px 20px rgba(150, 20, 40, 0.6);
   border-color: rgba(255, 215, 0, 0.9);
 }
 
@@ -715,7 +716,7 @@ export default {
   border: 2px dashed rgba(255, 215, 0, 0.5);
   padding: 16px;
   margin: 0 auto 16px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(248, 241, 241, 0.106);
   backdrop-filter: blur(5px);
   position: relative;
   overflow: hidden;
@@ -723,13 +724,39 @@ export default {
   width: 80%;
 }
 
+/* 顶部居中的 new year 图标 */
 .image-display-area::before {
-  content: '🏮';
+  content: '';
   position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 24px;
-  opacity: 0.2;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+  background-image: url('@/assets/images/newyear/newyear.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 左下角的 horse 图标 */
+.image-display-area::after {
+  content: '';
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 100px;
+  height: 100px;
+  background-image: url('@/assets/images/newyear/horse.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .generating-progress {
@@ -741,6 +768,8 @@ export default {
   color: rgba(255, 255, 255, 0.95);
   font-weight: 600;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .generating-progress i {
@@ -763,6 +792,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .result-image {
@@ -781,15 +812,20 @@ export default {
 }
 
 .empty-image-box {
-  min-height: 180px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   font-weight: 500;
-  position: relative;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .empty-image-box::before {
@@ -865,14 +901,14 @@ export default {
 .generate-button {
   width: 100%;
   margin-top: 8px;
-  background: linear-gradient(135deg, #dc143c 0%, #c41e3a 100%);
-  border: none;
+  background: linear-gradient(135deg, rgba(180, 30, 50, 0.9) 0%, rgba(150, 20, 40, 0.95) 50%, rgba(120, 15, 30, 1) 100%);
+  border: 2px solid rgba(255, 215, 0, 0.5);
   color: #fff;
   font-weight: 700;
   font-size: 16px;
   height: 48px;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(220, 20, 60, 0.4);
+  box-shadow: 0 4px 16px rgba(150, 20, 40, 0.4);
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
@@ -884,8 +920,9 @@ export default {
 }
 
 .generate-button:hover {
-  background: linear-gradient(135deg, #c41e3a 0%, #b22222 100%);
-  box-shadow: 0 6px 20px rgba(220, 20, 60, 0.5);
+  background: linear-gradient(135deg, rgba(200, 40, 60, 0.95) 0%, rgba(170, 30, 50, 1) 50%, rgba(140, 20, 40, 1) 100%);
+  border-color: rgba(255, 215, 0, 0.9);
+  box-shadow: 0 6px 20px rgba(150, 20, 40, 0.5);
   transform: translateY(-2px);
 }
 
