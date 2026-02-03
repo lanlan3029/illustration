@@ -77,7 +77,7 @@
               <el-input
                 v-model="subjectScene"
                 type="textarea"
-                :rows="3"
+                :rows="4"
                 :placeholder="$t('aiPicture.subjectPlaceholder')"
                 class="subject-input"
               />
@@ -175,8 +175,7 @@ export default {
 
         const response = await this.$http.post(apiUrl, requestData, {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+            'Content-Type': 'application/json'
           },
           timeout: 180000
         })
@@ -221,30 +220,7 @@ export default {
           throw new Error(errorMsg)
         }
       } catch (error) {
-        console.error('生成插画失败:', error)
-        let errorMessage = '生成失败，请重试'
-        if (error.response) {
-          const status = error.response.status
-          const data = error.response.data
-          if (status === 401) {
-            errorMessage = '未授权，请先登录'
-          } else if (status === 403) {
-            errorMessage = '无权限访问'
-          } else if (status === 404) {
-            errorMessage = 'API接口不存在，请检查后端配置'
-          } else if (status === 400) {
-            errorMessage = data?.message || data?.error || '请求参数错误'
-          } else if (status === 500) {
-            errorMessage = '服务器错误，请稍后重试'
-          } else {
-            errorMessage = data?.message || data?.error || `请求失败 (${status})`
-          }
-        } else if (error.code === 'ECONNABORTED') {
-          errorMessage = '请求超时，请稍后重试'
-        } else if (error.message) {
-          errorMessage = error.message
-        }
-        ElMessage.error(errorMessage)
+        ElMessage.error('出错啦，请稍后再试')
       } finally {
         this.generating = false
       }
@@ -254,13 +230,6 @@ export default {
     },
     // 自动保存插画到"我的插画"
     async autoSaveIllustration(imageUrl) {
-      // 检查登录状态
-      const token = localStorage.getItem('token') || ''
-      if (!token) {
-        console.warn('用户未登录，跳过自动保存')
-        return
-      }
-      
       try {
         // 处理URL格式
         let pictureValue = imageUrl
@@ -278,23 +247,14 @@ export default {
           type: '春节' // 类别设置为"春节"
         }
         
-        // 发送请求到服务器
-        const response = await this.$http.post('/ill/', requestData, {
+        // 发送请求到服务器（不需要登录，静默处理）
+        await this.$http.post('/ill/', requestData, {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
+            'Content-Type': 'application/json'
           }
         })
-        
-        // 检查响应
-        if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-          console.log('插画已自动保存到"我的插画"')
-        } else {
-          console.warn('自动保存插画失败:', response.data)
-        }
       } catch (error) {
-        console.error('自动保存插画失败:', error)
-        // 静默失败，不显示错误提示，避免影响用户体验
+        // 静默失败，不显示错误提示
       }
     },
     
@@ -302,13 +262,6 @@ export default {
     async collectIllustration() {
       if (!this.generatedImageUrl) {
         ElMessage.warning('图片尚未生成，请稍候')
-        return
-      }
-      
-      // 检查登录状态
-      const token = localStorage.getItem('token') || ''
-      if (!token) {
-        ElMessage.error('请先登录')
         return
       }
       
@@ -331,23 +284,21 @@ export default {
           type: '春节' // 类别设置为"春节"
         }
         
-        // 发送请求到服务器
+        // 发送请求到服务器（不需要登录）
         const response = await this.$http.post('/ill/', requestData, {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
+            'Content-Type': 'application/json'
           }
         })
         
         // 检查响应
         if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-          ElMessage.success('插画已保存到"我的插画"')
+          ElMessage.success('插画已保存')
         } else {
-          ElMessage.error('保存失败，请稍后重试')
+          ElMessage.error('出错啦，请稍后再试')
         }
       } catch (error) {
-        console.error('保存插画失败:', error)
-        ElMessage.error('保存失败，请稍后重试')
+        ElMessage.error('出错啦，请稍后再试')
       } finally {
         this.collecting = false
       }
@@ -592,6 +543,7 @@ export default {
 /* 磨砂玻璃效果 - 画板容器 */
 .style-detail-container {
   max-width: 600px;
+  height: calc(100vh - 80px);
   margin: 0 auto;
   /* 更暗的背景色，带纹理 */
   background: 

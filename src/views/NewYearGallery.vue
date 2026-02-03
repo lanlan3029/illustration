@@ -276,11 +276,6 @@ export default {
       this.loading = true
       
       try {
-        const token = localStorage.getItem('token') || ''
-        const headers = token ? { Authorization: `Bearer ${token}` } : {}
-        
-        console.log('开始加载插画数据，页码:', this.page)
-        
         const response = await this.$http.get('/ill/', {
           params: {
             sort_param: 'createdAt',
@@ -288,21 +283,13 @@ export default {
             page: this.page,
             limit: this.pageSize,
             type: '春节' // 只请求类别为"春节"的插画
-          },
-          headers
+          }
         })
-
-        console.log('插画API响应:', response.data)
 
         if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
           const newItems = response.data.message || response.data.data || []
           
-          console.log('解析到的插画数据:', newItems)
-          console.log('插画数量:', newItems.length)
-          
           if (!Array.isArray(newItems)) {
-            console.error('插画数据不是数组格式:', newItems)
-            ElMessage.warning('插画数据格式错误')
             return
           }
           
@@ -315,8 +302,6 @@ export default {
           this.totalCount = response.data.total || this.allIllustrations.length
           this.hasMore = newItems.length === this.pageSize
           
-          console.log('总插画数:', this.totalCount, '当前插画数:', this.allIllustrations.length, '是否有更多:', this.hasMore)
-          
           // 更新轨道宽度
           this.updateTrackWidth()
           
@@ -328,14 +313,9 @@ export default {
             this.page++
             await this.loadIllustrations()
           }
-        } else {
-          console.warn('获取插画列表失败，响应数据:', response.data)
-          ElMessage.warning('获取插画列表失败')
         }
       } catch (error) {
-        console.error('加载插画失败:', error)
-        console.error('错误详情:', error.response?.data || error.message)
-        ElMessage.error('加载插画失败，请稍后重试')
+        ElMessage.error('出错啦，请稍后再试')
       } finally {
         this.loading = false
       }
@@ -410,23 +390,23 @@ export default {
     },
     
     // 触摸移动
-    handleTouchMove(e) {
+    handleTouchMove() {
       // 可以在这里添加触摸反馈
     },
     
     // 触摸结束
-    handleTouchEnd(e) {
+    handleTouchEnd() {
       // 可以在这里添加滑动结束的处理
     },
     
     // 图片加载完成
-    onImageLoad(index) {
+    onImageLoad() {
       // 可以在这里添加加载完成的处理
     },
     
     // 图片加载错误
-    onImageError(index) {
-      console.error(`图片 ${index} 加载失败`)
+    onImageError() {
+      // 图片加载失败，静默处理
     },
     
     // 获取图片URL
@@ -437,7 +417,6 @@ export default {
       let picture = item.picture || item.content || item.image_url || item.url || item.image
       
       if (!picture) {
-        console.warn('插画数据中没有找到图片字段:', item)
         return ''
       }
       
