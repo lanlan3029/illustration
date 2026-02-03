@@ -117,8 +117,6 @@ export default {
   data() {
     return {
       subjectScene: '',
-      editableArtStyle: '',
-      editableElementDetails: '',
       generating: false,
       generatedImageUrl: null,
       collecting: false,
@@ -134,32 +132,23 @@ export default {
       if (!this.subjectScene || !this.subjectScene.trim()) {
         return ''
       }
-      // 使用固定的默认风格提示词
       const defaultArtStyle = '梦幻童话风格，彩色轮廓插图，纯色、喜庆红色背景，无拘无束的氛围，浪漫、生动的色彩和宽松的笔触，春节喜庆、嬉戏和无忧无虑的场景。'
-      let prompt = `${this.subjectScene.trim()}，${defaultArtStyle}`
-      return prompt
+      return `${this.subjectScene.trim()}，${defaultArtStyle}`
     }
   },
   mounted() {
-    // 关闭登录弹窗（此页面不需要登录）
     this.$store.commit('closeMask')
-    
-    // 从 localStorage 恢复之前生成的插画
     const savedImage = localStorage.getItem('newyear_generated_image')
     if (savedImage) {
       this.generatedImageUrl = savedImage
     }
-    
-    // 初始化动态颗粒效果
     this.initParticles()
   },
   
   beforeUnmount() {
-    // 清理动画
     if (this.particlesAnimationId) {
       cancelAnimationFrame(this.particlesAnimationId)
     }
-    // 清理 resize 事件监听器
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler)
     }
@@ -193,19 +182,11 @@ export default {
 
         const responseData = response.data
         
-        // 检查是否是限流错误（后端返回 allowed: false）
         if (responseData.allowed === false) {
           const errorMessage = responseData.type === 'create-character' 
             ? '免费次数已用完，登录解锁更多免费次数吧！'
-            : (responseData.type && responseData.maxCount 
-              ? `同一IP地址最多只能免费创建 ${responseData.maxCount} 张${responseData.type}主题的插画`
-              : (responseData.message || '免费次数已用完，登录解锁更多免费次数吧！'))
-          
-          ElMessage({
-            message: errorMessage,
-            type: 'error',
-            offset: 200
-          })
+            : (responseData.message || '免费次数已用完，登录解锁更多免费次数吧！')
+          ElMessage({ message: errorMessage, type: 'error', offset: 200 })
           return
         }
         
@@ -216,163 +197,90 @@ export default {
         if (isSuccess && responseData.message) {
           const result = responseData.message
           
-          // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
           if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
             this.$store.commit('setUserInfo', {
               ...(this.$store.state.userInfo || {}),
               points: result.points
             })
           }
-          let imageUrl = null
-          if (result.image_url) {
-            imageUrl = result.image_url
-          } else if (result.character_image_url) {
-            imageUrl = result.character_image_url
-          } else if (result.image) {
-            imageUrl = result.image
-          } else if (result.url) {
-            imageUrl = result.url
-          }
+          
+          const imageUrl = result.image_url || result.character_image_url || result.image || result.url
 
           if (imageUrl) {
             this.generatedImageUrl = imageUrl
-            
-            // 保存到 localStorage，防止刷新后丢失
             localStorage.setItem('newyear_generated_image', imageUrl)
-            
             ElMessage.success('插画生成成功！')
-            
-            // 自动保存到"我的插画"，类别为"春节"
             await this.autoSaveIllustration(imageUrl)
           } else {
             throw new Error('响应中未找到图片URL')
           }
         } else {
-          // 检查响应中是否有错误信息
           const errorMsg = responseData.message || responseData.desc || responseData.error
-          if (errorMsg) {
-            ElMessage({
-              message: errorMsg,
-              type: 'error'
-            })
-          } else {
-            ElMessage.error('出错啦，请稍后再试')
-          }
+          ElMessage({ message: errorMsg || '出错啦，请稍后再试', type: 'error', offset: 200 })
         }
       } catch (error) {
-        // 检查错误响应中是否有限流信息
-        if (error.response && error.response.data) {
-          const errorData = error.response.data
-          
-          const errorMessage = errorData.allowed === false
-            ? (errorData.type === 'create-character' 
-              ? '免费次数已用完，登录解锁更多免费次数吧！'
-              : (errorData.type && errorData.maxCount 
-                ? `同一IP地址最多只能免费创建 ${errorData.maxCount} 张${errorData.type}主题的插画`
-                : (errorData.message || '免费次数已用完，登录解锁更多免费次数吧！')))
-            : (errorData.message || '出错啦，请稍后再试')
-          
-          ElMessage({
-            message: errorMessage,
-            type: 'error',
-            offset: 200
-          })
-        } else {
-          ElMessage({
-            message: '出错啦，请稍后再试',
-            type: 'error',
-            offset: 200
-          })
-        }
+        const errorData = error.response?.data
+        const errorMessage = errorData?.allowed === false
+          ? (errorData.type === 'create-character' 
+            ? '免费次数已用完，登录解锁更多免费次数吧！'
+            : (errorData.message || '免费次数已用完，登录解锁更多免费次数吧！'))
+          : (errorData?.message || '出错啦，请稍后再试')
+        ElMessage({ message: errorMessage, type: 'error', offset: 200 })
       } finally {
         this.generating = false
       }
     },
     clearGeneratedImage() {
       this.generatedImageUrl = null
-      // 清除 localStorage 中保存的插画
       localStorage.removeItem('newyear_generated_image')
     },
-    // 自动保存插画到"我的插画"
+    
     async autoSaveIllustration(imageUrl) {
       try {
-        // 处理URL格式
         let pictureValue = imageUrl
-        
-        // 如果是相对路径，转换为完整URL
         if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
           pictureValue = `https://static.kidstory.cc/${pictureValue}`
         }
-        
-        // 构建请求数据
-        const requestData = {
-          picture: pictureValue, // 支持 URL 或 base64
+        await this.$http.post('/ill/', {
+          picture: pictureValue,
           title: this.subjectScene || '新年插画',
           description: this.generatedPrompt || '新年主题插画',
-          type: '春节' // 类别设置为"春节"
-        }
-        
-        // 发送请求到服务器（不需要登录，静默处理）
-        await this.$http.post('/ill/', requestData, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          type: '春节'
+        }, {
+          headers: { 'Content-Type': 'application/json' }
         })
       } catch (error) {
-        // 静默失败，不显示错误提示
+        // 静默失败
       }
     },
     
-    // 手动收集插画（如果用户想再次保存）
     async collectIllustration() {
       if (!this.generatedImageUrl) {
         ElMessage.warning('图片尚未生成，请稍候')
         return
       }
-      
       this.collecting = true
-      
       try {
-        // 处理URL格式
         let pictureValue = this.generatedImageUrl
-        
-        // 如果是相对路径，转换为完整URL
         if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
           pictureValue = `https://static.kidstory.cc/${pictureValue}`
         }
-        
-        // 构建请求数据
-        const requestData = {
-          picture: pictureValue, // 支持 URL 或 base64
+        const response = await this.$http.post('/ill/', {
+          picture: pictureValue,
           title: this.subjectScene || '新年插画',
           description: this.generatedPrompt || '新年主题插画',
-          type: '春节' // 类别设置为"春节"
-        }
-        
-        // 发送请求到服务器（不需要登录）
-        const response = await this.$http.post('/ill/', requestData, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          type: '春节'
+        }, {
+          headers: { 'Content-Type': 'application/json' }
         })
-        
-        // 检查响应
         if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
           ElMessage.success('插画已保存')
         } else {
-         ElMessage({
-          message: '出错啦，请稍后再试',
-          type: 'error',
-          offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
-         })
+          ElMessage({ message: '出错啦，请稍后再试', type: 'error', offset: 200 })
         }
-        } catch (error) {
-         ElMessage({
-           message: '出错啦，请稍后再试',
-           type: 'error',
-           offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
-         })
-        } finally {
+      } catch (error) {
+        ElMessage({ message: '出错啦，请稍后再试', type: 'error', offset: 200 })
+      } finally {
         this.collecting = false
       }
     },
@@ -386,7 +294,6 @@ export default {
       document.body.removeChild(link)
     },
     
-    // 初始化动态颗粒效果
     initParticles() {
       this.$nextTick(() => {
         const canvas = this.$refs.particlesCanvas
@@ -396,14 +303,11 @@ export default {
         canvas.width = window.innerWidth
         canvas.height = window.innerHeight
         
-        // 创建颗粒数组
-        const particleCount = 50
         this.particles = []
-        
-        for (let i = 0; i < particleCount; i++) {
+        for (let i = 0; i < 50; i++) {
           this.particles.push({
             x: Math.random() * canvas.width,
-            y: canvas.height + Math.random() * 200, // 从底部开始
+            y: canvas.height + Math.random() * 200,
             size: Math.random() * 3 + 1,
             speed: Math.random() * 0.5 + 0.2,
             opacity: Math.random() * 0.5 + 0.3,
@@ -411,25 +315,18 @@ export default {
           })
         }
         
-        // 动画循环
         const animate = () => {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
-          
           this.particles.forEach(particle => {
-            // 更新位置（向上移动）
             particle.y -= particle.speed
-            
-            // 如果颗粒超出顶部，重新从底部开始
             if (particle.y < -10) {
               particle.y = canvas.height + Math.random() * 100
               particle.x = Math.random() * canvas.width
             }
             
-            // 绘制颗粒（金色星光效果）
             ctx.save()
             ctx.globalAlpha = particle.opacity
             
-            // 外发光
             const gradient = ctx.createRadialGradient(
               particle.x, particle.y, 0,
               particle.x, particle.y, particle.size * 3
@@ -443,13 +340,11 @@ export default {
             ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2)
             ctx.fill()
             
-            // 核心亮点
             ctx.fillStyle = `rgba(255, 215, 0, ${particle.opacity})`
             ctx.beginPath()
             ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
             ctx.fill()
             
-            // 十字星光效果
             ctx.strokeStyle = `rgba(255, 215, 0, ${particle.opacity * 0.6})`
             ctx.lineWidth = 1
             ctx.beginPath()
@@ -461,13 +356,10 @@ export default {
             
             ctx.restore()
           })
-          
           this.particlesAnimationId = requestAnimationFrame(animate)
         }
         
         animate()
-        
-        // 监听窗口大小变化
         this.resizeHandler = () => {
           canvas.width = window.innerWidth
           canvas.height = window.innerHeight
@@ -480,15 +372,13 @@ export default {
 </script>
 
 <style>
-/* 全局样式：调整 ElMessage 的位置，避免被 TopBar 遮挡 */
 .el-message {
   top: 200px !important;
-  z-index: 10001 !important; /* 确保在 TopBar (z-index: 10000) 之上 */
+  z-index: 10001 !important;
 }
 </style>
 
 <style scoped>
-/* 新年红色主题背景 */
 .newyear-container {
   min-height: 100vh;
   padding: 16px;
@@ -498,7 +388,6 @@ export default {
   overflow: hidden;
 }
 
-/* 微光感：背景中心径向渐变光晕 */
 .newyear-container::before {
   content: '';
   position: fixed;
@@ -530,7 +419,6 @@ export default {
   }
 }
 
-/* 装饰性灯笼 */
 .decoration-lantern {
   position: fixed;
   font-size: 60px;
@@ -561,7 +449,6 @@ export default {
   }
 }
 
-/* 装饰性福字 */
 .decoration-fu {
   position: fixed;
   font-size: 80px;
@@ -584,7 +471,6 @@ export default {
   transform: rotate(15deg);
 }
 
-/* 背景装饰图案 - 灯笼和福字 */
 .newyear-container::after {
   content: '';
   position: absolute;
@@ -610,7 +496,6 @@ export default {
   z-index: 0;
 }
 
-/* 动态颗粒 Canvas */
 .particles-canvas {
   position: fixed;
   top: 0;
@@ -621,7 +506,6 @@ export default {
   z-index: 100;
 }
 
-/* 磨砂玻璃效果 - 画板容器 */
 .style-detail-container {
   max-width: 600px;
   height: calc(100vh - 80px);
@@ -669,7 +553,6 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 灯笼装饰 */
 .style-detail-container::before {
   content: '🏮';
   position: absolute;
@@ -713,8 +596,6 @@ export default {
   color: #fff;
   text-align: center;
   position: relative;
-
- 
   z-index: 1;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -731,7 +612,6 @@ export default {
   font-size: 24px;
 }
 
-/* 2026幻彩新春按钮样式 */
 .gallery-link-wrapper {
   padding: 12px 16px;
   text-align: center;
@@ -830,7 +710,6 @@ export default {
   width: 80%;
 }
 
-/* 顶部居中的 new year 图标 */
 .image-display-area::before {
   content: '';
   position: absolute;
@@ -848,7 +727,6 @@ export default {
   pointer-events: none;
 }
 
-/* 左下角的 horse 图标 */
 .image-display-area::after {
   content: '';
   position: absolute;
@@ -1005,7 +883,7 @@ export default {
 }
 
 .generate-button::before {
-  content: '🎉';
+  content: '✨';
   margin-right: 8px;
 }
 
@@ -1026,12 +904,10 @@ export default {
   cursor: not-allowed;
 }
 
-/* 按钮样式覆盖 */
 .generate-button :deep(.el-button__inner) {
   color: #fff;
 }
 
-/* 响应式设计 */
 @media (max-width: 480px) {
   .newyear-container {
     padding: 8px;

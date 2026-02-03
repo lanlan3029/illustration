@@ -53,7 +53,7 @@
           <!-- 图片容器 -->
           <div class="scrollmap-image-wrapper">
             <el-image
-              :src="getImageUrl(item.data.picture)"
+              :src="getImageUrl(item.data)"
               fit="cover"
               class="scrollmap-image"
               :loading="item.loading"
@@ -108,7 +108,7 @@
       <div class="preview-content">
         <el-image
           v-if="currentItem"
-          :src="getImageUrl(currentItem.picture)"
+          :src="getImageUrl(currentItem)"
           fit="contain"
           class="preview-image">
         </el-image>
@@ -290,7 +290,8 @@ export default {
         })
 
         if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
-          const newItems = response.data.message || response.data.data || []
+          const message = response.data.message || {}
+          const newItems = message.data || message || response.data.data || []
           
           if (!Array.isArray(newItems)) {
             return
@@ -302,7 +303,7 @@ export default {
             this.allIllustrations = [...this.allIllustrations, ...newItems]
           }
 
-          this.totalCount = response.data.total || this.allIllustrations.length
+          this.totalCount = message.total || response.data.total || this.allIllustrations.length
           this.hasMore = newItems.length === this.pageSize
           
           // 更新轨道宽度
