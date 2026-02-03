@@ -228,21 +228,17 @@ export default {
           this.viewportWidth = this.$refs.viewportRef.clientWidth || window.innerWidth
           this.viewportHeight = this.$refs.viewportRef.clientHeight || window.innerHeight
           
-          // 计算每行显示的列数（根据屏幕宽度自适应）
-          if (this.viewportWidth < 480) {
-            this.colsPerRow = 2 // 小屏幕每行2张
-          } else if (this.viewportWidth < 768) {
-            this.colsPerRow = 3 // 中等屏幕每行3张
-          } else {
-            this.colsPerRow = 4 // 大屏幕每行4张
-          }
-          
-          // 每张图片的宽度 = 视口宽度 / 每行列数（留出间距）
-          this.itemWidth = (this.viewportWidth - 40) / this.colsPerRow // 减去左右padding
-          
-          // 每张图片的高度 = (视口高度 - 标题高度) / 行数（留出间距）
+          // 每张图片的高度 = 视口高度的1/4（减去标题高度后）
           const availableHeight = this.viewportHeight - 120 // 减去标题高度
-          this.itemHeight = (availableHeight - 40) / this.rowsPerView // 减去上下padding
+          this.itemHeight = availableHeight / this.rowsPerView // 每行高度为可用高度的1/4
+          
+          // 每张图片的宽度 = 高度（保证正方形）
+          this.itemWidth = this.itemHeight
+          
+          // 根据图片宽度计算每行能放多少张（留出间距）
+          const spacing = 20 // 左右间距
+          const maxCols = Math.floor((this.viewportWidth - spacing * 2) / (this.itemWidth + spacing))
+          this.colsPerRow = Math.max(1, maxCols) // 至少1列
           
           this.updateTrackWidth()
         }
@@ -251,14 +247,17 @@ export default {
     
     // 更新轨道总宽度和高度
     updateTrackWidth() {
+      if (this.itemWidth === 0 || this.itemHeight === 0) return
+      
       // 总列数 = 总图片数 / 每行列数（向上取整）
       const totalCols = Math.ceil(this.totalCount / this.colsPerRow)
-      // 轨道宽度 = 总列数 × 每张图片宽度
-      this.trackWidth = totalCols * this.itemWidth + 40 // 加上左右padding
+      // 轨道宽度 = 总列数 × 每张图片宽度 + 间距
+      const spacing = 20
+      this.trackWidth = totalCols * this.itemWidth + (totalCols - 1) * spacing + 40
       
       // 计算轨道高度（总行数 × 每行高度）
       const totalRows = Math.ceil(this.totalCount / this.colsPerRow)
-      const trackHeight = totalRows * this.itemHeight + 40
+      const trackHeight = totalRows * this.itemHeight
       // 更新轨道高度
       if (this.$refs.viewportRef) {
         const track = this.$refs.viewportRef.querySelector('.scrollmap-track')
@@ -379,11 +378,16 @@ export default {
       const row = Math.floor(index / this.colsPerRow)
       const col = index % this.colsPerRow
       
+      // 计算间距，使图片在视口中居中
+      const spacing = 20
+      const totalWidth = this.colsPerRow * this.itemWidth + (this.colsPerRow - 1) * spacing
+      const leftOffset = (this.viewportWidth - totalWidth) / 2
+      
       return {
-        left: `${col * this.itemWidth + 20}px`, // 加上左边距
-        top: `${row * this.itemHeight + 20}px`, // 加上上边距
-        width: `${this.itemWidth - 10}px`, // 减去间距
-        height: `${this.itemHeight - 10}px` // 减去间距
+        left: `${leftOffset + col * (this.itemWidth + spacing)}px`,
+        top: `${row * this.itemHeight}px`,
+        width: `${this.itemWidth}px`,
+        height: `${this.itemHeight}px`
       }
     },
     
@@ -670,7 +674,7 @@ export default {
 .scrollmap-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .image-error,
