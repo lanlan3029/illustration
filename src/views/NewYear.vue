@@ -144,6 +144,12 @@ export default {
     // 关闭登录弹窗（此页面不需要登录）
     this.$store.commit('closeMask')
     
+    // 从 localStorage 恢复之前生成的插画
+    const savedImage = localStorage.getItem('newyear_generated_image')
+    if (savedImage) {
+      this.generatedImageUrl = savedImage
+    }
+    
     // 初始化动态颗粒效果
     this.initParticles()
   },
@@ -197,7 +203,8 @@ export default {
           
           ElMessage({
             message: errorMessage,
-            type: 'error'
+            type: 'error',
+            offset: 200
           })
           return
         }
@@ -229,6 +236,10 @@ export default {
 
           if (imageUrl) {
             this.generatedImageUrl = imageUrl
+            
+            // 保存到 localStorage，防止刷新后丢失
+            localStorage.setItem('newyear_generated_image', imageUrl)
+            
             ElMessage.success('插画生成成功！')
             
             // 自动保存到"我的插画"，类别为"春节"
@@ -262,18 +273,28 @@ export default {
             
             ElMessage({
               message: errorMessage,
-              type: 'error'
+              type: 'error',
+              offset: 200
             })
           } else if (errorData.message) {
             ElMessage({
               message: errorData.message,
-              type: 'error'
+              type: 'error',
+              offset: 200
             })
           } else {
-            ElMessage.error('出错啦，请稍后再试')
+            ElMessage({
+              message: '出错啦，请稍后再试',
+              type: 'error',
+              offset: 200
+            })
           }
         } else {
-          ElMessage.error('出错啦，请稍后再试')
+          ElMessage({
+            message: '出错啦，请稍后再试',
+            type: 'error',
+            offset: 200
+          })
         }
       } finally {
         this.generating = false
@@ -281,6 +302,8 @@ export default {
     },
     clearGeneratedImage() {
       this.generatedImageUrl = null
+      // 清除 localStorage 中保存的插画
+      localStorage.removeItem('newyear_generated_image')
     },
     // 自动保存插画到"我的插画"
     async autoSaveIllustration(imageUrl) {
@@ -349,10 +372,18 @@ export default {
         if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
           ElMessage.success('插画已保存')
         } else {
-          ElMessage.error('出错啦，请稍后再试')
+         ElMessage({
+          message: '出错啦，请稍后再试',
+          type: 'error',
+          offset: 200
+         })
         }
       } catch (error) {
-        ElMessage.error('出错啦，请稍后再试')
+        ElMessage({
+          message: '出错啦，请稍后再试',
+          type: 'error',
+          offset: 200
+        })
       } finally {
         this.collecting = false
       }
