@@ -204,7 +204,7 @@ export default {
           ElMessage({
             message: errorMessage,
             type: 'error',
-            offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
+            offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
           })
           return
         }
@@ -274,26 +274,26 @@ export default {
             ElMessage({
               message: errorMessage,
               type: 'error',
-              offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
+              offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
             })
           } else if (errorData.message) {
             ElMessage({
               message: errorData.message,
               type: 'error',
-              offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
+              offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
             })
           } else {
             ElMessage({
               message: '出错啦，请稍后再试',
               type: 'error',
-              offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
+              offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
             })
           }
         } else {
           ElMessage({
             message: '出错啦，请稍后再试',
             type: 'error',
-            offset: Math.floor(window.innerHeight / 2 - 30) // 页面中间位置，减去消息框高度的一半
+            offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
           })
         }
       } finally {
