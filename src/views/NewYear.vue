@@ -204,7 +204,7 @@ export default {
           ElMessage({
             message: errorMessage,
             type: 'error',
-            offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
+            offset: 200
           })
           return
         }
@@ -264,36 +264,24 @@ export default {
         if (error.response && error.response.data) {
           const errorData = error.response.data
           
-          if (errorData.allowed === false) {
-            const errorMessage = errorData.type === 'create-character' 
+          const errorMessage = errorData.allowed === false
+            ? (errorData.type === 'create-character' 
               ? '免费次数已用完，登录解锁更多免费次数吧！'
               : (errorData.type && errorData.maxCount 
                 ? `同一IP地址最多只能免费创建 ${errorData.maxCount} 张${errorData.type}主题的插画`
-                : (errorData.message || '免费次数已用完，登录解锁更多免费次数吧！'))
-            
-            ElMessage({
-              message: errorMessage,
-              type: 'error',
-              offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
-            })
-          } else if (errorData.message) {
-            ElMessage({
-              message: errorData.message,
-              type: 'error',
-              offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
-            })
-          } else {
-            ElMessage({
-              message: '出错啦，请稍后再试',
-              type: 'error',
-              offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
-            })
-          }
+                : (errorData.message || '免费次数已用完，登录解锁更多免费次数吧！')))
+            : (errorData.message || '出错啦，请稍后再试')
+          
+          ElMessage({
+            message: errorMessage,
+            type: 'error',
+            offset: 200
+          })
         } else {
           ElMessage({
             message: '出错啦，请稍后再试',
             type: 'error',
-            offset: 50 + Math.floor((window.innerHeight - 50) / 2 - 30) // TopBar高度(50px) + 剩余空间的一半，减去消息框高度的一半
+            offset: 200
           })
         }
       } finally {
@@ -490,6 +478,14 @@ export default {
   }
 }
 </script>
+
+<style>
+/* 全局样式：调整 ElMessage 的位置，避免被 TopBar 遮挡 */
+.el-message {
+  top: 200px !important;
+  z-index: 10001 !important; /* 确保在 TopBar (z-index: 10000) 之上 */
+}
+</style>
 
 <style scoped>
 /* 新年红色主题背景 */
