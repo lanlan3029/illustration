@@ -31,17 +31,19 @@
 
               <!-- 生成结果展示 -->
               <div v-else-if="generatedImageUrl" class="generated-result">
-                <el-image
-                  :src="generatedImageUrl"
-                  fit="contain"
-                  class="result-image"
-                >
-                  <template #error>
-                    <div class="image-slot">
-                      <i class="el-icon-picture-outline"></i>
-                    </div>
-                  </template>
-                </el-image>
+                <div class="result-image-wrapper">
+                  <el-image
+                    :src="generatedImageUrl"
+                    fit="contain"
+                    class="result-image"
+                  >
+                    <template #error>
+                      <div class="image-slot">
+                        <i class="el-icon-picture-outline"></i>
+                      </div>
+                    </template>
+                  </el-image>
+                </div>
                 <div class="result-actions">
                   <el-button 
                     type="primary" 
@@ -184,6 +186,22 @@ export default {
         })
 
         const responseData = response.data
+        
+        // 检查是否是限流错误（后端返回 allowed: false）
+        if (responseData.allowed === false) {
+          const errorMessage = responseData.type === 'create-character' 
+            ? '免费次数已用完，登录解锁更多免费次数吧！'
+            : (responseData.type && responseData.maxCount 
+              ? `同一IP地址最多只能免费创建 ${responseData.maxCount} 张${responseData.type}主题的插画`
+              : (responseData.message || '免费次数已用完，登录解锁更多免费次数吧！'))
+          
+          ElMessage({
+            message: errorMessage,
+            type: 'error'
+          })
+          return
+        }
+        
         const isSuccess = (responseData.code === 0 || responseData.code === '0') 
           || responseData.desc === 'success' 
           || responseData.statuscode === 'success'
@@ -219,11 +237,44 @@ export default {
             throw new Error('响应中未找到图片URL')
           }
         } else {
-          const errorMsg = responseData.message || responseData.desc || responseData.error || '生成失败，请重试'
-          throw new Error(errorMsg)
+          // 检查响应中是否有错误信息
+          const errorMsg = responseData.message || responseData.desc || responseData.error
+          if (errorMsg) {
+            ElMessage({
+              message: errorMsg,
+              type: 'error'
+            })
+          } else {
+            ElMessage.error('出错啦，请稍后再试')
+          }
         }
       } catch (error) {
-        ElMessage.error('出错啦，请稍后再试')
+        // 检查错误响应中是否有限流信息
+        if (error.response && error.response.data) {
+          const errorData = error.response.data
+          
+          if (errorData.allowed === false) {
+            const errorMessage = errorData.type === 'create-character' 
+              ? '免费次数已用完，登录解锁更多免费次数吧！'
+              : (errorData.type && errorData.maxCount 
+                ? `同一IP地址最多只能免费创建 ${errorData.maxCount} 张${errorData.type}主题的插画`
+                : (errorData.message || '免费次数已用完，登录解锁更多免费次数吧！'))
+            
+            ElMessage({
+              message: errorMessage,
+              type: 'error'
+            })
+          } else if (errorData.message) {
+            ElMessage({
+              message: errorData.message,
+              type: 'error'
+            })
+          } else {
+            ElMessage.error('出错啦，请稍后再试')
+          }
+        } else {
+          ElMessage.error('出错啦，请稍后再试')
+        }
       } finally {
         this.generating = false
       }
@@ -819,15 +870,25 @@ export default {
 .generated-result {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  height: 100%;
   position: relative;
   z-index: 1;
 }
 
+.result-image-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .result-image {
   width: 100%;
+  height: 100%;
+  object-fit: contain;
   border-radius: 12px;
-  overflow: hidden;
   box-shadow: 0 4px 16px rgba(220, 20, 60, 0.2);
   border: 2px solid rgba(255, 215, 0, 0.3);
 }
@@ -837,6 +898,8 @@ export default {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
+  padding-top: 12px;
+  flex-shrink: 0;
 }
 
 .empty-image-box {
