@@ -139,6 +139,9 @@ export default {
     }
   },
   mounted() {
+    // 关闭登录弹窗（此页面不需要登录）
+    this.$store.commit('closeMask')
+    
     // 初始化动态颗粒效果
     this.initParticles()
   },

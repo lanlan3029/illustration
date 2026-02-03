@@ -201,6 +201,9 @@ export default {
   },
   
   mounted() {
+    // 关闭登录弹窗（此页面不需要登录）
+    this.$store.commit('closeMask')
+    
     this.initViewport()
     this.loadIllustrations()
     
