@@ -72,29 +72,6 @@
               </div>
             </div>
 
-            <div class="style-info">
-              <div class="info-item">
-                <label class="info-label">{{ $t('aiPicture.artStyle') }}</label>
-                <el-input
-                  v-model="editableArtStyle"
-                  type="textarea"
-                  :rows="1"
-                  :placeholder="$t('aiPicture.artStylePlaceholder')"
-                  class="info-input"
-                />
-              </div>
-              <div class="info-item">
-                <label class="info-label">{{ $t('aiPicture.elementDetails') }}</label>
-                <el-input
-                  v-model="editableElementDetails"
-                  type="textarea"
-                  :rows="2"
-                  :placeholder="$t('aiPicture.elementDetailsPlaceholder')"
-                  class="info-input"
-                />
-              </div>
-            </div>
-
             <div class="input-section">
               <label class="input-label">{{ $t('aiPicture.subjectScene') }}</label>
               <el-input
@@ -155,17 +132,13 @@ export default {
       if (!this.subjectScene || !this.subjectScene.trim()) {
         return ''
       }
-      const artStyle = this.editableArtStyle.trim() || ''
-      const elementDetails = this.editableElementDetails.trim() || ''
-      let prompt = `${this.subjectScene.trim()}，${artStyle}，${elementDetails}`
+      // 使用固定的默认风格提示词
+      const defaultArtStyle = '梦幻童话风格，彩色轮廓插图，纯色、喜庆红色背景，无拘无束的氛围，浪漫、生动的色彩和宽松的笔触，春节喜庆、嬉戏和无忧无虑的场景。'
+      let prompt = `${this.subjectScene.trim()}，${defaultArtStyle}`
       return prompt
     }
   },
   mounted() {
-    // 设置固定的默认风格：治愈系水彩
-    this.editableArtStyle = this.$t('aibooks.styles.healingWatercolor.artStyle')
-    this.editableElementDetails = this.$t('aibooks.styles.healingWatercolor.elementDetails')
-    
     // 初始化动态颗粒效果
     this.initParticles()
   },
@@ -193,7 +166,7 @@ export default {
       try {
         const requestData = {
           prompt: this.generatedPrompt,
-          size: '1280x960'
+          size: '1024x1024'
         }
 
         const apiUrl = this.apiBaseUrl 
@@ -237,6 +210,9 @@ export default {
           if (imageUrl) {
             this.generatedImageUrl = imageUrl
             ElMessage.success('插画生成成功！')
+            
+            // 自动保存到"我的插画"，类别为"春节"
+            await this.autoSaveIllustration(imageUrl)
           } else {
             throw new Error('响应中未找到图片URL')
           }
@@ -276,8 +252,105 @@ export default {
     clearGeneratedImage() {
       this.generatedImageUrl = null
     },
-    collectIllustration() {
-      ElMessage.success('已收集插画')
+    // 自动保存插画到"我的插画"
+    async autoSaveIllustration(imageUrl) {
+      // 检查登录状态
+      const token = localStorage.getItem('token') || ''
+      if (!token) {
+        console.warn('用户未登录，跳过自动保存')
+        return
+      }
+      
+      try {
+        // 处理URL格式
+        let pictureValue = imageUrl
+        
+        // 如果是相对路径，转换为完整URL
+        if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
+          pictureValue = `https://static.kidstory.cc/${pictureValue}`
+        }
+        
+        // 构建请求数据
+        const requestData = {
+          picture: pictureValue, // 支持 URL 或 base64
+          title: this.subjectScene || '新年插画',
+          description: this.generatedPrompt || '新年主题插画',
+          type: '春节' // 类别设置为"春节"
+        }
+        
+        // 发送请求到服务器
+        const response = await this.$http.post('/ill/', requestData, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        
+        // 检查响应
+        if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
+          console.log('插画已自动保存到"我的插画"')
+        } else {
+          console.warn('自动保存插画失败:', response.data)
+        }
+      } catch (error) {
+        console.error('自动保存插画失败:', error)
+        // 静默失败，不显示错误提示，避免影响用户体验
+      }
+    },
+    
+    // 手动收集插画（如果用户想再次保存）
+    async collectIllustration() {
+      if (!this.generatedImageUrl) {
+        ElMessage.warning('图片尚未生成，请稍候')
+        return
+      }
+      
+      // 检查登录状态
+      const token = localStorage.getItem('token') || ''
+      if (!token) {
+        ElMessage.error('请先登录')
+        return
+      }
+      
+      this.collecting = true
+      
+      try {
+        // 处理URL格式
+        let pictureValue = this.generatedImageUrl
+        
+        // 如果是相对路径，转换为完整URL
+        if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
+          pictureValue = `https://static.kidstory.cc/${pictureValue}`
+        }
+        
+        // 构建请求数据
+        const requestData = {
+          picture: pictureValue, // 支持 URL 或 base64
+          title: this.subjectScene || '新年插画',
+          description: this.generatedPrompt || '新年主题插画',
+          type: '春节' // 类别设置为"春节"
+        }
+        
+        // 发送请求到服务器
+        const response = await this.$http.post('/ill/', requestData, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        
+        // 检查响应
+        if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
+          ElMessage.success('插画已保存到"我的插画"')
+        } else {
+          ElMessage.error('保存失败，请稍后重试')
+        }
+      } catch (error) {
+        console.error('保存插画失败:', error)
+        ElMessage.error('保存失败，请稍后重试')
+      } finally {
+        this.collecting = false
+      }
     },
     downloadIllustration() {
       if (!this.generatedImageUrl) return
@@ -844,34 +917,6 @@ export default {
   right: 20px;
   font-size: 20px;
   opacity: 0.3;
-}
-
-.style-info {
-  margin-bottom: 16px;
-}
-
-.info-item {
-  margin-bottom: 12px;
-}
-
-.info-label {
-  display: block;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.95);
-  margin-bottom: 6px;
-  font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.info-input :deep(.el-textarea__inner) {
-  font-size: 13px;
-  border-color: rgba(220, 20, 60, 0.3);
-  transition: all 0.3s;
-}
-
-.info-input :deep(.el-textarea__inner):focus {
-  border-color: #dc143c;
-  box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.1);
 }
 
 .input-section {
