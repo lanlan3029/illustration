@@ -47,8 +47,7 @@ export default {
             // data
             // 一个 DOMString表示要添加到 drag object的数据。
             e.dataTransfer.setData("index",e.target.dataset.index)
-            console.log(e.target.dataset.index)
-            console.log(e.dataTransfer.setData)
+        
             // index 0
         },
         handleClick(index) {

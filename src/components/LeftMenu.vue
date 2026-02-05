@@ -202,7 +202,7 @@ export default {
                 // if cached, use cache immediately
                 const cached = this.cacheMap[this.selectType]
                 if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
-                  console.log('从缓存恢复数据:', this.selectType, cached.items.length, '示例数据:', cached.items[0])
+                 
                   // 从缓存恢复时也进行去重，确保数据唯一
                   const uniqueMap = new Map()
                   cached.items.forEach(item => {
@@ -227,15 +227,13 @@ export default {
                   // 如果 noMore 为 false，说明还有更多数据，允许滚动加载
                   this.scrollDisabled = !!cached.noMore
                   this.loading = false
-                  
-                  console.log('缓存数据已恢复，当前图元数量:', this.pictureArr.length, '第一个图元:', this.pictureArr[0])
-                  console.log('第一个图元的图片URL:', this.getImageSrc(this.pictureArr[0]))
+                
                   
                   // 确保数据正确显示和滚动
                   this.$nextTick(()=>{
                     // 如果数据为空，尝试重新加载
                     if (this.pictureArr.length === 0) {
-                      console.warn('缓存数据为空，重新加载')
+                    
                       // 清除缓存，重新加载
                       delete this.cacheMap[this.selectType]
                       // 继续执行下面的加载逻辑

@@ -27,65 +27,41 @@
       <p>正在加载画卷...</p>
     </div>
 
-    <!-- 长卷容器 -->
+    <!-- 图片容器 -->
     <div 
       v-else
-      class="scrollmap-viewport"
+      class="gallery-viewport"
       ref="viewportRef"
-      @scroll="handleScroll"
-      @touchstart="handleTouchStart"
-      @touchmove="handleTouchMove"
-      @touchend="handleTouchEnd">
+      @scroll="handleScroll">
       
-      <!-- 虚拟轨道 -->
+      <!-- 图片网格 -->
       <div 
-        class="scrollmap-track"
+        class="gallery-grid"
         :style="{ width: trackWidth + 'px' }">
         
-        <!-- 动态渲染的图片 -->
+        <!-- 图片项 -->
         <div
-          v-for="item in visibleItems"
-          :key="item._id || item.index"
-          class="scrollmap-item"
-          :style="getItemStyle(item.index)"
-          @click="openPreview(item.data, item.index)">
+          v-for="(item, index) in visibleItems"
+          :key="item._id || index"
+          class="gallery-item"
+          :style="getItemStyle(index)"
+          @click="openPreview(item, index)">
           
-          <!-- 图片容器 -->
-          <div class="scrollmap-image-wrapper">
-            <el-image
-              :src="getImageUrl(item.data)"
-              fit="cover"
-              class="scrollmap-image"
-              :loading="item.loading"
-              @load="onImageLoad(item.index)"
-              @error="onImageError(item.index)">
-              <template #error>
-                <div class="image-error">
-                  <i class="el-icon-picture-outline"></i>
-                </div>
-              </template>
-              <template #placeholder>
-                <div class="image-placeholder">
-                  <i class="el-icon-loading"></i>
-                </div>
-              </template>
-            </el-image>
-            
-            <!-- 图片信息遮罩 -->
-            <div class="scrollmap-overlay">
-              <div class="overlay-content">
-                <p class="overlay-title">{{ item.data.title || '新年插画' }}</p>
-                <p class="overlay-author" v-if="item.data.owner">
-                  by {{ item.data.owner.name || '网友' }}
-                </p>
+          <el-image
+            :src="getImageUrl(item)"
+            fit="cover"
+            class="gallery-image">
+            <template #error>
+              <div class="image-error">
+                <i class="el-icon-picture-outline"></i>
               </div>
-            </div>
-          </div>
-          
-          <!-- 序号标签 -->
-          <div class="scrollmap-index-badge">
-            {{ item.index + 1 }}
-          </div>
+            </template>
+            <template #placeholder>
+              <div class="image-placeholder">
+                <i class="el-icon-loading"></i>
+              </div>
+            </template>
+          </el-image>
         </div>
       </div>
     </div>
@@ -138,21 +114,15 @@ export default {
       pageSize: 50, // 每次加载更多数据
       hasMore: true,
       
-      // 虚拟滚动相关
+      // 布局相关
       viewportRef: null,
-      viewportWidth: 0, // 视口宽度（手机屏宽）
-      viewportHeight: 0, // 视口高度
-      rowsPerView: 4, // 每屏显示的行数
-      colsPerRow: 2, // 每行显示的列数（图片数）
-      itemWidth: 0, // 每张图片的宽度
-      itemHeight: 0, // 每张图片的高度
-      trackWidth: 0, // 虚拟轨道总宽度
-      scrollLeft: 0, // 当前滚动位置
-      
-      // 可见区域计算
-      visibleStartIndex: 0, // 可见区域起始索引
-      visibleEndIndex: 0, // 可见区域结束索引
-      bufferSize: 1, // 左右各缓冲1列
+      viewportWidth: 0,
+      viewportHeight: 0,
+      rowsPerView: 4, // 固定4行
+      colsPerRow: 0, // 每行图片数（根据屏幕宽度计算）
+      itemSize: 0, // 图片尺寸（宽高相同，1:1）
+      trackWidth: 0, // 轨道总宽度
+      scrollLeft: 0,
       
       // 当前索引
       currentIndex: 0,
@@ -161,42 +131,15 @@ export default {
       previewVisible: false,
       currentItem: null,
       
-      // 触摸相关
-      touchStartX: 0,
-      touchStartTime: 0,
-      
       // UI 提示
       showScrollHint: true
     }
   },
   
   computed: {
-    // 计算可见的图片项
+    // 计算可见的图片项（简化：显示所有已加载的图片）
     visibleItems() {
-      const items = []
-      // 计算缓冲范围（左右各缓冲1列）
-      const bufferCols = this.bufferSize
-      const startCol = Math.max(0, Math.floor(this.visibleStartIndex / this.colsPerRow) - bufferCols)
-      const endCol = Math.ceil(this.visibleEndIndex / this.colsPerRow) + bufferCols
-      
-      // 计算需要渲染的图片范围（考虑所有行）
-      const start = Math.max(0, startCol * this.colsPerRow)
-      const end = Math.min(
-        this.allIllustrations.length,
-        (endCol + 1) * this.colsPerRow + (this.rowsPerView - 1) * this.colsPerRow
-      )
-      
-      for (let i = start; i < end; i++) {
-        if (this.allIllustrations[i]) {
-          items.push({
-            index: i,
-            data: this.allIllustrations[i],
-            loading: false
-          })
-        }
-      }
-      
-      return items
+      return this.allIllustrations
     }
   },
   
@@ -230,41 +173,25 @@ export default {
           
           // 每张图片的高度 = 视口高度的1/4（减去标题高度后）
           const availableHeight = this.viewportHeight - 120 // 减去标题高度
-          this.itemHeight = availableHeight / this.rowsPerView // 每行高度为可用高度的1/4
+          this.itemSize = availableHeight / this.rowsPerView // 固定4行，每行高度为可用高度的1/4
           
-          // 每张图片的宽度 = 高度（保证正方形）
-          this.itemWidth = this.itemHeight
-          
-          // 根据图片宽度计算每行能放多少张（留出间距）
-          const spacing = 20 // 左右间距
-          const maxCols = Math.floor((this.viewportWidth - spacing * 2) / (this.itemWidth + spacing))
-          this.colsPerRow = Math.max(1, maxCols) // 至少1列
+          // 根据图片尺寸计算每行能放多少张（无间距）
+          this.colsPerRow = Math.floor(this.viewportWidth / this.itemSize)
+          this.colsPerRow = Math.max(1, this.colsPerRow) // 至少1列
           
           this.updateTrackWidth()
         }
       })
     },
     
-    // 更新轨道总宽度和高度
+    // 更新轨道总宽度
     updateTrackWidth() {
-      if (this.itemWidth === 0 || this.itemHeight === 0) return
+      if (this.itemSize === 0 || this.colsPerRow === 0) return
       
       // 总列数 = 总图片数 / 每行列数（向上取整）
       const totalCols = Math.ceil(this.totalCount / this.colsPerRow)
-      // 轨道宽度 = 总列数 × 每张图片宽度 + 间距
-      const spacing = 20
-      this.trackWidth = totalCols * this.itemWidth + (totalCols - 1) * spacing + 40
-      
-      // 计算轨道高度（总行数 × 每行高度）
-      const totalRows = Math.ceil(this.totalCount / this.colsPerRow)
-      const trackHeight = totalRows * this.itemHeight
-      // 更新轨道高度
-      if (this.$refs.viewportRef) {
-        const track = this.$refs.viewportRef.querySelector('.scrollmap-track')
-        if (track) {
-          track.style.height = `${Math.max(trackHeight, this.viewportHeight - 120)}px`
-        }
-      }
+      // 轨道宽度 = 总列数 × 图片尺寸（无间距）
+      this.trackWidth = totalCols * this.itemSize
     },
     
     // 处理窗口大小变化
@@ -308,9 +235,6 @@ export default {
           // 更新轨道宽度
           this.updateTrackWidth()
           
-          // 初始化可见区域
-          this.updateVisibleRange()
-          
           // 如果还有更多数据，继续加载
           if (this.hasMore && this.allIllustrations.length < 100) {
             this.page++
@@ -329,42 +253,14 @@ export default {
       if (!this.$refs.viewportRef) return
       
       this.scrollLeft = this.$refs.viewportRef.scrollLeft
-      this.updateVisibleRange()
-      this.updateCurrentIndex()
+      
+      // 更新当前索引
+      if (this.itemSize > 0) {
+        const currentCol = Math.round(this.scrollLeft / this.itemSize)
+        this.currentIndex = currentCol * this.colsPerRow
+      }
       
       // 检查是否需要加载更多
-      this.checkLoadMore()
-    },
-    
-    // 更新可见区域
-    updateVisibleRange() {
-      if (this.itemWidth === 0) return
-      
-      // 计算可见的列范围
-      const startCol = Math.floor(this.scrollLeft / this.itemWidth)
-      const endCol = Math.ceil((this.scrollLeft + this.viewportWidth) / this.itemWidth)
-      
-      // 计算可见的图片索引范围（考虑4行）
-      // 起始索引 = 起始列 × 每行列数
-      // 结束索引 = (结束列 + 1) × 每行列数 + (行数 - 1) × 每行列数
-      this.visibleStartIndex = Math.max(0, startCol * this.colsPerRow)
-      this.visibleEndIndex = Math.min(
-        this.totalCount - 1,
-        (endCol + 1) * this.colsPerRow + (this.rowsPerView - 1) * this.colsPerRow
-      )
-    },
-    
-    // 更新当前索引
-    updateCurrentIndex() {
-      if (this.itemWidth === 0) return
-      const currentCol = Math.round(this.scrollLeft / this.itemWidth)
-      // 当前索引可以设置为当前列的第一张图片
-      this.currentIndex = currentCol * this.colsPerRow
-    },
-    
-    // 检查是否需要加载更多
-    checkLoadMore() {
-      // 如果滚动到接近末尾，加载更多
       const scrollRatio = this.scrollLeft / (this.trackWidth - this.viewportWidth)
       if (scrollRatio > 0.8 && this.hasMore && !this.loading) {
         this.page++
@@ -374,64 +270,37 @@ export default {
     
     // 获取图片项样式
     getItemStyle(index) {
+      if (this.itemSize === 0 || this.colsPerRow === 0) {
+        return { display: 'none' }
+      }
+      
       // 计算图片所在的行和列
       const row = Math.floor(index / this.colsPerRow)
       const col = index % this.colsPerRow
       
-      // 计算间距，使图片在视口中居中
-      const spacing = 20
-      const totalWidth = this.colsPerRow * this.itemWidth + (this.colsPerRow - 1) * spacing
-      const leftOffset = (this.viewportWidth - totalWidth) / 2
-      
       return {
-        left: `${leftOffset + col * (this.itemWidth + spacing)}px`,
-        top: `${row * this.itemHeight}px`,
-        width: `${this.itemWidth}px`,
-        height: `${this.itemHeight}px`
+        left: `${col * this.itemSize}px`,
+        top: `${row * this.itemSize}px`,
+        width: `${this.itemSize}px`,
+        height: `${this.itemSize}px`
       }
-    },
-    
-    // 触摸开始
-    handleTouchStart(e) {
-      this.touchStartX = e.touches[0].clientX
-      this.touchStartTime = Date.now()
-    },
-    
-    // 触摸移动
-    handleTouchMove() {
-      // 可以在这里添加触摸反馈
-    },
-    
-    // 触摸结束
-    handleTouchEnd() {
-      // 可以在这里添加滑动结束的处理
-    },
-    
-    // 图片加载完成
-    onImageLoad() {
-      // 可以在这里添加加载完成的处理
-    },
-    
-    // 图片加载错误
-    onImageError() {
-      // 图片加载失败，静默处理
     },
     
     // 获取图片URL
     getImageUrl(item) {
       if (!item) return ''
       
-      // 尝试多种可能的字段名
-      let picture = item.picture || item.content || item.image_url || item.url || item.image
+      // 尝试多种可能的字段名（优先使用 content）
+      let picture = item.content || item.picture || item.image_url || item.url || item.image
       
-      if (!picture) {
-        return ''
-      }
+      if (!picture) return ''
       
       if (typeof picture === 'string') {
+        // 如果是完整URL，直接返回
         if (picture.startsWith('http://') || picture.startsWith('https://') || picture.startsWith('data:')) {
           return picture
         }
+        // 如果是相对路径，添加域名前缀
         return `https://static.kidstory.cc/${picture}`
       }
       
@@ -614,67 +483,46 @@ export default {
   }
 }
 
-/* 长卷视口 */
-.scrollmap-viewport {
+/* 图片容器 */
+.gallery-viewport {
   width: 100vw;
   height: 100vh;
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;
   padding-top: 120px; /* 为标题留出空间 */
-  -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
+  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
 
 /* 隐藏滚动条但保持滚动功能 */
-.scrollmap-viewport::-webkit-scrollbar {
+.gallery-viewport::-webkit-scrollbar {
   display: none;
 }
 
-.scrollmap-viewport {
+.gallery-viewport {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* 虚拟轨道 */
-.scrollmap-track {
+/* 图片网格 */
+.gallery-grid {
   min-height: calc(100vh - 120px);
   position: relative;
-  display: block;
 }
 
 /* 图片项 */
-.scrollmap-item {
+.gallery-item {
   position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-sizing: border-box;
-}
-
-.scrollmap-image-wrapper {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(255, 215, 0, 0.6);
-  background: rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
-.scrollmap-image-wrapper:hover {
-  transform: scale(1.02);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  border-color: rgba(255, 215, 0, 1);
-}
-
-.scrollmap-image {
+.gallery-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: block;
 }
 
 .image-error,
@@ -691,59 +539,6 @@ export default {
 
 .image-placeholder i {
   animation: rotate 1s linear infinite;
-}
-
-/* 图片信息遮罩 */
-.scrollmap-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-  padding: 20px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.scrollmap-image-wrapper:hover .scrollmap-overlay {
-  opacity: 1;
-}
-
-.overlay-content {
-  color: #fff;
-}
-
-.overlay-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 8px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.overlay-author {
-  font-size: 12px;
-  margin: 0;
-  opacity: 0.9;
-}
-
-/* 序号标签 */
-.scrollmap-index-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  background: rgba(220, 20, 60, 0.9);
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.8);
-  z-index: 10;
 }
 
 /* 滚动提示 */
