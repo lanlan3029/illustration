@@ -145,37 +145,7 @@ export default {
       this.generatedImageUrl = savedImage
     }
     this.initParticles()
-
-    // 如果在微信内置浏览器中，初始化微信分享卡片样式
-    if (typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent) && window.wx) {
-      // 这里假设后端已在页面注入了合法的 wx.config 配置
-      window.wx.ready(() => {
-        const shareTitle = '共绘新春'
-        const shareDesc = '我是kidstory的第${springTotal}位创作者'
-        const shareLink = window.location.href
-        // 使用当前生成的插画作为微信分享卡片的封面图；如果还没有生成，则回退到本地 submit.webp
-        const shareImg = this.generatedImageUrl || this.submitImage
-
-        // 分享给朋友
-        if (window.wx.updateAppMessageShareData) {
-          window.wx.updateAppMessageShareData({
-            title: shareTitle,
-            desc: shareDesc,
-            link: shareLink,
-            imgUrl: shareImg
-          })
-        }
-
-        // 分享到朋友圈
-        if (window.wx.updateTimelineShareData) {
-          window.wx.updateTimelineShareData({
-            title: shareTitle,
-            link: shareLink,
-            imgUrl: shareImg
-          })
-        }
-      })
-    }
+    this.initWeChatShare()
   },
   
   beforeUnmount() {
@@ -187,6 +157,58 @@ export default {
     }
   },
   methods: {
+    async initWeChatShare() {
+      if (typeof window === 'undefined') return
+      if (!/MicroMessenger/i.test(window.navigator.userAgent)) return
+      if (!window.wx) return
+
+      try {
+        const url = window.location.href.split('#')[0]
+        const res = await fetch(
+          `https://api.kidstory.cc/wechat/js-signature?url=${encodeURIComponent(url)}`
+        )
+        const data = await res.json()
+        const { message } = data || {}
+        if (!message) return
+
+        window.wx.config({
+          debug: false,
+          appId: message.appId,
+          timestamp: message.timestamp,
+          nonceStr: message.nonceStr,
+          signature: message.signature,
+          jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
+        })
+
+        window.wx.ready(() => {
+          const shareTitle = '共绘新春'
+          const shareDesc = '我是kidstory的第${springTotal}位创作者'
+          const shareLink = window.location.href
+          // 使用当前生成的插画作为微信分享卡片的封面图；如果还没有生成，则回退到本地 submit.webp
+          const shareImg = this.generatedImageUrl || this.submitImage
+
+          if (window.wx.updateAppMessageShareData) {
+            window.wx.updateAppMessageShareData({
+              title: shareTitle,
+              desc: shareDesc,
+              link: shareLink,
+              imgUrl: shareImg
+            })
+          }
+
+          if (window.wx.updateTimelineShareData) {
+            window.wx.updateTimelineShareData({
+              title: shareTitle,
+              link: shareLink,
+              imgUrl: shareImg
+            })
+          }
+        })
+      } catch (e) {
+        // 签名失败时忽略，不影响页面正常使用
+      }
+    },
+
     async generateIllustration() {
       if (!this.generatedPrompt) {
         ElMessage.warning('请先输入主体场景')
