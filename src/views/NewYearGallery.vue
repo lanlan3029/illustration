@@ -10,7 +10,7 @@
     <div class="scrollmap-header">
       <h1 class="scrollmap-title">
         <span class="title-icon">🎊</span>
-        2026幻彩新春 · 长卷
+        2026幻彩新春
         <span class="title-icon">🎊</span>
       </h1>
       <p class="scrollmap-subtitle">汇聚所有网友的创意，共同绘制新年画卷</p>
@@ -35,16 +35,12 @@
       @scroll="handleScroll">
       
       <!-- 图片网格 -->
-      <div 
-        class="gallery-grid"
-        :style="{ width: trackWidth + 'px' }">
-        
+      <div class="gallery-grid">
         <!-- 图片项 -->
         <div
           v-for="(item, index) in visibleItems"
           :key="item._id || index"
           class="gallery-item"
-          :style="getItemStyle(index)"
           @click="openPreview(item, index)">
           
           <el-image
@@ -63,14 +59,6 @@
             </template>
           </el-image>
         </div>
-      </div>
-    </div>
-
-    <!-- 滚动提示 -->
-    <div v-if="!loading && showScrollHint" class="scroll-hint">
-      <div class="hint-content">
-        <i class="el-icon-d-arrow-right"></i>
-        <span>左右滑动浏览长卷</span>
       </div>
     </div>
 
@@ -121,18 +109,13 @@ export default {
       rowsPerView: 4, // 固定4行
       colsPerRow: 0, // 每行图片数（根据屏幕宽度计算）
       itemSize: 0, // 图片尺寸（宽高相同，1:1）
-      trackWidth: 0, // 轨道总宽度
-      scrollLeft: 0,
       
       // 当前索引
       currentIndex: 0,
       
       // 预览相关
       previewVisible: false,
-      currentItem: null,
-      
-      // UI 提示
-      showScrollHint: true
+      currentItem: null
     }
   },
   
@@ -149,11 +132,6 @@ export default {
     
     this.initViewport()
     this.loadIllustrations()
-    
-    // 隐藏滚动提示
-    setTimeout(() => {
-      this.showScrollHint = false
-    }, 3000)
     
     // 监听窗口大小变化
     window.addEventListener('resize', this.handleResize)
@@ -179,25 +157,19 @@ export default {
           this.colsPerRow = Math.floor(this.viewportWidth / this.itemSize)
           this.colsPerRow = Math.max(1, this.colsPerRow) // 至少1列
           
-          this.updateTrackWidth()
+          // 设置CSS变量
+          const grid = this.$refs.viewportRef?.querySelector('.gallery-grid')
+          if (grid) {
+            grid.style.setProperty('--cols-per-row', this.colsPerRow)
+            grid.style.setProperty('--item-size', `${this.itemSize}px`)
+          }
         }
       })
-    },
-    
-    // 更新轨道总宽度
-    updateTrackWidth() {
-      if (this.itemSize === 0 || this.colsPerRow === 0) return
-      
-      // 总列数 = 总图片数 / 每行列数（向上取整）
-      const totalCols = Math.ceil(this.totalCount / this.colsPerRow)
-      // 轨道宽度 = 总列数 × 图片尺寸（无间距）
-      this.trackWidth = totalCols * this.itemSize
     },
     
     // 处理窗口大小变化
     handleResize() {
       this.initViewport()
-      this.handleScroll()
     },
     
     // 加载插画数据
@@ -232,9 +204,6 @@ export default {
           this.totalCount = message.total || response.data.total || this.allIllustrations.length
           this.hasMore = newItems.length === this.pageSize
           
-          // 更新轨道宽度
-          this.updateTrackWidth()
-          
           // 如果还有更多数据，继续加载
           if (this.hasMore && this.allIllustrations.length < 100) {
             this.page++
@@ -248,41 +217,18 @@ export default {
       }
     },
     
-    // 处理滚动事件
+    // 处理滚动事件（垂直滚动加载更多）
     handleScroll() {
       if (!this.$refs.viewportRef) return
       
-      this.scrollLeft = this.$refs.viewportRef.scrollLeft
-      
-      // 更新当前索引
-      if (this.itemSize > 0) {
-        const currentCol = Math.round(this.scrollLeft / this.itemSize)
-        this.currentIndex = currentCol * this.colsPerRow
-      }
+      const scrollTop = this.$refs.viewportRef.scrollTop
+      const scrollHeight = this.$refs.viewportRef.scrollHeight
+      const clientHeight = this.$refs.viewportRef.clientHeight
       
       // 检查是否需要加载更多
-      const scrollRatio = this.scrollLeft / (this.trackWidth - this.viewportWidth)
-      if (scrollRatio > 0.8 && this.hasMore && !this.loading) {
+      if (scrollTop + clientHeight >= scrollHeight - 100 && this.hasMore && !this.loading) {
         this.page++
         this.loadIllustrations()
-      }
-    },
-    
-    // 获取图片项样式
-    getItemStyle(index) {
-      if (this.itemSize === 0 || this.colsPerRow === 0) {
-        return { display: 'none' }
-      }
-      
-      // 计算图片所在的行和列
-      const row = Math.floor(index / this.colsPerRow)
-      const col = index % this.colsPerRow
-      
-      return {
-        left: `${col * this.itemSize}px`,
-        top: `${row * this.itemSize}px`,
-        width: `${this.itemSize}px`,
-        height: `${this.itemSize}px`
       }
     },
     
@@ -486,43 +432,39 @@ export default {
 /* 图片容器 */
 .gallery-viewport {
   width: 100vw;
-  height: 100vh;
-  overflow-x: auto;
-  overflow-y: hidden;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   padding-top: 120px; /* 为标题留出空间 */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
 
-/* 隐藏滚动条但保持滚动功能 */
-.gallery-viewport::-webkit-scrollbar {
-  display: none;
-}
-
-.gallery-viewport {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
 /* 图片网格 */
 .gallery-grid {
-  min-height: calc(100vh - 120px);
-  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols-per-row), 1fr);
+  grid-auto-rows: var(--item-size);
+  gap: 0;
+  width: 100%;
 }
 
 /* 图片项 */
 .gallery-item {
-  position: absolute;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
   cursor: pointer;
   overflow: hidden;
+  aspect-ratio: 1 / 1;
 }
 
 .gallery-image {
   width: 100%;
   height: 100%;
   display: block;
+  object-fit: cover;
 }
 
 .image-error,
@@ -541,55 +483,6 @@ export default {
   animation: rotate 1s linear infinite;
 }
 
-/* 滚动提示 */
-.scroll-hint {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 200;
-  animation: fadeOut 3s ease-out forwards;
-}
-
-@keyframes fadeOut {
-  0% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    pointer-events: none;
-  }
-}
-
-.hint-content {
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 25px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.5);
-}
-
-.hint-content i {
-  font-size: 18px;
-  animation: slideRight 1.5s ease-in-out infinite;
-}
-
-@keyframes slideRight {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(5px);
-  }
-}
 
 /* 预览对话框 */
 .preview-dialog :deep(.el-dialog) {
