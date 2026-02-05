@@ -36,14 +36,14 @@
 
                         <el-form-item>
                             <div class="generate-btn-wrapper">
-                                <el-button
-                                    type="primary"
-                                    @click="generateBook"
-                                    :loading="generating"
-                                    :disabled="!form.prompt || !form.prompt.trim() || generating"
-                                    class="generate-btn">
-                                    {{ generating ? $t('aibooks.generating') : $t('aibooks.generate') }}
-                                </el-button>
+                            <el-button
+                                type="primary"
+                                @click="generateBook"
+                                :loading="generating"
+                                :disabled="!form.prompt || !form.prompt.trim() || generating"
+                                class="generate-btn">
+                                {{ generating ? $t('aibooks.generating') : $t('aibooks.generate') }}
+                            </el-button>
                                 <div class="points-hint">{{ $t('aibooks.pointsHint') }}</div>
                             </div>
                         </el-form-item>
@@ -373,7 +373,7 @@ export default {
             // 构建风格提示词（可选）
             let stylePrompt = ''
             if (this.form.artStyle) {
-                const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
+            const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
                 if (selectedStyle) {
                     const styleName = selectedStyle.artStyle || ''
                     const styleDetails = selectedStyle.elementDetails || ''
@@ -452,18 +452,18 @@ export default {
                     } catch (e) {
                         // 如果不是 JSON 字符串，尝试提取 JSON
                         const jsonMatch = responseData.message.match(/\{[\s\S]*\}/)
-                        if (jsonMatch) {
-                            try {
-                                let jsonStr = jsonMatch[0]
-                                    .replace(/```json\n?/g, '')
-                                    .replace(/```\n?/g, '')
-                                    .trim()
-                                storyJson = JSON.parse(jsonStr)
+                if (jsonMatch) {
+                try {
+                    let jsonStr = jsonMatch[0]
+                        .replace(/```json\n?/g, '')
+                        .replace(/```\n?/g, '')
+                        .trim()
+                    storyJson = JSON.parse(jsonStr)
                             } catch (parseError) {
                                 console.error('JSON解析失败:', parseError)
                                 throw new Error('响应格式错误，无法解析故事数据')
-                            }
-                        } else {
+                }
+            } else {
                             throw new Error('响应中未找到有效的故事数据')
                         }
                     }

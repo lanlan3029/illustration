@@ -1,26 +1,32 @@
 <template>
   <div class="scrollmap-container">
+    <!-- SVG 噪点滤镜 -->
+    <svg class="noise-filter" xmlns="http://www.w3.org/2000/svg">
+      <filter id="noise">
+        <feTurbulence 
+          type="fractalNoise" 
+          baseFrequency="0.9" 
+          numOctaves="4" 
+          stitchTiles="stitch"
+          result="noise"/>
+        <feColorMatrix 
+          in="noise" 
+          type="saturate" 
+          values="0"
+          result="noise"/>
+        <feComponentTransfer in="noise" result="noise">
+          <feFuncA type="discrete" tableValues="0 0.5 0 0.5 0 0.5 0 0.5 0 0.5 0 0.5 0 0.5 0 0.5"/>
+        </feComponentTransfer>
+        <feBlend in="SourceGraphic" in2="noise" mode="multiply"/>
+      </filter>
+    </svg>
+    
     <!-- 背景装饰 -->
     <div class="decoration-lantern decoration-lantern-left">🏮</div>
     <div class="decoration-lantern decoration-lantern-right">🏮</div>
     <div class="decoration-fu decoration-fu-top-left">福</div>
     <div class="decoration-fu decoration-fu-top-right">福</div>
     
-    <!-- 标题区域 -->
-    <div class="scrollmap-header">
-      <h1 class="scrollmap-title">
-        <span class="title-icon">🎊</span>
-        2026幻彩新春
-        <span class="title-icon">🎊</span>
-      </h1>
-      <p class="scrollmap-subtitle">汇聚所有网友的创意，共同绘制新年画卷</p>
-      <div class="scrollmap-stats">
-        <span class="stat-item">共 {{ totalCount }} 幅作品</span>
-        <span class="stat-divider">|</span>
-        <span class="stat-item">已浏览 {{ currentIndex + 1 }} / {{ totalCount }}</span>
-      </div>
-    </div>
-
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-container">
       <i class="el-icon-loading"></i>
@@ -149,9 +155,8 @@ export default {
           this.viewportWidth = this.$refs.viewportRef.clientWidth || window.innerWidth
           this.viewportHeight = this.$refs.viewportRef.clientHeight || window.innerHeight
           
-          // 每张图片的高度 = 视口高度的1/4（减去标题高度后）
-          const availableHeight = this.viewportHeight - 120 // 减去标题高度
-          this.itemSize = availableHeight / this.rowsPerView // 固定4行，每行高度为可用高度的1/4
+          // 每张图片的高度 = 视口高度的1/4
+          this.itemSize = this.viewportHeight / this.rowsPerView // 固定4行，每行高度为视口高度的1/4
           
           // 根据图片尺寸计算每行能放多少张（无间距）
           this.colsPerRow = Math.floor(this.viewportWidth / this.itemSize)
@@ -290,8 +295,84 @@ export default {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(135deg, #dc143c 0%, #c41e3a 50%, #b22222 100%);
   position: relative;
+  /* 春节相关的柔和红色背景 */
+  background-color: #ff4d4f;
+  /* 放大一点的格纹 SVG 图案 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 4 4'%3E%3Cpath fill='%23ff6b9d' fill-opacity='0.5' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* SVG 噪点滤镜 */
+.noise-filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+}
+
+/* 添加噪点纹理效果 */
+.scrollmap-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 使用 SVG 噪点纹理（放大一点，略微增强） */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: overlay;
+}
+
+/* 添加额外的噪点层增强效果和光效装饰 */
+.scrollmap-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  /* 光效装饰 - 更柔和的光晕 */
+  background: 
+    radial-gradient(circle at 30% 20%, rgba(255, 215, 0, 0.12) 0%, transparent 30%),
+    radial-gradient(circle at 70% 80%, rgba(255, 182, 193, 0.15) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(255, 105, 180, 0.1) 0%, transparent 40%);
+  /* 额外的噪点纹理层（放大噪点） */
+  background-image: 
+    repeating-radial-gradient(
+      circle at 0 0,
+      transparent 0,
+      rgba(0, 0, 0, 0.03) 2px,
+      transparent 4px,
+      rgba(0, 0, 0, 0.02) 6px,
+      transparent 8px
+    ),
+    repeating-radial-gradient(
+      circle at 100px 100px,
+      transparent 0,
+      rgba(0, 0, 0, 0.025) 2px,
+      transparent 4px,
+      rgba(0, 0, 0, 0.03) 6px,
+      transparent 8px
+    );
+  background-size: 
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    90px 90px,
+    120px 120px;
+  background-position: 
+    0 0,
+    0 0,
+    0 0,
+    0 0,
+    50px 50px;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: normal;
 }
 
 /* 背景装饰 */
@@ -329,11 +410,12 @@ export default {
   position: fixed;
   font-size: 80px;
   font-weight: bold;
-  color: rgba(255, 215, 0, 0.15);
+  color: rgba(255, 215, 0, 0.2);
   font-family: 'KaiTi', '楷体', serif;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
   transform: rotate(-15deg);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
 .decoration-fu-top-left {
@@ -345,62 +427,6 @@ export default {
   top: 8%;
   right: 8%;
   transform: rotate(15deg);
-}
-
-/* 标题区域 */
-.scrollmap-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 15px 20px;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  z-index: 100;
-  text-align: center;
-}
-
-.scrollmap-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 8px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  font-family: 'LiSu', 'STLiti', '隶书', 'KaiTi', serif;
-}
-
-.title-icon {
-  font-size: 28px;
-  margin: 0 8px;
-  animation: bounce 2s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.scrollmap-subtitle {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 8px;
-}
-
-.scrollmap-stats {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-}
-
-.stat-divider {
-  opacity: 0.5;
 }
 
 /* 加载状态 */
@@ -432,11 +458,10 @@ export default {
 /* 图片容器 */
 .gallery-viewport {
   width: 100vw;
-  height: calc(100vh - 120px);
+  height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  padding-top: 120px; /* 为标题留出空间 */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
@@ -524,22 +549,6 @@ export default {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .scrollmap-title {
-    font-size: 20px;
-  }
-
-  .title-icon {
-    font-size: 24px;
-  }
-
-  .scrollmap-header {
-    padding: 12px 16px;
-  }
-
-  .scrollmap-viewport {
-    padding-top: 110px;
-  }
-
   .scrollmap-item {
     padding: 15px;
   }
@@ -558,19 +567,6 @@ export default {
 }
 
 @media (max-width: 480px) {
-  .scrollmap-title {
-    font-size: 18px;
-  }
-
-  .scrollmap-subtitle {
-    font-size: 12px;
-  }
-
-  .scrollmap-stats {
-    font-size: 11px;
-    gap: 8px;
-  }
-
   .decoration-lantern {
     font-size: 40px;
   }

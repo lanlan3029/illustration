@@ -104,6 +104,7 @@
 <script>
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import submitImage from '@/assets/images/submit.webp'
 
 export default {
   name: 'NewYear',
@@ -124,7 +125,8 @@ export default {
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
       particlesAnimationId: null,
       particles: [],
-      resizeHandler: null
+      resizeHandler: null,
+      submitImage
     }
   },
   computed: {
@@ -143,6 +145,37 @@ export default {
       this.generatedImageUrl = savedImage
     }
     this.initParticles()
+
+    // 如果在微信内置浏览器中，初始化微信分享卡片样式
+    if (typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent) && window.wx) {
+      // 这里假设后端已在页面注入了合法的 wx.config 配置
+      window.wx.ready(() => {
+        const shareTitle = '共绘新春'
+        const shareDesc = '我是kidstory的第${springTotal}位创作者'
+        const shareLink = window.location.href
+        // 使用当前生成的插画作为微信分享卡片的封面图；如果还没有生成，则回退到本地 submit.webp
+        const shareImg = this.generatedImageUrl || this.submitImage
+
+        // 分享给朋友
+        if (window.wx.updateAppMessageShareData) {
+          window.wx.updateAppMessageShareData({
+            title: shareTitle,
+            desc: shareDesc,
+            link: shareLink,
+            imgUrl: shareImg
+          })
+        }
+
+        // 分享到朋友圈
+        if (window.wx.updateTimelineShareData) {
+          window.wx.updateTimelineShareData({
+            title: shareTitle,
+            link: shareLink,
+            imgUrl: shareImg
+          })
+        }
+      })
+    }
   },
   
   beforeUnmount() {
@@ -241,9 +274,33 @@ export default {
         if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
           pictureValue = `https://static.kidstory.cc/${pictureValue}`
         }
+
+        // 先获取当前“春节”插画总数，用于生成“第几副作品”的标题
+        let springTotal = 0
+        try {
+          const countRes = await this.$http.get('/ill/', {
+            params: {
+              type: '春节',
+              page: 1,
+              limit: 1,
+              sort_param: 'createdAt',
+              sort_num: 'desc'
+            }
+          })
+          if (countRes.data && (countRes.data.code === 0 || countRes.data.code === '0' || countRes.data.desc === 'success')) {
+            const message = countRes.data.message || {}
+            springTotal = Number(message.total || countRes.data.total || 0) || 0
+          }
+        } catch (e) {
+          // 统计失败时忽略，退回默认标题
+        }
+
+        const nextIndex = springTotal + 1
+        const dynamicTitle = `共绘新春第${nextIndex}副作品`
+
         await this.$http.post('/ill/', {
           picture: pictureValue,
-          title: this.subjectScene || '新年插画',
+          title: dynamicTitle,
           description: this.generatedPrompt || '新年主题插画',
           type: '春节'
         }, {
@@ -265,9 +322,32 @@ export default {
         if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
           pictureValue = `https://static.kidstory.cc/${pictureValue}`
         }
+        // 获取当前“春节”插画总数，用于生成“第几副作品”的标题
+        let springTotal = 0
+        try {
+          const countRes = await this.$http.get('/ill/', {
+            params: {
+              type: '春节',
+              page: 1,
+              limit: 1,
+              sort_param: 'createdAt',
+              sort_num: 'desc'
+            }
+          })
+          if (countRes.data && (countRes.data.code === 0 || countRes.data.code === '0' || countRes.data.desc === 'success')) {
+            const message = countRes.data.message || {}
+            springTotal = Number(message.total || countRes.data.total || 0) || 0
+          }
+        } catch (e) {
+          // 忽略统计失败，使用默认标题
+        }
+
+        const nextIndex = springTotal + 1
+        const dynamicTitle = `共绘新春第${nextIndex}副作品`
+
         const response = await this.$http.post('/ill/', {
           picture: pictureValue,
-          title: this.subjectScene || '新年插画',
+          title: dynamicTitle,
           description: this.generatedPrompt || '新年主题插画',
           type: '春节'
         }, {

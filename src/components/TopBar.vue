@@ -47,6 +47,10 @@
             <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">{{ $t('common.tools') }}</router-link>
           </li>
 
+          <li class="nav-item" :class="{ 'active': route.path === '/newyear' }">
+            <router-link to="/newyear" class="nav-link nav-link-2026" @click="closeSubmenu">2026</router-link>
+          </li>
+
         
 
           <!-- 搜索框 -->
@@ -178,6 +182,9 @@
                 </li>
                 <li :class="{ active: route.path === '/utility-tools' }">
                   <router-link to="/utility-tools" @click="closeMobileMenu">{{ $t('common.tools') }}</router-link>
+                </li>
+                <li :class="{ active: route.path === '/newyear' }">
+                  <router-link to="/newyear" class="nav-link-2026" @click="closeMobileMenu">2026</router-link>
                 </li>
               </ul>
               <div class="mobile-menu-footer">
@@ -988,6 +995,16 @@ export default {
 
 .nav-item.active .nav-link {
 	color: #777 !important;
+}
+
+/* 2026 导航项：默认红色加粗 */
+.nav-link-2026 {
+	color: #e53935 !important;
+	font-weight: 700;
+}
+
+.nav-item.active .nav-link-2026 {
+	color: #c62828 !important;
 }
 
 .nav-item:after {

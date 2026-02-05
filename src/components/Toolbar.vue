@@ -28,7 +28,7 @@
             >{{ $t('toolbar.save') }}</label>
             <label class="insert" @click="deleteDraft">{{ $t('toolbar.clear') }}</label>
             <div class="export-wrapper">
-                <label class="export" @click="AICompose">{{ $t('toolbar.smartOptimize') }}</label>
+            <label class="export" @click="AICompose">{{ $t('toolbar.smartOptimize') }}</label>
                 <div class="points-hint">{{ $t('toolbar.pointsHint') }}</div>
             </div>
         </div>

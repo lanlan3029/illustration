@@ -99,14 +99,14 @@
                         <!-- 提交按钮 - 固定在底部 -->
                         <div class="submit-section">
                             <div class="generate-btn-wrapper">
-                                <el-button 
-                                    type="primary" 
-                                    size="large"
-                                    @click="handleSubmit"
-                                    :loading="processing"
-                                    :disabled="!canSubmit">
-                                    <i class="el-icon-magic-stick"></i> {{ $t('createGroupImages.startGenerate') }}
-                                </el-button>
+                            <el-button 
+                                type="primary" 
+                                size="large"
+                                @click="handleSubmit"
+                                :loading="processing"
+                                :disabled="!canSubmit">
+                                <i class="el-icon-magic-stick"></i> {{ $t('createGroupImages.startGenerate') }}
+                            </el-button>
                                 <div class="points-hint">{{ $t('createGroupImages.pointsHint') }}</div>
                             </div>
                         </div>

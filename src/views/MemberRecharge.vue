@@ -234,10 +234,10 @@ export default {
         }
 
     
-          const orderData = {
+        const orderData = {
             product_type: 'points', // 产品类型：积分
             product_id: 1 // 产品ID：1 → 100 积分，9.9 元（990 分）
-          };
+        };
 
         const apiUrl = this.apiBaseUrl 
           ? `${this.apiBaseUrl}/payment/create-order`
@@ -346,12 +346,12 @@ export default {
               this.pollingInterval = null;
               this.showQRCode = false;
               this.processing = false;
-
+              
               // 更新用户积分
               await this.getUserPoints();
-
+              
               ElMessage.success('支付成功！积分已到账');
-
+              
               // 跳转到成功页面或刷新
               setTimeout(() => {
                 this.$router.push('/member/recharge/success');

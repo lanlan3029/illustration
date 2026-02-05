@@ -163,14 +163,14 @@
 
                   
                         <div class="generate-button-wrapper">
-                            <el-button
-                                type="primary"
-                                class="generate-button"
-                                @click="generateIllustration"
-                                :loading="generating"
-                                :disabled="!subjectScene || !subjectScene.trim() || generating">
-                                {{ generating ? $t('aiPicture.generating') : $t('aiPicture.generate') }}
-                            </el-button>
+                        <el-button
+                            type="primary"
+                            class="generate-button"
+                            @click="generateIllustration"
+                            :loading="generating"
+                            :disabled="!subjectScene || !subjectScene.trim() || generating">
+                            {{ generating ? $t('aiPicture.generating') : $t('aiPicture.generate') }}
+                        </el-button>
                             <div class="points-hint">{{ $t('aiPicture.pointsHint') }}</div>
                         </div>
                     </div>

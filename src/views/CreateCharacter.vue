@@ -87,16 +87,16 @@
                                 <!-- 生成角色按钮 -->
                                 <div class="generate-actions">
                                     <div class="generate-btn-wrapper">
-                                        <el-button 
-                                            type="primary"
-                                            size="default"
-                                            :loading="processing" 
-                                        
-                                            @click="handleCreateCharacter"
-                                            class="btn-generate">
-                                            <i class="el-icon-magic-stick"></i>
-                                            {{ processing ? $t('createCharacter.generating') : $t('createCharacter.generateCharacter') }}
-                                        </el-button>
+                                    <el-button 
+                                        type="primary"
+                                        size="default"
+                                        :loading="processing" 
+                                    
+                                        @click="handleCreateCharacter"
+                                        class="btn-generate">
+                                        <i class="el-icon-magic-stick"></i>
+                                        {{ processing ? $t('createCharacter.generating') : $t('createCharacter.generateCharacter') }}
+                                    </el-button>
                                         <div class="points-hint">{{ $t('createCharacter.pointsHint') }}</div>
                                     </div>
                                     <el-button 
