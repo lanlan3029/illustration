@@ -836,7 +836,7 @@ export default {
   left: 20px;
   width: 100px;
   height: 100px;
-  background-image: url('@/assets/images/newyear/horse.svg');
+ 
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

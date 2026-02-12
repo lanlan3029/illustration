@@ -9,7 +9,7 @@
         loading="lazy"
         decoding="async"
       />
-      <span>鲁ICP备2023000705号-1</span>
+      <span>渝ICP备2026002745号</span>
    </a>
   </footer>
 </template>
