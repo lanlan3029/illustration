@@ -1346,8 +1346,28 @@ export default {
 }
 
 @media (max-width: 768px) {
+    .library-main {
+        flex-direction: column;
+        max-width: 100vw;
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .style-list-container,
+    .style-detail-container {
+        width: 100%;
+        min-height: auto;
+        height: auto;
+    }
+
+    .style-list-container-scroll {
+        height: auto;
+    }
+
     .style-list {
         grid-template-columns: 1fr;
+        max-height: none;
+        overflow-y: visible;
     }
 
     /* 手机端不显示每种风格的预览插画，只保留文字标题 */
@@ -1355,10 +1375,8 @@ export default {
         display: none;
     }
 
-    /* 手机端：风格列表不要占满整屏，只占上方一小块区域，内部可滚动 */
-    .style-list {
-        max-height: 220px;
-        overflow-y: auto;
+    .style-detail {
+        overflow-y: visible;
     }
 }
 
