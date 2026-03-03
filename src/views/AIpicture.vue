@@ -1086,15 +1086,18 @@ export default {
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    min-height: calc(100vh - 72px - 50px - 48px - 64px);
+    /* 固定一个最大高度，超出时由容器本身垂直滚动（PC 和手机通用） */
+    max-height: calc(100vh - 140px);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .style-detail {
     flex: 1;
-    overflow-y: auto;
+    /* 由外层 .style-detail-container 负责滚动，这里不再单独滚动 */
+    overflow: visible;
 }
 
 .placeholder {
@@ -1349,15 +1352,6 @@ export default {
 }
 
 @media (max-width: 768px) {
-    /* 整体由页面滚动，而不是内部容器填满一屏 */
-    .inspiration-library {
-        min-height: auto;
-    }
-
-    .library-main {
-        flex: none;
-    }
-
     /* 手机端：风格列表内部滚动区域高度限定 */
     .style-list {
         grid-template-columns: 1fr;
@@ -1383,7 +1377,6 @@ export default {
         min-height: 260px;
     }
 
-    /* 生成插画部分不再自己滚动，由页面整体滚动 */
     .style-detail {
         overflow-y: visible;
     }
