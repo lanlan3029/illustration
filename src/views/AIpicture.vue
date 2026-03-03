@@ -1349,10 +1349,10 @@ export default {
 }
 
 @media (max-width: 768px) {
-
+    /* 手机端：风格列表内部滚动区域高度限定 */
     .style-list {
         grid-template-columns: 1fr;
-        max-height: 120px;
+        max-height: 140px;
         overflow-y: auto;
     }
 
@@ -1361,7 +1361,19 @@ export default {
         display: none;
     }
 
-    /* 生成插画区域不内部滚动，由页面滚动 */
+    /* 生成插画区域缩小高度，避免内部滚动条 */
+    .image-display-area {
+        height: 260px;
+    }
+
+    .empty-image-box {
+        min-height: 260px;
+    }
+
+    .generated-result {
+        min-height: 260px;
+    }
+
     .style-detail {
         overflow-y: visible;
     }
