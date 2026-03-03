@@ -393,17 +393,21 @@ export default {
         padding: 40px 20px;
     }
 
+    .home-header {
+        margin-bottom: 32px;
+    }
+
     .main-title {
-        font-size: 32px;
+        font-size: 24px;
     }
 
     .subtitle {
-        font-size: 16px;
+        font-size: 14px;
 }
 
     .features-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 16px;
 }
 
     .card-icon {
@@ -412,7 +416,12 @@ export default {
 }
 
     .card-title {
-        font-size: 18px;
+        font-size: 16px;
+    }
+
+    .card-description {
+        font-size: 13px;
+        margin-bottom: 20px;
     }
 }
 </style>
