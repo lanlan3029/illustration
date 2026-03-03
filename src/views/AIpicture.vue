@@ -906,7 +906,6 @@ export default {
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 50px - 40px - 80px);
-    
 }
 .style-list-container-scroll{
     height: calc(100vh - 50px - 40px - 80px);
@@ -1337,7 +1336,12 @@ export default {
     .style-list-container,
     .style-detail-container {
         width: 100%;
-        height: 400px;
+        height: auto;
+        min-height: auto;
+    }
+
+    .style-list-container-scroll {
+        height: auto;
     }
 }
 
@@ -1349,6 +1353,12 @@ export default {
     /* 手机端不显示每种风格的预览插画，只保留文字标题 */
     .style-image-wrapper {
         display: none;
+    }
+
+    /* 手机端：风格列表不要占满整屏，只占上方一小块区域，内部可滚动 */
+    .style-list {
+        max-height: 220px;
+        overflow-y: auto;
     }
 }
 
