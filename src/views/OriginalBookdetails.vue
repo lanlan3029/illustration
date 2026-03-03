@@ -1684,6 +1684,7 @@ async loadCollectIdMap() {
 @media (max-width: 768px) {
   .book-reader-container {
     padding: 10px;
+    overflow-y: auto;
   }
   
   .book-layout {
@@ -1692,11 +1693,6 @@ async loadCollectIdMap() {
   
   .book-viewer {
     padding: 10px 0;
-  }
-  
-  .book-wrapper {
-    height: 60vh;
-    min-height: 400px;
   }
   
   .book-page.single-page {
@@ -1715,7 +1711,7 @@ async loadCollectIdMap() {
   }
   
   .book-header {
-    padding: 12px 16px;
+    padding: 8px 12px;
   }
   
   .header-content {
@@ -1723,7 +1719,14 @@ async loadCollectIdMap() {
   }
   
   .book-description {
-    padding: 16px;
+    padding: 8px 12px 0;
+    max-height: 4.5em;
+    overflow: hidden;
+  }
+
+  .book-description p {
+    font-size: 13px;
+    line-height: 1.5;
   }
 }
 
