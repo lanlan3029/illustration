@@ -524,7 +524,7 @@ export default {
               
               const response = await this.$http.post(`/book/`, formData, {
                 headers: {
-                  'Content-Type': 'multipart/form-data',
+                  // 不设置 Content-Type，让 axios 自动加 multipart/form-data; boundary=...
                   'Authorization': `Bearer ${token}`
                 }
               });
