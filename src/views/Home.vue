@@ -305,6 +305,7 @@ export default {
 .feature-card[class*="icon-card-"] :deep(.el-card__body) {
     position: relative;
     z-index: 1;
+    overflow: visible;
 }
 
 .feature-card[class*="icon-card-"] :deep(.el-card__body)::after {
