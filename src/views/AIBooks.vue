@@ -1599,6 +1599,35 @@ export default {
 @media (max-width: 768px) {
     .story-pages {
         grid-template-columns: 1fr !important;
+        gap: 16px;
+        padding: 16px 0;
+    }
+
+    .inspiration-main {
+        padding: 16px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .prompt-container,
+    .generated-book {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+        padding: 16px;
+    }
+
+    .section-title {
+        font-size: 16px;
+    }
+
+    .book-title {
+        font-size: 20px;
+    }
+
+    .book-summary,
+    .scene-text {
+        font-size: 13px;
     }
 }
 

@@ -272,7 +272,7 @@ export default {
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 2fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     position: relative;
     z-index: 1;
@@ -391,6 +391,7 @@ export default {
 @media (max-width: 768px) {
     .home-container {
         padding: 40px 20px;
+        overflow: auto;
     }
 
     .home-header {

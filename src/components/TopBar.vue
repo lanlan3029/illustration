@@ -833,10 +833,15 @@ export default {
 	margin: 0;
 	flex: 1;
 	overflow-y: auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
 }
 
 .mobile-menu-list li {
-	margin-bottom: 8px;
+	margin-bottom: 0;
+	flex: 1;
 }
 
 .mobile-menu-list a {
@@ -846,6 +851,7 @@ export default {
 	color: #303133;
 	text-decoration: none;
 	font-size: 15px;
+	text-align: center;
 }
 
 .mobile-menu-list li.active a,

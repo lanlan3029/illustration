@@ -1345,6 +1345,11 @@ export default {
     .style-list {
         grid-template-columns: 1fr;
     }
+
+    /* 手机端不显示每种风格的预览插画，只保留文字标题 */
+    .style-image-wrapper {
+        display: none;
+    }
 }
 
 /* 滚动条样式 */
