@@ -1377,6 +1377,12 @@ export default {
         min-height: 260px;
     }
 
+    /* 手机端：生成插画整体交给页面滚动，右侧容器不再一直显示滚动条 */
+    .style-detail-container {
+        max-height: none;
+        overflow-y: visible;
+    }
+
     .style-detail {
         overflow-y: visible;
     }
