@@ -132,97 +132,34 @@
           </li>
         </ul>
 
-        <!-- 手机端汉堡菜单按钮 -->
-        <button class="hamburger-button" @click.stop="toggleMobileMenu">
-          <span class="hamburger-line"></span>
-          <span class="hamburger-line"></span>
-          <span class="hamburger-line"></span>
-        </button>
+    
 
         <!-- 手机端全屏菜单 -->
-        <transition name="mobile-menu-fade">
-          <div v-if="mobileMenuVisible" class="mobile-menu-overlay" @click.self="closeMobileMenu">
-            <div class="mobile-menu-panel">
-              <div class="mobile-menu-header">
-                <a class="navbar-brand" @click.prevent="goHomeFromMobile">
-                  <img :src="logoUrl" alt="Logo" />
-                </a>
-                <button class="mobile-menu-close" @click="closeMobileMenu">×</button>
-              </div>
-              <ul class="mobile-menu-list">
-                <li :class="{ active: route.path === '/' }">
-                  <router-link to="/" @click="closeMobileMenu">{{ $t('nav.home') || '首页' }}</router-link>
-                </li>
-                <li :class="{ active: route.path === '/ai-picture' }">
-                  <router-link to="/ai-picture" @click="closeMobileMenu">{{ $t('nav.aiIllustration') }}</router-link>
-                </li>
-                <li :class="{ active: route.path === '/AIbooks' }">
-                  <router-link to="/AIbooks" @click="closeMobileMenu">{{ $t('nav.aiBooks') }}</router-link>
-                </li>
-                <li>
-                  <router-link to="/create-character" @click="closeMobileMenu">{{ $t('nav.createCharacter') }}</router-link>
-                </li>
-                <li>
-                  <router-link to="/create-group-images" @click="closeMobileMenu">{{ $t('nav.createGroupImages') }}</router-link>
-                </li>
-                <li>
-                  <router-link to="/create-layout-illustration" @click="closeMobileMenu">{{ $t('nav.createLayoutIllustration') }}</router-link>
-                </li>
-                <li>
-                  <router-link to="/creation" @click="closeMobileMenu">{{ $t('nav.createIllustration') }}</router-link>
-                </li>
-                <li>
-                  <router-link to="/user/upload/compose-illustration" @click="closeMobileMenu">{{ $t('nav.composeBook') }}</router-link>
-                </li>
-                <li :class="{ active: route.path === '/user/upload' }">
-                  <router-link to="/user/upload" @click="closeMobileMenu">{{ $t('common.upload') }}</router-link>
-                </li>
-                <li :class="{ active: route.path === '/books' }">
-                  <router-link to="/books" @click="closeMobileMenu">{{ $t('common.books') }}</router-link>
-                </li>
-                <li :class="{ active: route.path === '/utility-tools' }">
-                  <router-link to="/utility-tools" @click="closeMobileMenu">{{ $t('common.tools') }}</router-link>
-                </li>
-                <li :class="{ active: route.path === '/newyear' }">
-                  <router-link to="/newyear" class="nav-link-2026" @click="closeMobileMenu">2026</router-link>
-                </li>
-              </ul>
-              <div class="mobile-menu-footer">
-                <div class="mobile-language-switcher">
-                  <el-radio-group 
-                    v-model="currentLanguage" 
-                    size="small" 
-                    fill="#8167a9"
-                    @change="handleLanguageChange">
-                    <el-radio-button label="zh" value="zh">中文</el-radio-button>
-                    <el-radio-button label="en" value="en">EN</el-radio-button>
-                  </el-radio-group>
-                </div>
-                <div class="mobile-auth-section">
-                  <template v-if="!isLogin">
-                    <el-button type="primary" size="small" @click="handleMobileLogin">登录 / 注册</el-button>
-                  </template>
-                  <template v-else>
-                    <div class="mobile-user-info">
-                      <img :src="userInfo && userInfo.avatar" :alt="userInfo && userInfo.name" class="mobile-user-avatar" />
-                      <div class="mobile-user-meta">
-                        <div class="name">{{ (userInfo && userInfo.name) || '用户' }}</div>
-                        <div class="points">
-                          <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
-                          <span>{{ userPoints || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="mobile-user-actions">
-                      <el-button size="small" @click="toMemberRechargeFromMobile">充值积分</el-button>
-                      <el-button size="small" type="danger" @click="logoutFromMobile">退出登录</el-button>
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </div>
-        </transition>
+        <ul class="mobile-menu-list">
+  <!-- 首页 -->
+  <li :class="{ active: route.path === '/' }">
+    <router-link to="/" @click="closeMobileMenu">
+      首页
+    </router-link>
+  </li>
+
+  <!-- 绘本：跳到已有的绘本列表页 /books -->
+  <li :class="{ active: route.path === '/books' }">
+    <router-link to="/books" @click="closeMobileMenu">
+      绘本
+    </router-link>
+  </li>
+
+  <!-- 我的：根据登录状态跳转 -->
+  <li>
+    <a
+      href="#"
+      @click.prevent="handleMobileMy"
+    >
+      我的
+    </a>
+  </li>
+</ul>
       </div>
     </nav>
   </div>
