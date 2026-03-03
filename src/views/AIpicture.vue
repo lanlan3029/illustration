@@ -1349,6 +1349,15 @@ export default {
 }
 
 @media (max-width: 768px) {
+    /* 整体由页面滚动，而不是内部容器填满一屏 */
+    .inspiration-library {
+        min-height: auto;
+    }
+
+    .library-main {
+        flex: none;
+    }
+
     /* 手机端：风格列表内部滚动区域高度限定 */
     .style-list {
         grid-template-columns: 1fr;
@@ -1374,6 +1383,7 @@ export default {
         min-height: 260px;
     }
 
+    /* 生成插画部分不再自己滚动，由页面整体滚动 */
     .style-detail {
         overflow-y: visible;
     }
