@@ -1327,6 +1327,9 @@ export default {
 @media (max-width: 1024px) {
     .library-main {
         flex-direction: column;
+        max-width: 100vw;
+        padding: 16px;
+        gap: 16px;
     }
 
     .style-list {
@@ -1336,8 +1339,8 @@ export default {
     .style-list-container,
     .style-detail-container {
         width: 100%;
-        height: auto;
         min-height: auto;
+        height: auto;
     }
 
     .style-list-container-scroll {
@@ -1346,28 +1349,11 @@ export default {
 }
 
 @media (max-width: 768px) {
-    .library-main {
-        flex-direction: column;
-        max-width: 100vw;
-        padding: 16px;
-        gap: 12px;
-    }
-
-    .style-list-container,
-    .style-detail-container {
-        width: 100%;
-        min-height: auto;
-        height: auto;
-    }
-
-    .style-list-container-scroll {
-        height: auto;
-    }
 
     .style-list {
         grid-template-columns: 1fr;
-        max-height: none;
-        overflow-y: visible;
+        max-height: 120px;
+        overflow-y: auto;
     }
 
     /* 手机端不显示每种风格的预览插画，只保留文字标题 */
@@ -1375,6 +1361,7 @@ export default {
         display: none;
     }
 
+    /* 生成插画区域不内部滚动，由页面滚动 */
     .style-detail {
         overflow-y: visible;
     }
