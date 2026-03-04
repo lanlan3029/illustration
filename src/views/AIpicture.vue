@@ -1364,27 +1364,18 @@ export default {
         display: none;
     }
 
-    /* 生成插画区域缩小高度，避免内部滚动条 */
-    .image-display-area {
-        height: 260px;
-    }
-
-    .empty-image-box {
-        min-height: 260px;
-    }
-
-    .generated-result {
-        min-height: 260px;
-    }
-
-    /* 手机端：生成插画整体交给页面滚动，右侧容器不再一直显示滚动条 */
+    /* 手机端：生成插画 card 固定高度，内部始终可以垂直滚动 */
     .style-detail-container {
-        max-height: none;
-        overflow-y: visible;
+        width: 100%;
+        max-height: calc(100vh - 160px);
+        overflow-x: hidden;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
     }
 
     .style-detail {
-        overflow-y: visible;
+        flex: 1;
+        overflow: visible;
     }
 }
 

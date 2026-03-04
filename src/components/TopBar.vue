@@ -860,6 +860,13 @@ export default {
 	color: #8167a9;
 }
 
+/* 桌面端隐藏手机菜单列表，避免两个系统菜单同时显示 */
+@media (min-width: 768px) {
+	.mobile-menu-list {
+		display: none;
+	}
+}
+
 .mobile-menu-footer {
 	padding: 12px 16px 16px;
 	border-top: 1px solid #eeeeee;
