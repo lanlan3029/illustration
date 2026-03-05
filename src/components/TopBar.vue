@@ -43,9 +43,11 @@
             <router-link to="/books" class="nav-link" @click="closeSubmenu">{{ $t('common.books') }}</router-link>
           </li>
 
+          <!--
           <li class="nav-item" :class="{ 'active': route.path === '/utility-tools' }">
             <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">{{ $t('common.tools') }}</router-link>
           </li>
+          -->
 
           <li class="nav-item" :class="{ 'active': route.path === '/newyear' }">
             <router-link to="/newyear" class="nav-link nav-link-2026" @click="closeSubmenu">2026</router-link>

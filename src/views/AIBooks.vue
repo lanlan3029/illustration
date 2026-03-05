@@ -512,19 +512,6 @@ export default {
                 ElMessage.warning('请先生成故事');
                 return;
             }
-
-            // 过滤掉被清空/只剩空格的提示词，避免还按原始分镜数量生成图片
-            const filtered = this.imagePrompts
-                .map((prompt, index) => ({ prompt, index }))
-                .filter(item => item.prompt && item.prompt.trim());
-
-            if (filtered.length === 0) {
-                ElMessage.warning('有效的提示词已被全部清空，请至少保留一条提示词');
-                return;
-            }
-
-            const validPrompts = filtered.map(item => item.prompt);
-            const validIndices = filtered.map(item => item.index);
             
             this.generatingImages = true
             this.progressPercentage = 0
@@ -532,19 +519,15 @@ export default {
             this.progressText = '开始生成图片...'
             
             try {
-                // 只根据用户保留的有效提示词生成对应数量的图片
-                const images = await this.generateImages(validPrompts, validPrompts.length)
-                
-                // 根据保留的提示词索引，同步裁剪 scenes 和 scenes_detail，保证页数一致
-                const scenes = validIndices.map(i => this.storyData.scenes[i]).filter(Boolean);
-                const scenesDetail = validIndices.map(i => this.storyData.scenes_detail[i]).filter(Boolean);
+                // 生成图片
+                const images = await this.generateImages(this.imagePrompts, this.imagePrompts.length)
                 
                 // 组装故事书数据
                 this.bookData = {
                     title: this.storyData.title,
                     summary: this.storyData.summary,
-                    scenes,
-                    scenes_detail: scenesDetail,
+                    scenes: this.storyData.scenes,
+                    scenes_detail: this.storyData.scenes_detail,
                     images: images
                 }
                 
