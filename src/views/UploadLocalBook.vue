@@ -16,7 +16,7 @@
         :file-list="uploadFileList"
         accept=".png, .jpg, .jpeg, .JPG, .JPEG"
         multiple
-        :limit="20"
+        :limit="50"
         :limit-size="31457280"
         class="upload-wrapper"
     >
