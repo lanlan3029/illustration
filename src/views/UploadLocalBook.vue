@@ -50,7 +50,7 @@
   </el-form-item>
    <el-form-item>
     <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">
-      {{ isEditMode ? $t('upload.updateButton') : $t('upload.uploadButton') }}
+      {{ uploading ? '正在上传' : (isEditMode ? $t('upload.updateButton') : $t('upload.uploadButton')) }}
     </el-button>
    
   </el-form-item>
@@ -75,7 +75,8 @@ export default {
       return {
         dialogImageUrl: '',
         dialogVisible: false,
-        disabled:false,
+        disabled: false,
+        uploading: false, // 提交中，按钮显示「正在上传」
         fileList: [], // 存储所有选中的文件（File 对象）
         uploadFileList: [], // Element UI 需要的文件列表格式
         form: {
@@ -425,6 +426,7 @@ export default {
           }
           
           this.disabled = true;
+          this.uploading = true;
           
           try {
             const formData = new FormData();
@@ -449,6 +451,7 @@ export default {
                     offset: 100
                   });
                   this.disabled = false;
+                  this.uploading = false;
                   this.$router.push('/');
                   return;
                 }
@@ -486,21 +489,21 @@ export default {
                     this.$router.push('/user/upload/submit-res/');
                   }, 1500);
                 } else {
-                  const errorMsg = updateResponse.data?.message || updateResponse.data?.desc || this.$t('upload.bookUpdateFailed');
                   ElMessage.error({
-                    message: errorMsg,
+                    message: '上传失败，请稍后再试',
                     offset: 100
                   });
                   this.disabled = false;
+                  this.uploading = false;
                 }
               } catch (error) {
                 console.error('更新失败:', error);
-                const errorMsg = error.response?.data?.message || error.message || this.$t('upload.updateFailedRetry');
                 ElMessage.error({
-                  message: errorMsg,
+                  message: '上传失败，请稍后再试',
                   offset: 100
                 });
                 this.disabled = false;
+                this.uploading = false;
               }
             } else {
               // 获取 token
@@ -511,6 +514,7 @@ export default {
                   offset: 100
                 });
                 this.disabled = false;
+                this.uploading = false;
                 this.$router.push('/');
                 return;
               }
@@ -526,7 +530,8 @@ export default {
                 headers: {
                   // 不设置 Content-Type，让 axios 自动加 multipart/form-data; boundary=...
                   'Authorization': `Bearer ${token}`
-                }
+                },
+                timeout: 180000  // 4 分钟，38 张或更多大图够用；可改为 180000（3 分钟）
               });
               
               if (response.data && (response.data.desc === "success" || response.data.code === 0 || response.data.code === '0')) {
@@ -542,22 +547,22 @@ export default {
                 // 跳转到提交结果页面
                 this.$router.push('/user/upload/submit-res/');
               } else {
-                const errorMsg = response.data?.message || response.data?.desc || this.$t('upload.bookCreateFailed');
                 ElMessage.error({
-                  message: errorMsg,
+                  message: '上传失败，请稍后再试',
                   offset: 100
                 });
                 this.disabled = false;
+                this.uploading = false;
               }
             }
           } catch (error) {
             console.error(this.isEditMode ? '更新失败:' : '上传失败:', error);
-            const errorMsg = error.response?.data?.message || error.message || (this.isEditMode ? this.$t('upload.updateFailedRetry') : this.$t('upload.uploadFailedRetry'));
             ElMessage.error({
-              message: errorMsg,
+              message: '上传失败，请稍后再试',
               offset: 100
             });
             this.disabled = false;
+            this.uploading = false;
           }
       },
       
