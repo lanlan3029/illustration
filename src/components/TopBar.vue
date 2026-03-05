@@ -134,32 +134,18 @@
 
     
 
-        <!-- 手机端全屏菜单 -->
-        <ul class="mobile-menu-list">
-  <!-- 首页 -->
-  <li :class="{ active: route.path === '/' }">
-    <router-link to="/" @click="closeMobileMenu">
-      首页
-    </router-link>
-  </li>
-
-  <!-- 绘本：跳到已有的绘本列表页 /books -->
-  <li :class="{ active: route.path === '/books' }">
-    <router-link to="/books" @click="closeMobileMenu">
-      绘本
-    </router-link>
-  </li>
-
-  <!-- 我的：根据登录状态跳转 -->
-  <li>
-    <a
-      href="#"
-      @click.prevent="handleMobileMy"
-    >
-      我的
-    </a>
-  </li>
-</ul>
+        <!-- 手机端全屏菜单：仅在小屏下渲染，电脑端不显示 -->
+        <ul v-if="isMobileView" class="mobile-menu-list">
+          <li :class="{ active: route.path === '/' }">
+            <router-link to="/" @click="closeMobileMenu">首页</router-link>
+          </li>
+          <li :class="{ active: route.path === '/books' }">
+            <router-link to="/books" @click="closeMobileMenu">绘本</router-link>
+          </li>
+          <li>
+            <a href="#" @click.prevent="handleMobileMy">我的</a>
+          </li>
+        </ul>
       </div>
     </nav>
   </div>
@@ -190,6 +176,7 @@ export default {
         const activeSubmenu = ref(null) // 当前激活的子菜单
         const isScrolled = ref(false) // 是否已滚动
         const mobileMenuVisible = ref(false) // 手机端菜单是否可见
+        const isMobileView = ref(false) // 是否为手机端视口（用于控制是否渲染手机菜单 DOM）
         
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
@@ -278,6 +265,10 @@ export default {
         
         const closeMobileMenu = () => {
             mobileMenuVisible.value = false
+        }
+
+        const updateMobileView = () => {
+            isMobileView.value = window.innerWidth <= 767
         }
         
         const goHomeFromMobile = () => {
@@ -607,6 +598,10 @@ export default {
             nextTick(() => {
                 handleScroll()
             })
+
+            // 手机端菜单仅在小屏渲染，与 CSS 断点 767px 一致
+            updateMobileView()
+            window.addEventListener('resize', updateMobileView)
             
             // 监听路由变化，关闭下拉菜单并重置滚动状态
             watch(() => route.path, (to) => {
@@ -624,6 +619,7 @@ export default {
         onBeforeUnmount(() => {
             document.removeEventListener('click', handleClickOutside)
             window.removeEventListener('scroll', handleScroll)
+            window.removeEventListener('resize', updateMobileView)
         })
         
         return {
@@ -631,6 +627,7 @@ export default {
             userid,
             searchValue,
             userPoints,
+            isMobileView,
             mobileMenuVisible,
             toggleMobileMenu,
             closeMobileMenu,
@@ -787,45 +784,6 @@ export default {
 	display: block;
 }
 
-/* 手机端全屏菜单 */
-.mobile-menu-overlay {
-	position: fixed;
-	inset: 0;
-	background: rgba(0, 0, 0, 0.5);
-	z-index: 9999;
-	display: flex;
-	justify-content: flex-end;
-}
-
-.mobile-menu-panel {
-	width: 80%;
-	max-width: 320px;
-	height: 100%;
-	background: #ffffff;
-	display: flex;
-	flex-direction: column;
-	box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
-}
-
-.mobile-menu-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 12px 16px;
-	border-bottom: 1px solid #eeeeee;
-}
-
-.mobile-menu-header .navbar-brand img {
-	height: 28px;
-}
-
-.mobile-menu-close {
-	border: none;
-	background: transparent;
-	font-size: 24px;
-	line-height: 1;
-	cursor: pointer;
-}
 
 .mobile-menu-list {
 	list-style: none;
