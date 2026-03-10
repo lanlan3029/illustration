@@ -416,10 +416,10 @@ export default {
 /* 图片列表：响应式多列，垂直排布 */
 .gallery-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
   padding: 16px;
-  max-width: 1200px;
+  max-width: 98vh;
   margin: 0 auto;
 }
 
