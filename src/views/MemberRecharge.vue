@@ -69,7 +69,14 @@
                 <h3>限时特惠套餐</h3>
               </div>
               <div class="package-content">
-                <div class="package-desc">永久会员 + 100 积分</div>
+                <div class="package-top-row">
+                  <div class="package-points">
+                    <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
+                    <span>100</span>
+                  </div>
+                  <div class="package-price">¥9.9</div>
+                </div>
+                <div class="package-desc">永久会员 + 100 积分（限前500名）</div>
               </div>
               <div class="package-badge" v-if="selectedPackage === 'limited'">
                 <i class="el-icon-check"></i>
@@ -600,15 +607,14 @@ export default {
 
 .recharge-packages {
   display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .package-item {
-  flex: 1;
-  min-width: 250px;
-  padding: 24px;
+  width: 100%;
+  padding: 14px 18px;
   border: 2px solid #e4e7ed;
   border-radius: 8px;
   cursor: pointer;
@@ -634,6 +640,11 @@ export default {
   background: #fff7f7;
 }
 
+.limited-package:hover {
+  border-color: #f56c6c;
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.2);
+}
+
 .limited-package.active {
   border-color: #f56c6c;
   background: #ffecec;
@@ -644,18 +655,18 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .package-header h3 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #303133;
   margin: 0;
 }
 
 .package-price {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: #07c160;
 }
@@ -663,14 +674,14 @@ export default {
 .package-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
 .package-points {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 20px;
+  gap: 6px;
+  font-size: 16px;
   font-weight: 600;
   color: #303133;
 }
@@ -683,22 +694,23 @@ export default {
 }
 
 .package-points img {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   vertical-align: middle;
 }
 
 .package-desc {
-  font-size: 14px;
+  font-size: 13px;
   color: #909399;
 }
 
 .package-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 24px;
-  height: 24px;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
   background: #07c160;
   border-radius: 50%;
   display: flex;
@@ -712,12 +724,12 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: linear-gradient(135deg, #ff7f50, #f56c6c);
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  border-radius: 8px 0 8px 0;
+  border-radius: 6px 0 6px 0;
 }
 
 .payment-section {
