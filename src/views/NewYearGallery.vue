@@ -469,8 +469,10 @@ export default {
 }
 
 .preview-image {
-  max-width: 100%;
-  max-height: 60vh;
+  --size: min(60vh, 80vw);
+  width: var(--size);
+  height: var(--size);
+  object-fit: contain;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
