@@ -59,13 +59,30 @@
             </div>
           </template>
           <div class="recharge-packages">
+            <!-- 限时特惠套餐 -->
+            <div
+              class="package-item limited-package"
+              :class="{ 'active': selectedPackage === 'limited' }"
+              @click="selectPackage('limited')">
+              <div class="limited-badge">限时特惠</div>
+              <div class="package-header">
+                <h3>限时特惠套餐</h3>
+              </div>
+              <div class="package-content">
+                <div class="package-desc">永久会员 + 100 积分</div>
+              </div>
+              <div class="package-badge" v-if="selectedPackage === 'limited'">
+                <i class="el-icon-check"></i>
+              </div>
+            </div>
+
+            <!-- 基础套餐 -->
             <div 
               class="package-item" 
               :class="{ 'active': selectedPackage === 'basic' }"
               @click="selectPackage('basic')">
               <div class="package-header">
                 <h3>基础套餐</h3>
-                
               </div>
               <div class="package-content">
                 <div class="package-top-row">
@@ -78,6 +95,29 @@
                 <div class="package-desc">可生成 50 张图片</div>
               </div>
               <div class="package-badge" v-if="selectedPackage === 'basic'">
+                <i class="el-icon-check"></i>
+              </div>
+            </div>
+
+            <!-- 标准终身套餐 -->
+            <div 
+              class="package-item"
+              :class="{ 'active': selectedPackage === 'standard' }"
+              @click="selectPackage('standard')">
+              <div class="package-header">
+                <h3>标准终身套餐</h3>
+              </div>
+              <div class="package-content">
+                <div class="package-top-row">
+                  <div class="package-points">
+                    <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
+                    <span>100</span>
+                  </div>
+                  <div class="package-price">¥19.9</div>
+                </div>
+                <div class="package-desc">标准终身会员 + 100 积分</div>
+              </div>
+              <div class="package-badge" v-if="selectedPackage === 'standard'">
                 <i class="el-icon-check"></i>
               </div>
             </div>
@@ -108,7 +148,7 @@
               @click="handleRecharge"
               class="recharge-btn">
               <i class="el-icon-wallet"></i>
-              立即充值 ¥9.9
+              立即充值
             </el-button>
           </div>
         </el-card>
@@ -156,7 +196,7 @@ export default {
   name: 'MemberRecharge',
   data() {
     return {
-      selectedPackage: 'basic', // 当前选中的套餐
+      selectedPackage: 'limited', // 当前选中的套餐：默认选中限时特惠
       paymentMethod: 'wepay', // 支付方式：微信支付
       processing: false, // 是否正在处理
       userPoints: 0, // 用户当前积分
@@ -233,11 +273,32 @@ export default {
           return;
         }
 
-    
-        const orderData = {
-            product_type: 'points', // 产品类型：积分
-            product_id: 1 // 产品ID：1 → 100 积分，9.9 元（990 分）
-        };
+        // 根据前端套餐选择，映射后端的 product_type / product_id
+        let orderData;
+        if (this.selectedPackage === 'limited') {
+          // A：创世会员 9.9 元终身会员 + 100 积分（限前 500 名）
+          orderData = {
+            product_type: 'vip',
+            product_id: 'founder'
+          };
+        } else if (this.selectedPackage === 'basic') {
+          // B：基础包 9.9 元 100 积分（仅积分）
+          orderData = {
+            product_type: 'points',
+            product_id: 1
+          };
+        } else if (this.selectedPackage === 'standard') {
+          // C：标准终身 19.9 元终身会员 + 100 积分
+          orderData = {
+            product_type: 'vip',
+            product_id: 'lifetime_standard'
+          };
+        } else {
+          // 兜底：如果出现未知套餐类型，给出提示
+          ElMessage.error('未知的套餐类型，请刷新页面重试');
+          this.processing = false;
+          return;
+        }
 
         const apiUrl = this.apiBaseUrl 
           ? `${this.apiBaseUrl}/payment/create-order`
@@ -567,6 +628,18 @@ export default {
   box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
 }
 
+/* 限时特惠套餐样式 */
+.limited-package {
+  border-color: #f56c6c;
+  background: #fff7f7;
+}
+
+.limited-package.active {
+  border-color: #f56c6c;
+  background: #ffecec;
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
+}
+
 .package-header {
   display: flex;
   justify-content: space-between;
@@ -632,6 +705,19 @@ export default {
   align-items: center;
   justify-content: center;
   color: #fff;
+}
+
+/* 左上角“限时特惠”角标 */
+.limited-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #ff7f50, #f56c6c);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px 0 8px 0;
 }
 
 .payment-section {

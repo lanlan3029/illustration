@@ -106,7 +106,11 @@
                   </div>
                 </div>
                 <!-- 用户头像 -->
-                <img :src="userInfo && userInfo.avatar" :alt="userInfo && userInfo.name" class="user-avatar" />
+                <img
+                  :src="(userInfo && userInfo.avatar) ? userInfo.avatar : defaultAvatar"
+                  :alt="(userInfo && userInfo.name) || 'User Avatar'"
+                  class="user-avatar"
+                />
               </div>
             </a>
             <ul class="dropdown-menu">
@@ -171,6 +175,7 @@ export default {
         const { locale } = useI18n()
         
         const logoUrl = require('../assets/logo/logo.png')
+        const defaultAvatar = require('../assets/images/magic 2.svg')
         const userid = ref(localStorage.getItem("id"))
         const searchValue = ref('')
         const userPoints = ref(0) // 用户积分
@@ -626,6 +631,7 @@ export default {
         
         return {
             logoUrl,
+            defaultAvatar,
             userid,
             searchValue,
             userPoints,
