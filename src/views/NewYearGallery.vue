@@ -33,22 +33,18 @@
       <p>正在加载画卷...</p>
     </div>
 
-    <!-- 图片容器 -->
-    <div 
+    <!-- 图片容器：垂直滚动 -->
+    <div
       v-else
       class="gallery-viewport"
       ref="viewportRef"
       @scroll="handleScroll">
-      
-      <!-- 图片网格 -->
-      <div class="gallery-grid">
-        <!-- 图片项 -->
+      <div class="gallery-list">
         <div
           v-for="(item, index) in visibleItems"
           :key="item._id || index"
           class="gallery-item"
           @click="openPreview(item, index)">
-          
           <el-image
             :src="getImageUrl(item)"
             fit="cover"
@@ -108,14 +104,6 @@ export default {
       pageSize: 50, // 每次加载更多数据
       hasMore: true,
       
-      // 布局相关
-      viewportRef: null,
-      viewportWidth: 0,
-      viewportHeight: 0,
-      rowsPerView: 4, // 固定4行
-      colsPerRow: 0, // 每行图片数（根据屏幕宽度计算）
-      itemSize: 0, // 图片尺寸（宽高相同，1:1）
-      
       // 当前索引
       currentIndex: 0,
       
@@ -133,50 +121,11 @@ export default {
   },
   
   mounted() {
-    // 关闭登录弹窗（此页面不需要登录）
     this.$store.commit('closeMask')
-    
-    this.initViewport()
     this.loadIllustrations()
-    
-    // 监听窗口大小变化
-    window.addEventListener('resize', this.handleResize)
-  },
-  
-  beforeUnmount() {
-    window.removeEventListener('resize', this.handleResize)
   },
   
   methods: {
-    // 初始化视口
-    initViewport() {
-      this.$nextTick(() => {
-        if (this.$refs.viewportRef) {
-          this.viewportWidth = this.$refs.viewportRef.clientWidth || window.innerWidth
-          this.viewportHeight = this.$refs.viewportRef.clientHeight || window.innerHeight
-          
-          // 每张图片的高度 = 视口高度的1/4
-          this.itemSize = this.viewportHeight / this.rowsPerView // 固定4行，每行高度为视口高度的1/4
-          
-          // 根据图片尺寸计算每行能放多少张（无间距）
-          this.colsPerRow = Math.floor(this.viewportWidth / this.itemSize)
-          this.colsPerRow = Math.max(1, this.colsPerRow) // 至少1列
-          
-          // 设置CSS变量
-          const grid = this.$refs.viewportRef?.querySelector('.gallery-grid')
-          if (grid) {
-            grid.style.setProperty('--cols-per-row', this.colsPerRow)
-            grid.style.setProperty('--item-size', `${this.itemSize}px`)
-          }
-        }
-      })
-    },
-    
-    // 处理窗口大小变化
-    handleResize() {
-      this.initViewport()
-    },
-    
     // 加载插画数据
     async loadIllustrations() {
       this.loading = true
@@ -455,34 +404,32 @@ export default {
   }
 }
 
-/* 图片容器 */
+/* 图片容器：垂直滚动 */
 .gallery-viewport {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  min-height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative;
   -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
 }
 
-/* 图片网格 */
-.gallery-grid {
+/* 图片列表：响应式多列，垂直排布 */
+.gallery-list {
   display: grid;
-  grid-template-columns: repeat(var(--cols-per-row), 1fr);
-  grid-auto-rows: var(--item-size);
-  gap: 0;
-  width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* 图片项 */
 .gallery-item {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  cursor: pointer;
-  overflow: hidden;
+  position: relative;
   aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .gallery-image {
@@ -494,14 +441,14 @@ export default {
 
 .image-error,
 .image-placeholder {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 48px;
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 32px;
 }
 
 .image-placeholder i {
