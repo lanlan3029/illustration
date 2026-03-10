@@ -485,7 +485,7 @@ export default {
 
 <style scoped>
 .member-recharge-container {
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 90px);
   padding: 40px 20px;
 
 }
