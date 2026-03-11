@@ -66,7 +66,7 @@
               @click="selectPackage('limited')">
               <div class="limited-badge">限时特惠</div>
               <div class="package-header">
-                <h3>限时特惠套餐</h3>
+                <h3>早鸟套餐</h3>
               </div>
               <div class="package-content">
                 <div class="package-top-row">
@@ -99,7 +99,7 @@
                   </div>
                   <div class="package-price">¥9.9</div>
                 </div>
-                <div class="package-desc">可生成 50 张图片</div>
+                <div class="package-desc">100积分，永久有效。</div>
               </div>
               <div class="package-badge" v-if="selectedPackage === 'basic'">
                 <i class="el-icon-check"></i>
@@ -112,7 +112,7 @@
               :class="{ 'active': selectedPackage === 'standard' }"
               @click="selectPackage('standard')">
               <div class="package-header">
-                <h3>标准终身套餐</h3>
+                <h3>标准套餐</h3>
               </div>
               <div class="package-content">
                 <div class="package-top-row">

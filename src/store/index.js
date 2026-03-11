@@ -182,6 +182,25 @@ export default createStore({
         myAttention(state, items) {
             state.attentionArr = state.attentionArr.concat(items)
         },
+        // 按需拉取时整表替换（避免重复 concat）
+        setCollectBookArr(state, items) {
+            state.collectBookArr = Array.isArray(items) ? items : []
+        },
+        setLikeBookArr(state, items) {
+            state.likeBookArr = Array.isArray(items) ? items : []
+        },
+        setCollectIllusArr(state, items) {
+            state.collectIllusArr = Array.isArray(items) ? items : []
+        },
+        setLikeIllusArr(state, items) {
+            state.likeIllusArr = Array.isArray(items) ? items : []
+        },
+        setAttentionArr(state, items) {
+            state.attentionArr = Array.isArray(items) ? items : []
+        },
+        setFansArr(state, items) {
+            state.fansArr = Array.isArray(items) ? items : []
+        },
         //取消关注
         cancelAttention(state, item) {
             let d = state.attentionArr.indexOf(item)

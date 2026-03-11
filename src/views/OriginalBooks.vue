@@ -79,8 +79,9 @@
 
 <script>
 import BookLoading from '@/components/BookLoading.vue'
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
 import { ElMessage } from 'element-plus'
+import { getCollectionBook } from '@/api/userCollect'
 
 export default {
   name: "OriginalBooks",
@@ -441,9 +442,12 @@ export default {
 
 
 
-  async mounted(){
-    await this.getAllBooks();
-    await this.loadCollectIdMap();
+  async mounted() {
+    if (this.userid && localStorage.getItem('token')) {
+      await getCollectionBook(this.$http, this.$store)
+    }
+    await this.getAllBooks()
+    await this.loadCollectIdMap()
   },
 };
 </script>

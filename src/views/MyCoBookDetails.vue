@@ -45,7 +45,8 @@
 // @ is an alias to /src
 
 
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
+import { getCollectionBook, getAttention } from '@/api/userCollect'
 
 export default {
   name: "MyCoBookDetails",
@@ -136,14 +137,16 @@ collectBookFun(id) {
       this.$router.push({name:'user-g',params:{authorId:id}});
     }
   },
-  async mounted(){
-    console.log(this.books)
-    await this.getBookDetails();
-    await this.setId();
-    await this.getAuthor();
-   
-
-    
+  async mounted() {
+    if (this.userid && localStorage.getItem('token')) {
+      await Promise.all([
+        getCollectionBook(this.$http, this.$store),
+        getAttention(this.$http, this.$store)
+      ])
+    }
+    await this.getBookDetails()
+    await this.setId()
+    await this.getAuthor()
   }
 };
 </script>

@@ -17,7 +17,8 @@
 </template>
 
 <script>
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
+import { getAttention } from '@/api/userCollect'
 
 export default {
     data(){
@@ -27,8 +28,11 @@ export default {
     }},
     computed:mapState(["attentionArr"]),
 
-    async mounted(){
-     await this.getAttention()
+    async mounted() {
+      if (this.id && localStorage.getItem('token')) {
+        await getAttention(this.$http, this.$store)
+      }
+      await this.getAttention()
       await this.completeFun()
     },
 

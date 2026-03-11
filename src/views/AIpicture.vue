@@ -321,7 +321,7 @@ export default {
         },
         async copyPrompt() {
             if (!this.generatedPrompt) {
-                ElMessage.warning('请先输入主体场景');
+                ElMessage.warning({ message: '请先输入主体场景', offset: 200 });
                 return;
             }
 
@@ -340,7 +340,7 @@ export default {
                 }
 
                 this.copySuccess = true;
-                ElMessage.success('复制成功！');
+                ElMessage.success({ message: '复制成功！', offset: 200 });
 
                 // 2秒后恢复按钮状态
                 setTimeout(() => {
@@ -348,14 +348,14 @@ export default {
                 }, 2000);
             } catch (err) {
                 console.error('复制失败:', err);
-                ElMessage.error('复制失败，请手动复制');
+                ElMessage.error({ message: '复制失败，请手动复制', offset: 200 });
             }
         },
         
         // 生成插画 - 使用与创建角色相同的API（文生图）
         async generateIllustration() {
             if (!this.generatedPrompt) {
-                ElMessage.warning('请先输入主体场景');
+                ElMessage.warning({ message: '请先输入主体场景', offset: 200 });
                 return;
             }
             
@@ -467,7 +467,7 @@ export default {
                         this.imageLoadError = false;
                         // 保存到 localStorage
                         this.saveGeneratedImageToLocalStorage(imageUrl);
-                        ElMessage.success('插画生成成功！');
+                        ElMessage.success({ message: '插画生成成功！', offset: 200 });
                     } else {
                         throw new Error('响应中未找到图片URL');
                     }
@@ -504,46 +504,103 @@ export default {
                     errorMessage = error.message;
                 }
                 
-                ElMessage.error(errorMessage);
+                ElMessage.error({ message: errorMessage, offset: 200 });
             } finally {
                 this.generating = false;
             }
         },
         
+        /**
+         * 将过大的 base64 图片压缩到约 900KB 以内，避免服务端 1MB 请求体限制
+         */
+        async compressDataUrlIfNeeded(dataUrl, maxBytes = 900 * 1024) {
+            if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
+            try {
+                const blob = await fetch(dataUrl).then(r => r.blob());
+                if (blob.size <= maxBytes) return dataUrl;
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width;
+                        let h = img.height;
+                        const maxDim = 1200;
+                        if (w > maxDim || h > maxDim) {
+                            if (w >= h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        let quality = 0.82;
+                        const tryCanvas = () => {
+                            canvas.toBlob(
+                                (blob) => {
+                                    if (blob.size <= maxBytes || quality <= 0.3) {
+                                        const reader = new FileReader();
+                                        reader.onload = () => resolve(reader.result);
+                                        reader.onerror = reject;
+                                        reader.readAsDataURL(blob);
+                                    } else {
+                                        quality = Math.max(0.3, quality - 0.15);
+                                        tryCanvas();
+                                    }
+                                },
+                                'image/jpeg',
+                                quality
+                            );
+                        };
+                        tryCanvas();
+                    };
+                    img.onerror = () => resolve(dataUrl);
+                    img.src = dataUrl;
+                });
+            } catch (e) {
+                console.warn('压缩插画失败，使用原图', e);
+                return dataUrl;
+            }
+        },
+
         // 收集插画到"我的插画"
         async collectIllustration() {
             if (!this.generatedImageUrl) {
-                ElMessage.warning('图片尚未生成，请稍候');
+                ElMessage.warning({ message: '图片尚未生成，请稍候', offset: 200 });
                 return;
             }
             
-            // 检查登录状态
             const token = localStorage.getItem('token') || '';
             if (!token) {
-                ElMessage.error('请先登录');
+                ElMessage.error({ message: '请先登录', offset: 200 });
                 return;
             }
             
             this.collecting = true;
             
             try {
-                // 处理URL格式
                 let pictureValue = this.generatedImageUrl;
                 
-                // 如果是相对路径，转换为完整URL
                 if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
                     pictureValue = `https://static.kidstory.cc/${pictureValue}`;
                 }
                 
-                // 构建请求数据
+                // 若是 base64，压缩到 1MB 以内再提交，避免 "request entity too large"
+                if (pictureValue && pictureValue.startsWith('data:')) {
+                    pictureValue = await this.compressDataUrlIfNeeded(pictureValue);
+                }
+                
                 const requestData = {
-                    picture: pictureValue, // 支持 URL 或 base64
+                    picture: pictureValue,
                     title: this.generatedPrompt || '生成的插画',
                     description: this.generatedPrompt || '从灵感库生成的插画',
-                    type: 'others' // 默认类别为"其他"
+                    type: 'others'
                 };
                 
-                // 发送请求到服务器
                 const response = await this.$http.post('/ill/', requestData, {
                     headers: {
                         'Content-Type': 'application/json',
@@ -553,14 +610,14 @@ export default {
                 
                 // 检查响应
                 if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-                    ElMessage.success('插画已保存到"我的插画"');
+                    ElMessage.success({ message: '收集插画成功，去我的创作中查看吧', offset: 200 });
                 } else {
                     throw new Error(response.data?.message || '保存失败');
                 }
             } catch (error) {
                 console.error('收集插画失败:', error);
                 const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
-                ElMessage.error(`收集插画失败: ${errorMessage}`);
+                ElMessage.error({ message: `收集插画失败: ${errorMessage}`, offset: 200 });
             } finally {
                 this.collecting = false;
             }
@@ -569,7 +626,7 @@ export default {
         // 下载插画
         async downloadIllustration() {
             if (!this.generatedImageUrl) {
-                ElMessage.warning('图片尚未生成，请稍候');
+                ElMessage.warning({ message: '图片尚未生成，请稍候', offset: 200 });
                 return;
             }
             
@@ -603,7 +660,7 @@ export default {
                             window.URL.revokeObjectURL(blobUrl);
                         }, 100);
                         
-                        ElMessage.success('插画下载成功');
+                        ElMessage.success({ message: '插画下载成功', offset: 200 });
                     } catch (fetchError) {
                         console.error('下载图片失败:', fetchError);
                         // 如果 fetch 失败，尝试直接打开链接
@@ -611,18 +668,18 @@ export default {
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
-                        ElMessage.info('已在新窗口打开图片，请右键保存');
+                        ElMessage.info({ message: '已在新窗口打开图片，请右键保存', offset: 200 });
                     }
                 } else {
                     // 本地图片或 base64 图片，直接下载
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                    ElMessage.success('插画下载成功');
+                    ElMessage.success({ message: '插画下载成功', offset: 200 });
                 }
             } catch (error) {
                 console.error('下载插画失败:', error);
-                ElMessage.error('下载失败，请重试');
+                ElMessage.error({ message: '下载失败，请重试', offset: 200 });
             } finally {
                 this.downloading = false;
             }
@@ -680,7 +737,7 @@ export default {
             console.error('图片加载失败:', error);
             this.imageLoadError = true;
             this.imageLoading = false;
-            ElMessage.warning('图片加载失败，可能是网络问题或图片链接已过期');
+            ElMessage.warning({ message: '图片加载失败，可能是网络问题或图片链接已过期', offset: 200 });
         },
         
         // 处理图片加载成功
@@ -715,7 +772,7 @@ export default {
             // 10秒后检查是否仍然失败
             setTimeout(() => {
                 if (this.imageLoadError) {
-                    ElMessage.error('图片加载失败，请检查网络连接或联系客服');
+                    ElMessage.error({ message: '图片加载失败，请检查网络连接或联系客服', offset: 200 });
                 }
             }, 10000);
         },
@@ -729,11 +786,11 @@ export default {
                 this.generatedImageUrl = null;
                 this.imageLoading = false;
                 this.imageLoadError = false;
-                ElMessage.success('已清除插画数据');
+                ElMessage.success({ message: '已清除插画数据', offset: 200 });
             
             } catch (error) {
               
-                ElMessage.error('清除失败，请重试');
+                ElMessage.error({ message: '清除失败，请重试', offset: 200 });
             }
         },
         

@@ -47,7 +47,8 @@
 
 //import RightInfo from "../components/RightInfo.vue";
 import Suggestion from "../components/Suggestion.vue";
-import {mapState} from 'vuex'
+import { mapState } from 'vuex'
+import { getCollectionIllus, getLikeIllus, getAttention } from '@/api/userCollect'
 
 export default {
   name: "OriginalIllusDetails",
@@ -174,12 +175,17 @@ export default {
       this.$store.commit("showLoginBox",true)
     }
   },
-  async mounted(){
-     await this.getIllusDetails(); 
-     await this.setId();
-     await this.getAuthor();
-     console.log(this.attentionArr)
-     console.log(this.authorId)
+  async mounted() {
+    if (this.userid && localStorage.getItem('token')) {
+      await Promise.all([
+        getCollectionIllus(this.$http, this.$store),
+        getLikeIllus(this.$http, this.$store),
+        getAttention(this.$http, this.$store)
+      ])
+    }
+    await this.getIllusDetails()
+    await this.setId()
+    await this.getAuthor()
   }
 
 };

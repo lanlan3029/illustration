@@ -29,7 +29,8 @@
 </template>
 
 <script>
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
+import { getCollectionIllus } from '@/api/userCollect'
 
 export default {
     data(){
@@ -40,9 +41,11 @@ export default {
         }
     },
     computed:mapState(["collectIllusArr"]),
-mounted(){
-  
-this.getCollectIllus()
+async mounted() {
+  if (this.id && localStorage.getItem('token')) {
+    await getCollectionIllus(this.$http, this.$store)
+  }
+  this.getCollectIllus()
 },
     methods:{
       async getCollectIllus(){

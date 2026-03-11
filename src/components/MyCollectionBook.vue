@@ -46,8 +46,9 @@
 </template>
   
   <script>
-  import {mapState} from "vuex"
+  import { mapState } from 'vuex'
   import { ElMessage } from 'element-plus'
+  import { getCollectionBook } from '@/api/userCollect'
 
   export default {
       data(){
@@ -61,8 +62,11 @@
       },
       computed:mapState(["collectBookArr","collectBookDetails"]),
 
-  async mounted(){
-    await this.getCollectBook();
+  async mounted() {
+    if (this.id && localStorage.getItem('token')) {
+      await getCollectionBook(this.$http, this.$store)
+    }
+    await this.getCollectBook()
   },
   methods: {
     async getCollectBook() {

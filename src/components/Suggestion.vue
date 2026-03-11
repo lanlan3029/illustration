@@ -15,7 +15,8 @@
 </template>
 
 <script>
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
+import { getCollectionIllus, getLikeIllus } from '@/api/userCollect'
 
 export default {
     name: 'SuggestionBox',
@@ -48,9 +49,15 @@ export default {
         .catch((error) => console.log(error));
     },
     },
-    mounted() {
-    this.getIllus();
-  },
+    async mounted() {
+      if (this.userid && localStorage.getItem('token')) {
+        await Promise.all([
+          getCollectionIllus(this.$http, this.$store),
+          getLikeIllus(this.$http, this.$store)
+        ])
+      }
+      this.getIllus()
+    },
 
 }
 </script>

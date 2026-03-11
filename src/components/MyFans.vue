@@ -16,7 +16,8 @@
 </template>
 
 <script>
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
+import { getFans } from '@/api/userCollect'
 
 export default {
   data(){
@@ -25,9 +26,12 @@ export default {
    fansDetails:[]
   }},
   computed:mapState(["fansArr"]),
-  async mounted(){
-   await this.getFans();
-   await this.completeFun();
+  async mounted() {
+    if (this.id && localStorage.getItem('token')) {
+      await getFans(this.$http, this.$store)
+    }
+    await this.getFans()
+    await this.completeFun()
   },
  
 

@@ -372,185 +372,8 @@ export default {
                 }
             }
         }
-        //获取用户收藏的绘本
-        const getCollectionBook = () => {
-            if (!userid.value) {
-                return Promise.resolve() // 如果没有用户ID，直接返回
-            }
-            return $http
-                .get(`/user/list/collect`, {
-                    params: { category: "book", id: userid.value },
-                    headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("token")
-                    },
-                    timeout: 10000 // 10秒超时
-                })
-                .then((response) => {
-                    if (response.data.desc === "success") {
-                        let arr = response.data.message
-                        let tool = []
-                        for (var i = 0; i < arr.length; i++) {
-                            tool.push(arr[i].collectid)
-                        }
-                        store.commit("collectBook", tool)
-                    }
-                })
-                .catch((error) => {
-                    // 静默处理错误，避免影响页面加载
-                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
-                        console.log('获取收藏绘本失败:', error)
-                    }
-                })
-        }
+        // 插画/绘本/关注/粉丝 改为在具体页面按需请求，见 src/api/userCollect.js
 
-        //获取用户喜欢的绘本
-        const getLikeBook = () => {
-            if (!userid.value) {
-                return Promise.resolve() // 如果没有用户ID，直接返回
-            }
-            return $http
-                .get(`/user/list/like`, {
-                    params: { category: "book", id: userid.value },
-                    headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("token")
-                    },
-                    timeout: 10000 // 10秒超时
-                })
-                .then((response) => {
-                    if (response.data.desc === "success") {
-                        let arr = response.data.message
-                        let tool = []
-                        for (var i = 0; i < arr.length; i++) {
-                            tool.push(arr[i].likeid)
-                        }
-                        store.commit("likeBook", tool)
-                    }
-                })
-                .catch((error) => {
-                    // 静默处理错误，避免影响页面加载
-                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
-                        console.log('获取喜欢绘本失败:', error)
-                    }
-                })
-        }
-
-        //获取用户收藏的插画
-        const getCollectionIllus = () => {
-            if (!userid.value) {
-                return Promise.resolve() // 如果没有用户ID，直接返回
-            }
-            return $http
-                .get(`/user/list/collect`, {
-                    params: { category: "illustration", id: userid.value },
-                    headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("token")
-                    },
-                    timeout: 10000 // 10秒超时
-                })
-                .then((response) => {
-                    if (response.data.desc === "success") {
-                        let arr = response.data.message
-                        let tool = []
-                        for (var i = 0; i < arr.length; i++) {
-                            tool.push(arr[i].collectid)
-                        }
-                        store.commit("collectIllus", tool)
-                    }
-                })
-                .catch((error) => {
-                    // 静默处理错误，避免影响页面加载
-                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
-                        console.log('获取收藏插画失败:', error)
-                    }
-                })
-        }
-
-        //获取用户喜欢的插画
-        const getLikeIllus = () => {
-            return $http
-                .get(`/user/list/like`, {
-                    params: { category: "illustration", id: userid.value },
-                    headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("token")
-                    }
-                })
-                .then((response) => {
-                    if (response.data.desc === "success") {
-                        let arr = response.data.message
-                        let tool = []
-                        for (var i = 0; i < arr.length; i++) {
-                            tool.push(arr[i].likeid)
-                        }
-                        store.commit("likeIllus", tool)
-                    }
-                })
-                .catch((error) => console.log(error))
-        }
-
-        //获取用户关注的人
-        const getAttention = () => {
-            if (!userid.value) {
-                return Promise.resolve() // 如果没有用户ID，直接返回
-            }
-            return $http
-                .get(`/user/list/fllow`, {
-                    params: { id: userid.value },
-                    headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("token")
-                    },
-                    timeout: 10000 // 10秒超时
-                })
-                .then((response) => {
-                    if (response.data.desc === "success") {
-                        let arr = response.data.message
-                        let tool = []
-                        for (var i = 0; i < arr.length; i++) {
-                            tool.push(arr[i].fllowid)
-                        }
-                        store.commit("myAttention", tool)
-            
-                    }
-                })
-                .catch((error) => {
-                    // 静默处理错误，避免影响页面加载
-                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
-                        console.log('获取关注列表失败:', error)
-                    }
-                })
-        }
-
-        //获取粉丝
-        const getFans = () => {
-            if (!userid.value) {
-                return Promise.resolve() // 如果没有用户ID，直接返回
-            }
-            return $http
-                .get(`/user/list/fllow`, {
-                    params: { id: userid.value, sign: "item" },
-                    headers: {
-                        "Authorization": "Bearer " + localStorage.getItem("token")
-                    },
-                    timeout: 10000 // 10秒超时
-                })
-                .then((response) => {
-                    if (response.data.desc === "success") {
-                        let arr = response.data.message
-                        let tool = []
-                        for (var i = 0; i < arr.length; i++) {
-                            tool.push(arr[i].fllowid)
-                        }
-                        store.commit("myFans", tool)
-                        console.log(tool)
-                    }
-                })
-                .catch((error) => {
-                    // 静默处理错误，避免影响页面加载
-                    if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && !error.message?.includes('timeout')) {
-                        console.log('获取粉丝列表失败:', error)
-                    }
-                })
-        }
-        
         // 监听登录状态变化，当登录状态变为 true 时，更新 userid 并获取用户信息
         watch(isLogin, async (newVal) => {
             if (newVal) {
@@ -583,13 +406,7 @@ export default {
             try {
                 await Promise.allSettled([
                     tokenFail(),
-                    getUser(),
-                    getCollectionBook(),
-                    getLikeBook(),
-                    getCollectionIllus(),
-                    getLikeIllus(),
-                    getAttention(),
-                    getFans()
+                    getUser()
                 ])
             } catch (error) {
                 // 所有请求都使用 Promise.allSettled，即使有失败也不会抛出错误
@@ -668,13 +485,7 @@ export default {
             logout,
             searchFun,
             tokenFail,
-            getUser,
-            getCollectionBook,
-            getLikeBook,
-            getCollectionIllus,
-            getLikeIllus,
-            getAttention,
-            getFans
+            getUser
         }
     }
 }

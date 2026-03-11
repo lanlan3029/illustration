@@ -297,9 +297,10 @@
 
 import html2Canvas from "html2canvas";
 import JsPDF from "jspdf";
-import {mapState} from "vuex"
+import { mapState } from 'vuex'
 import { ElMessage } from 'element-plus'
 import { ArrowRightBold, ArrowLeftBold } from '@element-plus/icons-vue'
+import { getCollectionBook, getAttention } from '@/api/userCollect'
 
 export default {
   name: "OriginalBookDetails",
@@ -998,10 +999,16 @@ async loadCollectIdMap() {
       }, 1000);
     },
   },
-  async mounted(){
-    // 确保 id 已设置
+  async mounted() {
     if (!this.id) {
       this.id = this.bookId || (this.$route ? this.$route.params.bookId : '');
+    }
+
+    if (this.userid && localStorage.getItem('token')) {
+      await Promise.all([
+        getCollectionBook(this.$http, this.$store),
+        getAttention(this.$http, this.$store)
+      ])
     }
 
     if (this.id) {

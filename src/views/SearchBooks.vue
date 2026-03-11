@@ -58,8 +58,9 @@
   <script>
   // @ is an alias to /src
   
-  import {mapState} from "vuex"
-  
+  import { mapState } from 'vuex'
+  import { getCollectionBook, getLikeBook } from '@/api/userCollect'
+
   export default {
     name: "SearchBooks",
     components: {
@@ -193,10 +194,14 @@
   
     }},
   
-    async mounted(){
-      
-        await this.searchFun()
-   
+    async mounted() {
+      if (this.userid && localStorage.getItem('token')) {
+        await Promise.all([
+          getCollectionBook(this.$http, this.$store),
+          getLikeBook(this.$http, this.$store)
+        ])
+      }
+      await this.searchFun()
     },
   
   };

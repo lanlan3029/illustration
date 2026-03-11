@@ -124,6 +124,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
+import { getAttention } from '@/api/userCollect'
 
 export default {
   props: {
@@ -388,16 +389,18 @@ export default {
     },
   },
 
-  async mounted(){
-    // 确保 id 已设置
+  async mounted() {
     if (!this.id) {
-      this.id = this.authorId || (this.$route ? this.$route.params.authorId : '');
+      this.id = this.authorId || (this.$route ? this.$route.params.authorId : '')
     }
-    
+    const currentUserId = localStorage.getItem('id')
+    if (currentUserId && localStorage.getItem('token')) {
+      await getAttention(this.$http, this.$store)
+    }
     if (this.id) {
-      await this.getUserDetails();
-      await this.getIlls();
-      await this.getbook();
+      await this.getUserDetails()
+      await this.getIlls()
+      await this.getbook()
     }
   }
 };
