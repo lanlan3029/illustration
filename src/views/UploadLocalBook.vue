@@ -24,6 +24,7 @@
         <el-icon><Plus /></el-icon>
       </template>
     </el-upload>
+    <div class="upload-hint">可连续选择多张图片，请勿超过30张。</div>
     <div class="upload-tip" v-if="uploadFileList.length > 1">
       <el-icon><InfoFilled /></el-icon>
       <span>{{ $t('upload.dragSortTip') }}</span>
@@ -815,6 +816,12 @@ export default {
 }
 
 /* 上传提示 */
+.upload-hint {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #606266;
+}
+
 .upload-tip {
     display: flex;
     align-items: center;

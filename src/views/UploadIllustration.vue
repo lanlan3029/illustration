@@ -61,7 +61,9 @@
     <el-input type="textarea" v-model="form.desc" :rows="4"></el-input>
   </el-form-item>
    <el-form-item>
-    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">{{ $t('upload.uploadButton') }}</el-button>
+    <el-button type="primary" @click="onSubmit" class="btn" :disabled="disabled">
+      {{ uploading ? '上传中' : $t('upload.uploadButton') }}
+    </el-button>
   </el-form-item>
 </el-form>
 
@@ -88,7 +90,8 @@ export default {
           desc: '',
           category:'',
         },
-        disabled:false,
+        disabled: false,
+        uploading: false, // 上传中时按钮显示「上传中」
         localFile: null, // 本地选择的文件
         localImageUrl: '', // 本地文件的预览URL
     }
@@ -127,9 +130,9 @@ export default {
       // 检查是否有图片（本地文件或store中的图片）
       const hasImage = (this.localFile) || (this.imgUrl && this.imgUrl !== '');
       
-      if(hasImage && this.form.name && this.form.category){      
+      if (hasImage && this.form.name && this.form.category) {
         this.disabled = true;
-        
+        this.uploading = true;
         // 如果有本地文件，使用本地文件上传
         if (this.localFile) {
           this.uploadLocalFile();
@@ -168,14 +171,16 @@ export default {
        } else {
          ElMessage.error(this.$t('upload.uploadFailed'));
          this.disabled = false;
+         this.uploading = false;
        }
      } catch (error) {
        console.error('上传失败:', error);
        ElMessage.error(this.$t('upload.uploadFailedRetry'));
        this.disabled = false;
+       this.uploading = false;
      }
    },
-   
+
    // 上传store中的图片（可能是base64或URL）
    async uploadStoreImage() {
      try {
@@ -212,14 +217,15 @@ export default {
        } else {
          ElMessage.error(this.$t('upload.uploadFailed'));
          this.disabled = false;
+         this.uploading = false;
        }
      } catch (error) {
        console.error('上传失败:', error);
        ElMessage.error(this.$t('upload.uploadFailedRetry'));
        this.disabled = false;
+       this.uploading = false;
      }
    },
- 
   }
 }
 </script>
