@@ -238,11 +238,13 @@ export default {
 .box{
     width: 100%;
     max-width: 900px;
-    min-height: 80vh;
+    max-height: calc(100vh - 180px); /* 限制高度后 overflow 才会出现滚动条 */
+    min-height: 320px;
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     border-radius: 24px;
     padding: 48px;
+    padding-bottom: 32px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.3);
