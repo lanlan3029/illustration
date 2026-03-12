@@ -501,7 +501,7 @@ export default {
 }
 
 .card :deep(.el-card__body) {
-  padding: 12px 0; /* 仅上下内边距，封面图占满宽 320px */
+  padding: 12px; /* 仅上下内边距，封面图占满宽 320px */
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -513,8 +513,8 @@ export default {
   transform: translateY(-4px);
 }
 .image {
-  width: 320px;   /* 封面固定宽 */
-  height: 240px;  /* 封面固定高 */
+  width: 296px;   /* 封面固定宽 */
+  height: 222px;  /* 封面固定高 */
   flex-shrink: 0;
   border-radius: 4px;
   cursor: pointer;
