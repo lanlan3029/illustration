@@ -472,14 +472,15 @@ export default {
   padding: 0 12px;
   margin-top:2vh;
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 四列网格 */
-  gap: 24px; /* 行列间距 */
-  align-items: start; /* 顶部对齐 */
+  grid-template-columns: repeat(auto-fill, 320px); /* 每张卡片固定宽 320px */
+  gap: 24px;
+  align-items: start;
+  justify-content: center;
 }
 .item {
   box-sizing: border-box;
-  width: 100%;
-  height: 320px; /* 固定高度：图片区域 240px + 数据区域 40px + padding 24px + 边距 16px */
+  width: 320px;  /* 卡片固定宽高，与封面 320×240 统一 */
+  height: 320px;
   border-radius: 8px;
   user-select: none;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -500,11 +501,11 @@ export default {
 }
 
 .card :deep(.el-card__body) {
-  padding: 12px;
+  padding: 12px 0; /* 仅上下内边距，封面图占满宽 320px */
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 0; /* 允许 flex 子元素收缩 */
+  min-height: 0;
 }
 
 .card:hover {
@@ -512,9 +513,9 @@ export default {
   transform: translateY(-4px);
 }
 .image {
-  width: 100%;
-  height: 240px; /* 固定高度，确保所有图片区域相同 */
-  flex-shrink: 0; /* 防止被压缩 */
+  width: 320px;   /* 封面固定宽 */
+  height: 240px;  /* 封面固定高 */
+  flex-shrink: 0;
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -544,8 +545,8 @@ export default {
   transform: scale(1.05);
 }
 .img-placeholder, .img-error{
-  width: 100%;
-  height: 240px; /* 固定高度，与图片区域一致 */
+  width: 320px;
+  height: 240px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -579,8 +580,8 @@ export default {
 }
 /* 固定内部 el-select 组件宽度 */
 .el-select :deep(.el-select) {
-  width: 240px;
-  min-width: 240px;
+  width: 200px;
+  min-width: 200px;
 }
 .el-input__inner{
   height:28px;
@@ -588,15 +589,16 @@ export default {
 }
 .data{
   display: flex;
-  height: 40px; /* 固定高度，确保所有卡片一致 */
-  min-height: 40px; /* 最小高度 */
-  max-height: 40px; /* 最大高度，防止内容溢出 */
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   justify-content: space-between;
   color:#606266;
   align-items: center;
   overflow: hidden;
-  margin-top: 12px; /* 固定间距，确保标题位置一致 */
-  flex-shrink: 0; /* 防止被压缩 */
+  margin-top: 12px;
+  padding: 0 12px; /* 与卡片左右留白一致 */
+  flex-shrink: 0;
 }
 .data .name{
   flex: 1; /* 占据剩余空间 */
