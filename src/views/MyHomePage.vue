@@ -807,7 +807,8 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
             const list = res.data.message || []
             this.illArr = Array.isArray(list) ? list : []
-            if (this.illArr.length < this.illPerPage) this.hasMoreIllus = false
+            // 后端未明确 perPage 时，避免用条数误判“没有更多”
+            // 仅当后续某页返回空数组时再判定没有更多
           } else {
             this.illArr = []
             this.hasMoreIllus = false
@@ -854,8 +855,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         this.illArr.push(...merged)
         this.illPage = nextPage
 
-        // 返回条数小于每页条数 -> 没有更多
-        if (newIllus.length < this.illPerPage) this.hasMoreIllus = false
+        // 同上：不使用返回条数 < perPage 来判断是否结束
       } catch (err) {
         console.error('加载更多插画失败:', err)
         this.illScrollDisabled = false
@@ -885,7 +885,8 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
             const list = res.data.message || []
             this.toolArr = Array.isArray(list) ? list : []
-            if (this.toolArr.length < this.bookPerPage) this.hasMoreBooks = false
+            // 后端未明确 perPage 时，避免用条数误判“没有更多”
+            // 仅当后续某页返回空数组时再判定没有更多
 
             await this.loadBookCovers()
             this.setBooks()
@@ -939,7 +940,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
         this.setBooks()
         this.loadAllBookImages()
 
-        if (newBooks.length < this.bookPerPage) this.hasMoreBooks = false
+        // 同上：不使用返回条数 < perPage 来判断是否结束
       } catch (err) {
         console.error('加载更多绘本失败:', err)
         this.bookScrollDisabled = false
