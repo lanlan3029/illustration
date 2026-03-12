@@ -225,6 +225,7 @@
     "noCharacters": "No characters created yet, start creating!",
     "noIllustrations": "No illustrations created yet, start creating!",
     "noBooks": "No books created yet, start creating!",
+    "noMore": "No more",
     "bookStatus": {
       "published": "Published",
       "pending": "Pending Review",

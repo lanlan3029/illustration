@@ -66,9 +66,14 @@
         </div>
       </div>
 <!-- 我的插画 -->
-      <div v-if="activeIndex == 3" class="card-container">
-        <!-- 加载中 -->
-        <div v-if="loadingIll" class="empty-state">
+      <div
+        v-if="activeIndex == 3"
+        class="card-container"
+        v-infinite-scroll="loadMoreIllus"
+        :infinite-scroll-disabled="illScrollDisabled"
+        :infinite-scroll-distance="120">
+        <!-- 加载中（首次） -->
+        <div v-if="loadingIll && illArr.length === 0" class="empty-state">
           <p>{{ $t('myHomePage.loading') }}</p>
         </div>
         <!-- 有插画时显示卡片 -->
@@ -108,14 +113,26 @@
           </el-card>
         </transition-group>
         <!-- 加载完成但没有插画 -->
-        <div v-else class="empty-state">
+        <div v-else-if="!loadingIll" class="empty-state">
           <p>{{ $t('myHomePage.noIllustrations') }}</p>
+        </div>
+        <!-- 加载更多时底部提示 -->
+        <div v-if="loadingIll && illArr.length > 0" class="load-more-tip">
+          <p>{{ $t('myHomePage.loading') }}</p>
+        </div>
+        <div v-else-if="hasMoreIllus === false && illArr.length > 0" class="load-more-tip">
+          <p>{{ $t('myHomePage.noMore') }}</p>
         </div>
       </div>
 <!-- 我的绘本 -->
-      <div v-if="activeIndex == 4" class="card-container">
-        <!-- 加载中 -->
-        <div v-if="loadingBooks" class="empty-state">
+      <div
+        v-if="activeIndex == 4"
+        class="card-container"
+        v-infinite-scroll="loadMoreBooks"
+        :infinite-scroll-disabled="bookScrollDisabled"
+        :infinite-scroll-distance="120">
+        <!-- 加载中（首次） -->
+        <div v-if="loadingBooks && (!myBooks || myBooks.length === 0)" class="empty-state">
           <p>{{ $t('myHomePage.loading') }}</p>
         </div>
         <!-- 有绘本时显示卡片 -->
@@ -165,8 +182,15 @@
           </el-card>
         </transition-group>
         <!-- 加载完成但没有绘本 -->
-        <div v-else class="empty-state">
+        <div v-else-if="!loadingBooks" class="empty-state">
           <p>{{ $t('myHomePage.noBooks') }}</p>
+        </div>
+        <!-- 加载更多时底部提示 -->
+        <div v-if="loadingBooks && myBooks && myBooks.length > 0" class="load-more-tip">
+          <p>{{ $t('myHomePage.loading') }}</p>
+        </div>
+        <div v-else-if="hasMoreBooks === false && myBooks && myBooks.length > 0" class="load-more-tip">
+          <p>{{ $t('myHomePage.noMore') }}</p>
         </div>
       </div>
 
@@ -241,6 +265,18 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
       deletingBookId: null, // 正在删除的绘本ID
       showImagePreviewModal: false, // 是否显示图片预览遮罩
       previewImageUrl: '', // 预览的图片URL
+
+      // 我的插画 - 分页/滚动加载
+      illPage: 1,
+      illPerPage: 20,
+      illScrollDisabled: false,
+      hasMoreIllus: true,
+
+      // 我的绘本 - 分页/滚动加载
+      bookPage: 1,
+      bookPerPage: 20,
+      bookScrollDisabled: false,
+      hasMoreBooks: true,
     };
   },
   computed:mapState([
@@ -751,70 +787,166 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans
           });
         });
     },
-    //获取我的插画
+    //获取我的插画（第 1 页）
     async getIll(){
-      this.loadingIll = true; // 开始加载
+      this.illPage = 1
+      this.hasMoreIllus = true
+      this.illScrollDisabled = false
+      this.loadingIll = true
       try{
-          // 获取 token 并添加到请求头
-          const token = localStorage.getItem('token');
-          const headers = {};
+          const token = localStorage.getItem('token')
+          const headers = {}
           if (token && token !== 'undefined') {
-            headers['Authorization'] = `Bearer ${token}`;
+            headers['Authorization'] = `Bearer ${token}`
           }
-          
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id, { headers })
-          // 根据API响应格式处理数据
+
+          const res = await this.$http.get(
+            `/ill/?page=1&sort_param=createdAt&sort_num=desc`,
+            { headers }
+          )
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
-            this.illArr = res.data.message || [];
+            const list = res.data.message || []
+            this.illArr = Array.isArray(list) ? list : []
+            if (this.illArr.length < this.illPerPage) this.hasMoreIllus = false
           } else {
-            this.illArr = [];
-            console.warn('获取插画数据格式异常:', res.data);
+            this.illArr = []
+            this.hasMoreIllus = false
+            console.warn('获取插画数据格式异常:', res.data)
           }
-          console.log('我的插画数据:', this.illArr)
         } catch(err){
-          console.error('获取我的插画失败:', err);
-          this.illArr = []; // 出错时设置为空数组
-          ElMessage.error(this.$t('myHomePage.loadIllustrationsFailed'));
+          console.error('获取我的插画失败:', err)
+          this.illArr = []
+          this.hasMoreIllus = false
+          ElMessage.error(this.$t('myHomePage.loadIllustrationsFailed'))
         } finally {
-          this.loadingIll = false; // 加载完成
+          this.loadingIll = false
         }
     },
-   // 获取我的绘本
+
+    // 滚动加载更多插画
+    async loadMoreIllus() {
+      if (this.loadingIll || this.illScrollDisabled || !this.hasMoreIllus) return
+      if (this.activeIndex !== '3') return
+
+      const nextPage = this.illPage + 1
+      this.illScrollDisabled = true
+      this.loadingIll = true
+      try {
+        const token = localStorage.getItem('token')
+        const headers = {}
+        if (token && token !== 'undefined') {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+
+        const res = await this.$http.get(
+          `/ill/?page=${nextPage}&sort_param=createdAt&sort_num=desc`,
+          { headers }
+        )
+        const list = res.data?.message || res.data?.data || []
+        const newIllus = Array.isArray(list) ? list : []
+        if (newIllus.length === 0) {
+          this.hasMoreIllus = false
+          return
+        }
+
+        const existing = new Set(this.illArr.map(i => i?._id).filter(Boolean))
+        const merged = newIllus.filter(i => !i?._id || !existing.has(i._id))
+        this.illArr.push(...merged)
+        this.illPage = nextPage
+
+        // 返回条数小于每页条数 -> 没有更多
+        if (newIllus.length < this.illPerPage) this.hasMoreIllus = false
+      } catch (err) {
+        console.error('加载更多插画失败:', err)
+        this.illScrollDisabled = false
+      } finally {
+        this.loadingIll = false
+        this.illScrollDisabled = false
+      }
+    },
+
+   // 获取我的绘本（第 1 页）
     async getBook(){
-      this.loadingBooks = true; // 开始加载
+      this.bookPage = 1
+      this.hasMoreBooks = true
+      this.bookScrollDisabled = false
+      this.loadingBooks = true
       try{
-          // 获取 token 并添加到请求头
-          const token = localStorage.getItem('token');
-          const headers = {};
+          const token = localStorage.getItem('token')
+          const headers = {}
           if (token && token !== 'undefined') {
-            headers['Authorization'] = `Bearer ${token}`;
+            headers['Authorization'] = `Bearer ${token}`
           }
           
-          let res=await this.$http.get(`/book/?sort_param=createdAt&sort_num=desc&ownerid=`+this.id, { headers })
-          // 根据API响应格式处理数据
+          const res = await this.$http.get(
+            `/book/?page=1&sort_param=createdAt&sort_num=desc&ownerid=${this.id}`,
+            { headers }
+          )
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
-            this.toolArr = res.data.message || [];
-            
-            // 先只加载封面图片（第一张），快速显示
-            await this.loadBookCovers();
-            
-            // 保存到store，让页面先显示出来
-            this.setBooks();
-            
-            // 然后在后台异步加载所有图片URL（不阻塞显示）
-            this.loadAllBookImages();
+            const list = res.data.message || []
+            this.toolArr = Array.isArray(list) ? list : []
+            if (this.toolArr.length < this.bookPerPage) this.hasMoreBooks = false
+
+            await this.loadBookCovers()
+            this.setBooks()
+            this.loadAllBookImages()
           } else {
-            this.toolArr = [];
-            console.warn('获取绘本数据格式异常:', res.data);
+            this.toolArr = []
+            this.hasMoreBooks = false
+            console.warn('获取绘本数据格式异常:', res.data)
           }
-          console.log('我的绘本数据:', this.toolArr)
         } catch(err){
-          console.error('获取我的绘本失败:', err);
-          this.toolArr = []; // 出错时设置为空数组
-          ElMessage.error(this.$t('myHomePage.loadBooksFailed'));
+          console.error('获取我的绘本失败:', err)
+          this.toolArr = []
+          this.hasMoreBooks = false
+          ElMessage.error(this.$t('myHomePage.loadBooksFailed'))
         } finally {
-          this.loadingBooks = false; // 加载完成
+          this.loadingBooks = false
         }
+    },
+
+    // 滚动加载更多绘本
+    async loadMoreBooks(){
+      if (this.loadingBooks || this.bookScrollDisabled || !this.hasMoreBooks) return
+      if (this.activeIndex !== '4') return
+
+      const nextPage = this.bookPage + 1
+      this.bookScrollDisabled = true
+      this.loadingBooks = true
+      try {
+        const token = localStorage.getItem('token')
+        const headers = {}
+        if (token && token !== 'undefined') {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+
+        const res = await this.$http.get(
+          `/book/?page=${nextPage}&sort_param=createdAt&sort_num=desc&ownerid=${this.id}`,
+          { headers }
+        )
+        const list = res.data?.message || res.data?.data || []
+        const newBooks = Array.isArray(list) ? list : []
+        if (newBooks.length === 0) {
+          this.hasMoreBooks = false
+          return
+        }
+
+        const startIdx = this.toolArr.length
+        this.toolArr.push(...newBooks)
+        this.bookPage = nextPage
+
+        await this.loadBookCovers()
+        this.setBooks()
+        this.loadAllBookImages()
+
+        if (newBooks.length < this.bookPerPage) this.hasMoreBooks = false
+      } catch (err) {
+        console.error('加载更多绘本失败:', err)
+        this.bookScrollDisabled = false
+      } finally {
+        this.loadingBooks = false
+        this.bookScrollDisabled = false
+      }
     },
     
     // 只加载绘本封面（第一张图片），快速显示

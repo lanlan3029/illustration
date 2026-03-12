@@ -225,6 +225,7 @@
     "noCharacters": "还没有创建角色，快去创作吧！",
     "noIllustrations": "还没有创建插画，快去创作吧！",
     "noBooks": "还没有创建绘本，快去创作吧！",
+    "noMore": "没有更多了",
     "bookStatus": {
       "published": "已发布",
       "pending": "待审核",

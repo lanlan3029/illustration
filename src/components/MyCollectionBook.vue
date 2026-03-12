@@ -1,5 +1,10 @@
 <template>
-  <div>
+  <div
+    class="collect-books-wrapper"
+    v-infinite-scroll="loadMore"
+    :infinite-scroll-disabled="scrollDisabled"
+    :infinite-scroll-distance="120"
+  >
     <!-- 加载中 -->
     <div v-if="loading" class="empty-state">
       <p>正在加载...</p>
@@ -42,6 +47,14 @@
         </div>
       </el-card>
     </transition-group>
+
+    <!-- 底部加载提示 -->
+    <div v-if="loadingMore && collectBookDetails && collectBookDetails.length > 0" class="load-more-tip">
+      <p>正在加载...</p>
+    </div>
+    <div v-else-if="hasMore === false && collectBookDetails && collectBookDetails.length > 0" class="load-more-tip">
+      <p>没有更多了</p>
+    </div>
   </div>
 </template>
   
@@ -54,23 +67,44 @@
       data(){
           return{
             id:localStorage.getItem("id"),
-            toolArr:[],
+            toolArr:[], // 已加载的收藏绘本详情（会同步到 store.collectBookDetails）
+            allBookIds: [], // 全量收藏的绘本 id（用于前端分页）
+            loadedIdSet: new Set(), // 已加载 bookId 去重
+            page: 1,
+            perPage: 12,
+            hasMore: true,
+            scrollDisabled: false,
             deletingBookId: null,
             collectIdMap: {}, // 保存绘本ID到收藏记录ID的映射
             loading: true, // 加载状态
+            loadingMore: false,
           }
       },
       computed:mapState(["collectBookArr","collectBookDetails"]),
 
   async mounted() {
-    if (this.id && localStorage.getItem('token')) {
-      await getCollectionBook(this.$http, this.$store)
-    }
-    await this.getCollectBook()
+    await this.initCollectBooks()
   },
   methods: {
-    async getCollectBook() {
-      this.loading = true;
+    async initCollectBooks() {
+      this.loading = true
+      this.loadingMore = false
+      this.scrollDisabled = false
+      this.hasMore = true
+      this.page = 1
+      this.toolArr = []
+      this.allBookIds = []
+      this.loadedIdSet = new Set()
+
+      if (this.id && localStorage.getItem('token')) {
+        await getCollectionBook(this.$http, this.$store)
+      }
+
+      await this.fetchCollectRecordsAndFirstPage()
+      this.loading = false
+    },
+
+    async fetchCollectRecordsAndFirstPage() {
       try {
         // 使用新接口获取所有收藏记录
         const res = await this.$http.get(`/user/list/collect?id=${this.id}&category=book`, {
@@ -89,46 +123,90 @@
           });
           
           // 提取所有收藏的绘本ID
-          const bookIds = collectRecords.map(record => record.collectid).filter(id => id);
-          
-          if (bookIds.length === 0) {
-            this.toolArr = [];
-            this.setBooks();
-            this.loading = false;
-            return;
+          this.allBookIds = collectRecords.map(record => record.collectid).filter(id => id);
+
+          if (this.allBookIds.length === 0) {
+            this.toolArr = []
+            this.hasMore = false
+            this.setBooks()
+            return
           }
-          
-          // 根据绘本ID获取实际的绘本数据
-          const bookPromises = bookIds.map(bookId => 
-            this.$http.get(`/book/${bookId}`).catch(err => {
-              console.error(`获取绘本失败 (ID: ${bookId}):`, err);
-              return null;
-            })
-          );
-          
-          const bookResponses = await Promise.all(bookPromises);
-          // 过滤掉失败的请求，提取绘本数据
-          this.toolArr = bookResponses
-            .filter(res => res && res.data && res.data.message)
-            .map(res => res.data.message);
-          
-          // 加载图片URL
-          await this.getImgUrl();
-          // 保存到store
-          this.setBooks();
+
+          // 首次加载第一页
+          await this.loadPage(1)
         }
       } catch(err) {
         console.error('获取收藏绘本失败:', err);
-        this.toolArr = [];
-        this.setBooks();
+        this.toolArr = []
+        this.hasMore = false
+        this.setBooks()
+      }
+    },
+
+    async loadMore() {
+      if (this.loading || this.loadingMore || this.scrollDisabled || !this.hasMore) return
+      const nextPage = this.page + 1
+      await this.loadPage(nextPage)
+    },
+
+    async loadPage(page) {
+      // 计算本页需要加载的 bookId 切片
+      const start = (page - 1) * this.perPage
+      const end = start + this.perPage
+      const sliceIds = this.allBookIds.slice(start, end).filter(Boolean)
+
+      if (sliceIds.length === 0) {
+        this.hasMore = false
+        return
+      }
+
+      this.loadingMore = true
+      this.scrollDisabled = true
+
+      try {
+        // 根据绘本ID获取实际的绘本数据（按页分批）
+        const bookPromises = sliceIds
+          .filter(bookId => !this.loadedIdSet.has(bookId))
+          .map(bookId =>
+            this.$http.get(`/book/${bookId}`).catch(err => {
+              console.error(`获取绘本失败 (ID: ${bookId}):`, err)
+              return null
+            })
+          )
+
+        const bookResponses = await Promise.all(bookPromises)
+        const newBooks = bookResponses
+          .filter(res => res && res.data && res.data.message)
+          .map(res => res.data.message)
+
+        // 记录已加载 id 并追加
+        newBooks.forEach(b => {
+          if (b && b._id) this.loadedIdSet.add(b._id)
+        })
+        this.toolArr.push(...newBooks)
+
+        // 加载图片URL（只处理新增的）
+        await this.getImgUrlForRange(this.toolArr.length - newBooks.length, this.toolArr.length - 1)
+
+        this.page = page
+        this.setBooks()
+
+        // 是否还有更多：已覆盖到末尾 或 本次返回不足 perPage
+        const loadedCount = this.loadedIdSet.size
+        if (loadedCount >= this.allBookIds.length || sliceIds.length < this.perPage) {
+          this.hasMore = false
+        }
       } finally {
-        this.loading = false;
+        this.loadingMore = false
+        this.scrollDisabled = false
       }
     },
 
     // 获取绘本图片URL
-    async getImgUrl() {
-      for (let i = 0; i < this.toolArr.length; i++) {
+    async getImgUrlForRange(startIdx, endIdx) {
+      const s = Math.max(0, startIdx || 0)
+      const e = Math.min(this.toolArr.length - 1, endIdx ?? (this.toolArr.length - 1))
+      for (let i = s; i <= e; i++) {
         // 获取绘本图片ID
         let tool = this.toolArr[i].content;
         if (!tool || !Array.isArray(tool)) {
@@ -181,6 +259,9 @@ cancelCollectBook(bookId){
              setTimeout(() => {
                // 从本地数据中移除该项
                this.toolArr = this.toolArr.filter(item => item._id !== bookId);
+               // 从 allBookIds / 去重集合中移除，允许后续正确分页
+               this.allBookIds = this.allBookIds.filter(id => id !== bookId)
+               this.loadedIdSet.delete(bookId)
                // 从映射中移除
                delete this.collectIdMap[bookId];
                // 更新store
@@ -224,6 +305,13 @@ cancelCollectBook(bookId){
   </script>
   
 <style scoped>
+/* 让 infinite-scroll 绑定的元素可滚动（不依赖外层容器） */
+.collect-books-wrapper{
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* 空状态 */
 .empty-state {
   display: flex;
@@ -234,10 +322,18 @@ cancelCollectBook(bookId){
   font-size: 16px;
 }
 
-/* 卡片网格布局 - 一行三个 */
+/* 加载更多 / 没有更多 底部提示 */
+.load-more-tip{
+  text-align: center;
+  padding: 16px;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 卡片网格布局 - 与“我的绘本”一致：一行四个 */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   width: 100%;
   position: relative;
@@ -286,7 +382,7 @@ cancelCollectBook(bookId){
 
 .card-list-leave-active {
   position: absolute;
-  width: calc(33.333% - 16px);
+  width: calc((100% - 72px) / 4); /* 4列布局：3个gap共72px */
   transition: all 0.3s ease;
 }
 
