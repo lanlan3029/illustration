@@ -229,7 +229,9 @@
           @error="handleImageError"
         />
         <div class="preview-close" @click="closeImagePreview">
-          <i class="el-icon-close"></i>
+          <el-icon class="preview-close-icon">
+            <CloseBold />
+          </el-icon>
         </div>
       </div>
     </div>
@@ -239,6 +241,7 @@
 <script>
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
+import { CloseBold } from '@element-plus/icons-vue'
 import MyCollectionIll from '../components/MyCollectionIll.vue'
 import MyCollectionBook from '../components/MyCollectionBook.vue'
 import MyAttention from '../components/MyAttention.vue'
@@ -247,7 +250,7 @@ import generateID from '@/utils/generateID'
 import { commonStyle, commonAttr } from '@/custom-component/component-list'
 export default {
   components:{
-MyCollectionIll,MyCollectionBook,MyAttention,MyFans
+MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
   },
   data() {
     return {
@@ -1470,7 +1473,7 @@ overflow: hidden;
   transform: scale(1.1);
 }
 
-.preview-close i {
+.preview-close-icon {
   font-size: 20px;
   color: #303133;
 }
