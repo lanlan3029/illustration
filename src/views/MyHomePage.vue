@@ -147,7 +147,7 @@
             :class="['content-card', { 'card-deleting': deletingBookId === item._id }]"
             shadow="hover"
           >
-            <div class="card-image" @click="goBookDetails(item._id)">
+            <div class="card-image" @click="goReadBook(item._id)">
               <el-image
                 :src="getBookCoverUrl(item)"
                 fit="cover"
@@ -175,7 +175,7 @@
               
              
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goBookDetails(item._id)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button size="small" type="primary" @click="goEditBook(item._id)">{{ $t('myHomePage.edit') }}</el-button>
                 <el-button size="small" type="danger" @click="handleDeleteBook(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
             </div>
@@ -334,8 +334,15 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
       console.error('图片加载失败:', e)
       ElMessage.error(this.$t('myHomePage.imageLoadFailed'))
     },
-    goBookDetails(id){
-      // 编辑模式：跳转到上传页面并传递绘本ID
+    // 查看我的绘本：进入阅读页
+    goReadBook(id){
+      this.$router.push({
+        name: 'user-bookdetails',
+        params: { bookId: id }
+      });
+    },
+    // 编辑我的绘本：进入本地绘本上传编辑页
+    goEditBook(id){
       this.$router.push({
         name: 'upload-local-book',
         query: { bookId: id, mode: 'edit' }
