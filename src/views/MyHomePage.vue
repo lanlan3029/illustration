@@ -103,7 +103,7 @@
             </div>
             <div class="card-content">
               <h3 class="card-title">{{item.title || $t('myHomePage.unnamedIllustration')}}</h3>
-              <p class="card-description">{{item.description || $t('myHomePage.noDescription')}}</p>
+             
 
               <div class="card-actions">
                 <el-button size="small" type="primary" @click="goEdition(item)">{{ $t('myHomePage.edit') }}</el-button>

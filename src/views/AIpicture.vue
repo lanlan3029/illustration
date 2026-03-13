@@ -594,10 +594,22 @@ export default {
                     pictureValue = await this.compressDataUrlIfNeeded(pictureValue);
                 }
                 
+                // 生成更短、更适合作为标题的文案
+                const rawPrompt = this.generatedPrompt || '';
+                let title = 'AI插画';
+                if (rawPrompt) {
+                    const trimmed = rawPrompt.replace(/\s+/g, ' ').trim();
+                    if (trimmed) {
+                        // 截取前若干个字符作为标题，避免和完整描述重复过长
+                        const maxLen = 8;
+                        title = trimmed.length > maxLen ? trimmed.slice(0, maxLen) + '…' : trimmed;
+                    }
+                }
+
                 const requestData = {
                     picture: pictureValue,
-                    title: this.generatedPrompt || '生成的插画',
-                    description: this.generatedPrompt || '从灵感库生成的插画',
+                    title,
+                    description: rawPrompt || '从灵感库生成的插画',
                     type: 'others'
                 };
                 

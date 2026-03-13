@@ -313,13 +313,7 @@ export default {
           e.preventDefault();
           return;
         }
-        
-        // 如果点击的是图片，阻止图片的默认拖拽行为
-        if (e.target.tagName === 'IMG') {
-          e.preventDefault();
-          return;
-        }
-        
+
         this.dragIndex = parseInt(item.dataset.index);
         item.style.opacity = '0.5';
         e.dataTransfer.effectAllowed = 'move';
