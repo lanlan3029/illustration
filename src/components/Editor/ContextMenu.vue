@@ -122,15 +122,22 @@ export default {
         },
         deleteComponent(){
             this.$store.commit('deleteComponent')
+            this.$store.commit('hideContextMenu')
         },
         copy(){
             this.$store.commit('copy')
+            // 复制后关闭右键菜单，避免一直悬浮在画面上
+            this.$store.commit('hideContextMenu')
         },
         paste(){
             this.$store.commit('paste',true)
+            // 粘贴完成后关闭右键菜单
+            this.$store.commit('hideContextMenu')
         },
         cut(){
             this.$store.commit('cut')
+            // 剪切后关闭右键菜单
+            this.$store.commit('hideContextMenu')
         },
         cropper(){
             this.$store.commit("changeCropper",true)
