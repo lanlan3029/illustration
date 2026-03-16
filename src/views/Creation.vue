@@ -139,6 +139,11 @@ export default {
     this.calculateCurrentAspectRatio();
     // 监听组件数据变化，自动保存到本地
     this.setupAutoSave();
+    // 监听键盘复制/粘贴等快捷键
+    window.addEventListener('keydown', this.handleKeyPress);
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleKeyPress);
   },
   methods:{
     //获取草稿
@@ -185,6 +190,34 @@ export default {
       const top = e.clientY
       const left = e.clientX
       this.$store.commit('showContextMenu', { top, left })
+    },
+    // 处理键盘快捷键：复制 / 剪切 / 粘贴
+    handleKeyPress(e) {
+      const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      if (!ctrlOrCmd) return;
+
+      // 在输入框、文本域或可编辑区域中不拦截快捷键
+      const target = e.target;
+      const tag = target && target.tagName;
+      const isInputLike =
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        (target && target.isContentEditable);
+      if (isInputLike) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'c') {
+        e.preventDefault();
+        this.$store.commit('copy');
+      } else if (key === 'x') {
+        e.preventDefault();
+        this.$store.commit('cut');
+      } else if (key === 'v') {
+        e.preventDefault();
+        // 键盘触发粘贴：不是鼠标位置粘贴，稍微偏移一点
+        this.$store.commit('paste', false);
+      }
     },
     handleDrop(e){
       e.preventDefault()
