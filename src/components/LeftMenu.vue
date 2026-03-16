@@ -5,25 +5,24 @@
    <!--  显示搜索结果 -->
     <div v-if="(searchInput !='')" class="classify">
     <div
-      ref="scrollContainer"
+      ref="scrollContainerSearch"
       class="menu-right"
       :key="`search-${searchInput}`"
       v-infinite-scroll="searchLoad"
-      infinite-scroll-disabled="searchScrollDisabled"
-      :disabled="searchLoading"
-      :infinite-scroll-immediate="true"
+      :infinite-scroll-disabled="searchLoading || !searchHasMore"
+      :infinite-scroll-distance="80"
     >
         <ul class="elements">
-          <li class="element" v-for="(item,index) in searchArr" :key="`search-${item._id || index}-${index}`" @click="handleImageChange(item.content[0])">
+          <li class="element" v-for="(item,index) in searchArr" :key="`search-${item._id || index}-${index}`" @click="handleImageChange(getImageContent(item))">
               <el-image
-                fit="cover"
-                style="width:6vw; height:8vh"
-                :src="`https://static.kidstory.cc/` + item.content"
+                fit="contain"
+                style="width:6vw; height:8vh; display: block; margin: 0 auto;"
+                :src="getImageSrc(item)"
                 :lazy="true"
                 loading="lazy"
                 decoding="async"
                 :preview-src-list="[]"
-                :scroll-container="$refs.scrollContainer"
+                :scroll-container="$refs.scrollContainerSearch"
               >
                 <template #placeholder>
                   <div class="img-ph"><i class="el-icon-loading"></i></div>
@@ -34,6 +33,8 @@
               </el-image>
           </li>
         </ul>
+        <div v-if="searchLoading && searchArr.length > 0" class="load-more-tip">加载中...</div>
+        <div v-else-if="!searchHasMore && searchArr.length > 0" class="load-more-tip">没有更多了</div>
       </div>
     </div>
      <!-- 显示全部图元 -->
@@ -42,7 +43,7 @@
         而:disabled则是在元素上添加或移除disabled属性，从而控制该元素是否可以被交互。 -->
      <div v-else class="classify">
     <ul class="menu">
-        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type,item.num)"  :class="{'active':item.id===selectIndex }">
+        <li class="menu-item" v-for="item in icons" :key="item.id" @click="select(item.id,item.type)"  :class="{'active':item.id===selectIndex }">
           <el-tooltip :content="getTypeLabel(item.type)" placement="right" effect="dark">
             <i :class="item.icon"></i>
           </el-tooltip>
@@ -53,9 +54,8 @@
       class="menu-right"
       :key="`menu-${selectType}`"
       v-infinite-scroll="load"
-      infinite-scroll-disabled="scrollDisabled"
-      :disabled="loading"
-      :infinite-scroll-immediate="true"
+      :infinite-scroll-disabled="loading || !hasMore"
+      :infinite-scroll-distance="80"
     >
         <ul class="elements" :key="`elements-${selectType}-${selectIndex}`">
         <li class="element" v-for="(item,index) in pictureArr" :key="`${selectType}-${selectIndex}-${item._id || item.content || index}-${index}`" @click="handleImageChange(getImageContent(item))">
@@ -63,7 +63,7 @@
               fit="contain"
               style="width:6vw; height:8vh; display: block; margin: 0 auto;"
               :src="getImageSrc(item)"
-              :key="`img-${selectType}-${selectIndex}-${item._id || item.content || index}-${Date.now()}`"
+              :key="`img-${selectType}-${selectIndex}-${item._id || item.content || index}-${index}`"
               :lazy="true"
               loading="lazy"
               decoding="async"
@@ -78,8 +78,9 @@
               </template>
             </el-image>
         </li>
-
-    </ul>
+        </ul>
+        <div v-if="loading && pictureArr.length > 0" class="load-more-tip">加载中...</div>
+        <div v-else-if="!hasMore && pictureArr.length > 0" class="load-more-tip">没有更多了</div>
     </div>
 </div>
     
@@ -118,19 +119,16 @@ export default {
           {type:"furniture",icon:'iconfont icon-shafa1',id:9,num:2},
           {type:"others",icon:'iconfont icon-other',id:10,num:2}],
           pictureArr:[],
-          num:2,
-          searchNum:2,
+          page:1,
+          hasMore:true,
+          loading:false,
           selectType:'charcter',
           selectIndex:0,
           searchInput:'',
           searchArr:[],
           searchPage:1,
-          scrollDisabled:false,
-          loading:false,
+          searchHasMore:true,
           searchLoading:false,
-          searchScrollDisabled:false,
-          // client side cache: { [type]: { items: Array, nextPage: Number, noMore: Boolean } }
-          cacheMap:{},
           searchDebounceTimer:null
         }
     },
@@ -144,330 +142,105 @@ export default {
         getTypeLabel(type) {
             return this.$t(`leftMenu.${type}`);
         },
-        // 确保滚动容器在内容不足时也能触发加载，直到出现滚动条或无更多数据
-        ensureScrollable(containerSelector, loadMethod, disabledFlag){
-          const container = this.$el.querySelector(containerSelector)
-          if(!container) return
-          
-          // 等待一段时间，确保图片加载完成后再检查
-          setTimeout(() => {
-            const checkAndLoad = () => {
-              if (!container) return
-              const canScroll = container.scrollHeight > container.clientHeight
-              const disabled = this[disabledFlag]
-              const loading = this.loading || this.searchLoading
-              
-              // 如果已经可以滚动、已禁用加载或正在加载中，则停止
-              if (canScroll || disabled || loading) {
-                return
-              }
-              
-              // 触发一次加载
-              if (typeof this[loadMethod] === 'function') {
-                const loadPromise = this[loadMethod]()
-                if (loadPromise && typeof loadPromise.then === 'function') {
-                  loadPromise.then(() => {
-                    // 加载完成后，再次检查是否还需要更多内容
-                    setTimeout(() => {
-                      this.$nextTick(() => {
-                        if (container.scrollHeight <= container.clientHeight && !this[disabledFlag]) {
-                          checkAndLoad()
-                        }
-                      })
-                    }, 300)
-                  }).catch(() => {})
-                } else {
-                  // 如果不是 Promise，等待一下再检查
-                  setTimeout(() => {
-                    this.$nextTick(() => checkAndLoad())
-                  }, 300)
-                }
-              }
-            }
-            
-            this.$nextTick(() => checkAndLoad())
-          }, 200) // 等待图片开始加载
-        },
-        
-        //请求数据库数据
+        // 请求第一页数据（初始化/切换类型时调用）
         async getPictures(){
             try{
                 this.loading = true
-                
-                // 如果是"我的角色"类型，使用不同的API
                 if (this.selectType === 'charcter') {
                     return await this.getMyCharacters()
                 }
-                
-                // if cached, use cache immediately
-                const cached = this.cacheMap[this.selectType]
-                if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
-                 
-                  // 从缓存恢复时也进行去重，确保数据唯一
-                  const uniqueMap = new Map()
-                  cached.items.forEach(item => {
-                    const key = item._id || item.content || JSON.stringify(item)
-                    if (!uniqueMap.has(key)) {
-                      uniqueMap.set(key, item)
-                    }
-                  })
-                  const uniqueItems = Array.from(uniqueMap.values())
-                  
-                  // 先清空数组，然后设置新数据，确保 Vue 能检测到变化
-                  this.pictureArr = []
-                  
-                  // 使用 $nextTick 确保 DOM 更新
-                  await this.$nextTick()
-                  
-                  // 直接赋值新数组
-                  this.pictureArr = uniqueItems.slice()
-                  this.num = cached.nextPage || 2
-                  // 根据缓存状态设置 scrollDisabled
-                  // 如果 noMore 为 true，说明没有更多数据了，禁用滚动
-                  // 如果 noMore 为 false，说明还有更多数据，允许滚动加载
-                  this.scrollDisabled = !!cached.noMore
-                  this.loading = false
-                
-                  
-                  // 确保数据正确显示和滚动
-                  this.$nextTick(()=>{
-                    // 如果数据为空，尝试重新加载
-                    if (this.pictureArr.length === 0) {
-                    
-                      // 清除缓存，重新加载
-                      delete this.cacheMap[this.selectType]
-                      // 继续执行下面的加载逻辑
-                    } else {
-                      // 强制更新视图
-                      this.$forceUpdate()
-                      this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
-                    }
-                  })
-                  
-                  // 如果缓存数据不为空，直接返回
-                  if (uniqueItems.length > 0) {
-                    return
-                  }
-                }
-
-                // fetch page 1, and prefetch page 2 in parallel when possible
-                const page1 = this.$http.get(`/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=1`)
-                const page2 = this.$http.get(`/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=2`)
-                const [r1, r2] = await Promise.allSettled([page1, page2])
-
-                // 处理响应数据，支持多种响应格式
-                let list1 = []
-                let list2 = []
-                
-                if (r1.status === 'fulfilled' && r1.value && r1.value.data) {
-                    const data = r1.value.data
-                    list1 = data.message || data.data || data.list || data.items || []
-                }
-                
-                if (r2.status === 'fulfilled' && r2.value && r2.value.data) {
-                    const data = r2.value.data
-                    list2 = data.message || data.data || data.list || data.items || []
-                }
-                
-                // 如果请求失败，记录错误但不中断流程
-                if (r1.status === 'rejected') {
-                    console.error('加载第一页失败:', r1.reason)
-                }
-                if (r2.status === 'rejected') {
-                    console.error('加载第二页失败:', r2.reason)
-                }
-                
-                // 确保list1和list2是数组
-                if (!Array.isArray(list1)) list1 = []
-                if (!Array.isArray(list2)) list2 = []
-                
-                // 去重：使用 _id 或 content 作为唯一标识
-                const combined = list1.concat(list2)
-                const uniqueMap = new Map()
-                combined.forEach(item => {
-                  const key = item._id || item.content || JSON.stringify(item)
-                  if (!uniqueMap.has(key)) {
-                    uniqueMap.set(key, item)
-                  }
-                })
-                const uniqueList = Array.from(uniqueMap.values())
-                
-                const noMore = uniqueList.length === 0
-                this.cacheMap[this.selectType] = {
-                  items: uniqueList,
-                  nextPage: 3,
-                  noMore
-                }
-                this.pictureArr = uniqueList.slice()
-                this.num = 3
-                this.scrollDisabled = noMore
+                const res = await this.$http.get(`/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=1`)
+                const data = res.data || {}
+                const list = data.message || data.data || data.list || data.items || []
+                const items = Array.isArray(list) ? list : []
+                this.pictureArr = items.slice()
+                this.page = 2
+                this.hasMore = items.length > 0
                 this.loading = false
-                
-                // 确保在更新数据后检查滚动状态，多次检查确保滚动条出现
-                this.$nextTick(() => {
-                  this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
-                })
-                // 再次延迟检查，等待图片加载
-                setTimeout(() => {
-                  this.$nextTick(() => {
-                    this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
-                  })
-                }, 500)
-            }
-            catch(error){
+            } catch(error){
                 console.error('加载图元失败:', error)
                 this.pictureArr = []
-                this.scrollDisabled = true
+                this.hasMore = false
                 this.loading = false
                 ElMessage.error('加载图元失败，请重试')
             }
         },
         
-        // 获取"我的角色"
+        // 获取"我的角色"（无分页，hasMore=false）
         async getMyCharacters(){
             try {
                 this.loading = true
                 const userId = localStorage.getItem('id')
                 if (!userId) {
                     this.pictureArr = []
-                    this.scrollDisabled = true
+                    this.hasMore = false
                     this.loading = false
                     return
                 }
-                
                 const apiUrl = process.env.VUE_APP_API_BASE_URL 
                     ? `${process.env.VUE_APP_API_BASE_URL}/character`
                     : '/character';
-                
                 const response = await this.$http.get(apiUrl, {
-                    params: {
-                        user_id: userId
-                    },
-                    headers: {
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    }
+                    params: { user_id: userId },
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
                 });
-                
                 let characterList = []
                 if (response.data && (response.data.code === 0 || response.data.code === '0' || response.data.desc === 'success')) {
                     characterList = response.data.data || response.data.message || response.data.list || []
                 }
-                
-                // 将角色数据转换为图片格式，使用 image_url 或 character_image_url
-                const formattedList = characterList.map(char => {
+                const formattedList = (characterList || []).map(char => {
                     const imageUrl = char.image_url || char.character_image_url || ''
-                    return {
-                        _id: char.id || char._id,
-                        content: imageUrl,
-                        ...char
-                    }
+                    return { _id: char.id || char._id, content: imageUrl, ...char }
                 })
-                
-                // 缓存数据
-                this.cacheMap[this.selectType] = {
-                    items: formattedList,
-                    nextPage: 2,
-                    noMore: true // 角色数据通常不需要分页
-                }
-                
                 this.pictureArr = formattedList.slice()
-                this.scrollDisabled = true // 角色数据不需要无限滚动
+                this.hasMore = false
                 this.loading = false
-                
-                this.$nextTick(() => {
-                    this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
-                })
             } catch (error) {
                 console.error('获取我的角色失败:', error)
                 this.pictureArr = []
-                this.scrollDisabled = true
+                this.hasMore = false
                 this.loading = false
             }
         },
 
-       //选择左侧类别
-       async select(index,type,num){
-            // 重置所有状态
-            this.scrollDisabled = true // 暂停监听，避免清空时触发
+       // 选择左侧类别
+       async select(index, type){
             this.selectIndex = index
             this.selectType = type
+            this.page = 1
             this.pictureArr = []
-            this.num = num || 2 // 设置为2，因为getPictures会加载第一页
-
-            // 重置滚动位置
+            this.hasMore = true
             this.$nextTick(() => {
               const container = this.$refs.scrollContainer
               if (container) container.scrollTop = 0
             })
-
-            // 加载第一页数据（等待完成）
-            // getPictures 方法会根据缓存或加载结果正确设置 scrollDisabled 和 loading 状态
             await this.getPictures()
         },
         
-        //无限加载
+        // 无限加载下一页
         async load() {
-      // 如果是"我的角色"类型，不需要无限滚动加载
-      if (this.selectType === 'charcter') {
-          return
-      }
-      
-      if(!this.loading){
-        this.loading=true
-        try {
-        let res = await this.$http.get(
-            `/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=`+this.num);
-        
-        // 支持多种响应格式
-        const responseData = res.data || {}
-        const newItems = responseData.message || responseData.data || responseData.list || responseData.items || []
-        
-        if(!Array.isArray(newItems)) {
-            console.error('API返回的数据格式不正确:', newItems)
-            this.scrollDisabled = true
-            return
-        }
-        
-        if(newItems.length == 0){ 
-            this.scrollDisabled = true
-        } else {
-            // 去重：检查新数据是否已存在
-            const existingIds = new Set(this.pictureArr.map(item => item._id || item.content || JSON.stringify(item)))
-            const uniqueNewItems = newItems.filter(item => {
-              const key = item._id || item.content || JSON.stringify(item)
-              return !existingIds.has(key)
-            })
-            
-            if (uniqueNewItems.length > 0) {
-              this.pictureArr = this.pictureArr.concat(uniqueNewItems)
-              this.num++
-              // update cache
-              const cached = this.cacheMap[this.selectType] || { items: [], nextPage: this.num, noMore: false }
-              cached.items = this.pictureArr.slice()
-              cached.nextPage = this.num
-              cached.noMore = false
-              this.cacheMap[this.selectType] = cached
-            } else {
-              // 如果没有新数据，说明已经加载完所有数据
-              this.scrollDisabled = true
+            if (this.loading || !this.hasMore || this.selectType === 'charcter') return
+            this.loading = true
+            try {
+                const res = await this.$http.get(
+                    `/picture/?sort_param=heat&sort_num=desc&type=`+ this.selectType +`&page=`+ this.page
+                )
+                const data = res.data || {}
+                const newItems = data.message || data.data || data.list || data.items || []
+                const list = Array.isArray(newItems) ? newItems : []
+                if (list.length === 0) {
+                    this.hasMore = false
+                } else {
+                    this.pictureArr.push(...list)
+                    this.page += 1
+                }
+            } catch (err) {
+                console.error('加载更多图元失败:', err)
+                this.hasMore = false
+            } finally {
+                this.loading = false
             }
-            // 等待图片加载后检查滚动条
-            setTimeout(() => {
-              this.$nextTick(() => {
-                this.ensureScrollable('.menu-right', 'load', 'scrollDisabled')
-              })
-            }, 300)
-        }  
-      } catch (err) {
-        console.error('加载更多图元失败:', err);
-        this.scrollDisabled = true
-      } finally {
-        // 无论成功失败，都要重置loading状态
-        this.loading=false
-      }
-      }
-  
-    },
+        },
  
  
 
@@ -593,69 +366,56 @@ export default {
                     
                      
         },
-        //搜索关键字
-        async loadSearch(value){
+        // 搜索关键字：初始化 page=1, list=[], hasMore=true，请求第 1 页
+        loadSearch(value){
             clearTimeout(this.searchDebounceTimer)
             this.searchDebounceTimer = setTimeout(async () => {
+              this.searchPage = 1
               this.searchArr = []
-              this.searchNum = 2
-              this.searchScrollDisabled = false
+              this.searchHasMore = true
               try {
-                let res = await this.$http.get(
-                  `/picture/?sort_param=heat&sort_num=desc&keyword=`+ value +`&page=1`
-                );
-                this.searchArr = (res.data.message || []).slice()
-                // 预取第二页
-                try {
-                  const res2 = await this.$http.get(`/picture/?sort_param=heat&sort_num=desc&keyword=`+ value +`&page=2`)
-                  this.searchArr = this.searchArr.concat(res2.data.message || [])
-                  this.searchNum = 3
-                } catch(e){
-                  console.log(e)
-                }
-                this.$nextTick(()=>{
-                  this.ensureScrollable('.menu-right', 'searchLoad', 'searchScrollDisabled')
-                })
+                const res = await this.$http.get(
+                  `/picture/?sort_param=heat&sort_num=desc&keyword=`+ encodeURIComponent(value || '') +`&page=1`
+                )
+                const list = res.data.message || res.data.data || []
+                const items = Array.isArray(list) ? list : []
+                this.searchArr = items.slice()
+                this.searchPage = 2
+                this.searchHasMore = items.length > 0
               } catch (err) {
-                console.log(err);
+                console.log(err)
               }
             }, 300)
         },
-//搜索结果无限加载
+        // 搜索结果无限加载
         async searchLoad() {
-      if(!this.searchLoading){
-        this.searchLoading=true
-             try {
-                    let res = await this.$http.get(
-                        `/picture/?sort_param=heat&sort_num=desc&keyword=` + this.searchInput + `&page=` + this.searchNum
-                    );
-                    if (res.data.message.length == 0) {
-                        this.searchScrollDisabled = true
-
-                    } else {
-                        this.searchArr = this.searchArr.concat(res.data.message);
-                        this.searchNum++;
-                        // 确保搜索结果也有足够内容
-                        this.$nextTick(() => {
-                          this.ensureScrollable('.menu-right', 'searchLoad', 'searchScrollDisabled')
-                        })
-                    }
-
-                } catch (err) {
-                    console.log(err);
-                } finally {
-                    // 确保重置loading状态
-                    this.searchLoading = false
+            if (this.searchLoading || !this.searchHasMore) return
+            this.searchLoading = true
+            try {
+                const res = await this.$http.get(
+                    `/picture/?sort_param=heat&sort_num=desc&keyword=`+ encodeURIComponent(this.searchInput || '') +`&page=`+ this.searchPage
+                )
+                const list = res.data.message || res.data.data || []
+                const newItems = Array.isArray(list) ? list : []
+                if (newItems.length === 0) {
+                    this.searchHasMore = false
+                } else {
+                    this.searchArr.push(...newItems)
+                    this.searchPage += 1
                 }
-      }
-
-    },
+            } catch (err) {
+                console.log(err)
+                this.searchHasMore = false
+            } finally {
+                this.searchLoading = false
+            }
+        },
 
 
     },
     mounted(){
         // 默认选中第一个类别（charcter）并加载"我的角色"
-        this.select(0, 'charcter', 2)
+        this.select(0, 'charcter')
     },
     beforeDestory(){
        window.removeEventListener('scroll',this.load)
@@ -804,5 +564,12 @@ export default {
     display: flex;  
     justify-content: center;
     align-content: center;
+}
+.load-more-tip {
+    width: 100%;
+    padding: 8px 0;
+    text-align: center;
+    font-size: 12px;
+    color: #909399;
 }
 </style>
