@@ -261,6 +261,15 @@ const routes = [{
         }
     },
     {
+        path: '/editorpro',
+        name: 'editorpro',
+        component: () =>
+            import ( /* webpackChunkName: "editorpro" */ '../views/Editorpro.vue'),
+        meta: {
+            requiresAuth: false
+        }
+    },
+    {
         path: '/newyear',
         name: 'newyear',
         component: () =>

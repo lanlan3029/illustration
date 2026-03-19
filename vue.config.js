@@ -24,6 +24,20 @@ module.exports = defineConfig({
                 return args
             })
         }
+
+        // 让 webpack 正确处理 src/kuaitu-core/core 下的 .ts 文件
+        config.module
+          .rule('kuaitu-ts')
+          .test(/\.ts$/)
+          .include.add(path.resolve(__dirname, 'src/kuaitu-core/core')).end()
+          .use('ts-loader')
+          .loader('ts-loader')
+          .options({
+            // 使用项目的 tsconfig.json，只做转译，不做类型检查
+            transpileOnly: true
+          })
+
+        // SVG 仍按资源处理（url/img），避免 svg 组件化链路导致编译/渲染不稳定
         
         // 配置 webpack-bundle-analyzer（仅在分析时使用）
         if (process.env.ANALYZE === 'true') {
@@ -36,8 +50,8 @@ module.exports = defineConfig({
         }
     },
     devServer: {
-        // 配置 host，允许所有接口访问
-        host: '0.0.0.0',
+        // 配置 host：优先保证本机可正常启动（某些环境下读取网卡信息会报错）
+        host: 'localhost',
         // 禁用 HMR 以避免 sockjs-node 连接错误
         hot: false,
         // 客户端配置（webpack-dev-server 4+ 使用 client.overlay 替代 overlay）
@@ -54,6 +68,7 @@ module.exports = defineConfig({
     },
     configureWebpack: {
         resolve: {
+            extensions: ['.ts', '.js', '.vue', '.json'],
             fallback: {
                 "process": false,
                 "buffer": false,

@@ -542,6 +542,7 @@ export default {
            }
        },
        
+       
        // 保存画布数据到本地存储
        saveToLocalStorage() {
            try {

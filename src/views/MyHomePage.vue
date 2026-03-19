@@ -942,7 +942,6 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
           return
         }
 
-        const startIdx = this.toolArr.length
         this.toolArr.push(...newBooks)
         this.bookPage = nextPage
 

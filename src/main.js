@@ -3,15 +3,18 @@ import App from './App.vue'
 import router from './router'
 import customComponents from '@/custom-component' // 注册自定义组件
 import store from './store'
+// 基础重置样式应最先加载，避免覆盖第三方组件样式
+import '@/styles/reset.css'
 // Element Plus - 保持全量导入以确保兼容性
 // 如需按需导入，建议使用 unplugin-vue-components（需要额外配置）
-import ElementPlus, { ElMessage } from 'element-plus'
+import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import ViewUIPlus from 'view-ui-plus'
+import 'view-ui-plus/dist/styles/viewuiplus.css'
 import '@/assets/iconfont/iconfont.css'
 import i18n from './i18n'
-
-// 关键 CSS - 立即加载
-import '@/styles/reset.css'
+import '@/styles/editorPro.css';
+import '@/assets/editorpro/fonts/font.css';
 
 // 非关键 CSS - 延迟加载
 // cropper.css 和 animate.css 在需要时动态导入
@@ -49,6 +52,7 @@ app.use(router)
 app.use(store)
 app.use(i18n)
 app.use(ElementPlus)
+app.use(ViewUIPlus)
 app.use(customComponents)
 
 // 配置 axios

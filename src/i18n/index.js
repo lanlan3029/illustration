@@ -2,8 +2,24 @@ import { createI18n } from 'vue-i18n'
 import zh from './locales/zh.json'
 import en from './locales/en.json'
 
-// 从本地存储读取语言设置，默认为中文
-const savedLocale = localStorage.getItem('lang') || 'zh'
+// 与 TopBar 一致：使用 key `lang`（纯字符串）。兼容旧版编辑器里误存的 `app_lang`（JSON）
+function getSavedLocale() {
+    const raw = localStorage.getItem('lang')
+    if (raw === 'zh' || raw === 'en') return raw
+    try {
+        const legacy = localStorage.getItem('app_lang')
+        if (legacy) {
+            const v = JSON.parse(legacy)
+            if (v === 'zh' || v === 'en') {
+                localStorage.setItem('lang', v)
+                return v
+            }
+        }
+    } catch (_) { /* ignore */ }
+    return 'zh'
+}
+
+const savedLocale = getSavedLocale()
 
 // 更新 HTML lang 属性
 const updateHtmlLang = (lang) => {

@@ -76,4 +76,13 @@ html, body{
   bottom: 0;
   z-index: 100;
 }
+
+/* 顶部有固定 TopBar，消息提示整体下移，避免被遮挡 */
+.ivu-message {
+  top: 72px !important;
+}
+
+.el-message {
+  top: 72px !important;
+}
 </style>

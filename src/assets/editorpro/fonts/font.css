@@ -1,0 +1,144 @@
+/**
+ * 与 src/assets/editorpro/fonts/cn 目录内实际文件一一对应
+ * 多字重家族仅保留 cn 中仍存在的字重；单文件家族用 font-weight: 400（必要时同文件多注册以兼容粗体切换）
+ */
+
+@font-face {
+  font-family: '汉体';
+  src: url('./cn/汉体.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '华康金刚黑';
+  src: url('./cn/华康金刚黑.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* 阿里巴巴普惠体：当前仅有 Regular */
+@font-face {
+  font-family: '阿里巴巴普惠体';
+  src: url('./cn/阿里巴巴普惠体-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '阿里妈妈刀隶体';
+  src: url('./cn/阿里妈妈刀隶体.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '阿里妈妈东方大楷';
+  src: url('./cn/阿里妈妈东方大楷.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '阿里妈妈方圆体';
+  src: url('./cn/阿里妈妈方圆体.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '阿里妈妈灵动体';
+  src: url('./cn/阿里妈妈灵动体.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* 数黑体仅 Bold 文件：400/700 均指向同一文件，避免切换字重后找不到字形 */
+@font-face {
+  font-family: '阿里妈妈数黑体';
+  src: url('./cn/阿里妈妈数黑体-Bold.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: '阿里妈妈数黑体';
+  src: url('./cn/阿里妈妈数黑体-Bold.ttf');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '得意黑';
+  src: url('./cn/得意黑.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '钉钉进步体';
+  src: url('./cn/钉钉进步体-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '寒蝉圆体';
+  src: url('./cn/寒蝉圆体.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: '寒蝉圆体';
+  src: url('./cn/寒蝉圆体Bold.ttf');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '苦累蛙圓體';
+  src: url('./cn/苦累蛙圓體-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '思源黑体';
+  src: url('./cn/思源黑体-Regular.otf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '小米MiSans';
+  src: url('./cn/小米MiSans-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Avara 仅 Black：400/900 同文件，避免 normal 字重无匹配 */
+@font-face {
+  font-family: 'Avara';
+  src: url('./cn/Avara-Black.otf');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Avara';
+  src: url('./cn/Avara-Black.otf');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('./cn/Caveat-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'PublicSans';
+  src: url('./cn/PublicSans-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
