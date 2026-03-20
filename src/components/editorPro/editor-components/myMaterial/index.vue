@@ -38,13 +38,13 @@
 </template>
 
 <script setup name="ImportTmpl">
-import { getFileList } from '@/components/editorPro/api/user';
 import uploadMaterial from './uploadMaterial';
 import myTempl from './myTempl';
-import { ref, getCurrentInstance, watch } from 'vue';
+import { ref, getCurrentInstance, onMounted, watch } from 'vue';
 import useSelect from '@/components/editorPro/hooks/select';
 const type = ref('ill');
-const isLogin = ref(false);
+// 以 token 是否存在作为“是否登录”的主判断，避免接口暂时失败导致误判为未登录
+const isLogin = ref(!!localStorage.getItem('token'));
 const illArr = ref([]);
 const illPage = ref(1);
 const loadingIll = ref(false);
@@ -134,25 +134,23 @@ const handleIllScroll = (e) => {
   if (nearBottom) loadMoreIllus();
 };
 
-const getFileListHandle = () => {
-  // 获取素材列表
-  getFileList()
-    .then(() => {
-      isLogin.value = true;
-      getIll();
-    })
-    .catch(() => {
-      isLogin.value = false;
-    });
-};
-
-getFileListHandle();
-
-watch(type, (val) => {
-  if (val === 'ill' && illArr.value.length === 0 && !loadingIll.value) {
+// 初始化：只要 token 存在，首屏如果当前就是“插画”tab，就立即拉取
+onMounted(() => {
+  if (isLogin.value && type.value === 'ill' && illArr.value.length === 0 && !loadingIll.value) {
     getIll();
   }
 });
+
+// 切换到“插画”tab 时懒加载（避免重复请求）
+watch(
+  type,
+  (val) => {
+    if (val === 'ill' && illArr.value.length === 0 && !loadingIll.value) {
+      getIll();
+    }
+  },
+  { flush: 'post' }
+);
 </script>
 
 <style scoped  >

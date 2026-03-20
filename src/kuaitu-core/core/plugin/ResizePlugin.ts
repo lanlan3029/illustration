@@ -63,9 +63,11 @@ class ResizePlugin implements IPluginTempl {
 
   // 渲染控制条具体位置
   renderBars() {
+    if (!this.canvas) return;
     const viewportTransform = this.canvas.viewportTransform;
     const [scaleX, , , scaleY, offsetX, offsetY] = viewportTransform || [];
     const workspace = this.getWorkspase() as Required<fabric.Rect>;
+    if (!workspace || !workspace.width || !workspace.height) return;
     const wsWidth = workspace.width * scaleX;
     const wsHeight = workspace.height * scaleY;
     const wsLeft = workspace.left * scaleX;

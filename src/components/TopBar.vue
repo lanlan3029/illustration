@@ -30,7 +30,7 @@
               <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createCharacter') }}</router-link></li>
               <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createGroupImages') }}</router-link></li>
               <li><router-link to="/create-layout-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createLayoutIllustration') }}</router-link></li>
-              <li><router-link to="/creation" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createIllustration') }}</router-link></li>
+              <li><router-link to="/editorpro" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createIllustration') }}</router-link></li>
               <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.composeBook') }}</router-link></li>
             </ul>
           </li>
@@ -430,8 +430,8 @@ export default {
             // 监听路由变化，关闭下拉菜单并重置滚动状态
             watch(() => route.path, (to) => {
                 closeSubmenu()
-                // 如果跳转到 Creation 页面，重置滚动状态
-                if (to === '/creation') {
+                // 如果跳转到 Editorpro 页面，重置滚动状态
+                if (to === '/editorpro') {
                     nextTick(() => {
                         window.scrollTo(0, 0)
                         isScrolled.value = false

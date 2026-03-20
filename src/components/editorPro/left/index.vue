@@ -33,19 +33,19 @@ const leftBar = reactive([
     //模板
     key: 'importTmpl',
     name: computed(() => t('templates')),
-    icon: 'md-book',
+    icon: 'md-square-outline',
   },
   {
     //基础元素
     key: 'tools',
     name: computed(() => t('elements')),
-    icon: 'md-images',
+    icon: 'md-add-circle',
   },
   {
     // 图片元素
     key: 'material',
     name: computed(() => t('material.cartoon')),
-    icon: 'ios-leaf-outline',
+    icon: 'md-flower',
   },
   {
     // 图层

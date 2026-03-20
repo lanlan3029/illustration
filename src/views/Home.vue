@@ -158,7 +158,7 @@ export default {
             this.$router.push('/create-group-images');
         },
         goToCreation() {
-            this.$router.push('/creation');
+            this.$router.push('/editorpro');
         },
         goToCreateLayoutIllustration() {
             this.$router.push('/create-layout-illustration');

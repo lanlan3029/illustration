@@ -238,22 +238,6 @@ const drawPolygon = () => {
   }
 };
 
-// 路径文字（入口暂时隐藏，逻辑保留）
-const drawPathText = () => {
-  if (!canvasEditor) return;
-  if (state.lineType === LINE_TYPE.pathText) {
-    state.lineType = '';
-    state.isDrawingLineMode = false;
-    canvasEditor.endTextPathDraw && canvasEditor.endTextPathDraw();
-  } else {
-    endConflictTools();
-    endDrawingLineMode();
-    state.lineType = LINE_TYPE.pathText;
-    state.isDrawingLineMode = true;
-    canvasEditor.startTextPathDraw && canvasEditor.startTextPathDraw();
-  }
-};
-
 // 自由绘制
 const freeDraw = () => {
   if (!canvasEditor) return;

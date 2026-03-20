@@ -160,16 +160,20 @@ class WorkspacePlugin implements IPluginTempl {
     this.workspace = this.canvas
       .getObjects()
       .find((item) => item.id === 'workspace') as fabric.Rect;
-    this.workspace.set('width', width);
-    this.workspace.set('height', height);
-    this.editor.emit('sizeChange', this.workspace.width, this.workspace.height);
+    if (this.workspace) {
+      this.workspace.set('width', width);
+      this.workspace.set('height', height);
+      this.editor.emit('sizeChange', this.workspace.width, this.workspace.height);
+    }
     this.auto();
   }
 
   setZoomAuto(scale: number, cb?: (left?: number, top?: number) => void) {
     const { workspaceEl } = this;
+    if (!this.canvas || !workspaceEl) return;
     const width = workspaceEl.offsetWidth;
     const height = workspaceEl.offsetHeight;
+    if (!width || !height) return;
     this.canvas.setWidth(width);
     this.canvas.setHeight(height);
     const center = this.canvas.getCenter();
@@ -187,10 +191,13 @@ class WorkspacePlugin implements IPluginTempl {
   }
 
   _getScale() {
-    return fabric.util.findScaleToFit(this.getWorkspase(), {
-      width: this.workspaceEl.offsetWidth,
-      height: this.workspaceEl.offsetHeight,
-    });
+    const ws = this.getWorkspase();
+    // resizeObserver/路由切换时可能出现 workspace 尚未就绪，防止 findScaleToFit 读 undefined.width 直接崩溃
+    if (!ws || !this.workspaceEl) return 1;
+    const width = this.workspaceEl.offsetWidth;
+    const height = this.workspaceEl.offsetHeight;
+    if (!width || !height) return 1;
+    return fabric.util.findScaleToFit(ws, { width, height });
   }
 
   // 放大

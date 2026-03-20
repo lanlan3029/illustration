@@ -26,11 +26,11 @@
         />
       </div>
 
-      <Scroll
-        key="material-scroll"
-        :on-reach-bottom="loadMore"
-        :height="scrollHeight"
-        :distance-to-edge="[-1, -1]"
+      <div
+        ref="scrollEl"
+        class="material-scroll"
+        :style="{ height: scrollHeight }"
+        @scroll="onScroll"
       >
         <div class="list">
           <div
@@ -52,7 +52,7 @@
 
         <div v-if="loading && showArr.length > 0" class="load-more-tip">加载中...</div>
         <div v-else-if="!hasMore && showArr.length > 0" class="load-more-tip">没有更多了</div>
-      </Scroll>
+      </div>
     </div>
   </div>
 </template>
@@ -61,8 +61,9 @@
 import useSelect from '@/components/editorPro/hooks/select';
 import useCalculate from '@/components/editorPro/hooks/useCalculate';
 import axios from 'axios';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Message } from 'view-ui-plus';
 
 const { canvasEditor } = useSelect();
 
@@ -94,12 +95,16 @@ const page = ref(1);
 const searchPage = ref(1);
 const hasMore = ref(true);
 const loading = ref(false);
+const hasRequestError = ref(false);
 let searchDebounceTimer = null;
 
 const isSearching = computed(() => String(searchInput.value || '').trim() !== '');
 const showArr = computed(() => (isSearching.value ? searchArr.value : pictureArr.value));
 
 const scrollHeight = computed(() => 'calc(100vh - 140px)');
+
+const scrollEl = ref(null);
+let scrollTicking = false;
 
 const getTypeLabel = (type) => t(`leftMenu.${type}`);
 
@@ -113,6 +118,21 @@ const getImageSrc = (item) => {
   }
   return `https://static.kidstory.cc/${content || ''}`;
 };
+
+function extractListFromApi(data) {
+  if (!data) return [];
+  // 优先直接数组字段
+  if (Array.isArray(data.message)) return data.message;
+  if (Array.isArray(data.list)) return data.list;
+  if (Array.isArray(data.items)) return data.items;
+  // 常见嵌套：data.data / data.data.data / data.data.list ...
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.data)) return data.data.data;
+  if (Array.isArray(data?.data?.list)) return data.data.list;
+  if (Array.isArray(data?.data?.items)) return data.data.items;
+  if (Array.isArray(data?.data?.message)) return data.data.message;
+  return [];
+}
 
 async function fetchPage(p) {
   if (loading.value || !hasMore.value) return;
@@ -147,10 +167,17 @@ async function fetchPage(p) {
       `/picture/?sort_param=heat&sort_num=desc&type=${selectType.value}&page=${p}`
     );
     const data = res.data || {};
-    const list = data.message || data.data || data.list || data.items || [];
-    const items = Array.isArray(list) ? list : [];
+    const items = extractListFromApi(data);
     pictureArr.value = p === 1 ? items : pictureArr.value.concat(items);
+    // 不依赖后端分页 meta 的字段命名；用返回数据是否为空判断是否还有下一页。
+    // 避免 meta 解析失败导致 hasMore 在第一页就变成 false，从而无法继续滚动加载。
     hasMore.value = items.length > 0;
+  } catch (e) {
+    // 网络错误/跨域错误等：停止继续翻页，避免重复触发弹窗
+    hasRequestError.value = true;
+    hasMore.value = false;
+    console.error('[material] fetchPage error', e);
+    Message.error('加载素材失败，请稍后重试');
   } finally {
     loading.value = false;
   }
@@ -163,18 +190,38 @@ async function fetchSearchPage(p) {
     const keyword = encodeURIComponent(String(searchInput.value || '').trim());
     const res = await axios.get(`/picture/?sort_param=heat&sort_num=desc&keyword=${keyword}&page=${p}`);
     const data = res.data || {};
-    const list = data.message || data.data || data.list || data.items || [];
-    const items = Array.isArray(list) ? list : [];
+    const items = extractListFromApi(data);
     searchArr.value = p === 1 ? items : searchArr.value.concat(items);
     hasMore.value = items.length > 0;
+  } catch (e) {
+    hasRequestError.value = true;
+    hasMore.value = false;
+    console.error('[material] fetchSearchPage error', e);
+    Message.error('加载素材失败，请稍后重试');
   } finally {
     loading.value = false;
   }
 }
 
+const autoLoadIfNeeded = async (limit = 5) => {
+  // 若内容高度不足以触发滚动（没有滚动条），就持续补充下一页
+  for (let i = 0; i < limit; i++) {
+    if (hasRequestError.value) return;
+    await nextTick();
+    const el = scrollEl.value;
+    if (!el) return;
+    const canScroll = el.scrollHeight > el.clientHeight + 5;
+    if (canScroll) return;
+    if (!hasMore.value) return;
+    if (loading.value || loadMoreLock.value) return;
+    await loadMore();
+  }
+};
+
 const select = async (index, type) => {
   selectIndex.value = index;
   selectType.value = type;
+  hasRequestError.value = false;
   page.value = 1;
   pictureArr.value = [];
   hasMore.value = true;
@@ -183,9 +230,22 @@ const select = async (index, type) => {
   searchArr.value = [];
   await fetchPage(1);
   page.value = 2;
+  await autoLoadIfNeeded();
 };
 
 const loadMore = async () => {
+  if (!hasMore.value || loading.value) return;
+  // 防止连续触发导致翻页 page/searchPage 错乱
+  if (loadMoreLock.value) return;
+  // eslint-disable-next-line no-console
+  console.log('[material] loadMore', {
+    page: page.value,
+    searchPage: searchPage.value,
+    selectType: selectType.value,
+    isSearching: isSearching.value,
+  });
+  loadMoreLock.value = true;
+  try {
   if (isSearching.value) {
     await fetchSearchPage(searchPage.value);
     if (hasMore.value) searchPage.value += 1;
@@ -193,6 +253,28 @@ const loadMore = async () => {
   }
   await fetchPage(page.value);
   if (hasMore.value) page.value += 1;
+  } finally {
+    loadMoreLock.value = false;
+  }
+};
+
+const loadMoreLock = ref(false);
+
+const onScroll = () => {
+  if (scrollTicking) return;
+  scrollTicking = true;
+  requestAnimationFrame(() => {
+    scrollTicking = false;
+    const el = scrollEl.value;
+    if (!el) return;
+    const remain = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // 离底部不足 60px 时触发
+    if (remain <= 60) {
+      // eslint-disable-next-line no-console
+      console.log('[material] reach bottom', { remain });
+      loadMore();
+    }
+  });
 };
 
 function loadImageEl(url) {
@@ -223,6 +305,7 @@ const handleDragEnd = async (item, e) => {
 };
 
 const loadSearch = (value) => {
+  hasRequestError.value = false;
   const v = String(value ?? '').trim();
   // debounce，避免输入时疯狂请求
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
@@ -238,10 +321,12 @@ const loadSearch = (value) => {
       pictureArr.value = [];
       await fetchPage(1);
       page.value = 2;
+      await autoLoadIfNeeded();
       return;
     }
     await fetchSearchPage(1);
     searchPage.value = 2;
+    await autoLoadIfNeeded();
   }, 250);
 };
 
@@ -249,6 +334,7 @@ onMounted(() => {
   // 初次加载默认 decoration
   fetchPage(1).then(() => {
     page.value = 2;
+    autoLoadIfNeeded();
   });
 });
 </script>
@@ -279,6 +365,10 @@ onMounted(() => {
   flex: 1;
   padding: 8px;
   min-width: 0;
+}
+.material-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .search {
   margin-bottom: 8px;

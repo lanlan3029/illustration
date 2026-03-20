@@ -57,13 +57,14 @@
                     />
                   </div>
                 </div>
-                <el-button 
-                  @click="login" 
+                <button
+                  @click="login"
                   class="btn btn-primary"
-                  :loading="loading"
+                  type="button"
+                  :disabled="loading"
                 >
-                  {{ $t('loginRegister.login') }}
-                </el-button>
+                  {{ loading ? $t('common.loading') || 'Loading...' : $t('loginRegister.login') }}
+                </button>
                 <div class="forgot-password">
                   <span @click="handleForgotPassword" class="forgot-password-link">
                     {{ $t('loginRegister.forgotPassword') }}
@@ -110,13 +111,14 @@
                     />
                   </div>
                 </div>
-                <el-button 
-                  @click="register" 
+                <button
+                  @click="register"
                   class="btn btn-primary"
-                  :loading="loading"
+                  type="button"
+                  :disabled="loading"
                 >
-                  {{ $t('loginRegister.register') }}
-                </el-button>
+                  {{ loading ? $t('common.loading') || 'Loading...' : $t('loginRegister.register') }}
+                </button>
                 <div class="toregister">
                   {{ $t('loginRegister.hasAccount') }}
                   <span @click="countIn">{{ $t('loginRegister.loginNow') }}</span>
