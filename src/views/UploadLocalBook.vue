@@ -66,7 +66,6 @@
 import { ElMessage } from 'element-plus'
 import { InfoFilled, Plus } from '@element-plus/icons-vue'
 import imageCompression from 'browser-image-compression'
-import watermarkUrl from '@/assets/logo/watermark.png'
 
 export default {
   components: {
@@ -105,54 +104,6 @@ export default {
       handlePictureCardPreview(file) {
         this.dialogImageUrl = file.url;
         this.dialogVisible = true;
-      },
-      // 为单个图片文件添加右下角 PNG 水印
-      async addWatermarkToFile(file) {
-        return new Promise((resolve, reject) => {
-          const img = new Image()
-          img.onload = () => {
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-
-            canvas.width = img.width
-            canvas.height = img.height
-
-            // 先画原图
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-
-            const watermarkImg = new Image()
-            watermarkImg.onload = () => {
-              // 水印宽度占原图宽度的比例
-              const scale = 0.2
-              const marginRatio = 0.03
-              const targetW = canvas.width * scale
-              const ratio = watermarkImg.height / watermarkImg.width
-              const targetH = targetW * ratio
-              const margin = canvas.width * marginRatio
-
-              const x = canvas.width - targetW - margin
-              const y = canvas.height - targetH - margin
-
-              ctx.drawImage(watermarkImg, x, y, targetW, targetH)
-
-              canvas.toBlob(
-                (blob) => {
-                  if (!blob) {
-                    reject(new Error('canvas toBlob failed'))
-                    return
-                  }
-                  resolve(blob)
-                },
-                file.type || 'image/jpeg',
-                0.9
-              )
-            }
-            watermarkImg.onerror = reject
-            watermarkImg.src = watermarkUrl
-          }
-          img.onerror = reject
-          img.src = URL.createObjectURL(file)
-        })
       },
       // 上传前的钩子，用于绕过默认的文件大小限制检查
       beforeUpload(file) {
@@ -562,20 +513,7 @@ export default {
                 this.$router.push('/');
                 return;
               }
-              // 新建模式：对每一页图片（包括封面）添加水印后再上传
-              const processedFiles = []
-              for (const file of this.fileList) {
-                try {
-                  const watermarkedBlob = await this.addWatermarkToFile(file)
-                  const watermarkedFile = new File([watermarkedBlob], file.name, { type: file.type || 'image/jpeg' })
-                  processedFiles.push(watermarkedFile)
-                } catch (e) {
-                  console.error('添加水印失败，使用原图上传:', e)
-                  processedFiles.push(file)
-                }
-              }
-
-              processedFiles.forEach((file) => {
+              this.fileList.forEach((file) => {
                 formData.append('pictures', file);
               });
               

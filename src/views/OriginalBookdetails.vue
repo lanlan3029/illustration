@@ -295,7 +295,6 @@
 // @ is an alias to /src
 
 
-import html2Canvas from "html2canvas";
 import JsPDF from "jspdf";
 import { mapState } from 'vuex'
 import { ElMessage } from 'element-plus'
@@ -916,87 +915,60 @@ async loadCollectIdMap() {
       this.$router.push({name:'user-g',params:{authorId:id}});
     },
 
-    downPDF() {
+    async downPDF() {
       this.disabled = true;
       ElMessage(this.$t('originalBookDetails.downloading'));
-
-      // 创建一个临时容器来包含所有页面内容用于PDF生成
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.width = '984.3px';
-      tempContainer.className = 'pdf-export-container';
-      
-      // 添加所有页面图片
-      this.allPages.forEach((item) => {
-        if (!this.isImageId(item)) {
-          const imgWrapper = document.createElement('div');
-          imgWrapper.style.width = '984.3px';
-          imgWrapper.style.height = '699px';
-          imgWrapper.style.marginBottom = '0';
-          
-          const img = document.createElement('img');
-          img.src = this.getImageUrl(item);
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'contain';
-          
-          imgWrapper.appendChild(img);
-          tempContainer.appendChild(imgWrapper);
-        }
+      // 统一页面尺寸：A4 横向（pt），兼容性和打印体验更好
+      const pdf = new JsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4',
       });
-      
-      document.body.appendChild(tempContainer);
-      
-      // 等待图片加载
-      setTimeout(() => {
-        html2Canvas(tempContainer, {
-          dpi: 172,
-          useCORS: true,
-          scale: 2,
-        }).then((canvas) => {
-          document.body.removeChild(tempContainer);
-          
-          var contentWidth = canvas.width;
-          var contentHeight = canvas.height;
-        
-          //一页pdf显示html页面生成的canvas高度;
-          var pageHeight = (contentWidth / 984.3) * 699;
-          //未生成pdf的html页面高度
-          var leftHeight = contentHeight;
-          //pdf页面偏移
-          var position = 0;
-          //a4纸的尺寸[595.28,841.89]，html页面生成的canvas在pdf中图片的宽高
-          var imgWidth = 984.3;
-          var imgHeight = (984.3 / contentWidth) * contentHeight;
-          var pageData = canvas.toDataURL("image/jpeg");
-          var pdf = new JsPDF("l", "pt", [imgWidth,699]);
-        
-          //有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
-          //当内容未超过pdf一页显示的范围，无需分页
-          if (leftHeight < pageHeight) {
-            pdf.addImage(pageData, "JPEG", 0, 0, imgWidth, imgHeight);
-          } else {
-            while (leftHeight > 0) {
-              pdf.addImage(pageData, "JPEG", 0, position, imgWidth, imgHeight);
-              leftHeight -= pageHeight;
-              position -= 699;
-              //避免添加空白页
-              if (leftHeight > 0) {
-                pdf.addPage();
-              }
-            }
-          }
-          //保存到本地
-          pdf.save("StoryTime.pdf");
-          this.disabled = false;
-        }).catch((error) => {
-          document.body.removeChild(tempContainer);
-          console.error('PDF生成失败:', error);
-          ElMessage.error(this.$t('originalBookDetails.pdfGenerationFailed'));
-          this.disabled = false;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const pages = (this.allPages || []).filter((item) => !this.isImageId(item));
+      if (!pages.length) {
+        this.disabled = false;
+        return;
+      }
+
+      const loadImage = (src) =>
+        new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
         });
-      }, 1000);
+
+      try {
+        for (let i = 0; i < pages.length; i++) {
+          const src = this.getImageUrl(pages[i]);
+          const img = await loadImage(src);
+          const imgW = img.naturalWidth || img.width;
+          const imgH = img.naturalHeight || img.height;
+          if (!imgW || !imgH) continue;
+
+          // 按原图比例缩放，整张图完整落在 PDF 页面内并居中
+          const scale = Math.min(pageWidth / imgW, pageHeight / imgH);
+          const renderW = imgW * scale;
+          const renderH = imgH * scale;
+          const x = (pageWidth - renderW) / 2;
+          const y = (pageHeight - renderH) / 2;
+
+          if (i > 0) {
+            pdf.addPage('a4', 'landscape');
+          }
+          pdf.addImage(img, 'JPEG', x, y, renderW, renderH);
+        }
+        pdf.save('StoryTime.pdf');
+      } catch (error) {
+        console.error('PDF生成失败:', error);
+        ElMessage.error(this.$t('originalBookDetails.pdfGenerationFailed'));
+      } finally {
+        this.disabled = false;
+      }
     },
   },
   async mounted() {
