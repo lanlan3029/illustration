@@ -638,6 +638,13 @@ export default {
       if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
         return url
       }
+      // 本地静态资源或 data/blob URL 直接使用，避免错误拼接到静态域名
+      if (
+        typeof url === 'string' &&
+        (url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:'))
+      ) {
+        return url
+      }
       // 否则添加静态资源前缀
       return `https://static.kidstory.cc/${url}`
     },
@@ -936,16 +943,27 @@ async loadCollectIdMap() {
       const loadImage = (src) =>
         new Promise((resolve, reject) => {
           const img = new Image();
-          img.crossOrigin = 'anonymous';
+          // 仅远程地址使用匿名跨域，本地资源不设置，避免部分浏览器加载失败
+          if (typeof src === 'string' && /^https?:\/\//.test(src)) {
+            img.crossOrigin = 'anonymous';
+          }
           img.onload = () => resolve(img);
-          img.onerror = reject;
+          img.onerror = () => reject(new Error(`image load failed: ${src}`));
           img.src = src;
         });
 
       try {
+        let addedCount = 0;
         for (let i = 0; i < pages.length; i++) {
           const src = this.getImageUrl(pages[i]);
-          const img = await loadImage(src);
+          let img;
+          try {
+            img = await loadImage(src);
+          } catch (e) {
+            // 单张失败不影响整体导出
+            console.warn('PDF页图片加载失败，已跳过:', e);
+            continue;
+          }
           const imgW = img.naturalWidth || img.width;
           const imgH = img.naturalHeight || img.height;
           if (!imgW || !imgH) continue;
@@ -957,10 +975,15 @@ async loadCollectIdMap() {
           const x = (pageWidth - renderW) / 2;
           const y = (pageHeight - renderH) / 2;
 
-          if (i > 0) {
+          if (addedCount > 0) {
             pdf.addPage('a4', 'landscape');
           }
           pdf.addImage(img, 'JPEG', x, y, renderW, renderH);
+          addedCount += 1;
+        }
+        if (addedCount === 0) {
+          ElMessage.error(this.$t('originalBookDetails.pdfGenerationFailed'));
+          return;
         }
         pdf.save('StoryTime.pdf');
       } catch (error) {
