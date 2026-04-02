@@ -141,7 +141,9 @@
                             <div class="result-actions">
                                 <el-button 
                                     type="primary" 
-                                    @click="collectCharacter">
+                                    @click="collectCharacter"
+                                    :loading="collecting"
+                                    :disabled="collecting">
                                     <i class="el-icon-star-on"></i> {{ $t('createCharacter.collectCharacter') }}
                                 </el-button>
                                 <el-button 
@@ -206,6 +208,7 @@ export default {
             // 处理状态
             processing: false, // 风格迁移处理中
             downloading: false,
+            collecting: false, // 收集角色中（图像分割耗时较长）
             
             // 结果
             resultImageUrl: null,
@@ -811,7 +814,8 @@ export default {
                         headers: {
                             'Content-Type': 'multipart/form-data',
                             'Authorization': 'Bearer ' + token
-                        }
+                        },
+                        timeout: 120000 // 2分钟超时：抠图分割耗时较长
                     });
                 } catch (fileError) {
                     // 如果File转换失败，使用JSON方式发送base64
@@ -828,7 +832,8 @@ export default {
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer ' + token
-                        }
+                        },
+                        timeout: 120000 // 2分钟超时
                     });
                 }
             } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
@@ -840,7 +845,8 @@ export default {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
-                    }
+                    },
+                    timeout: 120000 // 2分钟超时
                 });
             } else {
                 // 相对路径，转换为完整URL
@@ -852,7 +858,8 @@ export default {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
-                    }
+                    },
+                    timeout: 120000 // 2分钟超时
                 });
             }
             
@@ -891,6 +898,7 @@ export default {
                 return;
             }
             
+            this.collecting = true;
             try {
                 // 获取当前的角色数据
                 const result = this.resultImageData || {};
@@ -919,6 +927,8 @@ export default {
                 });
             } catch (error) {
                 ElMessage.error(this.$t('createCharacter.collectCharacterFailed', { message: error.message || this.$t('common.error') }));
+            } finally {
+                this.collecting = false;
             }
         },
         

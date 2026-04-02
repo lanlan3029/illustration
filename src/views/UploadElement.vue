@@ -450,7 +450,8 @@
                   headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token
-                  }
+                  },
+                  timeout: 120000 // 2分钟超时：抠图分割耗时较长
                 });
 
                 if (segmentResponse.data && segmentResponse.data.code === 0) {
