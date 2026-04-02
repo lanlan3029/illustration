@@ -872,6 +872,10 @@ export default {
                 if (imageURL) {
                     // 如果是完整的URL，直接返回
                     if (imageURL.startsWith('http://') || imageURL.startsWith('https://')) {
+                        // 使用 https，避免后端下载该 URL 时出现协议限制/失败
+                        if (imageURL.startsWith('http://')) {
+                            return imageURL.replace(/^http:\/\//, 'https://');
+                        }
                         return imageURL;
                     }
                     // 如果是base64，转换为data URI格式
