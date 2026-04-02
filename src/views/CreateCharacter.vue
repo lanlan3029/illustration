@@ -915,7 +915,6 @@ export default {
                     character_type: characterType,
                     description: description,
                     full_response: result.full_response,
-                    resultImageData: this.resultImageData,
                     segmentedImageUrl: segmentedImageUrl // 保存分割后的图片URL
                 };
                 localStorage.setItem('pendingCharacterData', JSON.stringify(characterDataForUpload));

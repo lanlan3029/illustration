@@ -291,46 +291,46 @@ onBeforeUnmount(() => {
 }
 
 .ivu-row .ivu-col {
-  position: inherit;
+    position: inherit;
 }
 
 .ivu-row .ivu-col__box {
-  display: flex;
-  align-items: center;
-  background: #f8f8f8;
-  border-radius: 4px;
-  gap: 8px;
-}
+      display: flex;
+      align-items: center;
+      background: #f8f8f8;
+      border-radius: 4px;
+      gap: 8px;
+  }
 
 .ivu-row .label {
-  padding-left: 8px;
-}
+    padding-left: 8px;
+  }
 
 .ivu-row .content {
-  flex: 1;
+    flex: 1;
 }
 
 .ivu-row .content :deep(.--input),
 .ivu-row .content :deep(.ivu-select-selection) {
-  background-color: transparent;
-  border: none !important;
-  box-shadow: none !important;
-}
+      background-color: transparent;
+      border: none !important;
+      box-shadow: none !important;
+    }
 
 /* 字体下拉列表 */
 .font-selector :deep(.ivu-select-item) {
-  padding: 1px 4px;
-}
+    padding: 1px 4px;
+  }
 
 .font-selector .font-item {
-  height: 40px;
-  width: 280px;
-  background-size: auto 28px;
-  background-repeat: no-repeat;
+    height: 40px;
+    width: 280px;
+    background-size: auto 28px;
+    background-repeat: no-repeat;
   display: flex;
   align-items: center;
   padding-left: 6px;
-}
+  }
 
 .font-selector .font-name {
   font-size: 13px;
@@ -354,74 +354,74 @@ onBeforeUnmount(() => {
 }
 
 .flex-item .label {
-  width: 32px;
-  height: 32px;
-  line-height: 32px;
-  display: inline-block;
-  font-size: 14px;
-  color: #333333;
-}
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    display: inline-block;
+    font-size: 14px;
+    color: #333333;
+  }
 
 .flex-item .content {
-  flex: 1;
-  width: 60px;
-}
+    flex: 1;
+    width: 60px;
+  }
 
 .flex-item .slider-box {
-  width: calc(100% - 50px);
-  margin-left: 10px;
-}
+    width: calc(100% - 50px);
+    margin-left: 10px;
+  }
 
 .flex-item .left {
-  flex: 1;
-}
+    flex: 1;
+  }
 
 .flex-item .right {
-  flex: 1;
-  margin-left: 10px;
+    flex: 1;
+    margin-left: 10px;
 }
 
 .flex-item .right :deep(.ivu-input-number) {
-  display: block;
-  width: 100%;
-}
+      display: block;
+      width: 100%;
+    }
 
 .flex-item :deep(.ivu-slider-wrap) {
-  margin: 13px 0;
-}
+    margin: 13px 0;
+  }
 
 /* Radio 按钮组 */
 .flex-item :deep(.ivu-radio-group-button) {
-  display: flex;
-  flex: 1;
-  width: 100%;
+    display: flex;
+    flex: 1;
+    width: 100%;
 }
 
 .flex-item :deep(.ivu-radio-group-button .ivu-radio-wrapper) {
-  width: 48px;
-  flex: 1;
-  line-height: 40px;
-  text-align: center;
+      width: 48px;
+      flex: 1;
+      line-height: 40px;
+      text-align: center;
 }
 
 .flex-item :deep(.ivu-radio-group-button .ivu-radio-wrapper svg) {
-  vertical-align: baseline;
-}
+        vertical-align: baseline;
+  }
 
 /* 按钮组 */
 .flex-item :deep(.ivu-btn-group) {
-  display: flex;
-  flex: 1;
+    display: flex;
+    flex: 1;
 }
 
 .flex-item :deep(.ivu-btn-group .ivu-btn) {
-  flex: 1;
-}
+      flex: 1;
+  }
 
 .flex-item :deep(.ivu-btn-group-large > .ivu-btn) {
-  font-size: 24px;
-  flex: 1;
-}
+      font-size: 24px;
+      flex: 1;
+    }
 
 /* 大号 Radio 字体 */
 .flex-item :deep(.ivu-radio-group-button.ivu-radio-group-large .ivu-radio-wrapper) {

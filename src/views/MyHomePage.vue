@@ -722,7 +722,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
         
         const response = await this.$http.get(apiUrl, {
           params: {
-            user_id: this.id
+            ownerid: this.id
           },
           headers: {
             'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')

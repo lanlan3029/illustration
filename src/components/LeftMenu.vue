@@ -181,7 +181,7 @@ export default {
                     ? `${process.env.VUE_APP_API_BASE_URL}/character`
                     : '/character';
                 const response = await this.$http.get(apiUrl, {
-                    params: { user_id: userId },
+                    params: { ownerid: userId },
                     headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }
                 });
                 let characterList = []
