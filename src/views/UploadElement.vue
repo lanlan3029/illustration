@@ -188,6 +188,7 @@
             disabled:false,
             isCharacterMode: false, // 是否为角色模式
             characterImageUrl: '', // 角色图片URL
+            characterImagePath: '', // 保存角色时提交给后端的 image_url（优先 localPath）
             characterData: null, // 角色数据
             form: {
               name: '',
@@ -220,7 +221,8 @@
             if (storedData) {
               try {
                 this.characterData = JSON.parse(storedData);
-                this.characterImageUrl = this.characterData.image_url || '';
+                this.characterImagePath = this.characterData.image_url || '';
+                this.characterImageUrl = this.characterData.preview_url || this.characterImagePath || '';
                 this.form.name = this.characterData.character_name || '';
                 this.form.category = this.characterData.character_type || '';
                 this.form.desc = this.characterData.description || '';
@@ -369,7 +371,7 @@
           async saveCharacter() {
             const hasName = !!this.form.name;
             const hasCategory = !!this.form.category;
-            const hasImage = !!this.characterImageUrl;
+            const hasImage = !!this.characterImagePath;
 
             if (!hasName || !hasCategory || !hasImage) {
               ElMessage({
@@ -384,7 +386,7 @@
 
             try {
               const token = localStorage.getItem('token') || '';
-              let imageUrl = this.characterImageUrl;
+              let imageUrl = this.characterImagePath;
               const isBase64 = imageUrl.startsWith('data:');
               
               // 步骤1：先创建角色（使用占位图或原图）
@@ -417,7 +419,7 @@
                 }
               });
 
-              const createResponse = await this.$http.post('/character/', createData, {
+              const createResponse = await this.$http.post('/character', createData, {
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': 'Bearer ' + token

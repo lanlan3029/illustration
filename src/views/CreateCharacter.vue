@@ -768,7 +768,7 @@ export default {
         
         // 图像分割：抠图只保留主体
         // 支持角色相关参数：character_id, character_type, description, tags, is_public
-        async segmentImage(imageUrl, characterParams = {}) {
+        async segmentImage(imageUrl, characterParams = {}, options = {}) {
             const token = localStorage.getItem('token') || '';
             
             let response;
@@ -865,17 +865,21 @@ export default {
             
             if (response.data && response.data.code === 0) {
                 const message = response.data.message || {};
-                
-                // 新接口返回格式：imageURL 或 foreground_image
-                const imageURL = message.imageURL || message.foreground_image || message.image_url;
-                
+                const meta = {
+                    imageURL: message.imageURL || message.foreground_image || message.image_url || '',
+                    localPath: message.localPath || '',
+                    filename: message.filename || ''
+                };
+
+                // collectCharacter 需要同时拿到 localPath 与 imageURL
+                if (options && options.returnMeta) {
+                    return meta;
+                }
+
+                const imageURL = meta.imageURL;
                 if (imageURL) {
                     // 如果是完整的URL，直接返回
                     if (imageURL.startsWith('http://') || imageURL.startsWith('https://')) {
-                        // 使用 https，避免后端下载该 URL 时出现协议限制/失败
-                        if (imageURL.startsWith('http://')) {
-                            return imageURL.replace(/^http:\/\//, 'https://');
-                        }
                         return imageURL;
                     }
                     // 如果是base64，转换为data URI格式
@@ -887,12 +891,10 @@ export default {
                         return `https://static.kidstory.cc/${imageURL}`;
                     }
                     return `https://static.kidstory.cc${imageURL}`;
-                } else {
-                    throw new Error(response.data?.message || '未获取到分割后的图片');
                 }
-            } else {
-                throw new Error(response.data?.message || '图像分割失败');
+                throw new Error(response.data?.message || '未获取到分割后的图片');
             }
+            throw new Error(response.data?.message || '图像分割失败');
         },
         
         // 收集角色：跳转到上传页面确认信息后保存
@@ -910,16 +912,19 @@ export default {
                 const description = this.form.prompt || result.prompt || result.description || '';
                 
                 // 先进行图像分割（不传递角色参数，因为会在上传页面确认后再创建/更新角色）
-                const segmentedImageUrl = await this.segmentImage(this.resultImageUrl);
+                const seg = await this.segmentImage(this.resultImageUrl, {}, { returnMeta: true });
                 
                 // 将角色数据存储到 localStorage，供 UploadElement.vue 使用
                 const characterDataForUpload = {
                     mode: 'character', // 标识这是角色模式
-                    image_url: segmentedImageUrl, // 使用分割后的图片
+                    // 保存角色时使用后端返回的 localPath（稳定、可持久化）
+                    image_url: seg.localPath || '',
+                    // 页面预览使用临时 imageURL
+                    preview_url: seg.imageURL || '',
+                    filename: seg.filename || '',
+                    localPath: seg.localPath || '',
                     character_type: characterType,
                     description: description,
-                    full_response: result.full_response,
-                    segmentedImageUrl: segmentedImageUrl // 保存分割后的图片URL
                 };
                 localStorage.setItem('pendingCharacterData', JSON.stringify(characterDataForUpload));
                 
@@ -1070,7 +1075,7 @@ export default {
                 if (!characterId) {
                     try {
                         const token = localStorage.getItem('token') || '';
-                        const createResponse = await this.$http.post('/character/', {
+                        const createResponse = await this.$http.post('/character', {
                             character_type: characterType,
                             description: description,
                             image_url: this.resultImageUrl, // 先使用原图作为占位
@@ -1144,7 +1149,7 @@ export default {
                 if (!characterId) {
                     try {
                         const token = localStorage.getItem('token') || '';
-                        const createResponse = await this.$http.post('/character/', {
+                        const createResponse = await this.$http.post('/character', {
                             character_type: characterType,
                             description: description,
                             image_url: this.resultImageUrl, // 先使用原图作为占位
@@ -1280,8 +1285,8 @@ export default {
                 // - /user/character
                 // - /api/character
                 const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/character/`
-                    : '/character/';
+                    ? `${this.apiBaseUrl}/character`
+                    : '/character';
                 
                 
                 const response = await this.$http.post(apiUrl, saveData, {

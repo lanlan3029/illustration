@@ -717,8 +717,8 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
       this.loadingCharacters = true; // 开始加载
       try {
         const apiUrl = process.env.VUE_APP_API_BASE_URL 
-          ? `${process.env.VUE_APP_API_BASE_URL}/character/`
-          : '/character/';
+          ? `${process.env.VUE_APP_API_BASE_URL}/character`
+          : '/character';
         
         const response = await this.$http.get(apiUrl, {
           params: {
