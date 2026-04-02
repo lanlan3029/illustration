@@ -417,7 +417,7 @@
                 }
               });
 
-              const createResponse = await this.$http.post('/character', createData, {
+              const createResponse = await this.$http.post('/character/', createData, {
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': 'Bearer ' + token

@@ -546,12 +546,12 @@ export default {
                 }
                 
                 const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/character`
-                    : '/character';
+                    ? `${this.apiBaseUrl}/character/`
+                    : '/character/';
                 
                 const response = await this.$http.get(apiUrl, {
                     params: {
-                        user_id: userId
+                        ownerid: userId
                     },
                     headers: {
                         'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')

@@ -178,8 +178,8 @@ export default {
                     return
                 }
                 const apiUrl = process.env.VUE_APP_API_BASE_URL 
-                    ? `${process.env.VUE_APP_API_BASE_URL}/character`
-                    : '/character';
+                    ? `${process.env.VUE_APP_API_BASE_URL}/character/`
+                    : '/character/';
                 const response = await this.$http.get(apiUrl, {
                     params: { ownerid: userId },
                     headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }

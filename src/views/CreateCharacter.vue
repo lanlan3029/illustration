@@ -1066,7 +1066,7 @@ export default {
                 if (!characterId) {
                     try {
                         const token = localStorage.getItem('token') || '';
-                        const createResponse = await this.$http.post('/character', {
+                        const createResponse = await this.$http.post('/character/', {
                             character_type: characterType,
                             description: description,
                             image_url: this.resultImageUrl, // 先使用原图作为占位
@@ -1140,7 +1140,7 @@ export default {
                 if (!characterId) {
                     try {
                         const token = localStorage.getItem('token') || '';
-                        const createResponse = await this.$http.post('/character', {
+                        const createResponse = await this.$http.post('/character/', {
                             character_type: characterType,
                             description: description,
                             image_url: this.resultImageUrl, // 先使用原图作为占位
@@ -1276,8 +1276,8 @@ export default {
                 // - /user/character
                 // - /api/character
                 const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/character`
-                    : '/character';
+                    ? `${this.apiBaseUrl}/character/`
+                    : '/character/';
                 
                 
                 const response = await this.$http.post(apiUrl, saveData, {
