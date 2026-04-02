@@ -387,12 +387,17 @@
             try {
               const token = localStorage.getItem('token') || '';
               let imageUrl = this.characterImagePath;
+              // 后端要求：Base64 或有效的 http/https 图片 URL。localPath（如 upload/xxx.png）需要转换为可访问 URL。
+              if (imageUrl && !imageUrl.startsWith('data:') && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                const normalized = String(imageUrl).replace(/^\/+/, '');
+                imageUrl = `https://static.kidstory.cc/${normalized}`;
+              }
               const isBase64 = imageUrl.startsWith('data:');
               
               // 步骤1：先创建角色（使用占位图或原图）
               let characterId = null;
               
-              // 如果图片是 base64，尝试从 characterData 中获取外部URL作为占位图
+              // 创建接口要求传 Base64 或有效 URL，这里使用规范化后的 imageUrl 作为占位图
               let placeholderImageUrl = imageUrl;
               if (isBase64 && this.characterData && this.characterData.full_response) {
                 const fullResponse = this.characterData.full_response;
