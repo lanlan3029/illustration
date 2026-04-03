@@ -533,7 +533,7 @@
     "generateFailed": "生成失败，请重试",
     "pleaseLogin": "请先登录",
     "savingImage": "正在保存第 {number} 张插画...",
-    "promptPrefix": "画面风格保持不变，大师级作品，（如果有人物，人物不要出现畸形）画面主体做如下修改，",
+    "promptPrefix": "画面风格保持不变，大师级作品，（如果有人物，人物不要出现畸形）纯色背景，不要黑色背景，画面主体做如下修改，",
     "imageSaved": "第 {number} 张插画已保存到\"我的插画\"",
     "collectFailed": "收集插画失败: {message}",
     "saveFailed": "保存失败",

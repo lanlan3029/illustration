@@ -522,7 +522,7 @@
     "collectFailed": "Failed to collect illustration: {message}",
     "saveFailed": "Save failed",
     "saveFailedRetry": "Save failed, please try again",
-    "promptPrefix": "Keep the image style unchanged, master-level work, (if there is a character, the character should not be deformed) the main subject is modified as follows: "
+    "promptPrefix": "Keep the image style unchanged, master-level work, (if there is a character, the character should not be deformed) Use a solid color background, not black. The main subject is modified as follows: "
   },
   "createLayoutIllustration": {
     "myCharacters": "My Characters",
