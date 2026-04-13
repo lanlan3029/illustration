@@ -1214,12 +1214,35 @@ async loadCollectIdMap() {
 
 .header-actions .iconfont {
   font-size: 28px;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
 }
 
 .collect-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  padding: 0 8px !important;
+  line-height: 1 !important;
+  vertical-align: middle;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collect-btn :deep(.el-button__content) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  margin: 0;
+  padding: 0;
 }
 
 .collect-btn:hover {
@@ -1232,6 +1255,7 @@ async loadCollectIdMap() {
 
 .collect-animate {
   animation: collectPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
 }
 
 @keyframes collectPulse {
