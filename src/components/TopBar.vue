@@ -15,18 +15,14 @@
           <li class="nav-item" :class="{ 'active': route.path === '/' }">
             <router-link to="/" class="nav-link" @click="closeSubmenu">{{ $t('nav.home') || '首页' }}</router-link>
           </li>
-          <li class="nav-item" :class="{ 'active': route.path === '/ai-picture' }">
-            <router-link to="/ai-picture" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiIllustration') }}</router-link>
-          </li>
-          <li class="nav-item" :class="{ 'active': route.path === '/AIbooks' }">
-            <router-link to="/AIbooks" class="nav-link" @click="closeSubmenu">{{ $t('nav.aiBooks') }}</router-link>
-          </li>
 
-          <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation' }">
+          <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation', 'active': isCreationNavActive }">
             <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('creation')">
               {{ $t('nav.creation') }}
             </a>
             <ul class="dropdown-menu">
+              <li><router-link to="/ai-picture" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.aiIllustration') }}</router-link></li>
+              <li><router-link to="/AIbooks" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.aiBooks') }}</router-link></li>
               <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createCharacter') }}</router-link></li>
               <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createGroupImages') }}</router-link></li>
               <li><router-link to="/create-layout-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createLayoutIllustration') }}</router-link></li>
@@ -187,6 +183,20 @@ export default {
         
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
+
+        /** 创作入口下任一子路由（含 AI 插画 / AI 绘本）时高亮「创作」 */
+        const isCreationNavActive = computed(() => {
+            const p = route.path
+            return (
+                p === '/ai-picture' ||
+                p === '/AIbooks' ||
+                p.startsWith('/create-character') ||
+                p.startsWith('/create-group-images') ||
+                p.startsWith('/create-layout-illustration') ||
+                p.startsWith('/editorpro') ||
+                p.startsWith('/user/upload/compose-illustration')
+            )
+        })
         
         // 当前语言（使用 ref 以便双向绑定）
         const currentLanguage = ref(locale.value)
@@ -469,6 +479,7 @@ export default {
             attentionArr,
             searchArry,
             route,
+            isCreationNavActive,
             currentLanguage,
             toggleLanguage,
             handleLanguageChange,
