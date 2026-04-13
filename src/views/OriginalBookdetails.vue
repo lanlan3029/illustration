@@ -68,7 +68,7 @@
         <!-- 单页显示（横版绘本） -->
         <div v-if="!isSpreadMode" class="book-page single-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
           <div class="page-content">
-            <transition :name="flipDirection">
+            <transition name="page-flip">
               <div :key="currentPageIndex" class="page-content-inner">
                 <div v-if="getCurrentPageContent()" class="page-image-wrapper">
                   <div v-if="isImageId(getCurrentPageContent())" class="image-loading">
@@ -142,7 +142,7 @@
         <!-- 双页显示（竖版书页） -->
         <div v-else class="book-page spread-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
           <div class="spread-content">
-            <transition :name="flipDirection">
+            <transition name="page-flip">
               <div :key="currentPageIndex" class="spread-content-inner">
                 <!-- 左页 -->
                 <div class="spread-page-left">
@@ -323,7 +323,6 @@ export default {
       isFlipping: false, // 是否正在翻页
       showFlipButton: false, // 是否显示右侧翻页按钮
       showPrevButton: false, // 是否显示左侧翻页按钮
-      flipDirection: 'slide-left', // 翻页方向：slide-left（向右翻）或 slide-right（向左翻）
       collectIdMap: {}, // 保存绘本ID到收藏记录ID的映射
       isCollecting: false, // 收藏按钮点击动画状态
       isFollowingAnimating: false, // 关注按钮点击动画状态
@@ -434,13 +433,12 @@ export default {
       if (this.currentPageIndex > 0 && !this.isFlipping) {
         this.isFlipping = true;
         this.showPrevButton = false; // 翻页时隐藏按钮
-        this.flipDirection = 'slide-right'; // 向左翻页
         // 双页模式：每次减1（代表一屏）
         // 单页模式：每次减1（代表一页）
         this.currentPageIndex--;
         setTimeout(() => {
           this.isFlipping = false;
-        }, 440);
+        }, 300);
       }
     },
     // 下一页
@@ -448,13 +446,12 @@ export default {
       if (this.currentPageIndex < this.totalPages - 1 && !this.isFlipping) {
         this.isFlipping = true;
         this.showFlipButton = false; // 翻页时隐藏按钮
-        this.flipDirection = 'slide-left'; // 向右翻页
         // 双页模式：每次加1（代表一屏，包含2页）
         // 单页模式：每次加1（代表一页）
         this.currentPageIndex++;
         setTimeout(() => {
           this.isFlipping = false;
-        }, 440);
+        }, 300);
       }
     },
     // 键盘快捷键支持
@@ -1558,56 +1555,23 @@ async loadCollectIdMap() {
   transform: scale(0.8);
 }
 
-/* 翻页：下一页 — 旧页向左淡出，新页从右侧进入 */
-.slide-left-enter-active,
-.slide-left-leave-active {
-  transition:
-    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+/* 翻页：轻量交叉淡入淡出（无位移，上一页/下一页同一套） */
+.page-flip-enter-active,
+.page-flip-leave-active {
+  transition: opacity 0.26s ease;
 }
 
-.slide-left-enter-active {
+.page-flip-enter-active {
   z-index: 2;
 }
 
-.slide-left-leave-active {
+.page-flip-leave-active {
   z-index: 1;
 }
 
-.slide-left-enter-from {
+.page-flip-enter-from,
+.page-flip-leave-to {
   opacity: 0;
-  transform: translate3d(28px, 0, 0);
-}
-
-.slide-left-leave-to {
-  opacity: 0;
-  transform: translate3d(-28px, 0, 0);
-}
-
-/* 翻页：上一页 — 旧页向右淡出，新页从左侧进入 */
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition:
-    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.slide-right-enter-active {
-  z-index: 2;
-}
-
-.slide-right-leave-active {
-  z-index: 1;
-}
-
-.slide-right-enter-from {
-  opacity: 0;
-  transform: translate3d(-28px, 0, 0);
-}
-
-.slide-right-leave-to {
-  opacity: 0;
-  transform: translate3d(28px, 0, 0);
 }
 
 .page-image-wrapper {
