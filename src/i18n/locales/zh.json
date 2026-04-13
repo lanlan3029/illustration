@@ -548,6 +548,7 @@
         "unnamedCharacter": "未命名角色",
         "layoutEditor": "布局编辑器",
         "promptSettings": "提示词设置",
+        "characterTabsHint": "请切换下方标签页，逐个编辑每位角色的位置、大小与提示词，避免遗漏。",
         "character": "角色 {number}",
         "promptPlaceholder": "输入{character}的描述...",
         "dragCharacterHint": "从左侧拖拽角色到布局编辑器中",

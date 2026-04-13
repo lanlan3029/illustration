@@ -168,12 +168,20 @@
                                     class="layout-box"
                                     :class="{ 
                                         'selected': selectedBoxId === box.id,
-                                        'locked': box.locked
+                                        'locked': box.locked,
+                                        'has-image': !!getBoxPreviewImageUrl(box)
                                     }"
                                     :style="getBoxStyle(box)"
                                     @mousedown.stop="handleBoxMouseDown(box.id, $event)"
                                     @click.stop="selectBox(box.id)">
-                                    
+                                    <!-- 角色参考图预览 -->
+                                    <div v-if="getBoxPreviewImageUrl(box)" class="layout-box-preview">
+                                        <img
+                                            :src="getBoxPreviewImageUrl(box)"
+                                            alt=""
+                                            draggable="false"
+                                        />
+                                    </div>
                                     <!-- 布局框标签 -->
                                     <div class="box-label">
                                         {{ box.label || `角色${box.id}` }}
@@ -228,105 +236,96 @@
                             </div>
                         </div>
                         
-                        <!-- 选中布局框的属性设置 -->
-                        <div v-if="selectedBox" class="selected-box-properties">
-                            <div class="properties-header">
-                                <span>{{ selectedBox.label || $t('createLayoutIllustration.character', { number: selectedBox.id }) }}</span>
-                                <el-button 
-                                    size="mini" 
-                                    type="text" 
-                                    @click="removeLayoutBox(selectedBox.id)"
-                                    class="remove-box-btn">
-                                    <i class="el-icon-delete"></i>
-                                </el-button>
-                            </div>
-                            
-                            <div class="properties-content">
-                                <!-- 位置设置 -->
-                                <div class="property-group property-group-inline">
-                                    <label>{{ $t('createLayoutIllustration.position') || '位置' }}</label>
-                                    <div class="property-row">
-                                        <el-input-number
-                                            v-model="selectedBox.position.xPercent"
-                                            :min="0"
-                                            :max="100"
-                                            :step="1"
-                                            size="small"
-                                            @change="updateBoxPosition(selectedBox.id)">
-                                            <template #prepend>X</template>
-                                            <template #append>%</template>
-                                        </el-input-number>
-                                        <el-input-number
-                                            v-model="selectedBox.position.yPercent"
-                                            :min="0"
-                                            :max="100"
-                                            :step="1"
-                                            size="small"
-                                            @change="updateBoxPosition(selectedBox.id)">
-                                            <template #prepend>Y</template>
-                                            <template #append>%</template>
-                                        </el-input-number>
+                        <!-- 每位角色独立标签页：位置 / 大小 / Prompt -->
+                        <div v-if="layoutBoxes.length > 0" class="character-tabs-section">
+                            <p class="character-tabs-hint">{{ $t('createLayoutIllustration.characterTabsHint') }}</p>
+                            <el-tabs
+                                v-model="characterPropsTab"
+                                class="character-props-tabs"
+                                type="card"
+                                @tab-change="handleCharacterTabChange">
+                                <el-tab-pane
+                                    v-for="box in layoutBoxes"
+                                    :key="box.id"
+                                    :name="String(box.id)">
+                                    <template #label>
+                                        <span class="character-tab-label">
+                                            <span class="character-tab-title">{{ box.label || $t('createLayoutIllustration.character', { number: box.id }) }}</span>
+                                            <el-button
+                                                type="danger"
+                                                link
+                                                size="small"
+                                                class="character-tab-remove"
+                                                @click.stop="removeLayoutBox(box.id)">
+                                                <i class="el-icon-delete"></i>
+                                            </el-button>
+                                        </span>
+                                    </template>
+                                    <div class="properties-content">
+                                        <div class="property-group property-group-inline">
+                                            <label>{{ $t('createLayoutIllustration.position') || '位置' }}</label>
+                                            <div class="property-row">
+                                                <el-input-number
+                                                    v-model="box.position.xPercent"
+                                                    :min="0"
+                                                    :max="100"
+                                                    :step="1"
+                                                    size="small"
+                                                    @change="updateBoxPosition(box.id)">
+                                                    <template #prepend>X</template>
+                                                    <template #append>%</template>
+                                                </el-input-number>
+                                                <el-input-number
+                                                    v-model="box.position.yPercent"
+                                                    :min="0"
+                                                    :max="100"
+                                                    :step="1"
+                                                    size="small"
+                                                    @change="updateBoxPosition(box.id)">
+                                                    <template #prepend>Y</template>
+                                                    <template #append>%</template>
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+                                        <div class="property-group property-group-inline">
+                                            <label>{{ $t('createLayoutIllustration.size') || '大小' }}</label>
+                                            <div class="property-row">
+                                                <el-input-number
+                                                    v-model="box.size.widthPercent"
+                                                    :min="5"
+                                                    :max="100"
+                                                    :step="1"
+                                                    size="small"
+                                                    @change="updateBoxSize(box.id)">
+                                                    <template #prepend>{{ $t('createLayoutIllustration.width') || '宽' }}</template>
+                                                    <template #append>%</template>
+                                                </el-input-number>
+                                                <el-input-number
+                                                    v-model="box.size.heightPercent"
+                                                    :min="5"
+                                                    :max="100"
+                                                    :step="1"
+                                                    size="small"
+                                                    @change="updateBoxSize(box.id)">
+                                                    <template #prepend>{{ $t('createLayoutIllustration.height') || '高' }}</template>
+                                                    <template #append>%</template>
+                                                </el-input-number>
+                                            </div>
+                                        </div>
+                                        <div class="property-group">
+                                            <label>Prompt</label>
+                                            <el-input
+                                                v-model="box.prompt"
+                                                type="textarea"
+                                                :rows="4"
+                                                :placeholder="$t('createLayoutIllustration.promptPlaceholder', { character: box.label || box.id })"
+                                                maxlength="200"
+                                                show-word-limit>
+                                            </el-input>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <!-- 大小设置 -->
-                                <div class="property-group property-group-inline">
-                                    <label>{{ $t('createLayoutIllustration.size') || '大小' }}</label>
-                                    <div class="property-row">
-                                        <el-input-number
-                                            v-model="selectedBox.size.widthPercent"
-                                            :min="5"
-                                            :max="100"
-                                            :step="1"
-                                            size="small"
-                                            @change="updateBoxSize(selectedBox.id)">
-                                            <template #prepend>{{ $t('createLayoutIllustration.width') || '宽' }}</template>
-                                            <template #append>%</template>
-                                        </el-input-number>
-                                        <el-input-number
-                                            v-model="selectedBox.size.heightPercent"
-                                            :min="5"
-                                            :max="100"
-                                            :step="1"
-                                            size="small"
-                                            @change="updateBoxSize(selectedBox.id)">
-                                            <template #prepend>{{ $t('createLayoutIllustration.height') || '高' }}</template>
-                                            <template #append>%</template>
-                                        </el-input-number>
-                                    </div>
-                                </div>
-
-                                <!-- Prompt 输入 -->
-                                <div class="property-group">
-                                    <label>Prompt</label>
-                                    <el-input
-                                        v-model="selectedBox.prompt"
-                                        type="textarea"
-                                        :rows="4"
-                                        :placeholder="$t('createLayoutIllustration.promptPlaceholder', { character: selectedBox.label || selectedBox.id })"
-                                        maxlength="200"
-                                        show-word-limit>
-                                    </el-input>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 所有布局框列表 -->
-                        <div v-if="!selectedBox && layoutBoxes.length > 0" class="all-boxes-list">
-                            <div 
-                                v-for="box in layoutBoxes" 
-                                :key="box.id"
-                                class="box-list-item"
-                                @click="selectBoxInEditor(box.id)">
-                                <span>{{ box.label || $t('createLayoutIllustration.character', { number: box.id }) }}</span>
-                                <el-button 
-                                    size="mini" 
-                                    type="text" 
-                                    @click.stop="removeLayoutBox(box.id)"
-                                    class="remove-box-btn">
-                                    <i class="el-icon-delete"></i>
-                                </el-button>
-                            </div>
+                                </el-tab-pane>
+                            </el-tabs>
                         </div>
                         
                         <!-- 如果没有布局框，显示提示 -->
@@ -439,6 +438,8 @@ export default {
             
             // 选中的布局框ID
             selectedBoxId: null,
+            /** 右侧属性面板当前标签页（与 layoutBoxes[].id 对应，字符串） */
+            characterPropsTab: '',
             
             // 布局编辑器相关
             showGrid: false,
@@ -516,6 +517,15 @@ export default {
             };
         }
     },
+    watch: {
+        selectedBoxId(val) {
+            if (val != null && this.layoutBoxes.some(b => b.id === val)) {
+                this.characterPropsTab = String(val);
+            } else if (val == null) {
+                this.characterPropsTab = '';
+            }
+        }
+    },
     mounted() {
         this.loadCharacters();
         // 延迟设置拖拽监听，确保画布已渲染
@@ -591,6 +601,20 @@ export default {
                 return imageUrl;
             }
             
+            return `https://static.kidstory.cc/${imageUrl}`;
+        },
+
+        /** 布局框内预览图 URL（与生成逻辑一致） */
+        getBoxPreviewImageUrl(box) {
+            const raw = box && box.characterImageUrl;
+            if (!raw || !String(raw).trim()) return '';
+            const imageUrl = String(raw).trim();
+            if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+                return imageUrl;
+            }
+            if (imageUrl.startsWith('data:')) {
+                return imageUrl;
+            }
             return `https://static.kidstory.cc/${imageUrl}`;
         },
         
@@ -687,8 +711,26 @@ export default {
         // 移除布局框
         removeLayoutBox(boxId) {
             const index = this.layoutBoxes.findIndex(box => box.id === boxId);
-            if (index > -1) {
-                this.layoutBoxes.splice(index, 1);
+            if (index === -1) return;
+            const wasActiveTab = String(this.characterPropsTab) === String(boxId);
+            this.layoutBoxes.splice(index, 1);
+            if (this.layoutBoxes.length === 0) {
+                this.selectedBoxId = null;
+                this.characterPropsTab = '';
+                return;
+            }
+            if (wasActiveTab || this.selectedBoxId === boxId) {
+                const next = this.layoutBoxes[Math.min(index, this.layoutBoxes.length - 1)];
+                this.characterPropsTab = String(next.id);
+                this.selectBox(next.id);
+            }
+        },
+
+        handleCharacterTabChange(name) {
+            if (name === undefined || name === null || name === '') return;
+            const id = typeof name === 'number' ? name : parseInt(String(name), 10);
+            if (!Number.isNaN(id)) {
+                this.selectBox(id);
             }
         },
         
@@ -1864,6 +1906,40 @@ export default {
     padding: 10px 0;
 }
 
+.character-tabs-section {
+    margin-top: 4px;
+}
+
+.character-tabs-hint {
+    font-size: 12px;
+    color: #909399;
+    line-height: 1.5;
+    margin: 0 0 12px 0;
+}
+
+.character-props-tabs :deep(.el-tabs__header) {
+    margin-bottom: 14px;
+}
+
+.character-tab-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 148px;
+}
+
+.character-tab-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.character-tab-remove {
+    flex-shrink: 0;
+    padding: 0 4px !important;
+    min-height: auto !important;
+}
+
 .selected-box-properties {
     margin-bottom: 20px;
 }
@@ -2180,6 +2256,30 @@ export default {
     cursor: move;
     box-sizing: border-box;
     transition: border-color 0.2s;
+    overflow: hidden;
+}
+
+.layout-box.has-image {
+    background: rgba(245, 245, 245, 0.95);
+}
+
+.layout-box-preview {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.layout-box-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
 }
 
 .layout-box.selected {
@@ -2197,6 +2297,7 @@ export default {
     position: absolute;
     top: -24px;
     left: 0;
+    z-index: 2;
     background: #409eff;
     color: #fff;
     padding: 2px 8px;
@@ -2211,6 +2312,7 @@ export default {
 
 .resize-handle {
     position: absolute;
+    z-index: 3;
     width: 8px;
     height: 8px;
     background: #67c23a;
@@ -2232,6 +2334,7 @@ export default {
     position: absolute;
     top: 4px;
     right: 4px;
+    z-index: 2;
     color: #909399;
     font-size: 16px;
 }

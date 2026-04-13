@@ -533,6 +533,7 @@
     "unnamedCharacter": "Unnamed Character",
     "layoutEditor": "Layout Editor",
     "promptSettings": "Prompt Settings",
+    "characterTabsHint": "Switch tabs below to edit each character's position, size, and prompt so nothing is missed.",
     "character": "Character {number}",
         "promptPlaceholder": "Enter description for {character}...",
         "dragCharacterHint": "Drag characters from the left to the layout editor",
