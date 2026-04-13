@@ -68,7 +68,7 @@
         <!-- 单页显示（横版绘本） -->
         <div v-if="!isSpreadMode" class="book-page single-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
           <div class="page-content">
-            <transition :name="flipDirection" mode="out-in">
+            <transition :name="flipDirection">
               <div :key="currentPageIndex" class="page-content-inner">
                 <div v-if="getCurrentPageContent()" class="page-image-wrapper">
                   <div v-if="isImageId(getCurrentPageContent())" class="image-loading">
@@ -116,7 +116,6 @@
                 <el-button 
                   v-if="showFlipButton && currentPageIndex < totalPages - 1"
                   class="flip-button"
-                  circle
                   size="large">
                   <el-icon><ArrowRightBold /></el-icon>
                 </el-button>
@@ -132,7 +131,6 @@
                 <el-button 
                   v-if="showPrevButton && currentPageIndex > 0"
                   class="flip-button"
-                  circle
                   size="large">
                   <el-icon><ArrowLeftBold /></el-icon>
                 </el-button>
@@ -144,7 +142,7 @@
         <!-- 双页显示（竖版书页） -->
         <div v-else class="book-page spread-page" @click="handlePageClick" :class="{ 'flipping': isFlipping }">
           <div class="spread-content">
-            <transition :name="flipDirection" mode="out-in">
+            <transition :name="flipDirection">
               <div :key="currentPageIndex" class="spread-content-inner">
                 <!-- 左页 -->
                 <div class="spread-page-left">
@@ -225,7 +223,6 @@
                 <el-button 
                   v-if="showFlipButton && currentPageIndex < totalPages - 1"
                   class="flip-button"
-                  circle
                   size="large">
                   <el-icon><ArrowRightBold /></el-icon>
                 </el-button>
@@ -241,7 +238,6 @@
                 <el-button 
                   v-if="showPrevButton && currentPageIndex > 0"
                   class="flip-button"
-                  circle
                   size="large">
                   <el-icon><ArrowLeftBold /></el-icon>
                 </el-button>
@@ -257,7 +253,6 @@
           class="page-btn prev-btn"
           :disabled="currentPageIndex <= 0"
           @click="prevPage"
-          circle
           size="large">
           <el-icon><ArrowLeftBold /></el-icon>
         </el-button>
@@ -280,7 +275,6 @@
           class="page-btn next-btn"
           :disabled="currentPageIndex >= totalPages - 1"
           @click="nextPage"
-          circle
           size="large">
           <el-icon><ArrowRightBold /></el-icon>
         </el-button>
@@ -446,7 +440,7 @@ export default {
         this.currentPageIndex--;
         setTimeout(() => {
           this.isFlipping = false;
-        }, 500);
+        }, 440);
       }
     },
     // 下一页
@@ -460,7 +454,7 @@ export default {
         this.currentPageIndex++;
         setTimeout(() => {
           this.isFlipping = false;
-        }, 500);
+        }, 440);
       }
     },
     // 键盘快捷键支持
@@ -1357,9 +1351,11 @@ async loadCollectIdMap() {
 }
 
 .spread-content-inner {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  position: relative;
+  box-sizing: border-box;
   display: flex;
 }
 
@@ -1410,9 +1406,11 @@ async loadCollectIdMap() {
 }
 
 .page-content-inner {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  position: relative;
+  box-sizing: border-box;
 }
 
 /* 书页边缘效果 - 使用背景图片 */
@@ -1474,6 +1472,14 @@ async loadCollectIdMap() {
 }
 
 .flip-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 44px !important;
+  height: 40px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  line-height: 1 !important;
   background: rgba(255, 255, 255, 0.3) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1483,15 +1489,34 @@ async loadCollectIdMap() {
   transition: all 0.3s ease;
 }
 
+.flip-button :deep(.el-button__content) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+}
+
+.flip-button :deep(.el-icon) {
+  margin: 0 !important;
+  color: #303133;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flip-button :deep(.el-icon svg) {
+  display: block;
+}
+
 .flip-button:hover {
   background: rgba(255, 255, 255, 0.4) !important;
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.flip-button :deep(.el-icon) {
-  color: #303133;
 }
 
 /* 淡入淡出动画 */
@@ -1507,6 +1532,58 @@ async loadCollectIdMap() {
 .fade-leave-to {
   opacity: 0;
   transform: scale(0.8);
+}
+
+/* 翻页：下一页 — 旧页向左淡出，新页从右侧进入 */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition:
+    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-left-enter-active {
+  z-index: 2;
+}
+
+.slide-left-leave-active {
+  z-index: 1;
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translate3d(28px, 0, 0);
+}
+
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translate3d(-28px, 0, 0);
+}
+
+/* 翻页：上一页 — 旧页向右淡出，新页从左侧进入 */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition:
+    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-right-enter-active {
+  z-index: 2;
+}
+
+.slide-right-leave-active {
+  z-index: 1;
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translate3d(-28px, 0, 0);
+}
+
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translate3d(28px, 0, 0);
 }
 
 .page-image-wrapper {
@@ -1551,13 +1628,36 @@ async loadCollectIdMap() {
 }
 
 .page-btn {
-  width: 32px;
-  height: 32px;
+  min-width: 40px !important;
+  width: auto !important;
+  height: 36px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
   font-size: 16px;
   border: none;
   background: #8167a9;
   color: #fff;
   transition: all 0.3s;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.page-btn :deep(.el-button__content) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+}
+
+.page-btn :deep(.el-icon) {
+  margin: 0 !important;
+}
+
+.page-btn :deep(.el-icon svg) {
+  display: block;
 }
 
 .page-btn:hover:not(:disabled) {
