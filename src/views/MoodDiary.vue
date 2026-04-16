@@ -23,9 +23,9 @@
       </div>
 
       <div class="illustration-generator">
-        <h3 class="section-title">{{ $t('moodDiary.generateMoodTitle') }}</h3>
+       
         <div class="generator-row">
-          <span class="field-label">{{ $t('moodDiary.style') }}</span>
+          
           <div class="style-strip" role="list">
             <button
               v-for="style in popularStyles"
@@ -524,7 +524,9 @@ export default {
   margin-top: 12px;
   border: 1px solid #ebeef5;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 52vh;
   background: #f8f8fb;
 }
 
@@ -534,11 +536,15 @@ export default {
   padding: 10px 12px 12px;
   background: #fff;
   border-top: 1px solid #ebeef5;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
 }
 
 .generated-image {
   width: 100%;
   min-height: 220px;
+  display: block;
 }
 
 .dialog-title {
