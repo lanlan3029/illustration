@@ -4,21 +4,23 @@
       <h1 class="page-title">{{ $t('moodDiary.title') }}</h1>
      
 
-      <div v-if="selectedMood" class="selected-mood">
-        <div class="selected-mood-icon-wrap">
-          <img :src="selectedMood.src" :alt="selectedMood.label" class="selected-mood-icon" />
-        </div>
-       
+      <div class="diary-input-wrap">
+        <img
+          v-if="selectedMood"
+          :src="selectedMood.src"
+          :alt="selectedMood.label"
+          class="diary-mood-bg"
+        />
+        <el-input
+          v-model="diaryContent"
+          type="textarea"
+          :rows="8"
+          :placeholder="$t('moodDiary.entryPlaceholder')"
+          maxlength="1000"
+          show-word-limit
+          class="diary-entry-input"
+        />
       </div>
-
-      <el-input
-        v-model="diaryContent"
-        type="textarea"
-        :rows="8"
-        :placeholder="$t('moodDiary.entryPlaceholder')"
-        maxlength="1000"
-        show-word-limit
-      />
 
       <div class="illustration-generator">
         <h3 class="section-title">{{ $t('moodDiary.generateMoodTitle') }}</h3>
@@ -66,7 +68,7 @@
 
     <el-dialog
       v-model="moodDialogVisible"
-      width="680px"
+      width="min(680px, 80vw)"
       :close-on-click-modal="false"
       :show-close="false"
       class="mood-selector-dialog"
@@ -100,7 +102,6 @@ const moodOptions = [
   { id: 'happy-grin', file: 'happy-grin.webp', zh: '开心', en: 'Happy' },
   { id: 'big-grin', file: 'big-grin.webp', zh: '大笑', en: 'Big grin' },
   { id: 'laughing-tears', file: 'laughing-tears.webp', zh: '笑哭', en: 'Laughing tears' },
-  { id: 'heart-eyes', file: 'heart-eyes.webp', zh: '心动', en: 'Heart eyes' },
   { id: 'cool', file: 'cool.webp', zh: '自信', en: 'Cool' },
   { id: 'neutral-smile', file: 'neutral-smile.webp', zh: '平静', en: 'Neutral' },
   { id: 'worried', file: 'worried.webp', zh: '担心', en: 'Worried' },
@@ -116,12 +117,12 @@ const moodImageContext = require.context('@/assets/images/mood', false, /\.webp$
 
 // 来自 AI 插画页的常用风格（精简为 6 个）
 const popularStyleConfigs = [
-  { key: 'penLineArt', id: 1 },
-  { key: 'colorfulOutlineRomanticism', id: 6 },
-  { key: 'crayonNoiseHandDrawn', id: 15 },
-  { key: 'vintageSketch', id: 17 },
-  { key: 'pixarStyle', id: 5 },
-  { key: 'healingWatercolor', id: 14 }
+  { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.webp') },
+  { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.webp') },
+  { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.webp') },
+  { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.webp') },
+  { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.webp') },
+  { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp') }
 ]
 
 export default {
@@ -153,7 +154,7 @@ export default {
       return popularStyleConfigs.map((config) => ({
         id: config.id,
         key: config.key,
-        image: '',
+        image: config.image,
         artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
         elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`)
       }))
@@ -409,43 +410,31 @@ export default {
   font-size: 14px;
 }
 
-.selected-mood {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #f8f3ff;
-  border: 1px solid #e3d6f8;
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 14px;
+.diary-input-wrap {
+  position: relative;
+  margin-bottom: 4px;
 }
 
-.selected-mood-icon-wrap {
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.selected-mood-icon {
-  width: 100%;
-  height: 100%;
+.diary-mood-bg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160px;
+  height: 160px;
+  transform: translate(-50%, -50%);
   object-fit: contain;
-  display: block;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.selected-mood-title {
-  margin: 0;
-  color: #303133;
-  font-weight: 600;
+.diary-entry-input {
+  position: relative;
+  z-index: 2;
 }
 
-.selected-mood-hint {
-  margin: 4px 0 0;
-  color: #909399;
-  font-size: 12px;
+.diary-entry-input :deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .actions {
@@ -482,16 +471,15 @@ export default {
 }
 
 .style-strip {
-  display: flex;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  width: 100%;
 }
 
 .style-chip {
-  width: 84px;
-  min-width: 84px;
+  width: 100%;
+  min-width: 0;
   border: 1px solid #ebeef5;
   border-radius: 8px;
   background: #fff;
@@ -620,9 +608,13 @@ export default {
     max-height: 62vh;
   }
 
+  .style-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .style-chip {
-    width: 78px;
-    min-width: 78px;
+    width: 100%;
+    min-width: 0;
   }
 
   .style-chip img {
