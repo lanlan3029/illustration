@@ -27,21 +27,30 @@
         </template>
 
         <template v-else>
-          <div class="maze-count">共 {{ imageMazeList.length }} 张创意迷宫</div>
+          <div class="maze-count">共 {{ imageMazeList.length }} 张创意迷宫页面</div>
           <div v-if="creativeLoading" class="maze-empty">加载中...</div>
           <div v-else-if="!imageMazeList.length" class="maze-empty">暂无创意迷宫图片</div>
-          <div class="maze-grid" role="list">
-            <button
-              v-for="maze in imageMazeList"
-              :key="maze.id"
-              type="button"
-              class="maze-list-card image-maze-card"
-              @click="enterImageMaze(maze.id)"
+          <div v-else class="creative-groups">
+            <section
+              v-for="group in creativeBookGroups"
+              :key="group.id"
+              class="creative-group"
             >
-              <div class="maze-list-thumb">
-                <img :src="maze.src" :alt="maze.title" />
+              <h3 class="creative-book-title">{{ group.title }}</h3>
+              <div class="maze-grid" role="list">
+                <button
+                  v-for="maze in group.pages"
+                  :key="maze.id"
+                  type="button"
+                  class="maze-list-card image-maze-card"
+                  @click="enterImageMaze(maze.id)"
+                >
+                  <div class="maze-list-thumb">
+                    <img :src="maze.src" :alt="maze.title" />
+                  </div>
+                </button>
               </div>
-            </button>
+            </section>
           </div>
         </template>
       </template>
@@ -262,6 +271,7 @@ export default {
     return {
       mazeList: buildMazeCatalog(100).map((item) => ({ ...item, previewUrl: '' })),
       imageMazeList: [],
+      creativeBookGroups: [],
       creativeLoading: false,
       activeTab: 'svg',
       selectedMazeId: null,
@@ -333,9 +343,9 @@ export default {
       if (!this.$http) return
       this.creativeLoading = true
       try {
-        const response = await this.$http.get('/ill/', {
+        const response = await this.$http.get('/book/', {
           params: {
-            type: 'maze',
+            type: 'puzzle',
             sort_param: 'createdAt',
             sort_num: 'desc',
             page: 1
@@ -343,40 +353,79 @@ export default {
         })
         const data = response && response.data ? response.data : {}
         const message = data.message || data.data || data.result || []
-        const list = Array.isArray(message)
+        const books = Array.isArray(message)
           ? message
           : (message && (message.list || message.items || message.docs)) || []
+        const creativePages = []
+        const groups = []
 
-        this.imageMazeList = list
-          .map((item, index) => {
-            const src = this.resolveCreativeImageSrc(item)
-            if (!src) return null
-            return {
-              id: item._id || item.id || `remote-maze-${index}`,
-              title: item.title || item.name || `创意迷宫 ${index + 1}`,
+        for (let i = 0; i < books.length; i++) {
+          const book = books[i]
+          const pages = Array.isArray(book.content) ? book.content : []
+          const bookId = book._id || book.id || `book-${i + 1}`
+          const bookTitle = book.title || book.name || `绘本 ${i + 1}`
+
+          const group = {
+            id: bookId,
+            title: bookTitle,
+            pages: []
+          }
+
+          for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+            const src = await this.resolveBookPageSrc(pages[pageIndex])
+            if (!src) continue
+            const pageItem = {
+              id: `${bookId}-page-${pageIndex + 1}`,
+              title: `${bookTitle} · 第${pageIndex + 1}页`,
               src
             }
-          })
-          .filter(Boolean)
+            creativePages.push(pageItem)
+            group.pages.push(pageItem)
+          }
+
+          if (group.pages.length) {
+            groups.push(group)
+          }
+        }
+
+        this.imageMazeList = creativePages
+        this.creativeBookGroups = groups
       } catch (_) {
         this.imageMazeList = []
+        this.creativeBookGroups = []
       } finally {
         this.creativeLoading = false
       }
     },
-    resolveCreativeImageSrc(item) {
-      const raw =
-        item.image_url ||
-        item.character_image_url ||
-        item.image ||
-        item.picture ||
-        item.cover ||
-        item.url ||
-        ''
-      if (!raw) return ''
-      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw
-      if (raw.startsWith('/')) return this.apiBaseUrl ? `${this.apiBaseUrl}${raw}` : raw
-      return raw
+    async resolveBookPageSrc(item) {
+      if (!item) return ''
+
+      if (typeof item === 'string') {
+        if (item.startsWith('http://') || item.startsWith('https://') || item.startsWith('data:')) return item
+        if (item.startsWith('/')) return this.apiBaseUrl ? `${this.apiBaseUrl}${item}` : item
+        if (item.includes('/')) return item
+        try {
+          const token = localStorage.getItem('token') || ''
+          const res = await this.$http.get(`/ill/${item}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          })
+          const msg = res && res.data ? (res.data.message || res.data.data || {}) : {}
+          const detailSrc = msg.content || msg.image_url || msg.image || msg.url || ''
+          return detailSrc || ''
+        } catch (_) {
+          return ''
+        }
+      }
+
+      if (typeof item === 'object') {
+        const raw = item.content || item.image_url || item.image || item.url || item.picture || ''
+        if (!raw) return ''
+        if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw
+        if (raw.startsWith('/')) return this.apiBaseUrl ? `${this.apiBaseUrl}${raw}` : raw
+        return raw
+      }
+
+      return ''
     },
     shapeLabel(shape) {
       const map = {
@@ -831,6 +880,26 @@ export default {
 
 .image-maze-card {
   background: #fff !important;
+}
+
+.creative-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.creative-group {
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fcfcff;
+}
+
+.creative-book-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #303133;
+  font-weight: 600;
 }
 
 .maze-list-thumb-fallback {
