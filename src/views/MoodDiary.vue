@@ -66,7 +66,7 @@
 
     <el-dialog
       v-model="moodDialogVisible"
-      width="min(680px, 40vw)"
+      width="680px"
       :close-on-click-modal="false"
       :show-close="false"
       class="mood-selector-dialog"
