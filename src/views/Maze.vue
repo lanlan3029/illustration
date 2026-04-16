@@ -30,7 +30,12 @@
           <div class="maze-count">共 {{ imageMazeList.length }} 张创意迷宫页面</div>
           <div v-if="creativeLoading" class="maze-empty">加载中...</div>
           <div v-else-if="!imageMazeList.length" class="maze-empty">暂无创意迷宫图片</div>
-          <div v-else class="creative-groups">
+          <div
+            v-else
+            ref="creativeScrollWrap"
+            class="creative-groups creative-scroll-wrap"
+            @scroll.passive="onCreativeScroll"
+          >
             <section
               v-for="group in creativeBookGroups"
               :key="group.id"
@@ -42,7 +47,7 @@
                   v-for="maze in group.pages"
                   :key="maze.id"
                   type="button"
-                  class="maze-list-card image-maze-card"
+                  class="maze-list-card image-maze-card creative-page-card"
                   @click="enterImageMaze(maze.id)"
                 >
                   <div class="maze-list-thumb">
@@ -51,6 +56,8 @@
                 </button>
               </div>
             </section>
+            <div v-if="creativeLoadingMore" class="creative-loading-more">加载更多中...</div>
+            <div v-else-if="!creativeHasMore" class="creative-loading-more">已加载全部内容</div>
           </div>
         </template>
       </template>
@@ -273,6 +280,10 @@ export default {
       imageMazeList: [],
       creativeBookGroups: [],
       creativeLoading: false,
+      creativeLoadingMore: false,
+      creativePage: 1,
+      creativePageSize: 8,
+      creativeHasMore: true,
       activeTab: 'svg',
       selectedMazeId: null,
       selectedImageMazeId: null,
@@ -336,19 +347,31 @@ export default {
   methods: {
     async handleMazeTabChange(name) {
       if (name === 'image' && !this.imageMazeList.length) {
-        await this.fetchCreativeMazes()
+        await this.fetchCreativeMazes(true)
       }
     },
-    async fetchCreativeMazes() {
+    async fetchCreativeMazes(reset = false) {
       if (!this.$http) return
-      this.creativeLoading = true
+      if (this.creativeLoading || this.creativeLoadingMore) return
+      if (!reset && !this.creativeHasMore) return
+
+      if (reset) {
+        this.creativePage = 1
+        this.creativeHasMore = true
+        this.imageMazeList = []
+        this.creativeBookGroups = []
+        this.creativeLoading = true
+      } else {
+        this.creativeLoadingMore = true
+      }
       try {
         const response = await this.$http.get('/book/', {
           params: {
             type: 'puzzle',
             sort_param: 'createdAt',
             sort_num: 'desc',
-            page: 1
+            page: this.creativePage,
+            page_size: this.creativePageSize
           }
         })
         const data = response && response.data ? response.data : {}
@@ -388,13 +411,47 @@ export default {
           }
         }
 
-        this.imageMazeList = creativePages
-        this.creativeBookGroups = groups
+        if (reset) {
+          this.imageMazeList = creativePages
+          this.creativeBookGroups = groups
+        } else {
+          this.imageMazeList = this.imageMazeList.concat(creativePages)
+          this.creativeBookGroups = this.mergeCreativeGroups(this.creativeBookGroups, groups)
+        }
+        this.creativeHasMore = books.length >= this.creativePageSize
+        if (this.creativeHasMore) this.creativePage += 1
       } catch (_) {
-        this.imageMazeList = []
-        this.creativeBookGroups = []
+        if (reset) {
+          this.imageMazeList = []
+          this.creativeBookGroups = []
+        }
+        this.creativeHasMore = false
       } finally {
         this.creativeLoading = false
+        this.creativeLoadingMore = false
+      }
+    },
+    mergeCreativeGroups(baseGroups, newGroups) {
+      if (!baseGroups.length) return newGroups
+      const merged = [...baseGroups]
+      const groupMap = new Map(merged.map((g) => [g.id, g]))
+      newGroups.forEach((group) => {
+        const existing = groupMap.get(group.id)
+        if (!existing) {
+          merged.push(group)
+          groupMap.set(group.id, group)
+          return
+        }
+        existing.pages = existing.pages.concat(group.pages)
+      })
+      return merged
+    },
+    onCreativeScroll(e) {
+      const el = e && e.target ? e.target : this.$refs.creativeScrollWrap
+      if (!el || this.creativeLoading || this.creativeLoadingMore || !this.creativeHasMore) return
+      const remain = el.scrollHeight - (el.scrollTop + el.clientHeight)
+      if (remain < 120) {
+        this.fetchCreativeMazes(false)
       }
     },
     async resolveBookPageSrc(item) {
@@ -426,15 +483,9 @@ export default {
     normalizeCreativeSrc(raw) {
       if (!raw || typeof raw !== 'string') return ''
       if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw
-
-      // Most backend image paths come as "upload/xxx.jpg"
-      if (this.apiBaseUrl) {
-        if (raw.startsWith('/')) return `${this.apiBaseUrl}${raw}`
-        return `${this.apiBaseUrl}/${raw}`
-      }
-
-      if (raw.startsWith('/')) return raw
-      return `/${raw}`
+      const staticBase = 'https://static.kidstory.cc'
+      if (raw.startsWith('/')) return `${staticBase}${raw}`
+      return `${staticBase}/${raw}`
     },
     shapeLabel(shape) {
       const map = {
@@ -763,7 +814,7 @@ export default {
       this.lastPoint = this.canvasPoint(e)
     },
     onPointerMove(e) {
-      if (!this.drawing || !this.lastPoint || !this.currentMaze) return
+      if (!this.drawing || !this.lastPoint) return
       e.preventDefault()
       const p = this.canvasPoint(e)
       if (!p) return
@@ -897,6 +948,12 @@ export default {
   gap: 14px;
 }
 
+.creative-scroll-wrap {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .creative-group {
   border: 1px solid #ebeef5;
   border-radius: 12px;
@@ -909,6 +966,17 @@ export default {
   font-size: 14px;
   color: #303133;
   font-weight: 600;
+}
+
+.creative-page-card {
+  background: #fff;
+}
+
+.creative-loading-more {
+  font-size: 12px;
+  color: #909399;
+  text-align: center;
+  padding: 6px 0 2px;
 }
 
 .maze-list-thumb-fallback {
