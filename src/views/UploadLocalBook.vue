@@ -43,6 +43,12 @@
       <el-option :label="$t('upload.categoryEnglish')" value="english"></el-option>
       <el-option :label="$t('upload.categoryMath')" value="math"></el-option>
       <el-option :label="$t('upload.categoryKnowledge')" value="knowledge"></el-option>
+      <el-option :label="$t('upload.categoryPuzzle')" value="puzzle"></el-option>
+      <el-option :label="$t('upload.categoryStory')" value="story"></el-option>
+      <el-option :label="$t('upload.categoryNature')" value="nature"></el-option>
+      <el-option :label="$t('upload.categoryHistory')" value="history"></el-option>
+      <el-option :label="$t('upload.categoryArt')" value="art"></el-option>
+      <el-option :label="$t('upload.categoryEmotion')" value="emotion"></el-option>
       <el-option :label="$t('upload.categoryOthers')" value="others"></el-option>
     </el-select>
   </el-form-item>

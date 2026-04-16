@@ -282,6 +282,24 @@ const routes = [{
             import ( /* webpackChunkName: "newyear-gallery" */ '../views/NewYearGallery.vue')
     },
     {
+        path: '/mood-diary',
+        name: 'mood-diary',
+        component: () =>
+            import ( /* webpackChunkName: "mood-diary" */ '../views/MoodDiary.vue'),
+        meta: {
+            requiresAuth: false
+        }
+    },
+    {
+        path: '/maze',
+        name: 'maze',
+        component: () =>
+            import ( /* webpackChunkName: "maze" */ '../views/Maze.vue'),
+        meta: {
+            requiresAuth: false
+        }
+    },
+    {
         path: '/member/recharge',
         name: 'member-recharge',
         component: () =>

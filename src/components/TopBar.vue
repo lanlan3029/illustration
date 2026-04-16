@@ -45,8 +45,12 @@
           </li>
           -->
 
-          <li class="nav-item" :class="{ 'active': route.path === '/newyear' }">
-            <router-link to="/newyear" class="nav-link nav-link-2026" @click="closeSubmenu">2026</router-link>
+          <li class="nav-item" :class="{ 'active': route.path === '/mood-diary' }">
+            <router-link to="/mood-diary" class="nav-link nav-link-mood-diary" @click="closeSubmenu">{{ $t('nav.moodDiary') }}</router-link>
+          </li>
+
+          <li class="nav-item" :class="{ 'active': route.path === '/maze' }">
+            <router-link to="/maze" class="nav-link nav-link-maze" @click="closeSubmenu">{{ $t('nav.maze') }}</router-link>
           </li>
 
         
@@ -143,6 +147,12 @@
           </li>
           <li :class="{ active: route.path === '/books' }">
             <router-link to="/books" @click="closeMobileMenu">绘本</router-link>
+          </li>
+          <li :class="{ active: route.path === '/mood-diary' }">
+            <router-link to="/mood-diary" @click="closeMobileMenu">{{ $t('nav.moodDiary') }}</router-link>
+          </li>
+          <li :class="{ active: route.path === '/maze' }">
+            <router-link to="/maze" @click="closeMobileMenu">{{ $t('nav.maze') }}</router-link>
           </li>
           <li>
             <a href="#" @click.prevent="handleMobileMy">我的</a>
@@ -735,14 +745,23 @@ export default {
 	color: #777 !important;
 }
 
-/* 2026 导航项：默认红色加粗 */
-.nav-link-2026 {
-	color: #e53935 !important;
+/* 心情日记导航项：默认强调色 */
+.nav-link-mood-diary {
+	color: #8167a9 !important;
 	font-weight: 700;
 }
 
-.nav-item.active .nav-link-2026 {
-	color: #c62828 !important;
+.nav-item.active .nav-link-mood-diary {
+	color: #6a4f96 !important;
+}
+
+.nav-link-maze {
+	color: #6b8a7a !important;
+	font-weight: 600;
+}
+
+.nav-item.active .nav-link-maze {
+	color: #4d6b5a !important;
 }
 
 .nav-item:after {

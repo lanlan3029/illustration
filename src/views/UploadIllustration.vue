@@ -54,6 +54,7 @@
       <el-option :label="$t('upload.categoryEnglish')" value="english"></el-option>
       <el-option :label="$t('upload.categoryMath')" value="math"></el-option>
       <el-option :label="$t('upload.categoryKnowledge')" value="knowledge"></el-option>
+      <el-option :label="$t('upload.categoryMaze')" value="maze"></el-option>
       <el-option :label="$t('upload.categoryOthers')" value="others"></el-option>
     </el-select>
   </el-form-item>
