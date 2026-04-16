@@ -402,8 +402,7 @@ export default {
 
       if (typeof item === 'string') {
         if (item.startsWith('http://') || item.startsWith('https://') || item.startsWith('data:')) return item
-        if (item.startsWith('/')) return this.apiBaseUrl ? `${this.apiBaseUrl}${item}` : item
-        if (item.includes('/')) return item
+        if (item.startsWith('/') || item.includes('/')) return this.normalizeCreativeSrc(item)
         try {
           const token = localStorage.getItem('token') || ''
           const res = await this.$http.get(`/ill/${item}`, {
@@ -411,7 +410,7 @@ export default {
           })
           const msg = res && res.data ? (res.data.message || res.data.data || {}) : {}
           const detailSrc = msg.content || msg.image_url || msg.image || msg.url || ''
-          return detailSrc || ''
+          return this.normalizeCreativeSrc(detailSrc)
         } catch (_) {
           return ''
         }
@@ -419,13 +418,23 @@ export default {
 
       if (typeof item === 'object') {
         const raw = item.content || item.image_url || item.image || item.url || item.picture || ''
-        if (!raw) return ''
-        if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw
-        if (raw.startsWith('/')) return this.apiBaseUrl ? `${this.apiBaseUrl}${raw}` : raw
-        return raw
+        return this.normalizeCreativeSrc(raw)
       }
 
       return ''
+    },
+    normalizeCreativeSrc(raw) {
+      if (!raw || typeof raw !== 'string') return ''
+      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw
+
+      // Most backend image paths come as "upload/xxx.jpg"
+      if (this.apiBaseUrl) {
+        if (raw.startsWith('/')) return `${this.apiBaseUrl}${raw}`
+        return `${this.apiBaseUrl}/${raw}`
+      }
+
+      if (raw.startsWith('/')) return raw
+      return `/${raw}`
     },
     shapeLabel(shape) {
       const map = {
