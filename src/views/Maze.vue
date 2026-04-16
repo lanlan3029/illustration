@@ -394,8 +394,12 @@ export default {
             pages: []
           }
 
-          for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
-            const src = await this.resolveBookPageSrc(pages[pageIndex])
+          const pageResults = await Promise.all(
+            pages.map((pageItem) => this.resolveBookPageSrc(pageItem))
+          )
+
+          for (let pageIndex = 0; pageIndex < pageResults.length; pageIndex++) {
+            const src = pageResults[pageIndex]
             if (!src) continue
             const pageItem = {
               id: `${bookId}-page-${pageIndex + 1}`,
@@ -482,8 +486,15 @@ export default {
     },
     normalizeCreativeSrc(raw) {
       if (!raw || typeof raw !== 'string') return ''
-      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw
+      if (raw.startsWith('data:')) return raw
       const staticBase = 'https://static.kidstory.cc'
+      if (raw.startsWith('http://') || raw.startsWith('https://')) {
+        const uploadIdx = raw.indexOf('/upload/')
+        if (uploadIdx >= 0) {
+          return `${staticBase}${raw.slice(uploadIdx)}`
+        }
+        return raw
+      }
       if (raw.startsWith('/')) return `${staticBase}${raw}`
       return `${staticBase}/${raw}`
     },
@@ -966,6 +977,12 @@ export default {
   font-size: 14px;
   color: #303133;
   font-weight: 600;
+}
+
+.creative-group .maze-grid {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .creative-page-card {
