@@ -62,8 +62,10 @@ html, body{
 
 .app-main{
     flex: 1; /* 占据剩余空间 */
+    min-height: 0; /* 允许在 flex 列布局中内部滚动，避免内容被 overflow 裁切 */
     width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding-top: 50px; /* 为固定导航栏留出空间（TopBar高度50px） */
     transition: padding-top 0.3s ease-out; /* 与导航栏滚动效果同步 */
 }

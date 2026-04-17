@@ -52,7 +52,11 @@
         </div>
         <div v-if="generatedImageUrl" class="generated-preview">
           <div class="generated-image-scroll">
-            <el-image :src="generatedImageUrl" fit="contain" class="generated-image" />
+            <img
+              :src="generatedImageUrl"
+              alt=""
+              class="generated-image-img"
+            />
           </div>
           <div class="preview-actions">
             <el-button
@@ -590,35 +594,33 @@ export default {
   background: #f8f8fb;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .generated-image-scroll {
-  max-height: 52vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(52vh, 560px);
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .preview-actions {
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   padding: 10px 12px 12px;
   background: #fff;
   border-top: 1px solid #ebeef5;
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
 }
 
-.generated-image {
+.generated-image-img {
   width: 100%;
-  min-height: 220px;
+  height: auto;
+  max-width: 100%;
   display: block;
-}
-
-.generated-image :deep(.el-image__inner) {
-  width: 100%;
-  height: auto !important;
-  object-fit: contain;
 }
 
 .dialog-title {
