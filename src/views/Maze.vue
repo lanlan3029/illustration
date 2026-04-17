@@ -102,24 +102,26 @@
         </div>
 
         <div class="maze-board-wrap" ref="imageBoardWrap">
-          <div class="maze-canvas-stack image-maze-stack" :style="imageStackStyle">
-            <img
-              v-if="currentImageMaze"
-              ref="imageMazeImage"
-              class="image-maze-preview"
-              :src="currentImageMaze.src"
-              :alt="currentImageMaze.title"
-              @load="syncImageBoardSize"
-            />
-            <canvas
-              ref="imageDrawCanvas"
-              class="maze-layer maze-draw"
-              @pointerdown="onPointerDown"
-              @pointermove="onPointerMove"
-              @pointerup="onPointerUp"
-              @pointerleave="onPointerUp"
-              @pointercancel="onPointerUp"
-            ></canvas>
+          <div class="image-maze-scroll">
+            <div class="maze-canvas-stack image-maze-stack" :style="imageStackStyle">
+              <img
+                v-if="currentImageMaze"
+                ref="imageMazeImage"
+                class="image-maze-preview"
+                :src="currentImageMaze.src"
+                :alt="currentImageMaze.title"
+                @load="syncImageBoardSize"
+              />
+              <canvas
+                ref="imageDrawCanvas"
+                class="maze-layer maze-draw"
+                @pointerdown="onPointerDown"
+                @pointermove="onPointerMove"
+                @pointerup="onPointerUp"
+                @pointerleave="onPointerUp"
+                @pointercancel="onPointerUp"
+              ></canvas>
+            </div>
           </div>
           <p class="maze-hint">图片迷宫模式默认不做穿墙检测，可自由描线。</p>
           <div class="maze-actions">
@@ -1081,6 +1083,13 @@ export default {
   background: #f7f7f9;
 }
 
+.image-maze-scroll {
+  max-height: 62vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 12px;
+}
+
 .image-maze-preview {
   width: 100%;
   height: 100%;
@@ -1106,6 +1115,10 @@ export default {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     max-height: calc(100vh - 210px);
+  }
+
+  .image-maze-scroll {
+    max-height: 54vh;
   }
 
   .maze-list-thumb {
