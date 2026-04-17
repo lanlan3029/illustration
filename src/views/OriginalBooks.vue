@@ -29,28 +29,33 @@
           <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
             <div class="item" v-for="(item, index) in books" :key="item._id || index">
               <el-card class="card" shadow="hover">
-                <el-image
-                  :src="(`https://static.kidstory.cc/`+item.cover)"
-                  class="image"
-                  fit="contain"
-                  :lazy="true"
-                  loading="lazy"
-                  :preview-src-list="[]"
-                  @click="toDetail(item._id)"
-                >
-                  <template #placeholder>
-                    <div class="img-placeholder">
-                      <i class="el-icon-loading"></i>
-                    </div>
-                  </template>
-                  <template #error>
-                    <div class="img-error">
-                      <i class="el-icon-picture-outline"></i>
-                    </div>
-                  </template>
-                </el-image>
+                <div class="cover-wrap" @click="toDetail(item._id)">
+                  <el-image
+                    :src="(`https://static.kidstory.cc/`+item.cover)"
+                    class="image"
+                    fit="cover"
+                    :lazy="true"
+                    loading="lazy"
+                    :preview-src-list="[]"
+                  >
+                    <template #placeholder>
+                      <div class="img-placeholder">
+                        <i class="el-icon-loading"></i>
+                      </div>
+                    </template>
+                    <template #error>
+                      <div class="img-error">
+                        <i class="el-icon-picture-outline"></i>
+                      </div>
+                    </template>
+                  </el-image>
+                  <div class="cover-overlay">
+                    <span class="cover-title">{{ item.title }}</span>
+                    <span class="cover-type">{{ getCategoryLabel(item.type) }}</span>
+                  </div>
+                </div>
                 <div class="data">
-                  <span class="name">{{item.title}}</span>
+                  <span class="name">{{ item.title }}</span>
                   <div class="icon">
                     <span 
                       v-if="collectBookArr.includes(item._id)" 
@@ -124,6 +129,23 @@ export default {
     };
   },
   methods: {
+    getCategoryLabel(type) {
+      const map = {
+        reading: this.$t('upload.categoryReading'),
+        habit: this.$t('upload.categoryHabit'),
+        english: this.$t('upload.categoryEnglish'),
+        math: this.$t('upload.categoryMath'),
+        knowledge: this.$t('upload.categoryKnowledge'),
+        puzzle: this.$t('upload.categoryPuzzle'),
+        story: this.$t('upload.categoryStory'),
+        nature: this.$t('upload.categoryNature'),
+        history: this.$t('upload.categoryHistory'),
+        art: this.$t('upload.categoryArt'),
+        emotion: this.$t('upload.categoryEmotion'),
+        others: this.$t('upload.categoryOthers')
+      }
+      return map[type] || this.$t('upload.categoryOthers')
+    },
     //去绘本详情页
     toDetail(id) {
       this.$router.push({name:'bookdetails',params:{bookId:id}});
@@ -479,9 +501,9 @@ export default {
 }
 .item {
   box-sizing: border-box;
-  width: 320px;  /* 卡片固定宽高，与封面 320×240 统一 */
-  height: 320px;
-  border-radius: 8px;
+  width: 320px;
+  height: 332px;
+  border-radius: 14px;
   user-select: none;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -493,15 +515,19 @@ export default {
 }
 .card{ 
   width: 100%; 
-  height: 100%; /* 占满 item 的固定高度 */
+  height: 100%;
   display: flex;
-  flex-direction: column; /* 垂直布局 */
+  flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateY(0);
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(24, 34, 56, 0.08);
 }
 
 .card :deep(.el-card__body) {
-  padding: 12px; /* 仅上下内边距，封面图占满宽 320px */
+  padding: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -509,17 +535,24 @@ export default {
 }
 
 .card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(35, 28, 62, 0.16);
+  transform: translateY(-5px);
+}
+
+.cover-wrap {
+  position: relative;
+  width: 100%;
+  height: 244px;
+  cursor: pointer;
+  overflow: hidden;
 }
 .image {
-  width: 296px;   /* 封面固定宽 */
-  height: 222px;  /* 封面固定高 */
+  width: 100%;
+  height: 100%;
   flex-shrink: 0;
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: 0;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #f5f6fa;
+  background: linear-gradient(140deg, #f8f4ff, #eef3ff);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -533,7 +566,7 @@ export default {
 .image :deep(.el-image__inner) {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* 改为 contain，完整显示图片 */
+  object-fit: cover;
   transition: opacity 0.3s ease;
 }
 
@@ -542,11 +575,44 @@ export default {
 }
 
 .item:hover .image {
-  transform: scale(1.05);
+  transform: scale(1.04);
+}
+
+.cover-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(to top, rgba(18, 16, 30, 0.72), rgba(18, 16, 30, 0.02));
+}
+
+.cover-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cover-type {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 11px;
+  flex-shrink: 0;
 }
 .img-placeholder, .img-error{
-  width: 320px;
-  height: 240px;
+  width: 100%;
+  height: 100%;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -589,34 +655,41 @@ export default {
 }
 .data{
   display: flex;
-  height: 40px;
-  min-height: 40px;
-  max-height: 40px;
+  height: 88px;
+  min-height: 88px;
+  max-height: 88px;
   justify-content: space-between;
   color:#606266;
-  align-items: center;
+  align-items: flex-start;
   overflow: hidden;
-  margin-top: 12px;
-  padding: 0 12px; /* 与卡片左右留白一致 */
+  margin-top: 0;
+  padding: 12px 14px 10px;
   flex-shrink: 0;
+  background: #fff;
 }
 .data .name{
-  flex: 1; /* 占据剩余空间 */
-  min-width: 0; /* 允许文本截断 */
-  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis; /* 修复拼写错误 */
+  text-overflow: ellipsis;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   text-align: left;
-  margin-right: 8px; /* 添加右边距 */
+  margin-right: 8px;
+  color: #2f3440;
 }
 .data .icon{
-  width: 32px; /* 固定宽度，使用 px 而不是 vw */
-  flex-shrink: 0; /* 防止被压缩 */
+  width: 34px;
+  flex-shrink: 0;
   display: inline-flex;
   justify-content: flex-end;
-  align-items: center;
+  align-items: flex-start;
   font-size: 14px;
   cursor: pointer;
 }

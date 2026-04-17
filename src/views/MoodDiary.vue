@@ -97,6 +97,8 @@
 <script>
 import { ElMessage } from 'element-plus'
 
+const MOOD_DIARY_DRAFT_KEY = 'mood_diary_draft_v1'
+
 // 代表性心情（精简展示）
 const moodOptions = [
   { id: 'happy-grin', file: 'happy-grin.webp', zh: '开心', en: 'Happy' },
@@ -139,6 +141,23 @@ export default {
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
     }
   },
+  watch: {
+    diaryContent() {
+      this.saveMoodDiaryDraft()
+    },
+    selectedStyleId() {
+      this.saveMoodDiaryDraft()
+    },
+    selectedMood: {
+      handler() {
+        this.saveMoodDiaryDraft()
+      },
+      deep: false
+    },
+    generatedImageUrl() {
+      this.saveMoodDiaryDraft()
+    }
+  },
   computed: {
     moods() {
       const isZh = this.$i18n && this.$i18n.locale === 'zh'
@@ -172,6 +191,46 @@ export default {
     }
   },
   methods: {
+    saveMoodDiaryDraft() {
+      try {
+        const payload = {
+          v: 1,
+          savedAt: Date.now(),
+          selectedMoodId: this.selectedMood ? this.selectedMood.id : null,
+          diaryContent: this.diaryContent || '',
+          selectedStyleId: this.selectedStyleId || 1,
+          generatedImageUrl: this.generatedImageUrl || null
+        }
+        localStorage.setItem(MOOD_DIARY_DRAFT_KEY, JSON.stringify(payload))
+      } catch (_) {
+        // ignore storage failures
+      }
+    },
+    loadMoodDiaryDraft() {
+      try {
+        const raw = localStorage.getItem(MOOD_DIARY_DRAFT_KEY)
+        if (!raw) return
+        const data = JSON.parse(raw)
+        if (!data || typeof data !== 'object') return
+
+        if (typeof data.diaryContent === 'string') this.diaryContent = data.diaryContent
+        if (data.selectedStyleId != null) this.selectedStyleId = Number(data.selectedStyleId) || 1
+        if (typeof data.generatedImageUrl === 'string' && data.generatedImageUrl.startsWith('data:')) {
+          this.generatedImageUrl = data.generatedImageUrl
+        }
+
+        const moodId = data.selectedMoodId
+        if (moodId) {
+          const m = this.moods.find((x) => x.id === moodId)
+          if (m) {
+            this.selectedMood = m
+            this.moodDialogVisible = false
+          }
+        }
+      } catch (_) {
+        // ignore parse errors
+      }
+    },
     selectMood(mood) {
       this.selectedMood = mood
       this.moodDialogVisible = false
@@ -376,6 +435,7 @@ export default {
   },
   mounted() {
     this.moodDialogVisible = true
+    this.loadMoodDiaryDraft()
   }
 }
 </script>
