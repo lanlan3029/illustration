@@ -27,7 +27,6 @@
         </template>
 
         <template v-else>
-          <div class="maze-count">共 {{ imageMazeList.length }} 张创意迷宫页面</div>
           <div v-if="creativeLoading" class="maze-empty">加载中...</div>
           <div v-else-if="!imageMazeList.length" class="maze-empty">暂无创意迷宫图片</div>
           <div
@@ -50,8 +49,17 @@
                   class="maze-list-card image-maze-card creative-page-card"
                   @click="enterImageMaze(maze.id)"
                 >
-                  <div class="maze-list-thumb">
-                    <img :src="maze.src" :alt="maze.title" />
+                  <div class="maze-list-thumb creative-thumb-wrap">
+                    <div class="creative-thumb-skeleton" aria-hidden="true" />
+                    <img
+                      class="creative-thumb-img"
+                      :src="maze.thumbSrc || maze.src"
+                      :alt="maze.title"
+                      loading="lazy"
+                      decoding="async"
+                      @load="onCreativeThumbLoad"
+                      @error="onCreativeThumbError($event, maze)"
+                    />
                   </div>
                 </button>
               </div>
@@ -381,41 +389,51 @@ export default {
         const books = Array.isArray(message)
           ? message
           : (message && (message.list || message.items || message.docs)) || []
+        const bookResults = await Promise.all(
+          books.map(async (book, i) => {
+            const pages = Array.isArray(book.content) ? book.content : []
+            const bookId = book._id || book.id || `book-${i + 1}`
+            const bookTitle = book.title || book.name || `绘本 ${i + 1}`
+
+            const pageResults = await Promise.all(
+              pages.map((pageItem) => this.resolveBookPageSrc(pageItem))
+            )
+
+            const group = {
+              id: bookId,
+              title: bookTitle,
+              pages: []
+            }
+            const creativePages = []
+
+            for (let pageIndex = 0; pageIndex < pageResults.length; pageIndex++) {
+              const src = pageResults[pageIndex]
+              if (!src) continue
+              const pageItem = {
+                id: `${bookId}-page-${pageIndex + 1}`,
+                title: `${bookTitle} · 第${pageIndex + 1}页`,
+                src,
+                thumbSrc: this.creativeThumbSrc(src)
+              }
+              creativePages.push(pageItem)
+              group.pages.push(pageItem)
+            }
+
+            return {
+              creativePages,
+              group: group.pages.length ? group : null
+            }
+          })
+        )
+
         const creativePages = []
         const groups = []
-
-        for (let i = 0; i < books.length; i++) {
-          const book = books[i]
-          const pages = Array.isArray(book.content) ? book.content : []
-          const bookId = book._id || book.id || `book-${i + 1}`
-          const bookTitle = book.title || book.name || `绘本 ${i + 1}`
-
-          const group = {
-            id: bookId,
-            title: bookTitle,
-            pages: []
+        bookResults.forEach((br) => {
+          if (br.creativePages && br.creativePages.length) {
+            creativePages.push(...br.creativePages)
           }
-
-          const pageResults = await Promise.all(
-            pages.map((pageItem) => this.resolveBookPageSrc(pageItem))
-          )
-
-          for (let pageIndex = 0; pageIndex < pageResults.length; pageIndex++) {
-            const src = pageResults[pageIndex]
-            if (!src) continue
-            const pageItem = {
-              id: `${bookId}-page-${pageIndex + 1}`,
-              title: `${bookTitle} · 第${pageIndex + 1}页`,
-              src
-            }
-            creativePages.push(pageItem)
-            group.pages.push(pageItem)
-          }
-
-          if (group.pages.length) {
-            groups.push(group)
-          }
-        }
+          if (br.group) groups.push(br.group)
+        })
 
         if (reset) {
           this.imageMazeList = creativePages
@@ -499,6 +517,26 @@ export default {
       }
       if (raw.startsWith('/')) return `${staticBase}${raw}`
       return `${staticBase}/${raw}`
+    },
+    /** 列表缩略图：优先走 OSS 缩放，减轻带宽；失败时在 onCreativeThumbError 回退原图 */
+    creativeThumbSrc(fullUrl) {
+      if (!fullUrl || typeof fullUrl !== 'string') return ''
+      if (fullUrl.startsWith('data:')) return fullUrl
+      if (!fullUrl.includes('static.kidstory.cc')) return fullUrl
+      if (fullUrl.includes('x-oss-process')) return fullUrl
+      const sep = fullUrl.includes('?') ? '&' : '?'
+      return `${fullUrl}${sep}x-oss-process=image%2Fresize,w_280,m_lfit`
+    },
+    onCreativeThumbLoad(e) {
+      const img = e && e.target
+      if (img && img.classList) img.classList.add('is-loaded')
+    },
+    onCreativeThumbError(e, maze) {
+      const img = e && e.target
+      if (!img || !maze || !maze.src) return
+      if (img.dataset.fallbackFull === '1') return
+      img.dataset.fallbackFull = '1'
+      img.src = maze.src
     },
     shapeLabel(shape) {
       const map = {
@@ -949,6 +987,40 @@ export default {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.creative-thumb-wrap {
+  position: relative;
+  background: #eceef3;
+}
+
+.creative-thumb-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, #e8eaef 0%, #f4f5f8 45%, #e8eaef 90%);
+  background-size: 200% 100%;
+  animation: creative-thumb-shimmer 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.creative-thumb-img {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.creative-thumb-img.is-loaded {
+  opacity: 1;
+}
+
+@keyframes creative-thumb-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .image-maze-card {
