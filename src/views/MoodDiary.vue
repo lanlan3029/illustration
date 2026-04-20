@@ -664,6 +664,21 @@ export default {
   flex: 0 0 auto;
 }
 
+.generator-actions .el-button {
+  height: 36px;
+  line-height: 1;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.generator-actions .el-button :deep(span) {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
 .save-mood-btn {
   display: inline-flex;
   align-items: center;
