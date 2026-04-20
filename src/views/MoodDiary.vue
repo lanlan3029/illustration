@@ -365,6 +365,36 @@ export default {
         ElMessage.error(this.$t('moodDiary.downloadFailed'))
       }
     },
+    async ensureMoodFontReady(family, size, sampleText) {
+      const spec = `${size}px "${family}"`
+      const sample = sampleText && sampleText.trim() ? sampleText.slice(0, 32) : '心情日记字体测试'
+
+      // 1) DOM 探针：强制浏览器把字体文件请求排入队列并应用到布局上
+      const probe = document.createElement('span')
+      probe.setAttribute('aria-hidden', 'true')
+      probe.style.cssText = [
+        'position:absolute',
+        'left:-9999px',
+        'top:-9999px',
+        'visibility:hidden',
+        'pointer-events:none',
+        `font:${spec}`,
+        'white-space:pre'
+      ].join(';')
+      probe.textContent = sample
+      document.body.appendChild(probe)
+
+      try {
+        // 2) 带真实文本的 load()：部分浏览器不传 text 时不会真正下载
+        if (document.fonts && typeof document.fonts.load === 'function') {
+          try { await document.fonts.load(spec, sample) } catch (_) { /* ignore */ }
+        }
+        // 3) 再等两帧，确保字形加入浏览器字形缓存可供 canvas 使用
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      } finally {
+        if (probe.parentNode) probe.parentNode.removeChild(probe)
+      }
+    },
     async composeMoodCardImage(imageUrl, text) {
       const sourceUrl = await this.normalizeImageUrl(imageUrl)
       const image = await this.loadImage(sourceUrl)
@@ -414,14 +444,10 @@ export default {
 
       // 文字区（手绘风字体 + 水平居中）
       const textY = imageY + imageH + 36
-      const moodFont = '400 36px "阿里妈妈灵动体", "苦累蛙圓體", "寒蝉圆体", "Caveat", "PingFang SC", "Microsoft YaHei", sans-serif'
-      try {
-        if (document.fonts && typeof document.fonts.load === 'function') {
-          await document.fonts.load(`36px "阿里妈妈灵动体"`)
-        }
-      } catch (_) {
-        // 字体未就绪时回落到后续 fallback 字体
-      }
+      const moodFontSize = 36
+      const moodFontFamily = '"阿里妈妈灵动体", "苦累蛙圓體", "寒蝉圆体", "Caveat", "PingFang SC", "Microsoft YaHei", sans-serif'
+      const moodFont = `400 ${moodFontSize}px ${moodFontFamily}`
+      await this.ensureMoodFontReady('阿里妈妈灵动体', moodFontSize, textLines.join(''))
       ctx.fillStyle = '#2a1f42'
       ctx.font = moodFont
       ctx.textBaseline = 'top'
