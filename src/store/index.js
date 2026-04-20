@@ -146,10 +146,17 @@ export default createStore({
             state.editionBook = item
         },
         addBooks(state, items) {
-            // 去重：基于 _id 过滤掉已存在的书籍，防止重复添加
-            const existingIds = new Set(state.books.map(book => book._id));
-            const newItems = items.filter(item => item._id && !existingIds.has(item._id));
-            state.books = state.books.concat(newItems);
+            // 去重：同时防止与已存在的书籍重复、入参数组内部重复（后端翻页可能返回相同条目）
+            if (!Array.isArray(items) || !items.length) return;
+            const seen = new Set(state.books.map(book => book && book._id).filter(Boolean));
+            const out = [];
+            for (const item of items) {
+                if (!item || !item._id) continue;
+                if (seen.has(item._id)) continue;
+                seen.add(item._id);
+                out.push(item);
+            }
+            if (out.length) state.books = state.books.concat(out);
         },
         removeBooks(state) {
             state.books = []

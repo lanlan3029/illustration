@@ -26,7 +26,14 @@
           <div v-if="loading" class="loading">
             <book-loading :text="$t('books.loading')" />
           </div>
-          <div v-show="(!loading)" class="items" v-infinite-scroll="loadMore" infinite-scroll-disabled="scrollDisabled" :disabled="loadControl">
+          <div
+            v-show="(!loading)"
+            class="items"
+            v-infinite-scroll="loadMore"
+            :infinite-scroll-disabled="scrollDisabled || loadControl || !initialLoaded"
+            :infinite-scroll-immediate="false"
+            :infinite-scroll-distance="120"
+          >
             <article
               class="book-card"
               v-for="(item, index) in books"
@@ -69,7 +76,6 @@
               </div>
               <div class="book-meta">
                 <h3 class="book-title">{{ item.title }}</h3>
-                <span class="book-subtype">{{ getCategoryLabel(item.type) }}</span>
               </div>
             </article>
           </div>
@@ -123,6 +129,7 @@ export default {
       button2: "",
       collectingIds: [],
       collectIdMap: {},
+      initialLoaded: false,
     };
   },
   methods: {
@@ -143,320 +150,270 @@ export default {
       }
       return map[type] || this.$t('upload.categoryOthers')
     },
-    //去绘本详情页
     toDetail(id) {
-      this.$router.push({name:'bookdetails',params:{bookId:id}});
+      this.$router.push({ name: 'bookdetails', params: { bookId: id } })
     },
 
-    // 当前排序参数
     getSortParams() {
-      // 默认和“热度”都按热度倒序
       if (this.sortType === 'time') {
-        return { sort_param: 'createdAt', sort_num: 'desc' };
+        return { sort_param: 'createdAt', sort_num: 'desc' }
       }
-      return { sort_param: 'heat', sort_num: 'desc' };
+      return { sort_param: 'heat', sort_num: 'desc' }
     },
 
-    //获取后台返回的绘本数据（18）
-   async getBooks(){
-      try{
-        const { sort_param, sort_num } = this.getSortParams();
-        let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=1`;
-        // 只有当 button2 有值且不为空字符串时，才添加 type 参数
-        // "不限"对应的 value 是空字符串，此时不添加 type 参数，显示所有绘本
-        if (this.button2 && this.button2.trim() !== '') {
-          url += `&type=${this.button2}`;
+    getAuthHeaders() {
+      const token = localStorage.getItem('token')
+      return token && token !== 'undefined'
+        ? { Authorization: `Bearer ${token}` }
+        : {}
+    },
+
+    buildBookListUrl(page) {
+      const { sort_param, sort_num } = this.getSortParams()
+      let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=${page}`
+      if (this.button2 && this.button2.trim() !== '') {
+        url += `&type=${this.button2}`
+      }
+      return url
+    },
+
+    async getBooks() {
+      try {
+        const res = await this.$http.get(this.buildBookListUrl(1), { headers: this.getAuthHeaders() })
+        const raw = Array.isArray(res.data && res.data.message) ? res.data.message : []
+        this.toolArry = this.dedupById(raw)
+      } catch (err) {
+        this.loading = false
+        ElMessage({ message: this.$t('books.errorOccurred'), type: 'error' })
+      }
+    },
+
+    dedupById(list) {
+      if (!Array.isArray(list)) return []
+      const seen = new Set()
+      const out = []
+      for (const item of list) {
+        if (!item || !item._id) continue
+        if (seen.has(item._id)) continue
+        seen.add(item._id)
+        out.push(item)
+      }
+      return out
+    },
+
+    setBooks() {
+      this.$store.commit('addBooks', this.toolArry)
+      this.loading = false
+    },
+
+    async loadMore() {
+      if (this.loadControl || this.scrollDisabled || !this.initialLoaded) return
+      this.loadControl = true
+      try {
+        const nextPage = this.num + 1
+        const res = await this.$http.get(this.buildBookListUrl(nextPage), { headers: this.getAuthHeaders() })
+        const books = Array.isArray(res.data && res.data.message)
+          ? res.data.message
+          : (Array.isArray(res.data && res.data.data) ? res.data.data : [])
+
+        if (!books.length) {
+          this.scrollDisabled = true
+          return
         }
-        
-        // 获取 token 并添加到请求头
-        const token = localStorage.getItem('token');
-        const headers = {};
-        if (token && token !== 'undefined') {
-          headers['Authorization'] = `Bearer ${token}`;
+
+        const existingIds = new Set()
+        this.toolArry.forEach((b) => b && b._id && existingIds.add(b._id))
+        this.$store.state.books.forEach((b) => b && b._id && existingIds.add(b._id))
+
+        const newBooks = []
+        for (const item of books) {
+          if (!item || !item._id) continue
+          if (existingIds.has(item._id)) continue
+          existingIds.add(item._id)
+          newBooks.push(item)
         }
-        
-        let res=await this.$http.get(url, { headers })
-        //对象数组，对象包含绘本的name\id\content\description等
-        this.toolArry=res.data.message || []
-        
-      }catch(err){
-        this.loading=false 
-        console.log(err)
-        ElMessage({
-          message: this.$t('books.errorOccurred'),
-          type: 'error'
-        });
-      }
 
-    },
-
-//获取绘本的封面图片（优化：批量请求，使用 Promise.allSettled 避免单个失败影响整体）
-   async getImgUrl(){
-    // 获取 token 并添加到请求头
-    const token = localStorage.getItem('token');
-    const headers = {};
-    if (token && token !== 'undefined') {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const promises = this.toolArry.map((book, idx) => {
-      const firstId = Array.isArray(book.content) ? book.content[0] : null;
-      if (!firstId) {
-        // 如果没有封面ID，设置默认占位符
-        this.toolArry[idx].cover = '';
-        return Promise.resolve();
-      }
-      return this.$http.get(`/ill/` + firstId, { headers })
-        .then(res => {
-          if (res.data && res.data.message && res.data.message.content) {
-            this.toolArry[idx].cover = res.data.message.content;
-          }
-        })
-        .catch(err => {
-          console.log(`获取封面失败 (idx: ${idx}):`, err);
-          // 失败时设置空字符串，显示占位符
-          this.toolArry[idx].cover = '';
-        });
-    });
-    // 使用 allSettled 确保所有请求都完成，即使部分失败
-    await Promise.allSettled(promises);
-   },
-    setBooks(){
-      this.$store.commit("addBooks",this.toolArry)
-      this.loading=false  
-    },
-
-    async loadMore(){
-      if(!this.loadControl) {
-        this.loadControl=true
-        try {
-          const { sort_param, sort_num } = this.getSortParams();
-          const nextPage = this.num + 1;
-          let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=` + nextPage;
-          if (this.button2 && this.button2.trim() !== '') {
-            url += `&type=${this.button2}`;
-          }
-          
-          // 获取 token 并添加到请求头
-          const token = localStorage.getItem('token');
-          const headers = {};
-          if (token && token !== 'undefined') {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          
-          let res = await this.$http.get(url, { headers })
-          const books = res.data?.message || res.data?.data || [];
-          if (!Array.isArray(books) || books.length === 0) {
-            this.scrollDisabled = true
-            this.loadControl = false
-          } else {
-            // 追加到现有数组，而不是替换（无限滚动）
-            const currentLength = this.toolArry.length
-            this.toolArry = [...this.toolArry, ...books]
-            // 只获取新加载的图片URL，避免重复请求
-            await this.getImgUrlForRange(currentLength, books.length);
-            await this.setBooks();
-            this.num = nextPage;
-            this.loadControl=false
-          }
-        } catch (err) {
-          this.loadControl = false
+        // 本页全部重复：跳过这页，继续向后翻。连续多页都重复时判定没有更多数据。
+        if (!newBooks.length) {
+          this.num = nextPage
+          this.emptyPageStreak = (this.emptyPageStreak || 0) + 1
+          if (this.emptyPageStreak >= 2) this.scrollDisabled = true
+          return
         }
+        this.emptyPageStreak = 0
+
+        const currentLength = this.toolArry.length
+        this.toolArry = this.toolArry.concat(newBooks)
+        await this.fetchCoversForRange(currentLength, newBooks.length)
+        this.$store.commit('addBooks', newBooks)
+        this.num = nextPage
+      } catch (err) {
+        // 网络异常不禁用滚动，允许后续重试
+      } finally {
+        this.loadControl = false
       }
     },
-    
-    // 获取指定范围的图片URL（优化：只加载新数据）
-    async getImgUrlForRange(startIndex, count) {
-      // 获取 token 并添加到请求头
-      const token = localStorage.getItem('token');
-      const headers = {};
-      if (token && token !== 'undefined') {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const endIndex = startIndex + count
-      const promises = this.toolArry.slice(startIndex, endIndex).map((book, relativeIdx) => {
-        const idx = startIndex + relativeIdx
-        const firstId = Array.isArray(book.content) ? book.content[0] : null;
+
+    async fetchCoversForRange(startIndex, count) {
+      const headers = this.getAuthHeaders()
+      const endIndex = startIndex + (count == null ? this.toolArry.length - startIndex : count)
+      const promises = []
+      for (let idx = startIndex; idx < endIndex; idx++) {
+        const book = this.toolArry[idx]
+        if (!book) continue
+        const firstId = Array.isArray(book.content) ? book.content[0] : null
         if (!firstId) {
-          this.toolArry[idx].cover = '';
-          return Promise.resolve();
+          this.toolArry[idx].cover = ''
+          continue
         }
-        return this.$http.get(`/ill/` + firstId, { headers })
-          .then(res => {
-            if (res.data && res.data.message && res.data.message.content) {
-              this.toolArry[idx].cover = res.data.message.content;
-            }
-          })
-          .catch(err => {
-            console.log(`获取封面失败 (idx: ${idx}):`, err);
-            this.toolArry[idx].cover = '';
-          });
-      });
-      await Promise.allSettled(promises);
+        promises.push(
+          this.$http.get(`/ill/${firstId}`, { headers })
+            .then((res) => {
+              const content = res && res.data && res.data.message && res.data.message.content
+              this.toolArry[idx].cover = content || ''
+            })
+            .catch(() => {
+              this.toolArry[idx].cover = ''
+            })
+        )
+      }
+      await Promise.allSettled(promises)
     },
 
     handleCollectClick(id) {
       if (!id) {
-        ElMessage.error(this.$t('books.invalidBookId'));
-        return;
+        ElMessage.error(this.$t('books.invalidBookId'))
+        return
       }
-      
-      if (!this.collectingIds.includes(id)) {
-        this.collectingIds.push(id);
-      }
-      
+      if (!this.collectingIds.includes(id)) this.collectingIds.push(id)
+
       if (this.collectBookArr.includes(id)) {
-        this.cancelCollectBook(id);
+        this.cancelCollectBook(id)
       } else {
-        this.collectBookFun(id);
+        this.collectBookFun(id)
       }
-      
+
       setTimeout(() => {
-        const index = this.collectingIds.indexOf(id);
-        if (index > -1) {
-          this.collectingIds.splice(index, 1);
-        }
-      }, 600);
+        const index = this.collectingIds.indexOf(id)
+        if (index > -1) this.collectingIds.splice(index, 1)
+      }, 600)
     },
 
     collectBookFun(id) {
       if (!id) {
-        ElMessage.error(this.$t('books.invalidBookId'));
-        return;
+        ElMessage.error(this.$t('books.invalidBookId'))
+        return
       }
-      
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       if (!token) {
-        ElMessage.warning(this.$t('books.pleaseLogin'));
-        return;
+        ElMessage.warning(this.$t('books.pleaseLogin'))
+        return
       }
-      
-      this.$http.post(`/user/collect/${id}`, {
-        type: "book"
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then((response) => {
-        if (response.data.desc === "success" || response.data.code === 0) {
-          this.$store.commit("collectBook", [id])
-          if (response.data.message && response.data.message._id) {
-            this.collectIdMap[id] = response.data.message._id;
+
+      this.$http
+        .post(`/user/collect/${id}`, { type: 'book' }, { headers: { Authorization: `Bearer ${token}` } })
+        .then((response) => {
+          if (response.data.desc === 'success' || response.data.code === 0) {
+            this.$store.commit('collectBook', [id])
+            if (response.data.message && response.data.message._id) {
+              this.collectIdMap[id] = response.data.message._id
+            } else {
+              this.loadCollectIdMap()
+            }
+            ElMessage.success(this.$t('books.collectSuccess'))
           } else {
-            this.loadCollectIdMap();
+            ElMessage.warning(response.data.message || this.$t('books.collectFailed'))
           }
-          ElMessage.success(this.$t('books.collectSuccess'));
-        } else {
-          ElMessage.warning(response.data.message || this.$t('books.collectFailed'));
-        }
-      })
-      .catch(() => {
-        ElMessage.error(this.$t('books.collectFailedRetry'));
-      });
+        })
+        .catch(() => {
+          ElMessage.error(this.$t('books.collectFailedRetry'))
+        })
     },
 
     cancelCollectBook(bookId) {
-      const collectRecordId = this.collectIdMap[bookId];
+      const collectRecordId = this.collectIdMap[bookId]
       if (!collectRecordId) {
         this.loadCollectIdMap().then(() => {
-          const recordId = this.collectIdMap[bookId];
+          const recordId = this.collectIdMap[bookId]
           if (recordId) {
-            this.performCancelCollect(bookId, recordId);
+            this.performCancelCollect(bookId, recordId)
           } else {
-            ElMessage.error(this.$t('books.collectRecordNotFound'));
+            ElMessage.error(this.$t('books.collectRecordNotFound'))
           }
-        });
-        return;
+        })
+        return
       }
-      
-      this.performCancelCollect(bookId, collectRecordId);
+      this.performCancelCollect(bookId, collectRecordId)
     },
 
     performCancelCollect(bookId, collectRecordId) {
-      const token = localStorage.getItem('token');
-      this.$http.delete(`/user/list/collect?id=${collectRecordId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then((response) => {
-        if (response.data.desc === "success" || response.data.code === 0) {
-          this.$store.commit("cancelCoBook", bookId);
-          delete this.collectIdMap[bookId];
-          ElMessage.success(this.$t('books.cancelCollectSuccess'));
-        } else {
-          ElMessage.warning(response.data.message || this.$t('books.cancelCollectFailed'));
-        }
-      })
-      .catch(() => {
-        ElMessage.error(this.$t('books.cancelCollectFailedRetry'));
-      });
+      this.$http
+        .delete(`/user/list/collect?id=${collectRecordId}`, { headers: this.getAuthHeaders() })
+        .then((response) => {
+          if (response.data.desc === 'success' || response.data.code === 0) {
+            this.$store.commit('cancelCoBook', bookId)
+            delete this.collectIdMap[bookId]
+            ElMessage.success(this.$t('books.cancelCollectSuccess'))
+          } else {
+            ElMessage.warning(response.data.message || this.$t('books.cancelCollectFailed'))
+          }
+        })
+        .catch(() => {
+          ElMessage.error(this.$t('books.cancelCollectFailedRetry'))
+        })
     },
 
     async loadCollectIdMap() {
       try {
-        const userId = localStorage.getItem("id");
-        const token = localStorage.getItem("token");
-        if (!userId || !token) {
-          return;
-        }
+        const userId = localStorage.getItem('id')
+        const token = localStorage.getItem('token')
+        if (!userId || !token) return
         const res = await this.$http.get(`/user/list/collect?id=${userId}&category=book`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (res.data.desc === "success" || res.data.code === 0) {
-          const collectRecords = res.data.message || [];
-          this.collectIdMap = {};
-          collectRecords.forEach(record => {
-            if (record.collectid) {
-              this.collectIdMap[record.collectid] = record._id;
-            }
-          });
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.data.desc === 'success' || res.data.code === 0) {
+          const collectRecords = res.data.message || []
+          this.collectIdMap = {}
+          collectRecords.forEach((record) => {
+            if (record.collectid) this.collectIdMap[record.collectid] = record._id
+          })
         }
       } catch (error) {
         // 静默失败
       }
     },
 
-    async getAllBooks(){
-      this.$store.commit("removeBooks")
-      this.num = 1;
-      this.scrollDisabled = false;
-      this.loadControl = false;
-      if(this.searchInput==''){
-        this.$router.push({
-          name: "books"
-        });
-        await this.getBooks();
-        await this.getImgUrl();
-        await this.setBooks();
-      }
+    resetListState() {
+      this.num = 1
+      this.scrollDisabled = false
+      this.loadControl = false
+      this.initialLoaded = false
+      this.toolArry = []
+      this.emptyPageStreak = 0
     },
 
-    async handleSortChange() {
-      this.num = 1;
-      this.scrollDisabled = false;
-      this.loadControl = false;
-      this.loading = true;
-      this.$store.commit("removeBooks");
-      await this.getBooks();
-      await this.getImgUrl();
-      await this.setBooks();
+    async reloadBooks() {
+      this.loading = true
+      this.resetListState()
+      this.$store.commit('removeBooks')
+      await this.getBooks()
+      await this.fetchCoversForRange(0, this.toolArry.length)
+      this.setBooks()
+      this.initialLoaded = true
     },
 
-    async handleCategoryChange() {
-      this.num = 1;
-      this.scrollDisabled = false;
-      this.loadControl = false;
-      this.loading = true;
-      this.$store.commit("removeBooks");
-      await this.getBooks();
-      await this.getImgUrl();
-      await this.setBooks();
+    async getAllBooks() {
+      this.$router.push({ name: 'books' })
+      await this.reloadBooks()
     },
+
+    handleSortChange() {
+      return this.reloadBooks()
+    },
+
+    handleCategoryChange() {
+      return this.reloadBooks()
+    }
   },
 
 
@@ -697,13 +654,6 @@ export default {
   min-height: calc(14px * 1.4 * 2);
 }
 
-.book-subtype {
-  font-size: 12px;
-  color: #9298aa;
-  text-align: left;
-  letter-spacing: 0.01em;
-}
-
 /* ---------- Placeholders ---------- */
 .img-placeholder,
 .img-error {
@@ -753,11 +703,6 @@ export default {
   padding: 0 1vw;
 }
 
-.el-select :deep(.el-select) {
-  width: 200px;
-  min-width: 200px;
-}
-
 .box {
   margin-bottom: 32px;
 }
@@ -769,8 +714,6 @@ export default {
   color: #c0c4cc;
   font-size: 18px;
 }
-
-.loading .text { display: block; }
 
 /* 自定义类别选择按钮的选中颜色 */
 :deep(.el-radio-button.is-active .el-radio-button__inner) {
