@@ -12,8 +12,8 @@
           <svg
             class="clear-entry-btn-icon"
             viewBox="0 0 24 24"
-            width="14"
-            height="14"
+            width="11"
+            height="11"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
@@ -615,15 +615,15 @@ export default {
 .clear-entry-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  height: 28px;
-  font-size: 12px;
+  gap: 3px;
+  padding: 2px 8px;
+  height: 22px;
+  font-size: 11px;
   line-height: 1;
   color: #8a8a8a;
   background: transparent;
   border: 1px solid #e4e7ed;
-  border-radius: 999px;
+  border-radius: 4px;
   cursor: pointer;
   transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
