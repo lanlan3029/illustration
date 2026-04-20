@@ -75,6 +75,30 @@
             <span class="save-mood-btn-spinner" v-else aria-hidden="true"></span>
             <span>{{ savingCreation ? $t('moodDiary.savingMood') : $t('moodDiary.saveMood') }}</span>
           </button>
+          <button
+            v-if="generatedImageUrl"
+            type="button"
+            class="download-mood-btn"
+            @click="downloadCurrentMoodIllustration"
+          >
+            <svg
+              class="download-mood-btn-icon"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3v12" />
+              <path d="M7 10l5 5 5-5" />
+              <path d="M4 21h16" />
+            </svg>
+            <span>{{ $t('moodDiary.downloadMood') }}</span>
+          </button>
         </div>
         <div v-if="generatedImageUrl" ref="generatedPreview" class="generated-preview">
           <img
@@ -174,9 +198,6 @@ export default {
         this.saveMoodDiaryDraft()
       },
       deep: false
-    },
-    generatedImageUrl() {
-      this.saveMoodDiaryDraft()
     }
   },
   computed: {
@@ -219,8 +240,7 @@ export default {
           savedAt: Date.now(),
           selectedMoodId: this.selectedMood ? this.selectedMood.id : null,
           diaryContent: this.diaryContent || '',
-          selectedStyleId: this.selectedStyleId || 1,
-          generatedImageUrl: this.generatedImageUrl || null
+          selectedStyleId: this.selectedStyleId || 1
         }
         localStorage.setItem(MOOD_DIARY_DRAFT_KEY, JSON.stringify(payload))
       } catch (_) {
@@ -236,9 +256,6 @@ export default {
 
         if (typeof data.diaryContent === 'string') this.diaryContent = data.diaryContent
         if (data.selectedStyleId != null) this.selectedStyleId = Number(data.selectedStyleId) || 1
-        if (typeof data.generatedImageUrl === 'string' && data.generatedImageUrl.startsWith('data:')) {
-          this.generatedImageUrl = data.generatedImageUrl
-        }
 
         const moodId = data.selectedMoodId
         if (moodId) {
@@ -326,6 +343,27 @@ export default {
         return
       }
       await this.saveComposedToCreation(this.generatedImageUrl)
+    },
+    downloadCurrentMoodIllustration() {
+      if (!this.generatedImageUrl) {
+        ElMessage.warning(this.$t('moodDiary.generateFailed'))
+        return
+      }
+      try {
+        const ts = new Date()
+        const pad = (n) => String(n).padStart(2, '0')
+        const filename = `mood-diary-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.jpg`
+        const link = document.createElement('a')
+        link.href = this.generatedImageUrl
+        link.download = filename
+        link.rel = 'noopener'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        ElMessage.success(this.$t('moodDiary.downloadSuccess'))
+      } catch (err) {
+        ElMessage.error(this.$t('moodDiary.downloadFailed'))
+      }
     },
     async composeMoodCardImage(imageUrl, text) {
       const sourceUrl = await this.normalizeImageUrl(imageUrl)
@@ -616,9 +654,14 @@ export default {
 .generator-actions {
   margin-top: 10px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
   align-items: center;
+  justify-content: flex-start;
+}
+
+.generator-actions > * {
+  flex: 0 0 auto;
 }
 
 .save-mood-btn {
@@ -679,6 +722,41 @@ export default {
   to {
     transform: rotate(360deg);
   }
+}
+
+.download-mood-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  height: 36px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5a4b7a;
+  border: 1px solid rgba(129, 103, 169, 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+  background: #fff;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.download-mood-btn:hover {
+  transform: translateY(-1px);
+  color: #8167a9;
+  border-color: #8167a9;
+  background: rgba(129, 103, 169, 0.06);
+  box-shadow: 0 6px 14px rgba(129, 103, 169, 0.16);
+}
+
+.download-mood-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(129, 103, 169, 0.12);
+}
+
+.download-mood-btn-icon {
+  flex-shrink: 0;
 }
 
 .generated-preview {
@@ -798,6 +876,24 @@ export default {
   .style-chip img {
     width: 66px;
     height: 44px;
+  }
+
+  .generator-actions {
+    gap: 8px;
+  }
+
+  .generator-actions .el-button,
+  .save-mood-btn,
+  .download-mood-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .save-mood-btn,
+  .download-mood-btn {
+    justify-content: center;
   }
 }
 </style>

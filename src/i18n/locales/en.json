@@ -308,7 +308,10 @@
     "saveCreationFailed": "Failed to save to My Creations, please try again",
     "creationTitle": "Mood Diary Illustration",
     "saveMood": "Save Mood Illustration",
-    "savingMood": "Saving..."
+    "savingMood": "Saving...",
+    "downloadMood": "Download",
+    "downloadSuccess": "Download started",
+    "downloadFailed": "Download failed, please try again"
   },
   "home": {
     "welcomeTitle": "Welcome to Illustration Creation Platform",
