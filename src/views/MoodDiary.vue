@@ -49,14 +49,32 @@
           >
             {{ generating ? $t('moodDiary.generating') : $t('moodDiary.generateMood') }}
           </el-button>
-          <el-button
+          <button
             v-if="generatedImageUrl"
-            type="success"
-            :loading="savingCreation"
+            type="button"
+            class="save-mood-btn"
+            :class="{ 'is-loading': savingCreation }"
+            :disabled="savingCreation"
             @click="saveCurrentMoodIllustration"
           >
-            {{ savingCreation ? $t('moodDiary.savingMood') : $t('moodDiary.saveMood') }}
-          </el-button>
+            <svg
+              v-if="!savingCreation"
+              class="save-mood-btn-icon"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            <span class="save-mood-btn-spinner" v-else aria-hidden="true"></span>
+            <span>{{ savingCreation ? $t('moodDiary.savingMood') : $t('moodDiary.saveMood') }}</span>
+          </button>
         </div>
         <div v-if="generatedImageUrl" ref="generatedPreview" class="generated-preview">
           <img
@@ -356,13 +374,23 @@ export default {
       ctx.restore()
       ctx.filter = 'none'
 
-      // 文字区
+      // 文字区（手绘风字体 + 水平居中）
       const textY = imageY + imageH + 36
-      ctx.fillStyle = '#1f2430'
-      ctx.font = '600 34px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+      const moodFont = '400 36px "阿里妈妈灵动体", "苦累蛙圓體", "寒蝉圆体", "Caveat", "PingFang SC", "Microsoft YaHei", sans-serif'
+      try {
+        if (document.fonts && typeof document.fonts.load === 'function') {
+          await document.fonts.load(`36px "阿里妈妈灵动体"`)
+        }
+      } catch (_) {
+        // 字体未就绪时回落到后续 fallback 字体
+      }
+      ctx.fillStyle = '#2a1f42'
+      ctx.font = moodFont
       ctx.textBaseline = 'top'
+      ctx.textAlign = 'center'
+      const textCenterX = imageX + imageW / 2
       textLines.forEach((line, index) => {
-        ctx.fillText(line, imageX, textY + index * lineHeight)
+        ctx.fillText(line, textCenterX, textY + index * lineHeight)
       })
 
       return canvas.toDataURL('image/jpeg', 0.92)
@@ -593,12 +621,94 @@ export default {
   align-items: center;
 }
 
+.save-mood-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  height: 36px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff9a8b 0%, #ff6a88 45%, #8167a9 100%);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  box-shadow: 0 6px 16px rgba(255, 106, 136, 0.28),
+    0 2px 6px rgba(129, 103, 169, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    background-position 0.4s ease, opacity 0.18s ease;
+  white-space: nowrap;
+}
+
+.save-mood-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-position: 100% 50%;
+  box-shadow: 0 10px 22px rgba(255, 106, 136, 0.34),
+    0 4px 10px rgba(129, 103, 169, 0.22);
+}
+
+.save-mood-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(255, 106, 136, 0.22);
+}
+
+.save-mood-btn:disabled,
+.save-mood-btn.is-loading {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.save-mood-btn-icon {
+  flex-shrink: 0;
+}
+
+.save-mood-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #fff;
+  animation: save-mood-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes save-mood-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .generated-preview {
   margin-top: 12px;
   border: 1px solid #ebeef5;
   border-radius: 8px;
   background: #f8f8fb;
   padding: 8px;
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.generated-preview::-webkit-scrollbar {
+  width: 8px;
+}
+
+.generated-preview::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.generated-preview::-webkit-scrollbar-thumb {
+  background: rgba(129, 103, 169, 0.25);
+  border-radius: 4px;
+}
+
+.generated-preview::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 103, 169, 0.45);
 }
 
 .generated-image-img {
