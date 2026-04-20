@@ -198,6 +198,9 @@ export default {
         this.saveMoodDiaryDraft()
       },
       deep: false
+    },
+    generatedImageUrl() {
+      this.saveMoodDiaryDraft()
     }
   },
   computed: {
@@ -240,7 +243,8 @@ export default {
           savedAt: Date.now(),
           selectedMoodId: this.selectedMood ? this.selectedMood.id : null,
           diaryContent: this.diaryContent || '',
-          selectedStyleId: this.selectedStyleId || 1
+          selectedStyleId: this.selectedStyleId || 1,
+          generatedImageUrl: this.generatedImageUrl || null
         }
         localStorage.setItem(MOOD_DIARY_DRAFT_KEY, JSON.stringify(payload))
       } catch (_) {
@@ -256,6 +260,9 @@ export default {
 
         if (typeof data.diaryContent === 'string') this.diaryContent = data.diaryContent
         if (data.selectedStyleId != null) this.selectedStyleId = Number(data.selectedStyleId) || 1
+        if (typeof data.generatedImageUrl === 'string' && data.generatedImageUrl.startsWith('data:')) {
+          this.generatedImageUrl = data.generatedImageUrl
+        }
 
         const moodId = data.selectedMoodId
         if (moodId) {
