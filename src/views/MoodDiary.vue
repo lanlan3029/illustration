@@ -51,13 +51,11 @@
           </el-button>
         </div>
         <div v-if="generatedImageUrl" ref="generatedPreview" class="generated-preview">
-          <div class="generated-image-scroll">
-            <img
-              :src="generatedImageUrl"
-              alt=""
-              class="generated-image-img"
-            />
-          </div>
+          <img
+            :src="generatedImageUrl"
+            alt=""
+            class="generated-image-img"
+          />
           <div class="preview-actions">
             <el-button
               type="success"
@@ -598,15 +596,19 @@ export default {
   border: 1px solid #ebeef5;
   border-radius: 8px;
   background: #f8f8fb;
-  overflow: hidden;
+  display: block;
 }
 
-.generated-image-scroll {
-  max-height: min(52vh, 560px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+.generated-image-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  max-height: 60vh;
+  height: auto;
+  object-fit: contain;
+  background: #f8f8fb;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 .preview-actions {
@@ -615,13 +617,8 @@ export default {
   padding: 12px;
   background: #fff;
   border-top: 1px solid #ebeef5;
-}
-
-.generated-image-img {
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  display: block;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .dialog-title {
