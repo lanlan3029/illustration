@@ -309,6 +309,7 @@
     "creationTitle": "Mood Diary Illustration",
     "saveMood": "Save Mood Illustration",
     "savingMood": "Saving...",
+    "clearEntry": "Clear",
     "downloadMood": "Download",
     "downloadSuccess": "Download started",
     "downloadFailed": "Download failed, please try again"

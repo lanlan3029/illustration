@@ -1,7 +1,35 @@
 <template>
   <div class="mood-diary-page">
     <div class="mood-diary-card">
-      <h1 class="page-title">{{ $t('moodDiary.title') }}</h1>
+      <div class="page-title-row">
+        <h1 class="page-title">{{ $t('moodDiary.title') }}</h1>
+        <button
+          v-if="selectedMood || (diaryContent && diaryContent.trim())"
+          type="button"
+          class="clear-entry-btn"
+          @click="clearMoodEntry"
+        >
+          <svg
+            class="clear-entry-btn-icon"
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+          </svg>
+          <span>{{ $t('moodDiary.clearEntry') }}</span>
+        </button>
+      </div>
      
 
       <div class="diary-input-wrap">
@@ -279,6 +307,10 @@ export default {
     selectMood(mood) {
       this.selectedMood = mood
       this.moodDialogVisible = false
+    },
+    clearMoodEntry() {
+      this.diaryContent = ''
+      this.selectedMood = null
     },
     async generateIllustration() {
       if (!this.generatedPrompt) {
@@ -566,10 +598,48 @@ export default {
   box-shadow: 0 6px 20px rgba(31, 35, 41, 0.08);
 }
 
+.page-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .page-title {
   margin: 0;
   font-size: 24px;
   color: #303133;
+}
+
+.clear-entry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  height: 28px;
+  font-size: 12px;
+  line-height: 1;
+  color: #8a8a8a;
+  background: transparent;
+  border: 1px solid #e4e7ed;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.clear-entry-btn:hover {
+  color: #e14a4a;
+  border-color: #f5c2c2;
+  background: rgba(225, 74, 74, 0.06);
+}
+
+.clear-entry-btn:active {
+  background: rgba(225, 74, 74, 0.1);
+}
+
+.clear-entry-btn-icon {
+  flex-shrink: 0;
 }
 
 .page-subtitle {
