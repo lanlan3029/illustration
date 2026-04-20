@@ -904,7 +904,7 @@ export default {
 <style scoped>
 .maze-page {
   min-height: calc(100vh - 56px);
-  padding: 72px 16px 32px;
+  padding:16px 32px;
   box-sizing: border-box;
   background: linear-gradient(180deg, #f6f4fb 0%, #eef1f8 100%);
 }

@@ -50,7 +50,7 @@
             {{ generating ? $t('moodDiary.generating') : $t('moodDiary.generateMood') }}
           </el-button>
         </div>
-        <div v-if="generatedImageUrl" class="generated-preview">
+        <div v-if="generatedImageUrl" ref="generatedPreview" class="generated-preview">
           <div class="generated-image-scroll">
             <img
               :src="generatedImageUrl"
@@ -61,6 +61,7 @@
           <div class="preview-actions">
             <el-button
               type="success"
+              size="large"
               :loading="savingCreation"
               @click="saveCurrentMoodIllustration"
             >
@@ -293,6 +294,12 @@ export default {
         const composedDataUrl = await this.composeMoodCardImage(imageUrl, this.diaryContent.trim())
         this.generatedImageUrl = composedDataUrl
         ElMessage.success(this.$t('moodDiary.generateSuccess'))
+        this.$nextTick(() => {
+          const el = this.$refs.generatedPreview
+          if (el && typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'end' })
+          }
+        })
       } catch (error) {
         ElMessage.error(error.message || this.$t('moodDiary.generateFailed'))
       } finally {
@@ -590,16 +597,11 @@ export default {
   margin-top: 12px;
   border: 1px solid #ebeef5;
   border-radius: 8px;
-  overflow: hidden;
   background: #f8f8fb;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+  overflow: hidden;
 }
 
 .generated-image-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
   max-height: min(52vh, 560px);
   overflow-y: auto;
   overflow-x: hidden;
@@ -608,10 +610,9 @@ export default {
 }
 
 .preview-actions {
-  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
-  padding: 10px 12px 12px;
+  padding: 12px;
   background: #fff;
   border-top: 1px solid #ebeef5;
 }
