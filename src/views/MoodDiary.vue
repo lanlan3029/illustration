@@ -49,6 +49,14 @@
           >
             {{ generating ? $t('moodDiary.generating') : $t('moodDiary.generateMood') }}
           </el-button>
+          <el-button
+            v-if="generatedImageUrl"
+            type="success"
+            :loading="savingCreation"
+            @click="saveCurrentMoodIllustration"
+          >
+            {{ savingCreation ? $t('moodDiary.savingMood') : $t('moodDiary.saveMood') }}
+          </el-button>
         </div>
         <div v-if="generatedImageUrl" ref="generatedPreview" class="generated-preview">
           <img
@@ -56,16 +64,6 @@
             alt=""
             class="generated-image-img"
           />
-          <div class="preview-actions">
-            <el-button
-              type="success"
-              size="large"
-              :loading="savingCreation"
-              @click="saveCurrentMoodIllustration"
-            >
-              {{ savingCreation ? $t('moodDiary.savingMood') : $t('moodDiary.saveMood') }}
-            </el-button>
-          </div>
         </div>
       </div>
 
@@ -589,6 +587,10 @@ export default {
 
 .generator-actions {
   margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .generated-preview {
@@ -596,29 +598,15 @@ export default {
   border: 1px solid #ebeef5;
   border-radius: 8px;
   background: #f8f8fb;
-  display: block;
+  padding: 8px;
 }
 
 .generated-image-img {
   display: block;
   width: 100%;
   max-width: 100%;
-  max-height: 60vh;
   height: auto;
-  object-fit: contain;
-  background: #f8f8fb;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-}
-
-.preview-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 12px;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  border-radius: 6px;
 }
 
 .dialog-title {
