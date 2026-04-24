@@ -1001,6 +1001,26 @@ export default {
             })
         },
 
+        /** 接口常把 message 嵌套成对象，避免 new Error(obj) 变成 [object Object] */
+        normalizeApiErrorToString(raw) {
+            if (raw == null || raw === '') return ''
+            if (typeof raw === 'string') return raw
+            if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
+            if (typeof raw === 'object') {
+                const nested = raw.message ?? raw.msg ?? raw.error ?? raw.desc ?? raw.detail
+                if (nested != null && nested !== raw) {
+                    const s = this.normalizeApiErrorToString(nested)
+                    if (s) return s
+                }
+                try {
+                    return JSON.stringify(raw)
+                } catch (e) {
+                    return '请求失败'
+                }
+            }
+            return String(raw)
+        },
+
         shuffleStyles() {
             if (this.inspirationSource === 'illustration') {
                 const arr = this.visibleStyles.map(s => s.id)
@@ -1099,11 +1119,19 @@ export default {
 
             try {
                 const requestData = this.buildCreateCharacterRequest()
-                const refs = (this.referenceImageUrls || []).filter(Boolean)
+                let refs = (this.referenceImageUrls || []).filter(Boolean)
+                // 多图时 JSON 体积极大，按张数分摊压缩，降低网关/解析失败概率
+                if (refs.length > 1) {
+                    const budget = 850 * 1024
+                    const per = Math.max(220 * 1024, Math.floor(budget / refs.length))
+                    refs = await Promise.all(
+                        refs.slice(0, 10).map((u) => this.compressDataUrlIfNeeded(u, per))
+                    )
+                }
                 if (refs.length === 1) {
                     requestData.image = refs[0]
                 } else if (refs.length > 1) {
-                    requestData.image = refs.slice(0, 10)
+                    requestData.image = refs
                 }
 
                 const apiUrl = this.apiBaseUrl
@@ -1125,7 +1153,9 @@ export default {
                         || responseData.statuscode === 'success')
 
                 if (isWrappedFail) {
-                    const errorMsg = responseData.error?.message || responseData.message || responseData.desc || '生成失败，请重试'
+                    const errorMsg = this.normalizeApiErrorToString(
+                        responseData.error?.message ?? responseData.error ?? responseData.message ?? responseData.desc
+                    ) || '生成失败，请重试'
                     throw new Error(errorMsg)
                 }
 
@@ -1157,9 +1187,12 @@ export default {
                     if (status === 401) errorMessage = '未授权，请先登录'
                     else if (status === 403) errorMessage = '无权限访问'
                     else if (status === 404) errorMessage = 'API接口不存在'
-                    else if (status === 400) errorMessage = data?.message || data?.error || '请求参数错误'
-                    else if (status === 500) errorMessage = '服务器错误，请稍后重试'
-                    else errorMessage = data?.message || data?.error || `请求失败 (${status})`
+                    else if (status === 400) {
+                        errorMessage = this.normalizeApiErrorToString(data?.message ?? data?.error) || '请求参数错误'
+                    } else if (status === 500) errorMessage = '服务器错误，请稍后重试'
+                    else {
+                        errorMessage = this.normalizeApiErrorToString(data?.message ?? data?.error) || `请求失败 (${status})`
+                    }
                 } else if (error.request) {
                     errorMessage = '网络错误，请检查网络连接'
                 } else if (error.message) {
