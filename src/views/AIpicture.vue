@@ -881,29 +881,21 @@ export default {
             this.canScrollNext = rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 4
         },
 
-        buildGenerationRequest() {
+        /**
+         * KidStory 后端为 POST /create-character（与 CreateCharacter / AIBooks 一致），
+         * 无 OpenAI 兼容路径 /v1/images/generations，勿改路径除非网关已部署该路由。
+         */
+        buildCreateCharacterRequest() {
             const prompt = (this.generatedPrompt || '').slice(0, 5000)
-            const req = {
+            const size = this.selectedSize && this.selectedSize !== 'auto'
+                ? this.selectedSize
+                : '1280x960'
+            return {
                 prompt,
-                model: this.selectedModel || 'gpt-image-2',
-                size: this.selectedSize || 'auto',
-                n: Number(this.imageCount) || 1
+                size,
+                response_format: 'b64_json',
+                watermark: false
             }
-
-            if (this.isDallE) {
-                req.quality = this.selectedQuality === 'high' ? 'hd' : 'standard'
-                req.response_format = 'b64_json'
-                if (this.selectedModel === 'dall-e-3') {
-                    req.style = 'vivid'
-                }
-            } else {
-                req.quality = this.selectedQuality || 'auto'
-                req.output_format = this.outputFormat || 'png'
-                if ((this.outputFormat === 'jpeg' || this.outputFormat === 'webp') && typeof this.outputCompression === 'number') {
-                    req.output_compression = this.outputCompression
-                }
-            }
-            return req
         },
 
         extractImageUrl(responseData) {
@@ -956,14 +948,14 @@ export default {
             this.generating = true
 
             try {
-                const requestData = this.buildGenerationRequest()
+                const requestData = this.buildCreateCharacterRequest()
                 if (this.referenceImageUrl) {
                     requestData.image = this.referenceImageUrl
                 }
 
                 const apiUrl = this.apiBaseUrl
-                    ? `${this.apiBaseUrl}/v1/images/generations`
-                    : '/v1/images/generations'
+                    ? `${this.apiBaseUrl}/create-character`
+                    : '/create-character'
 
                 const response = await this.$http.post(apiUrl, requestData, {
                     headers: {
