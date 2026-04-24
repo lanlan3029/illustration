@@ -49,6 +49,7 @@
         "@vue/compiler-sfc": "^3.3.4",
         "eslint": "^8.50.0",
         "eslint-plugin-vue": "^9.18.1",
+        "google-translate-api-x": "^10.7.2",
         "svg-vue3-loader": "^1.0.2",
         "ts-loader": "^9.5.4",
         "typescript": "^5.9.3"

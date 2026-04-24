@@ -579,6 +579,9 @@ export default {
             imageLoading: false,
             imageLoadError: false,
 
+            /** 最近一次成功「生成」时请求里的 prompt 快照，与 current generatedImageUrl 一致；重选风格后不会变。 */
+            lastGeneratedPromptSnapshot: '',
+
             stylePreview: {
                 show: false,
                 left: 0,
@@ -1071,6 +1074,7 @@ export default {
                 return
             }
             this.generatedImageUrl = null
+            this.lastGeneratedPromptSnapshot = ''
             this.generating = true
 
             try {
@@ -1112,6 +1116,7 @@ export default {
 
                 const imageUrl = this.extractImageUrl(responseData)
                 if (imageUrl) {
+                    this.lastGeneratedPromptSnapshot = (requestData.prompt && String(requestData.prompt)) || ''
                     this.generatedImageUrl = imageUrl
                     this.imageLoading = true
                     this.imageLoadError = false
@@ -1216,7 +1221,7 @@ export default {
                 if (pictureValue && pictureValue.startsWith('data:')) {
                     pictureValue = await this.compressDataUrlIfNeeded(pictureValue)
                 }
-                const rawPrompt = this.generatedPrompt || ''
+                const rawPrompt = (this.lastGeneratedPromptSnapshot || this.generatedPrompt || '').trim()
                 let title = 'AI插画'
                 if (rawPrompt) {
                     const trimmed = rawPrompt.replace(/\s+/g, ' ').trim()
@@ -1299,7 +1304,7 @@ export default {
             try {
                 const imageData = {
                     url: imageUrl,
-                    prompt: this.generatedPrompt || '',
+                    prompt: this.lastGeneratedPromptSnapshot || this.generatedPrompt || '',
                     artStyle: this.selectedStyle?.artStyle
                         || (this.selectedPackItem ? this.packItemDisplayTitle(this.selectedPackItem) : '')
                         || (this.selectedOaiItem ? this.selectedOaiItem.title : '')
@@ -1313,7 +1318,7 @@ export default {
                     localStorage.removeItem('home_generated_image')
                     localStorage.setItem('home_generated_image', JSON.stringify({
                         url: imageUrl,
-                        prompt: this.generatedPrompt || '',
+                        prompt: this.lastGeneratedPromptSnapshot || this.generatedPrompt || '',
                         artStyle: this.selectedStyle?.artStyle
                             || (this.selectedPackItem ? this.packItemDisplayTitle(this.selectedPackItem) : '')
                             || (this.selectedOaiItem ? this.selectedOaiItem.title : '')
@@ -1331,7 +1336,12 @@ export default {
                 const saved = localStorage.getItem('home_generated_image')
                 if (saved) {
                     const imageData = JSON.parse(saved)
-                    if (imageData && imageData.url) this.generatedImageUrl = imageData.url
+                    if (imageData && imageData.url) {
+                        this.generatedImageUrl = imageData.url
+                        this.lastGeneratedPromptSnapshot = imageData.prompt
+                            ? String(imageData.prompt)
+                            : ''
+                    }
                 }
             } catch (error) {
                 console.error('恢复插画失败:', error)
@@ -1352,6 +1362,7 @@ export default {
             try {
                 localStorage.removeItem('home_generated_image')
                 this.generatedImageUrl = null
+                this.lastGeneratedPromptSnapshot = ''
                 this.imageLoading = false
                 this.imageLoadError = false
                 ElMessage.success({ message: '已清除插画数据', offset: 200 })
@@ -1661,19 +1672,22 @@ export default {
     position: relative;
 }
 
+/* 下拉面版：向下展开，避免与固定 TopBar(z-index:10000) 重叠；置于顶栏之上 */
 .size-menu {
     position: absolute;
-    bottom: calc(100% + 8px);
+    top: calc(100% + 6px);
+    bottom: auto;
     left: 0;
+    right: auto;
     background: #fff;
     border: 1px solid #ececf0;
     border-radius: 14px;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
     padding: 6px;
     min-width: 220px;
-    max-height: 60vh;
+    max-height: min(60vh, 400px);
     overflow-y: auto;
-    z-index: 30;
+    z-index: 10020;
 }
 
 .size-menu-group-label {
