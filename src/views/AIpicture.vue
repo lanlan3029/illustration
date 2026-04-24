@@ -93,7 +93,11 @@
                                     :class="{ selected: selectedStyleId === style.id }"
                                     @click="selectStyle(style.id)"
                                 >
-                                    <div class="style-list-item-thumb">
+                                    <div
+                                        class="style-list-item-thumb"
+                                        @mouseenter="enterStylePreview($event, style.image, style.artStyle)"
+                                        @mouseleave="beginLeaveStylePreview"
+                                    >
                                         <img
                                             :src="style.image"
                                             :alt="style.artStyle"
@@ -113,15 +117,24 @@
                                     :class="{ selected: selectedPackItemId === item.id }"
                                     @click="selectPackItem(item)"
                                 >
-                                    <div class="style-list-item-thumb">
+                                    <div
+                                        v-if="item.image"
+                                        class="style-list-item-thumb"
+                                        @mouseenter="enterStylePreview($event, item.image, packItemDisplayTitle(item))"
+                                        @mouseleave="beginLeaveStylePreview"
+                                    >
                                         <img
-                                            v-if="item.image"
                                             :src="item.image"
                                             :alt="packItemDisplayTitle(item)"
                                             class="style-list-item-img"
                                             loading="lazy"
                                         />
-                                        <div v-else class="style-list-item-img style-list-item-fallback" aria-hidden="true" />
+                                    </div>
+                                    <div
+                                        v-else
+                                        class="style-list-item-thumb"
+                                    >
+                                        <div class="style-list-item-img style-list-item-fallback" aria-hidden="true" />
                                     </div>
                                     <span class="style-list-item-text">{{ packItemDisplayTitle(item) }}</span>
                                 </button>
@@ -136,15 +149,24 @@
                                     :title="item.description || item.title"
                                     @click="selectOaiTemplate(item)"
                                 >
-                                    <div class="style-list-item-thumb">
+                                    <div
+                                        v-if="item.image"
+                                        class="style-list-item-thumb"
+                                        @mouseenter="enterStylePreview($event, item.image, item.title)"
+                                        @mouseleave="beginLeaveStylePreview"
+                                    >
                                         <img
-                                            v-if="item.image"
                                             :src="item.image"
                                             :alt="item.title"
                                             class="style-list-item-img"
                                             loading="lazy"
                                         />
-                                        <div v-else class="style-list-item-img style-list-item-fallback" aria-hidden="true" />
+                                    </div>
+                                    <div
+                                        v-else
+                                        class="style-list-item-thumb"
+                                    >
+                                        <div class="style-list-item-img style-list-item-fallback" aria-hidden="true" />
                                     </div>
                                     <div class="style-list-item-body">
                                         <span class="style-list-item-text">{{ item.title }}</span>
@@ -159,73 +181,6 @@
                 <div class="editor-column">
             <!-- 主输入框 -->
             <div class="prompt-card" :class="{ 'is-focused': isFocused }">
-                <!-- 已选风格（在输入区域上方） -->
-                <div v-if="selectedStyle" class="selected-style-bar">
-                    <div class="selected-style-main">
-                        <img
-                            v-if="selectedStyle.image"
-                            :src="selectedStyle.image"
-                            alt=""
-                            class="selected-style-thumb"
-                        />
-                        <div class="selected-style-text">
-                            <span class="selected-style-eyebrow">{{ $t('aiPicture.currentStyle') || '当前风格' }}</span>
-                            <span class="selected-style-name">{{ selectedStyle.artStyle }}</span>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        class="selected-style-clear"
-                        @click="clearSelectedStyle"
-                    >
-                        {{ $t('aiPicture.clearStyle') || '仅清除风格' }}
-                    </button>
-                </div>
-                <div v-else-if="selectedPackItem" class="selected-style-bar selected-style-bar--pack">
-                    <div class="selected-style-main">
-                        <img
-                            v-if="selectedPackItem.image"
-                            :src="selectedPackItem.image"
-                            alt=""
-                            class="selected-style-thumb"
-                        />
-                        <div v-else class="selected-style-thumb selected-style-thumb--empty" aria-hidden="true" />
-                        <div class="selected-style-text">
-                            <span class="selected-style-eyebrow">{{ $t('aiPicture.currentPack') || '当前提示词' }}</span>
-                            <span class="selected-style-name">{{ packItemDisplayTitle(selectedPackItem) }}</span>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        class="selected-style-clear"
-                        @click="clearSelectedPack"
-                    >
-                        {{ $t('aiPicture.clearPack') || '仅清除' }}
-                    </button>
-                </div>
-                <div v-else-if="selectedOaiItem" class="selected-style-bar selected-style-bar--oai">
-                    <div class="selected-style-main">
-                        <img
-                            v-if="selectedOaiItem.image"
-                            :src="selectedOaiItem.image"
-                            alt=""
-                            class="selected-style-thumb"
-                        />
-                        <div v-else class="selected-style-thumb selected-style-thumb--empty" aria-hidden="true" />
-                        <div class="selected-style-text">
-                            <span class="selected-style-eyebrow">{{ $t('aiPicture.currentOaiTemplate') || '创意模板' }}</span>
-                            <span class="selected-style-name">{{ selectedOaiItem.title }}</span>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        class="selected-style-clear"
-                        @click="clearSelectedOai"
-                    >
-                        {{ $t('aiPicture.clearOai') || '仅清除' }}
-                    </button>
-                </div>
-
                 <textarea
                     ref="promptInput"
                     v-model="subjectScene"
@@ -464,6 +419,28 @@
                 </div>
             </div>
         </main>
+        <teleport to="body">
+            <div
+                v-if="stylePreview.show"
+                class="style-image-preview-floater"
+                :style="{
+                    left: stylePreview.left + 'px',
+                    top: stylePreview.top + 'px',
+                }"
+                @mouseenter="cancelLeaveStylePreview"
+                @mouseleave="hideStyleImagePreview"
+            >
+                <img
+                    :src="stylePreview.src"
+                    :alt="stylePreview.alt"
+                    class="style-image-preview-img"
+                    :style="{
+                        maxWidth: stylePreview.maxW + 'px',
+                        maxHeight: stylePreview.maxH + 'px',
+                    }"
+                />
+            </div>
+        </teleport>
     </div>
 </template>
 
@@ -601,6 +578,16 @@ export default {
             downloading: false,
             imageLoading: false,
             imageLoadError: false,
+
+            stylePreview: {
+                show: false,
+                left: 0,
+                top: 0,
+                maxW: 320,
+                maxH: 420,
+                src: '',
+                alt: ''
+            },
 
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || ''
         }
@@ -752,9 +739,22 @@ export default {
         }
         this.restoreLatestGeneratedImage()
         document.addEventListener('click', this.handleDocClick)
+        this._onStyleListScroll = () => {
+            this.hideStyleImagePreview()
+        }
+        this.$nextTick(() => {
+            const el = this.$refs.styleListRef
+            this._styleListEl = el
+            if (el) el.addEventListener('scroll', this._onStyleListScroll, { passive: true })
+        })
     },
     beforeUnmount() {
         document.removeEventListener('click', this.handleDocClick)
+        this.clearStylePreviewTimer()
+        if (this._styleListEl && this._onStyleListScroll) {
+            this._styleListEl.removeEventListener('scroll', this._onStyleListScroll)
+        }
+        this.stylePreview.show = false
     },
     methods: {
         setInspirationSource(src) {
@@ -884,7 +884,62 @@ export default {
             this.selectedQuality = value
             this.qualityMenuOpen = false
         },
+        enterStylePreview(e, src, alt) {
+            if (!src) return
+            this.clearStylePreviewTimer()
+            this.openStyleImagePreviewAtThumb(e, src, alt)
+        },
+        openStyleImagePreviewAtThumb(e, src, alt) {
+            if (!e || !e.currentTarget || !src) return
+            const r = e.currentTarget.getBoundingClientRect()
+            const maxW = Math.min(320, window.innerWidth - 16)
+            const maxH = Math.min(420, window.innerHeight - 16)
+            let left = r.right - 2
+            let top = r.top
+            if (left + maxW > window.innerWidth - 8) {
+                left = r.left - maxW + 2
+            }
+            if (left < 8) {
+                left = 8
+            }
+            if (left + maxW > window.innerWidth - 8) {
+                left = Math.max(8, window.innerWidth - 8 - maxW)
+            }
+            if (top + maxH > window.innerHeight - 8) {
+                top = r.top - maxH - 6
+            }
+            if (top < 8) {
+                top = 8
+            }
+            this.stylePreview.show = true
+            this.stylePreview.left = left
+            this.stylePreview.top = top
+            this.stylePreview.maxW = maxW
+            this.stylePreview.maxH = maxH
+            this.stylePreview.src = src
+            this.stylePreview.alt = alt != null ? String(alt) : ''
+        },
+        beginLeaveStylePreview() {
+            this._stylePreviewTimer = window.setTimeout(() => {
+                this.stylePreview.show = false
+                this._stylePreviewTimer = null
+            }, 250)
+        },
+        cancelLeaveStylePreview() {
+            this.clearStylePreviewTimer()
+        },
+        clearStylePreviewTimer() {
+            if (this._stylePreviewTimer) {
+                clearTimeout(this._stylePreviewTimer)
+                this._stylePreviewTimer = null
+            }
+        },
+        hideStyleImagePreview() {
+            this.clearStylePreviewTimer()
+            this.stylePreview.show = false
+        },
         handleDocClick(e) {
+            this.hideStyleImagePreview()
             const sizeRef = this.$refs.sizeSelectRef
             const modelRef = this.$refs.modelSelectRef
             const qualityRef = this.$refs.qualitySelectRef
@@ -1335,7 +1390,7 @@ export default {
 }
 
 .page-main {
-    max-width: 1200px;
+    max-width: 1350px;
     width: 100%;
     margin: 0 auto;
     display: flex;
@@ -1356,8 +1411,8 @@ export default {
 }
 
 .inspiration-column {
-    flex: 0 0 380px;
-    width: 380px;
+    flex: 0 0 520px;
+    width: 520px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -1844,8 +1899,7 @@ export default {
     line-height: 1.4;
 }
 
-.style-list-item--pack .style-list-item-text,
-.style-list-item--oai .style-list-item-desc {
+.style-list-item--pack .style-list-item-text {
     -webkit-line-clamp: 2;
     line-clamp: 2;
     display: -webkit-box;
@@ -1947,9 +2001,10 @@ export default {
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px 8px;
+    align-content: start;
     padding: 4px 2px 8px 0;
     scroll-behavior: smooth;
     scrollbar-width: thin;
@@ -1974,13 +2029,13 @@ export default {
 }
 
 .style-list-item {
-    flex: 0 0 auto;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
-    padding: 10px 8px 10px;
-    border-radius: 16px;
+    gap: 4px;
+    padding: 6px 4px 8px;
+    border-radius: 12px;
     border: 1px solid #ececf0;
     background: #fff;
     cursor: pointer;
@@ -2044,8 +2099,12 @@ export default {
     text-align: center;
 }
 
+.style-list-item--oai .style-list-item-desc {
+    display: none;
+}
+
 .style-list-item-text {
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.4;
     color: #1f1f1f;
     font-weight: 500;
@@ -2081,6 +2140,28 @@ export default {
 .style-list-item--upload {
     background: #fff;
     border-style: dashed;
+}
+
+/* 悬停放大预览（挂到 body，避免在滚动层被裁切） */
+.style-image-preview-floater {
+    position: fixed;
+    z-index: 10050;
+    pointer-events: auto;
+    line-height: 0;
+    background: #fff;
+    border: 1px solid #e6e8ec;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.2);
+    overflow: hidden;
+}
+
+.style-image-preview-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 /* 结果区 */
@@ -2221,6 +2302,7 @@ export default {
 
     .style-list {
         max-height: 38vh;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .result-image {
