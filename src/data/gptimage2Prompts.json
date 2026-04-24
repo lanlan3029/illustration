@@ -1,0 +1,419 @@
+{
+  "source": "https://github.com/xianyu110/awesome-gptimage2",
+  "generatedAt": "2026-04-24T03:05:11.568Z",
+  "categories": [
+    {
+      "id": "ecommerce",
+      "name": "电商与产品"
+    },
+    {
+      "id": "brandPoster",
+      "name": "品牌海报设计"
+    },
+    {
+      "id": "creativeType",
+      "name": "创意字体"
+    },
+    {
+      "id": "infographic",
+      "name": "知识科普与信息图"
+    },
+    {
+      "id": "uiClone",
+      "name": "UI 界面复刻"
+    },
+    {
+      "id": "photography",
+      "name": "真实摄影"
+    },
+    {
+      "id": "characterConsistency",
+      "name": "角色与一致性"
+    },
+    {
+      "id": "imageEdit",
+      "name": "图片编辑与参考"
+    },
+    {
+      "id": "artCreation",
+      "name": "艺术创作"
+    },
+    {
+      "id": "funPlay",
+      "name": "趣味玩法"
+    }
+  ],
+  "items": [
+    {
+      "id": "gp2-ecommerce-1",
+      "categoryId": "ecommerce",
+      "title": "1.1 香水电商详情页",
+      "prompt": "（有香水垫图）给这个香水产品生成电商中文详情页，9:16，4k",
+      "image": "https://upload.maynor1024.live/file/1776831281195_wx_003_09ee24278e.png"
+    },
+    {
+      "id": "gp2-ecommerce-2",
+      "categoryId": "ecommerce",
+      "title": "1.2 产品精修白底图",
+      "prompt": "帮我生成一张图片，将该产品进行精修，可重新打光，精修优化，白色的背景。",
+      "image": "https://upload.maynor1024.live/file/1776831496827_wx_057_b9f505e33e.jpg"
+    },
+    {
+      "id": "gp2-ecommerce-3",
+      "categoryId": "ecommerce",
+      "title": "1.3 产品详情长图",
+      "prompt": "帮我做一张这个产品的电商详情页海报。",
+      "image": "https://upload.maynor1024.live/file/1776831510634_wx_059_d6a1b6d749.png"
+    },
+    {
+      "id": "gp2-ecommerce-4",
+      "categoryId": "ecommerce",
+      "title": "1.4 护肤品电商首图",
+      "prompt": "高端护肤品电商首图海报，产品名为 澄光维稳精华。整体风格干净、轻奢、科学护肤感强，画面中心是一瓶半透明磨砂玻璃精华液，带淡金色液体和水珠反光，背景为奶白到暖灰渐变，局部有液体流动与微观分子结构装饰。要求同时具备品牌感和卖货感。\n\n海报必须包含以下文案：\n澄光 维稳精华\n修护屏障 舒缓泛红 细腻透亮\n第 2 代升级配方\n核心成分 神经酰胺 泛醇 B5 积雪草提取物 微囊脂质体\n适合人群 敏感肌 熬夜肌 换季不稳定肌\n限时到手价 229 元 买 1 送 3\n赠洁面 15ml 赠精华 5ml 赠面霜 10g\n左下角小字：实际效果因人而异，请坚持使用\n\n要求重点测试商品卖点、价格、赠品列表、产品名与功能短句的层级。整体要高级，不能土，不要过度直播间风格。",
+      "image": "https://upload.maynor1024.live/file/1776480570690_img_048.png"
+    },
+    {
+      "id": "gp2-ecommerce-5",
+      "categoryId": "ecommerce",
+      "title": "1.5 高保真电商 App 首页",
+      "prompt": "生成一张高保真移动端电商 App 首页界面截图，整体风格参考 2026 年主流中文电商 App，要求界面极其真实，具有完整的手机应用 UI 逻辑与商业设计感。页面顶部为状态栏，包含时间 9:41、5G 信号、电量图标。下面是搜索框区域，左侧为城市选择 杭州，中央是圆角搜索框，提示词为 搜索耳机、咖啡机、运动鞋，右侧有消息图标和扫一扫图标。搜索区下方是横向分类标签，包含 推荐、数码、家电、服饰、美妆、食品、运动、家居，其中 推荐 高亮选中。\n\n首页主体内容必须包含以下结构并排版清晰：\n顶部轮播 Banner 一张，主题为 618 预售开启，副标题 每满300减50，画面带商品海报和红色促销氛围\nBanner 下方为 10 宫格功能区，图标风格统一，包含 超市、百亿补贴、秒杀、直播、充值中心、到家、领券、品牌馆、全球购、排行榜\n中部为 限时秒杀 模块，左侧标题，右侧倒计时 02:14:39，下方三件商品卡片横向排列，每件商品含商品图、标题、现价、原价、已售进度条\n下方为 猜你喜欢 双列商品瀑布流，至少 6 张商品卡，每张卡片包含商品图、两行商品标题、价格、月销、店铺名、好评率、券后价标签\n底部固定 Tab Bar，包含 首页、分类、购物车、消息、我的，其中 首页 为高亮状态\n\n要求：所有中文文字清晰、可读、接近真实字体，图标统一，间距合理，留白真实，卡片阴影、圆角、分隔线、标签样式高度像真实 App，不要生成手机外壳，只输出纯界面截图，整体必须让人一眼觉得是真实电商 App 截图，而不是概念图",
+      "image": "https://upload.maynor1024.live/file/1776480347969_img_025.png"
+    },
+    {
+      "id": "gp2-ecommerce-6",
+      "categoryId": "ecommerce",
+      "title": "1.6 招聘海报（含完整 JD）",
+      "prompt": "（附上职位 JD 文字）请根据以上职位描述生成招聘海报",
+      "image": "https://upload.maynor1024.live/file/1776480424783_img_033.jpg"
+    },
+    {
+      "id": "gp2-ecommerce-7",
+      "categoryId": "ecommerce",
+      "title": "1.7 茶饮新品上市海报",
+      "prompt": "请设计一张 3:4 竖版国潮茶饮新品上市海报，品牌名为 山川茶事。整体风格新中式、轻奢、克制，颜色以墨绿、米白、金色为主，融合宣纸肌理、留白、淡雅山水、现代版式设计。画面主体是一杯高颜值冷泡茶与茶叶、柑橘、冰块、金箔元素，画面必须兼具商业感与审美感。\n\n海报中必须准确呈现以下文字：\n山川茶事 山柚观音 冷泡系列 新品上市\n一口清醒，半城入夏\n限定尝鲜价 中杯 16 元 大杯 19 元\n门店活动 第二杯半价 加 3 元升级轻乳版\n每日前 100 名赠限定杯套\n推荐风味 观音茶底 / 西柚果香 / 轻乳云顶 / 冰感回甘\n活动时间 4月20日 至 5月10日\n扫码点单 SHANCHUAN TEA\n底部小字：图片仅供参考，请以门店实际售卖为准\n\n要求海报具备明显促销信息层级，同时依旧精致，不要做成廉价电商海报。",
+      "image": "https://upload.maynor1024.live/file/1776480372187_img_027.png"
+    },
+    {
+      "id": "gp2-brandPoster-1",
+      "categoryId": "brandPoster",
+      "title": "2.1 品牌入驻宣传海报",
+      "prompt": "生成【茶颜悦色】2026.5.1入驻深圳万象天地的宣传海报，3:4，4k",
+      "image": "https://upload.maynor1024.live/file/1776831281454_wx_005_d0df16a605.jpg"
+    },
+    {
+      "id": "gp2-brandPoster-2",
+      "categoryId": "brandPoster",
+      "title": "2.2 定制 T 恤宣传图",
+      "prompt": "为科技自媒体量子位设计定制T恤，生成宣传图",
+      "image": "https://upload.maynor1024.live/file/1776831573117_wx_075_530b0ce4a7.png"
+    },
+    {
+      "id": "gp2-brandPoster-3",
+      "categoryId": "brandPoster",
+      "title": "2.3 迪特拉姆斯设计十戒海报",
+      "prompt": "迪特拉姆斯的设计十戒做一张海报，每条戒律都配上博朗的超级经典的产品。灵感参考奏笙。",
+      "image": "https://upload.maynor1024.live/file/1776831295835_wx_010_e3e82879b5.jpg"
+    },
+    {
+      "id": "gp2-brandPoster-4",
+      "categoryId": "brandPoster",
+      "title": "2.4 书籍封面设计",
+      "prompt": "书籍封面设计：标题为\"阿勒泰的角落\"，作者\"李娟\"。以广袤的绿色草地为主背景，深浅不一的草叶构成自然层次感，远处绘制若隐若现的山脉轮廓。画面中央放置孤立的白羊剪影，上方用简洁白色字体呈现中英文书名\"The Corner of Altay\"。整体采用清新自然的森系配色，营造出空灵悠远的文学意境",
+      "image": "https://upload.maynor1024.live/file/1776831299547_wx_011_91db5d4dd0.jpg"
+    },
+    {
+      "id": "gp2-brandPoster-5",
+      "categoryId": "brandPoster",
+      "title": "2.5 K-POP 概念海报",
+      "prompt": "生成一张 K-POP 女团第三张迷你专辑的概念海报，专辑名 ECLIPSE。所有人都穿黑色系造型，打光是侧逆光加柔焦，整体色调偏冷灰蓝，肢体、影子自然真实，脸部细节、发丝、饰品光泽、布料褶皱质感精致，每个人有不同的 pose 和表情。",
+      "image": "https://upload.maynor1024.live/file/1776831522030_wx_065_a4d181f295.jpg"
+    },
+    {
+      "id": "gp2-brandPoster-6",
+      "categoryId": "brandPoster",
+      "title": "2.6 论文宣传海报",
+      "prompt": "（上传论文 PDF）请根据这篇论文生成对应的宣传海报",
+      "image": "https://upload.maynor1024.live/file/1776831579409_wx_076_204bdd9bf8.png"
+    },
+    {
+      "id": "gp2-creativeType-1",
+      "categoryId": "creativeType",
+      "title": "3.1 城市创意字体 — 杭州",
+      "prompt": "字体设计，创意字体插画，将文字\"杭州\"作为主体画面，以文字为画布进行深度重构。\n\"杭\"字内部融合杭州标志性建筑轮廓与场景元素，如西湖断桥、雷峰塔、湖岸柳树与远山轮廓，所有元素顺应笔画走势自然生成，结构一体化，不可拼贴堆砌。\n\"州\"字内部融合地域文化符号与生活意象，如西湖龙井茶叶、丝绸飘带、水乡屋檐、小桥流水，元素与字体笔画交织生长，形成有机结构。\n整体风格为江南水乡意境，线条柔和流动，辅以西湖水波纹理在笔画间隐约扩散，增强空间层次与韵律感。\n色彩以低饱和东方配色为主（青灰、淡绿、米白、浅墨色），营造温润、诗意、含蓄的视觉氛围。\n背景为干净米白色宣纸质感，带轻微纸张纹理。3:2,4k\n画面要求：高精细插画风格，结构清晰但富有艺术表现力，元素融合自然，无明显边界，避免卡通化与过度装饰，整体具有高级设计感与文化审美。",
+      "image": "https://upload.maynor1024.live/file/1776831318135_wx_017_c335b14da9.jpg"
+    },
+    {
+      "id": "gp2-infographic-1",
+      "categoryId": "infographic",
+      "title": "4.1 科普百科图 — 萨摩耶",
+      "prompt": "请根据【萨摩耶】生成一张高质量竖版「科普百科图」。\n\n这张图不是普通海报，也不是单纯插画，而是一张兼具\"图鉴感、百科感、信息结构感、收藏感\"的模块化科普信息图。整体风格参考高级博物图鉴、现代百科书页、生活方式知识卡和社交媒体高传播信息图的结合。\n\n请让画面包含：\n- 一个清晰漂亮的主题主视觉\n- 若干局部特征放大细节\n- 多个圆角模块化信息分区\n- 清楚的标题层级与重点标签\n- 简洁但丰富的百科内容\n- 可视化评分、要点总结或 Top 5 模块\n\n内容栏目请根据主题自动适配，优先从这些方向中选择并合理组合：\n基础档案、分类信息、外观特征、习性/生态、形成机制/结构组成、生长或使用条件、养护或维护建议、风险与注意事项、适合人群或适用场景、优缺点对比、快速评分卡。\n\n视觉要求：浅色干净背景，柔和配色，轻阴影，精致小图标，圆角信息框，整洁排版，信息密度高但不拥挤，阅读体验好。整体必须像真正可以发布、阅读、收藏、系列化生产的科普百科卡，而不是广告图。\n请不要做成普通商业宣传海报。要突出\"知识整理 + 模块信息 + 图鉴式展示\"的特征。",
+      "image": "https://upload.maynor1024.live/file/1776831306943_wx_012_0a46c0f1cc.png"
+    },
+    {
+      "id": "gp2-infographic-2",
+      "categoryId": "infographic",
+      "title": "4.2 心肺复苏急救讲解图",
+      "prompt": "生成 \"心肺复苏急救步骤\"讲解图，技术词汇用大众词汇替代，中文对白，整体用 Chiikawa 作为形象引导，纯中文，信息要足够详细准确，比例 9:16，4k",
+      "image": "https://upload.maynor1024.live/file/1776831293062_wx_008_64263de1fa.png"
+    },
+    {
+      "id": "gp2-infographic-3",
+      "categoryId": "infographic",
+      "title": "4.3 咖啡科普信息长图",
+      "prompt": "中文信息图海报，主题为 一杯咖啡如何来到你手里。风格为高级信息设计，兼具科普感与商业视觉感，版式清晰，带有路径箭头、数据框、图标、简洁插画和模块化卡片。色调以咖啡棕、奶白、墨黑、少量铜色点缀。要求图文并重，信息非常多，但仍然好看。\n\n海报必须完整展示以下内容：\n一杯咖啡 如何来到你手里\n01 种植 海拔 1200 至 2200 米 适宜温度 18℃ 至 24℃ 采摘期通常集中在 11 月至次年 3 月\n02 处理 日晒 水洗 蜜处理\n03 烘焙 浅烘 更明亮 中烘 更平衡 深烘 更浓郁\n04 研磨 手冲偏粗 意式偏细 冷萃中粗\n05 萃取 粉水比 水温 时间 都会影响风味\n风味关键词 花香 / 柑橘 / 坚果 / 焦糖 / 巧克力 / 烟熏\n你喝到的每一口 都来自一连串精密选择\n底部小字：适合用于咖啡入门科普与门店展示\n\n重点测试长信息图、数字、温度、编号、短说明、斜杠风味词和多模块排版。要让它看起来像高质量展板，不要像课堂PPT。",
+      "image": "https://upload.maynor1024.live/file/1776480487938_img_040.png"
+    },
+    {
+      "id": "gp2-infographic-4",
+      "categoryId": "infographic",
+      "title": "4.4 植物光合作用科普图",
+      "prompt": "用中文给我制作一张科普图片，讲述详细的植物进行光合作用的原理",
+      "image": "https://upload.maynor1024.live/file/1776480243135_img_017.png"
+    },
+    {
+      "id": "gp2-infographic-5",
+      "categoryId": "infographic",
+      "title": "4.5 五代十国历史演示图",
+      "prompt": "生成一张【五代十国】的历史演示图，保证信息准确清晰，3:4,4k",
+      "image": "https://upload.maynor1024.live/file/1776831312682_wx_014_552e4c3807.jpg"
+    },
+    {
+      "id": "gp2-infographic-6",
+      "categoryId": "infographic",
+      "title": "4.6 Mariah Carey 信息长图",
+      "prompt": "生成一张 Mariah Carey 90 年代生涯图的中文信息长图",
+      "image": "https://upload.maynor1024.live/file/1776831533822_wx_066_832cf34e82.jpg"
+    },
+    {
+      "id": "gp2-infographic-7",
+      "categoryId": "infographic",
+      "title": "4.7 原神推荐海报",
+      "prompt": "生成关于原神玩法的推荐海报，官方设定风格",
+      "image": "https://upload.maynor1024.live/file/1776831585290_wx_077_ed366cc331.png"
+    },
+    {
+      "id": "gp2-uiClone-1",
+      "categoryId": "uiClone",
+      "title": "5.1 TikTok 视频截图",
+      "prompt": "生成一张 TikTok 的妆教视频截图",
+      "image": "https://upload.maynor1024.live/file/1776831565116_wx_073_1bf5c77bf8.jpg"
+    },
+    {
+      "id": "gp2-uiClone-2",
+      "categoryId": "uiClone",
+      "title": "5.2 GPT 对话截图",
+      "prompt": "生成一张和 GPT 的对话截图",
+      "image": "https://upload.maynor1024.live/file/1776831559892_wx_072_2467589688.png"
+    },
+    {
+      "id": "gp2-uiClone-3",
+      "categoryId": "uiClone",
+      "title": "5.3 音乐 App 播放页",
+      "prompt": "生成一张高保真中文音乐 App 播放页界面截图，移动端竖屏，视觉精致，风格接近现代流媒体播放器。整体以深色模式为主，背景来自专辑封面的模糊扩散色，中央是大尺寸方形专辑封面，带微弱阴影和圆角。顶部状态栏时间 18:26。导航栏左侧返回箭头，中间标题 正在播放，右侧更多操作图标。\n\n页面需包含以下信息并排版真实：\n歌曲名：海边的晚风 歌手：林秋 专辑名：夏夜实验室\n播放进度条，当前时间 01:42，总时长 04:18\n控制按钮包括 随机、上一首、播放暂停、下一首、循环\n下方有歌词区域，显示 5 到 7 行滚动歌词，其中当前播放行高亮，其余行弱化\n再下方有 喜欢、评论、下载、收藏到歌单、分享 按钮行\n页面底部有设备投放与播放队列入口\n\n要求：歌词排版要有真实的音乐播放器体验，深色层级、按钮图标、进度条反光与阴影要真实，中英文数字混排自然，整体像可直接上架的产品界面，而不是 Dribbble 概念稿",
+      "image": "https://upload.maynor1024.live/file/1776480546859_img_045.png"
+    },
+    {
+      "id": "gp2-uiClone-4",
+      "categoryId": "uiClone",
+      "title": "5.4 游戏画面复刻",
+      "prompt": "生成黑悟空神话，被二郎神打飞的游戏画面",
+      "image": "https://upload.maynor1024.live/file/1776480398301_img_029.jpg"
+    },
+    {
+      "id": "gp2-uiClone-5",
+      "categoryId": "uiClone",
+      "title": "5.5 macOS 浏览器截图",
+      "prompt": "生成一张 macOS 浏览器中 ChatGPT 窗口的截图，桌面杂乱，后台开着终端等随机窗口",
+      "image": "https://upload.maynor1024.live/file/1776831359629_wx_023_73568a3498.jpg"
+    },
+    {
+      "id": "gp2-photography-1",
+      "categoryId": "photography",
+      "title": "6.1 商场纪实抓拍",
+      "prompt": "生成一张极其真实的商场纪实摄影照片，场景是周末傍晚的大型购物中心扶梯口，一位 30 岁左右的亚洲男性刚从上行扶梯走下来，左手拎着购物袋，右手正在低头回消息，神态自然，没有看镜头。他穿深灰色连帽卫衣外搭黑色薄夹克，下身是宽松卡其裤和轻微磨损的运动鞋，头发略乱，脸上有一点出油感和下巴胡茬。商场灯光是复杂的混合光，顶部暖白灯、品牌橱窗冷白灯、远处广告屏彩色光同时存在，地面是高反光瓷砖，能看到模糊但真实的倒影。背景里有经过的人群、奶茶店招牌、玻璃护栏、模糊品牌海报。要求像摄影师在商场里抓拍的真实瞬间，不能像时尚街拍摆拍，皮肤、衣服、鞋面、购物袋折痕、玻璃反射都要非常真实。",
+      "image": "https://upload.maynor1024.live/file/1776480142529_img_008.jpg"
+    },
+    {
+      "id": "gp2-photography-2",
+      "categoryId": "photography",
+      "title": "6.2 便利店群像",
+      "prompt": "生成一张超真实的城市街头群像照片，场景是夏夜十点的便利店门口，三到四个年轻人正在门口短暂停留聊天，有人拿着饮料，有人坐在店外塑料椅上，有人站着低头看手机。便利店的玻璃门和橱窗透出明亮白光，外面路边则是暖黄街灯和远处车灯。人物穿搭非常日常，包含 T 恤、衬衫、短裤、牛仔裤、运动鞋，不要网红穿搭感，脸部状态和体态都要像真实路人，不能每个人都过于精致。环境要有真实便利店元素，冰柜贴纸、促销海报、垃圾桶、门口地垫、玻璃倒影、路边共享单车、地面饮料瓶水珠。画面像摄影师在城市里拍到的一张非常真实的生活切片，重点测试多人自然互动、夜间便利店灯光、玻璃反射和普通人气质的还原能力。",
+      "image": "https://upload.maynor1024.live/file/1776480162164_img_010.jpg"
+    },
+    {
+      "id": "gp2-photography-3",
+      "categoryId": "photography",
+      "title": "6.3 四季眼部特写",
+      "prompt": "超写实眼部特写，macro 极致微距摄影，皮肤纹理清晰可见，睫毛细节真实，虹膜高精度细节，镜头紧贴眼睛，画面极致精致与通透，梦幻光影氛围，电影级打光，浅景深，背景虚化，光斑柔和，四屏竖向分割构图（3:4 比例），从上到下依次为春、夏、秋、冬，每一屏保持同一只眼睛的一致性\n\n春：粉色樱花环绕，花瓣漂浮，蝴蝶点缀，柔和暖光，粉色与金色微光粒子，梦幻浪漫氛围；夏：绿色植物、露珠、水汽，清透高光，阳光穿透感，蜻蜓或荷花元素，清新明亮；秋：橙红枫叶，暖金色阳光，落叶环绕，光影浓郁，温暖厚重的氛围，蝴蝶或飞叶动态；冬：冰霜、雪花结晶覆盖睫毛与皮肤，冷蓝色调，雾气与寒气，细腻冰晶结构，高对比冷光。每一屏加入对应季节英文+中文文字（SPRING 春 / SUMMER 夏 / AUTUMN 秋 / WINTER 冬），轻微融入画面，高细节 3:4，8K，cinematic lighting，unreal detail，photorealistic，volumetric light，global illumination",
+      "image": "https://upload.maynor1024.live/file/1776831287228_wx_007_8fe3f95823.jpg"
+    },
+    {
+      "id": "gp2-photography-4",
+      "categoryId": "photography",
+      "title": "6.4 胶片质感抓拍",
+      "prompt": "一张写实风格的旅行抓拍：阴天清晨，一个人站在海边路旁的观景停车带，用 35mm 胶片拍摄。构图自然、略有瑕疵，颗粒感明显，环境光漫射，色调低饱和，衣物和发丝随风飘动，带着纪录片式的电影质感，像是某段真实生活留下的影像。",
+      "image": "https://upload.maynor1024.live/file/1776831365390_wx_027_704e3946d9.jpg"
+    },
+    {
+      "id": "gp2-photography-5",
+      "categoryId": "photography",
+      "title": "6.5 photorealistic 关键词",
+      "prompt": "photorealistic",
+      "image": "https://upload.maynor1024.live/file/1776831365224_wx_026_b585044656.jpg"
+    },
+    {
+      "id": "gp2-characterConsistency-1",
+      "categoryId": "characterConsistency",
+      "title": "7.1 八套穿搭一致性",
+      "prompt": "（上传一张人物照片）请根据这张照片，生成八套夏日穿搭方案",
+      "image": "https://upload.maynor1024.live/file/1776831377557_wx_030_f3ed0f1175.png"
+    },
+    {
+      "id": "gp2-characterConsistency-2",
+      "categoryId": "characterConsistency",
+      "title": "7.2 十六宫格动漫表情包",
+      "prompt": "生成一个有着银色长发和蓝色眼瞳的二次元动漫少女的十六宫格表情图。她的脸型、发型、服装必须在所有格子里保持高度一致。十六个表情需要包含：开心、难过、愤怒、惊讶、害羞、无语、坏笑、沉思、好奇、得意、委屈、鄙视、困惑、害怕、流泪、以及一个爱心的表情。",
+      "image": "https://upload.maynor1024.live/file/1776480562503_img_047.png"
+    },
+    {
+      "id": "gp2-characterConsistency-3",
+      "categoryId": "characterConsistency",
+      "title": "7.3 杂志封面（多人一致）",
+      "prompt": "（上传四人合照）根据这张照片生成一张杂志封面",
+      "image": "https://upload.maynor1024.live/file/1776831738119_wx_110_90c91e28cc.png"
+    },
+    {
+      "id": "gp2-imageEdit-1",
+      "categoryId": "imageEdit",
+      "title": "8.1 宠物联名海报",
+      "prompt": "以「77（猫的名字）X 肯德基」联名企划为主题，围绕同一只宠物（形象、花色等与上传图片绝对一致）生成一张联名海报。统一宠物形象与肯德基品牌识别（红白配色、经典 LOGO、餐厅场景等）的前提下，让小猫穿肯德基员工制服、带上肯德基员工帽子，佩戴工牌站在柜台前、兜售炸鸡、汉堡和套餐、与炸鸡桶、薯条、汽水等元素互动等。画面风格活泼、有趣、具有商业联名感，适合用于线上宣传与活动海报。然后自由的为这张海报添加合适的中文内容。",
+      "image": "https://upload.maynor1024.live/file/1776480357820_img_026.png"
+    },
+    {
+      "id": "gp2-imageEdit-2",
+      "categoryId": "imageEdit",
+      "title": "8.2 海报风格复刻",
+      "prompt": "（上传一张风格化海报）请参考这张海报的风格，保持排版、字体、构图的一致性，将春天场景改为冬天场景后重新生成",
+      "image": "https://upload.maynor1024.live/file/1776480232760_img_016.png"
+    },
+    {
+      "id": "gp2-imageEdit-3",
+      "categoryId": "imageEdit",
+      "title": "8.3 漫画上色翻译",
+      "prompt": "给这张漫画页上色并翻译成中文放到图中原来的位置，保持构图和图片细节的一致",
+      "image": "https://upload.maynor1024.live/file/1776480214370_img_015.png"
+    },
+    {
+      "id": "gp2-imageEdit-4",
+      "categoryId": "imageEdit",
+      "title": "8.4 电影截图换人",
+      "prompt": "（上传《闪灵》经典画面 + 迪迦奥特曼参考图 + 黄色猫咪参考图）请将门缝里的人物替换为迪迦奥特曼",
+      "image": "https://upload.maynor1024.live/file/1776831508063_wx_060_abc2ec5dcb.png"
+    },
+    {
+      "id": "gp2-imageEdit-5",
+      "categoryId": "imageEdit",
+      "title": "8.5 GitHub 链接生成主页",
+      "prompt": "https://github.com/你的用户名/你的仓库 根据这个 GitHub 链接，生成一张个人 AI 自媒体介绍主页，9:16, 4k，要日式侘寂风格作为背景，内容分类艺术拼贴。（垫一张 IP 形象图）",
+      "image": "https://upload.maynor1024.live/file/1776831318135_wx_017_c335b14da9.jpg"
+    },
+    {
+      "id": "gp2-imageEdit-6",
+      "categoryId": "imageEdit",
+      "title": "8.6 公众号封面（人物 + 主题互动）",
+      "prompt": "（垫一张人物 IP 图）设计做 1 张 21:9 的公众号封面，大标题是\"又被 GPT image 2 硬控了\"，需要你将图片人物（换个艺术穿搭，保持人物一致性的半身照）与封面主题设计的有互动搭配，用白色线条描绘人物最外面的轮廓，适配标题去搭高级浅色背景和标题元素，4k 输出。",
+      "image": "https://upload.maynor1024.live/file/1776831323900_wx_018_16e48490f1.png"
+    },
+    {
+      "id": "gp2-artCreation-1",
+      "categoryId": "artCreation",
+      "title": "9.1 海贼王 3D 纸雕",
+      "prompt": "平视视角，正面直视一个高饱和度 3D 多层纸雕场景。\n整体为灰蓝、奶油白、深森林绿，点缀琥珀色暖光。所有元素必须是实体纸张分层结构，边缘为硬切割效果，并清晰可见厚纸横截面。\n极致丰富构图，一个高能量的海盗群像场景，发生在混乱的海上冒险中。多个风格化海盗角色以夸张动作呈现，中层核心是一位戴草帽的年轻船长向前冲刺，周围是姿态鲜明的船员。\n分层的船只、翻涌海浪和旋转洋流贯穿前中后景，多艘船在不同空间层中碰撞倾斜，船帆破损、旗帜飞扬。\n背景层中出现体型巨大的对立角色剪影，增强压迫感和空间层级。\n前景堆满叙事元素：宝箱、金币、地图、木桶、绳索、灯笼，以及一张带笑脸海盗的通缉令。角落放置一个吉祥物式小角色作为视觉锚点。\n所有氛围元素以纸雕形式呈现：海浪、水花、烟雾、碎片、动势线，强化混乱与动感。\n主体位于中层，元素跨层互动，通过重叠和空间关系表达运动感。\n单一方向柔光，形成清晰层间投影。整体为哑光纸张质感，无发光、无柔边、无体积光。\noctane 渲染，8K，细节清晰 3:4",
+      "image": "https://upload.maynor1024.live/file/1776831295947_wx_009_83a98eb04d.jpg"
+    },
+    {
+      "id": "gp2-artCreation-2",
+      "categoryId": "artCreation",
+      "title": "9.2 花卉 Knolling 解构",
+      "prompt": "Knolling 风格摄影，一朵被完全解构的【蓝花楹】，植物解剖学概念，严格垂直顶视，平铺摆放。花瓣大量铺陈，整体以 Bento Grid 作为排列逻辑，同时带有自然轻微随机性。花瓣从大到小、从深到浅呈渐变规律，局部方向略有偏转。包括雄蕊簇、花萼、叶片、花茎横切面等组件，位置不刻意对称但保持整体秩序。每一张的右下角用中文行书小字展示鲜花的名称。\n\n画面边缘需保留一处用于放置金属镊子，镊子为不锈钢材质、细长直形，轻轻置于边缘，与花瓣布局保持协调，不抢主体，方向自然，光影一致。镊子位置固定在画面外缘附近，但不遮挡任何花瓣或标签。\n\n光影与质感：从边缘到边缘填满画面，无留白；柔和影棚布光，无硬阴影；8k 超高清、超写实微距质感，天鹅绒花瓣细节清晰；纯白背景，比例 3:4。",
+      "image": "https://upload.maynor1024.live/file/1776831307340_wx_013_c3c9376556.jpg"
+    },
+    {
+      "id": "gp2-artCreation-3",
+      "categoryId": "artCreation",
+      "title": "9.3 手绘涂鸦读书笔记",
+      "prompt": "请根据\"【防颓指南】混一天和努力一天看不到任何差别，三天看不到任何变化，七天也可以说看不到任何距离。但是一个月后悔看到话题不同，三个月后悔看到气场不同，半年后会看到一定距离，一年后会看到人生道路不同。你继续堕落下去的话，你的天赋就会被全部收走，你身边原本比你差的人也会靠努力一个一个超越你，你继续差的话也没人会等你。所以请不要在该吃苦的年纪选择安逸，走自己的路为自己的梦想奋斗，即使有人亏待你，时间和人生也不会亏待你。\"输入内容,生成一张手绘涂鸦风格的读书笔记信息图,并严格遵循以下风格:\n\n1. 整体风格与媒介: 采用充满活力的手绘涂鸦笔记风格,专业知识笔记的学霸风格,不要太卡通。黑色使用深棕、橙黄或海军蓝,轻微水彩进行填色,并搭配柔和的黑色或深棕色细线等勾勒轮廓。竖版(3:4)构图。\n2. 配色方案(关键):整张图都应该是彩色的,采用明亮、清新、和谐的色彩组合(海军蓝、浅蓝、金色、奶油色背景)背景应有淡淡纸张纹理的米色,或者直接留白,但画面主体必须是五彩斑斓的。颜色填充应模仿彩铅或水彩的质感,带有自然的笔触感,而不是均匀的数字平涂。\n3. 线条特征: 所有轮廓线都必须是不完美、略带抖动的手绘线条,给人一种柔软、亲切的感觉。\n4. 字体风格:所有文字都必须是彩色的手写体,绝对不要使用任何电脑字体。标题和关键词使用加粗的、或带有简单边框的手写艺术字来突出。正文和注释使用清晰、自然的个人笔记手写体。",
+      "image": "https://upload.maynor1024.live/file/1776831307340_wx_013_c3c9376556.jpg"
+    },
+    {
+      "id": "gp2-artCreation-4",
+      "categoryId": "artCreation",
+      "title": "9.4 田园水彩旅行攻略",
+      "prompt": "【24号：早教场中路看花--文化巷/云南大学--翠湖公园--昆明老街--南强夜市 25号:上午打车去捞鱼河湿地公园（包含有风小院花田、古桩月季园）--斗南花市 26号：盘龙江看花--篆新农贸市场--然后12点之前出发去机场】\n\n就以上的文字不要增减，生成一张田园水彩速写 / 自然风物图鉴风格的竖版信息图，比例为 3:4，4k。\n\n视觉风格规范：\n构图逻辑：采用分点式构图，有框线，序号。\n背景与色彩：画面底背使用干净的米白色或原木浆草纸纹理，无需任何方框束缚。色彩采用自然原生色系，如草木绿、番茄红、泥土棕、暖阳黄。上色需呈现水彩特有的轻薄透气感、水渍边缘以及随性的色彩飞溅。\n绘画风格：摒弃幼态卡通或扁平化图标，采用钢笔淡彩技法。使用松弛、利落、带有速写感的不规则深色线条勾勒轮廓，画面充满艺术写生感和手作温度。\n场景演绎（核心）：绝对不要使用名人画像或现代 UI 图标。将文字信息全部转化为具象的自然事物、劳作场景或局部特写。\n版式细节：整体排版自由、松弛、透气，仿佛是一页生动精美的自然观察日记或农庄手记。",
+      "image": "https://upload.maynor1024.live/file/1776831317590_wx_015_b59a25e9a4.jpg"
+    },
+    {
+      "id": "gp2-artCreation-5",
+      "categoryId": "artCreation",
+      "title": "9.5 暗黑风格插画",
+      "prompt": "生成一张暗黑风格的金克斯（Jinx）插画，要求画面呼吸感和节奏顺畅，细节精致，具有游戏原画级别的完成度",
+      "image": "https://upload.maynor1024.live/file/1776831537718_wx_067_d80aa1ad9c.png"
+    },
+    {
+      "id": "gp2-artCreation-6",
+      "categoryId": "artCreation",
+      "title": "9.6 中国传统长卷山水画",
+      "prompt": "生成一张横版中国传统长卷山水画，笔墨晕染和留白",
+      "image": "https://upload.maynor1024.live/file/1776831787179_wx_118_51623d8b22.png"
+    },
+    {
+      "id": "gp2-funPlay-1",
+      "categoryId": "funPlay",
+      "title": "10.1 生成作业",
+      "prompt": "生成一份高中数学试卷",
+      "image": "https://upload.maynor1024.live/file/1776831586695_wx_078_62681d312e.jpg"
+    },
+    {
+      "id": "gp2-funPlay-2",
+      "categoryId": "funPlay",
+      "title": "10.2 360 度全景图",
+      "prompt": "生成一张人类登月的 360 度全景图",
+      "image": "https://upload.maynor1024.live/file/1776831763812_wx_113_bf646f5279.gif"
+    },
+    {
+      "id": "gp2-funPlay-3",
+      "categoryId": "funPlay",
+      "title": "10.3 四格漫画",
+      "prompt": "（上传团队合照）根据这张照片生成一张四格漫画",
+      "image": "https://upload.maynor1024.live/file/1776831594736_wx_080_a5f98eed6d.png"
+    },
+    {
+      "id": "gp2-funPlay-4",
+      "categoryId": "funPlay",
+      "title": "10.4 中文书法默写",
+      "prompt": "用普通人的笔迹抄写《定风波·莫听穿林打叶声》",
+      "image": "https://upload.maynor1024.live/file/1776831381902_wx_032_473fc25dea.png"
+    },
+    {
+      "id": "gp2-funPlay-5",
+      "categoryId": "funPlay",
+      "title": "10.5 红楼梦关系图",
+      "prompt": "生成一张红楼梦人物关系图",
+      "image": "https://upload.maynor1024.live/file/1776831475649_wx_051_3161a27532.jpg"
+    },
+    {
+      "id": "gp2-funPlay-6",
+      "categoryId": "funPlay",
+      "title": "10.6 情书生成",
+      "prompt": "帮我写一封情书，用精美的信纸和手写字体的风格呈现",
+      "image": "https://upload.maynor1024.live/file/1776831470428_wx_050_77d5d0ad4f.png"
+    },
+    {
+      "id": "gp2-funPlay-7",
+      "categoryId": "funPlay",
+      "title": "10.7 Sam Altman 微信朋友圈",
+      "prompt": "生成 OpenAI CEO Sam Altman 在微信朋友圈用中文介绍宣传 ChatGPT Images 2.0，底下马斯克评论发「？？？」，Demis Hassabis 评论称：「我觉得不如 Nano Banana Pro」，图片比例为 16:9",
+      "image": "https://upload.maynor1024.live/file/1776831492381_wx_054_3289e65a1c.jpg"
+    }
+  ]
+}

@@ -28,6 +28,28 @@
                         {{ $t('aiPicture.clearStyle') || '仅清除风格' }}
                     </button>
                 </div>
+                <div v-else-if="selectedPackItem" class="selected-style-bar selected-style-bar--pack">
+                    <div class="selected-style-main">
+                        <img
+                            v-if="selectedPackItem.image"
+                            :src="selectedPackItem.image"
+                            alt=""
+                            class="selected-style-thumb"
+                        />
+                        <div v-else class="selected-style-thumb selected-style-thumb--empty" aria-hidden="true" />
+                        <div class="selected-style-text">
+                            <span class="selected-style-eyebrow">{{ $t('aiPicture.currentPack') || '当前提示词' }}</span>
+                            <span class="selected-style-name">{{ packItemDisplayTitle(selectedPackItem) }}</span>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        class="selected-style-clear"
+                        @click="clearSelectedPack"
+                    >
+                        {{ $t('aiPicture.clearPack') || '仅清除' }}
+                    </button>
+                </div>
 
                 <textarea
                     ref="promptInput"
@@ -63,18 +85,42 @@
                             @change="handleReferenceUpload"
                         />
 
-                        <!-- 模式：图片 -->
-                        <button
-                            type="button"
-                            class="tool-btn pill mode-pill"
-                        >
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <path d="M21 15l-5-5L5 21" />
-                            </svg>
-                            <span>{{ $t('aiPicture.modeImage') || '图片' }}</span>
-                        </button>
+                        <!-- 尺寸（原「图片」位置） -->
+                        <div class="size-select-wrap" ref="sizeSelectRef">
+                            <button
+                                type="button"
+                                class="tool-btn pill"
+                                :class="{ active: sizeMenuOpen }"
+                                :title="$t('aiPicture.sizeLabel') || '尺寸'"
+                                @click="toggleSizeMenu"
+                            >
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                                </svg>
+                                <span class="size-toolbar-text">{{ currentSizeLabel }}</span>
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </button>
+                            <div v-if="sizeMenuOpen" class="size-menu">
+                                <template v-for="(group, gIdx) in sizeGroups" :key="group.label">
+                                    <div v-if="gIdx > 0" class="size-menu-divider"></div>
+                                    <div class="size-menu-group-label">{{ group.label }}</div>
+                                    <button
+                                        v-for="opt in group.items"
+                                        :key="opt.value"
+                                        type="button"
+                                        class="size-menu-item"
+                                        :class="{ active: opt.value === selectedSize }"
+                                        @click="selectSize(opt.value)"
+                                    >
+                                        <span class="size-icon" :style="{ width: opt.iconW + 'px', height: opt.iconH + 'px' }"></span>
+                                        <span class="size-label">{{ opt.label }}</span>
+                                        <span class="size-dim">{{ opt.value === 'auto' ? '' : opt.value }}</span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
 
                         <!-- 高级设置 折叠入口 -->
                         <button
@@ -136,7 +182,7 @@
                     </div>
                 </div>
 
-                <!-- 高级设置：模型 / 画质 / 尺寸 -->
+                <!-- 高级设置：模型 / 画质 -->
                 <div v-show="advancedSettingsOpen" class="advanced-panel" @click.stop>
                     <div class="advanced-panel-inner">
                         <div class="size-select-wrap" ref="modelSelectRef">
@@ -194,42 +240,6 @@
                                 </button>
                             </div>
                         </div>
-
-                        <div class="size-select-wrap" ref="sizeSelectRef">
-                            <span class="advanced-field-label">{{ $t('aiPicture.sizeLabel') || '尺寸' }}</span>
-                            <button
-                                type="button"
-                                class="tool-btn pill"
-                                :class="{ active: sizeMenuOpen }"
-                                @click="toggleSizeMenu"
-                            >
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                                </svg>
-                                <span>{{ currentSizeLabel }}</span>
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret">
-                                    <polyline points="6 9 12 15 18 9" />
-                                </svg>
-                            </button>
-                            <div v-if="sizeMenuOpen" class="size-menu">
-                                <template v-for="(group, gIdx) in sizeGroups" :key="group.label">
-                                    <div v-if="gIdx > 0" class="size-menu-divider"></div>
-                                    <div class="size-menu-group-label">{{ group.label }}</div>
-                                    <button
-                                        v-for="opt in group.items"
-                                        :key="opt.value"
-                                        type="button"
-                                        class="size-menu-item"
-                                        :class="{ active: opt.value === selectedSize }"
-                                        @click="selectSize(opt.value)"
-                                    >
-                                        <span class="size-icon" :style="{ width: opt.iconW + 'px', height: opt.iconH + 'px' }"></span>
-                                        <span class="size-label">{{ opt.label }}</span>
-                                        <span class="size-dim">{{ opt.value === 'auto' ? '' : opt.value }}</span>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -255,50 +265,117 @@
                     </div>
                 </div>
 
-                <div class="style-tab-row" role="tablist" :aria-label="$t('aiPicture.browseInspiration') || '风格分类'">
+                <div class="style-source-row" role="tablist" :aria-label="$t('aiPicture.inspirationType') || '灵感类型'">
                     <button
-                        v-for="tab in styleTabItems"
+                        v-for="tab in sourceTabItems"
                         :key="tab.id"
                         type="button"
-                        class="style-tab"
-                        :class="{ active: activeStyleTab === tab.id }"
+                        class="style-source-tab"
+                        :class="{ active: inspirationSource === tab.id }"
                         role="tab"
-                        :aria-selected="activeStyleTab === tab.id"
-                        @click="setStyleTab(tab.id)"
+                        :aria-selected="inspirationSource === tab.id"
+                        @click="setInspirationSource(tab.id)"
                     >
                         {{ tab.label }}
                     </button>
                 </div>
 
-                <div class="style-rail" ref="styleRailRef" @scroll="updateScrollState">
-                    <!-- 上传照片入口 -->
-                    <button type="button" class="style-item upload-item" @click="triggerReferenceUpload">
-                        <div class="upload-plus">
-                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                        </div>
-                        <span class="style-item-label">{{ $t('aiPicture.uploadPhoto') || '上传照片' }}</span>
-                    </button>
-
-                    <!-- 风格卡 -->
+                <div
+                    v-show="inspirationSource === 'illustration'"
+                    class="style-tab-row"
+                    role="tablist"
+                    :aria-label="$t('aiPicture.illustrationSubTabs') || '插画分类'">
                     <button
-                        v-for="style in displayedStyles"
-                        :key="style.id"
+                        v-for="tab in illustrationTabItems"
+                        :key="tab.id"
                         type="button"
-                        class="style-item"
-                        :class="{ selected: selectedStyleId === style.id }"
-                        @click="selectStyle(style.id)"
+                        class="style-tab"
+                        :class="{ active: activeIllustrationTab === tab.id }"
+                        role="tab"
+                        :aria-selected="activeIllustrationTab === tab.id"
+                        @click="setIllustrationTab(tab.id)"
                     >
-                        <img
-                            :src="style.image"
-                            :alt="style.artStyle"
-                            class="style-item-img"
-                            loading="lazy"
-                        />
-                        <span class="style-item-label">{{ style.artStyle }}</span>
+                        {{ tab.label }}
                     </button>
+                </div>
+
+                <div
+                    v-show="inspirationSource === 'promptPack'"
+                    class="style-tab-row style-tab-row--pack"
+                    role="tablist"
+                    :aria-label="$t('aiPicture.promptCategoryTabs') || '提示词分类'">
+                    <button
+                        v-for="tab in promptCategoryTabItems"
+                        :key="tab.id"
+                        type="button"
+                        class="style-tab"
+                        :class="{ active: activePromptCategory === tab.id }"
+                        role="tab"
+                        :aria-selected="activePromptCategory === tab.id"
+                        @click="setPromptCategory(tab.id)"
+                    >
+                        {{ tab.label }}
+                    </button>
+                </div>
+
+                <p v-if="inspirationSource === 'promptPack'" class="pack-attrib">
+                    {{ $t('aiPicture.packAttribution') }}
+                </p>
+
+                <div class="style-rail" ref="styleRailRef" @scroll="updateScrollState">
+                    <template v-if="inspirationSource === 'illustration'">
+                        <!-- 上传照片入口 -->
+                        <button type="button" class="style-item upload-item" @click="triggerReferenceUpload">
+                            <div class="upload-plus">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </div>
+                            <span class="style-item-label">{{ $t('aiPicture.uploadPhoto') || '上传照片' }}</span>
+                        </button>
+
+                        <button
+                            v-for="style in displayedStyles"
+                            :key="style.id"
+                            type="button"
+                            class="style-item"
+                            :class="{ selected: selectedStyleId === style.id }"
+                            @click="selectStyle(style.id)"
+                        >
+                            <img
+                                :src="style.image"
+                                :alt="style.artStyle"
+                                class="style-item-img"
+                                loading="lazy"
+                            />
+                            <span class="style-item-label">{{ style.artStyle }}</span>
+                        </button>
+                    </template>
+                    <template v-else>
+                        <button
+                            v-for="item in displayedPackItems"
+                            :key="item.id"
+                            type="button"
+                            class="style-item style-item--pack"
+                            :class="{ selected: selectedPackItemId === item.id }"
+                            @click="selectPackItem(item)"
+                        >
+                            <img
+                                v-if="item.image"
+                                :src="item.image"
+                                :alt="packItemDisplayTitle(item)"
+                                class="style-item-img"
+                                loading="lazy"
+                            />
+                            <div
+                                v-else
+                                class="style-item-img style-item-fallback"
+                                aria-hidden="true"
+                            />
+                            <span class="style-item-label">{{ packItemDisplayTitle(item) }}</span>
+                        </button>
+                    </template>
                 </div>
             </div>
 
@@ -353,6 +430,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
+import gptimage2Data from '@/data/gptimage2Prompts.json'
 
 export default {
     name: 'AIPicture',
@@ -405,7 +483,13 @@ export default {
     data() {
         return {
             selectedStyleId: null,
-            activeStyleTab: 'all',
+            activeIllustrationTab: 'all',
+            inspirationSource: 'illustration',
+            activePromptCategory: 'ecommerce',
+            selectedPackItemId: null,
+            displayOrderPack: [],
+            packCategories: gptimage2Data.categories,
+            packItems: gptimage2Data.items,
             advancedSettingsOpen: false,
             subjectScene: '',
             editableArtStyle: '',
@@ -483,7 +567,13 @@ export default {
             if (this.selectedStyleId == null) return null
             return this.styles.find(s => s.id === this.selectedStyleId) || null
         },
-        styleTabItems() {
+        sourceTabItems() {
+            return [
+                { id: 'illustration', label: this.$t('aiPicture.styleSourceIllustration') || '插画风格' },
+                { id: 'promptPack', label: this.$t('aiPicture.styleSourcePromptPack') || '提示词合集' }
+            ]
+        },
+        illustrationTabItems() {
             return [
                 { id: 'all', label: this.$t('aiPicture.styleTabAll') || '全部' },
                 { id: 'sketch', label: this.$t('aiPicture.styleTabSketch') || '线稿手绘' },
@@ -491,9 +581,29 @@ export default {
                 { id: 'toon', label: this.$t('aiPicture.styleTabToon') || '卡通 / 3D' }
             ]
         },
+        promptCategoryTabItems() {
+            return this.packCategories.map(c => ({ id: c.id, label: c.name }))
+        },
+        selectedPackItem() {
+            if (!this.selectedPackItemId) return null
+            return this.packItems.find(p => p.id === this.selectedPackItemId) || null
+        },
         visibleStyles() {
-            if (this.activeStyleTab === 'all') return this.styles
-            return this.styles.filter(s => s.category === this.activeStyleTab)
+            if (this.activeIllustrationTab === 'all') return this.styles
+            return this.styles.filter(s => s.category === this.activeIllustrationTab)
+        },
+        visiblePackItems() {
+            return this.packItems.filter(p => p.categoryId === this.activePromptCategory)
+        },
+        displayedPackItems() {
+            const vis = this.visiblePackItems
+            const inTab = new Set(vis.map(p => p.id))
+            if (!this.displayOrderPack || !this.displayOrderPack.length) {
+                return vis
+            }
+            return this.displayOrderPack
+                .map(id => this.packItems.find(p => p.id === id))
+                .filter(p => p && inTab.has(p.id))
         },
         canGenerate() {
             return !!(this.subjectScene && this.subjectScene.trim())
@@ -587,10 +697,36 @@ export default {
         document.removeEventListener('click', this.handleDocClick)
     },
     methods: {
-        setStyleTab(tabId) {
-            if (this.activeStyleTab === tabId) return
-            this.activeStyleTab = tabId
+        setInspirationSource(src) {
+            if (this.inspirationSource === src) return
+            this.inspirationSource = src
             this.displayOrder = []
+            this.displayOrderPack = []
+            if (src === 'illustration') {
+                this.selectedPackItemId = null
+            } else {
+                this.selectedStyleId = null
+            }
+            this.$nextTick(() => {
+                const rail = this.$refs.styleRailRef
+                if (rail) rail.scrollTo({ left: 0, behavior: 'auto' })
+                this.updateScrollState()
+            })
+        },
+        setIllustrationTab(tabId) {
+            if (this.activeIllustrationTab === tabId) return
+            this.activeIllustrationTab = tabId
+            this.displayOrder = []
+            this.$nextTick(() => {
+                const rail = this.$refs.styleRailRef
+                if (rail) rail.scrollTo({ left: 0, behavior: 'auto' })
+                this.updateScrollState()
+            })
+        },
+        setPromptCategory(catId) {
+            if (this.activePromptCategory === catId) return
+            this.activePromptCategory = catId
+            this.displayOrderPack = []
             this.$nextTick(() => {
                 const rail = this.$refs.styleRailRef
                 if (rail) rail.scrollTo({ left: 0, behavior: 'auto' })
@@ -607,15 +743,31 @@ export default {
         clearSelectedStyle() {
             this.selectedStyleId = null
         },
+        clearSelectedPack() {
+            this.selectedPackItemId = null
+        },
 
         selectStyle(styleId) {
             this.selectedStyleId = styleId
+            this.selectedPackItemId = null
+            this.inspirationSource = 'illustration'
             const style = this.styles.find(s => s.id === styleId)
             if (style) {
                 this.editableArtStyle = style.artStyle
                 this.editableElementDetails = style.elementDetails
                 this.applyStylePromptToInput(style)
             }
+        },
+        selectPackItem(item) {
+            if (!item) return
+            this.selectedPackItemId = item.id
+            this.selectedStyleId = null
+            this.inspirationSource = 'promptPack'
+            this.subjectScene = (item.prompt || '').trim()
+        },
+        packItemDisplayTitle(item) {
+            if (!item || !item.title) return ''
+            return String(item.title).replace(/^\d+\.\d+\s*/, '')
         },
 
         toggleSizeMenu() {
@@ -696,12 +848,21 @@ export default {
         },
 
         shuffleStyles() {
-            const arr = this.visibleStyles.map(s => s.id)
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1))
-                ;[arr[i], arr[j]] = [arr[j], arr[i]]
+            if (this.inspirationSource === 'illustration') {
+                const arr = this.visibleStyles.map(s => s.id)
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1))
+                    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+                }
+                this.displayOrder = arr
+            } else {
+                const arr = this.visiblePackItems.map(p => p.id)
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1))
+                    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+                }
+                this.displayOrderPack = arr
             }
-            this.displayOrder = arr
             this.$nextTick(() => {
                 if (this.$refs.styleRailRef) this.$refs.styleRailRef.scrollTo({ left: 0, behavior: 'smooth' })
                 this.updateScrollState()
@@ -1021,7 +1182,9 @@ export default {
                 const imageData = {
                     url: imageUrl,
                     prompt: this.generatedPrompt || '',
-                    artStyle: this.selectedStyle?.artStyle || '',
+                    artStyle: this.selectedStyle?.artStyle
+                        || (this.selectedPackItem ? this.packItemDisplayTitle(this.selectedPackItem) : '')
+                        || '',
                     timestamp: Date.now()
                 }
                 localStorage.setItem('home_generated_image', JSON.stringify(imageData))
@@ -1032,7 +1195,9 @@ export default {
                     localStorage.setItem('home_generated_image', JSON.stringify({
                         url: imageUrl,
                         prompt: this.generatedPrompt || '',
-                        artStyle: this.selectedStyle?.artStyle || '',
+                        artStyle: this.selectedStyle?.artStyle
+                            || (this.selectedPackItem ? this.packItemDisplayTitle(this.selectedPackItem) : '')
+                            || '',
                         timestamp: Date.now()
                     }))
                 } catch (e) {
@@ -1293,15 +1458,6 @@ export default {
     background: #ebedf0;
 }
 
-.tool-btn.mode-pill {
-    color: #2f7df6;
-    background: rgba(47, 125, 246, 0.1);
-}
-
-.tool-btn.mode-pill:hover {
-    background: rgba(47, 125, 246, 0.16);
-}
-
 .caret {
     opacity: 0.7;
     margin-left: 2px;
@@ -1547,6 +1703,81 @@ export default {
     border-color: #8167a9;
     color: #3d3550;
     font-weight: 500;
+}
+
+.style-source-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.style-source-tab {
+    border: 1px solid #d8dbe0;
+    background: #fafbfc;
+    color: #3c4043;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.style-source-tab:hover {
+    border-color: #b8b3e8;
+    background: #f3f0ff;
+}
+
+.style-source-tab.active {
+    background: #8167a9;
+    border-color: #8167a9;
+    color: #fff;
+}
+
+.style-tab-row--pack {
+    max-height: none;
+}
+
+.style-tab-row--pack .style-tab {
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+.pack-attrib {
+    margin: 0 0 4px;
+    font-size: 11px;
+    color: #9aa0a6;
+    line-height: 1.4;
+}
+
+.style-item--pack .style-item-label {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.style-item-fallback,
+.selected-style-thumb--empty {
+    background: linear-gradient(145deg, #eceef2 0%, #e0e3ea 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.style-item-fallback::after,
+.selected-style-thumb--empty::after {
+    content: 'GPT';
+    font-size: 10px;
+    font-weight: 700;
+    color: #9aa0a6;
+    letter-spacing: 0.5px;
+}
+
+.selected-style-thumb--empty {
+    min-width: 40px;
 }
 
 /* 浏览灵感 */
@@ -1875,9 +2106,11 @@ export default {
         gap: 6px;
     }
 
-    .tool-btn.mode-pill span,
-    .size-select-wrap span {
-        display: none;
+    .size-toolbar-text {
+        max-width: 72px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .style-item {

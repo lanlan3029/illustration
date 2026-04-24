@@ -470,7 +470,15 @@
     "styleTabAll": "All",
     "styleTabSketch": "Sketch & line art",
     "styleTabPaint": "Paint & color",
-    "styleTabToon": "Cartoon / 3D"
+    "styleTabToon": "Cartoon / 3D",
+    "styleSourceIllustration": "Illustration styles",
+    "styleSourcePromptPack": "Prompt pack",
+    "inspirationType": "Inspiration type",
+    "illustrationSubTabs": "Illustration categories",
+    "promptCategoryTabs": "Prompt topics",
+    "currentPack": "Current prompt",
+    "clearPack": "Clear",
+    "packAttribution": "Prompts and previews are from the open-source project awesome-gptimage2 (GitHub). Thanks to the original authors."
   },
   "upload": {
     "title": "Upload Content",

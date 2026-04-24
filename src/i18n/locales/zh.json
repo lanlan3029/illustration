@@ -485,7 +485,15 @@
     "styleTabAll": "全部",
     "styleTabSketch": "线稿手绘",
     "styleTabPaint": "色彩综合",
-    "styleTabToon": "卡通 / 3D"
+    "styleTabToon": "卡通 / 3D",
+    "styleSourceIllustration": "插画风格",
+    "styleSourcePromptPack": "提示词合集",
+    "inspirationType": "灵感类型",
+    "illustrationSubTabs": "插画子分类",
+    "promptCategoryTabs": "提示词场景",
+    "currentPack": "当前提示词",
+    "clearPack": "仅清除",
+    "packAttribution": "提示词与预览图整理自 GitHub 开源项目 awesome-gptimage2，版权归原作者。"
   },
   "upload": {
     "title": "上传内容",
