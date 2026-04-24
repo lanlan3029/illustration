@@ -202,6 +202,7 @@
                             ref="referenceUpload"
                             type="file"
                             accept="image/*"
+                            multiple
                             class="hidden-file-input"
                             @change="handleReferenceUpload"
                         />
@@ -256,20 +257,26 @@
                             <span>{{ $t('aiPicture.advancedSettings') || '高级设置' }}</span>
                         </button>
 
-                        <!-- 已选参考图缩略 -->
-                        <div v-if="referenceImageUrl" class="ref-thumb-wrap">
-                            <img :src="referenceImageUrl" alt="reference" class="ref-thumb" />
-                            <button
-                                type="button"
-                                class="ref-thumb-clear"
-                                @click="clearReferenceImage"
-                                aria-label="remove reference"
+                        <!-- 已选参考图（可多张，与 /create-character 一致，最多 10 张） -->
+                        <div v-if="referenceImageUrls.length" class="ref-thumbs-row">
+                            <div
+                                v-for="(url, idx) in referenceImageUrls"
+                                :key="url"
+                                class="ref-thumb-wrap"
                             >
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                            </button>
+                                <img :src="url" alt="reference" class="ref-thumb" />
+                                <button
+                                    type="button"
+                                    class="ref-thumb-clear"
+                                    @click="removeReferenceAt(idx)"
+                                    :aria-label="'remove reference ' + (idx + 1)"
+                                >
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -555,11 +562,12 @@ export default {
             ],
 
             selectedModel: 'gpt-image-2',
-            selectedQuality: 'auto',
+            selectedQuality: 'medium',
             outputFormat: 'png',
             imageCount: 1,
 
-            referenceImageUrl: '',
+            /** 参考图 data URL 列表，最多 10 张（与 CreateLayoutIllustration 中 create-character 的 image 数组一致） */
+            referenceImageUrls: [],
 
             displayOrder: [],
 
@@ -690,7 +698,7 @@ export default {
         },
         currentQualityLabel() {
             const hit = this.qualityMenuOptions.find(o => o.value === this.selectedQuality)
-            return hit ? hit.label : (this.$t('aiPicture.qualityAuto') || '自动')
+            return hit ? hit.label : (this.$t('aiPicture.qualityMedium') || '中')
         },
         displayedStyles() {
             const vis = this.visibleStyles
@@ -858,7 +866,7 @@ export default {
             this.selectedModel = value
             this.modelMenuOpen = false
             const valid = this.qualityMenuOptions.some(o => o.value === this.selectedQuality)
-            if (!valid) this.selectedQuality = 'auto'
+            if (!valid) this.selectedQuality = 'medium'
         },
         toggleQualityMenu() {
             const next = !this.qualityMenuOpen
@@ -940,13 +948,39 @@ export default {
             this.$refs.referenceUpload && this.$refs.referenceUpload.click()
         },
         async handleReferenceUpload(e) {
-            const file = e.target.files && e.target.files[0]
-            if (!file) return
+            const files = Array.from((e.target.files && e.target.files) || []).filter((f) => f.type && f.type.startsWith('image/'))
+            if (!files.length) {
+                e.target.value = ''
+                return
+            }
+            const maxRef = 10
+            const room = maxRef - this.referenceImageUrls.length
+            if (room <= 0) {
+                ElMessage.warning({ message: this.$t('aiPicture.referenceMax') || '参考图最多 10 张', offset: 200 })
+                e.target.value = ''
+                return
+            }
+            const toProcess = files.slice(0, room)
+            let added = 0
             try {
-                const dataUrl = await this.fileToDataUrl(file)
-                const compressed = await this.compressDataUrlIfNeeded(dataUrl)
-                this.referenceImageUrl = compressed
-                ElMessage.success({ message: this.$t('aiPicture.referenceAdded') || '已添加参考图', offset: 200 })
+                for (const file of toProcess) {
+                    const dataUrl = await this.fileToDataUrl(file)
+                    const compressed = await this.compressDataUrlIfNeeded(dataUrl)
+                    this.referenceImageUrls.push(compressed)
+                    added++
+                }
+                if (added > 0) {
+                    ElMessage.success({
+                        message: this.$t('aiPicture.referenceAddedCount', { n: added }) || `已添加 ${added} 张参考图`,
+                        offset: 200
+                    })
+                }
+                if (files.length > room) {
+                    ElMessage.info({
+                        message: this.$t('aiPicture.referenceTruncated', { max: maxRef }) || `已达上限 ${maxRef} 张，其余未添加`,
+                        offset: 200
+                    })
+                }
             } catch (err) {
                 console.error(err)
                 ElMessage.error({ message: this.$t('aiPicture.referenceFailed') || '参考图加载失败', offset: 200 })
@@ -954,8 +988,9 @@ export default {
                 e.target.value = ''
             }
         },
-        clearReferenceImage() {
-            this.referenceImageUrl = ''
+        removeReferenceAt(index) {
+            if (index < 0 || index >= this.referenceImageUrls.length) return
+            this.referenceImageUrls.splice(index, 1)
         },
         fileToDataUrl(file) {
             return new Promise((resolve, reject) => {
@@ -1064,8 +1099,11 @@ export default {
 
             try {
                 const requestData = this.buildCreateCharacterRequest()
-                if (this.referenceImageUrl) {
-                    requestData.image = this.referenceImageUrl
+                const refs = (this.referenceImageUrls || []).filter(Boolean)
+                if (refs.length === 1) {
+                    requestData.image = refs[0]
+                } else if (refs.length > 1) {
+                    requestData.image = refs.slice(0, 10)
                 }
 
                 const apiUrl = this.apiBaseUrl
@@ -1750,7 +1788,15 @@ export default {
     color: #9aa0a6;
 }
 
-/* 参考图缩略 */
+/* 参考图缩略（可多张） */
+.ref-thumbs-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    max-width: min(280px, 100%);
+}
+
 .ref-thumb-wrap {
     position: relative;
     width: 32px;
