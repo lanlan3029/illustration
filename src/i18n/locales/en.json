@@ -478,7 +478,11 @@
     "promptCategoryTabs": "Prompt topics",
     "currentPack": "Current prompt",
     "clearPack": "Clear",
-    "packAttribution": "Prompts and previews are from the open-source project awesome-gptimage2 (GitHub). Thanks to the original authors."
+    "packAttribution": "Prompts and previews are from the open-source project awesome-gptimage2 (GitHub). Thanks to the original authors.",
+    "styleSourceOai": "Creative templates",
+    "currentOaiTemplate": "Template",
+    "clearOai": "Clear",
+    "oaiTemplateHint": "Most presets expect a reference photo (use + in the toolbar). A few are prompt-only (e.g. hyper-real macro)."
   },
   "upload": {
     "title": "Upload Content",
