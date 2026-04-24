@@ -1218,10 +1218,9 @@ export default {
                 if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
                     pictureValue = `https://static.kidstory.cc/${pictureValue}`
                 }
-                if (pictureValue && pictureValue.startsWith('data:')) {
-                    pictureValue = await this.compressDataUrlIfNeeded(pictureValue)
-                }
                 const rawPrompt = (this.lastGeneratedPromptSnapshot || this.generatedPrompt || '').trim()
+                const descMax = 10000
+                const description = (rawPrompt || '从灵感库生成的插画').slice(0, descMax)
                 let title = 'AI插画'
                 if (rawPrompt) {
                     const trimmed = rawPrompt.replace(/\s+/g, ' ').trim()
@@ -1230,15 +1229,25 @@ export default {
                         title = trimmed.length > maxLen ? trimmed.slice(0, maxLen) + '…' : trimmed
                     }
                 }
-                const requestData = {
-                    picture: pictureValue,
-                    title,
-                    description: rawPrompt || '从灵感库生成的插画',
-                    type: 'others'
+                // JSON + base64 整段易超过网关 1MB 限制，改为 multipart 上传，与 UploadIllustration 一致
+                const form = new FormData()
+                if (pictureValue && pictureValue.startsWith('data:')) {
+                    let compact = await this.compressDataUrlIfNeeded(pictureValue, 500 * 1024)
+                    let blob = await (await fetch(compact)).blob()
+                    if (blob.size > 600 * 1024) {
+                        compact = await this.compressDataUrlIfNeeded(compact, 320 * 1024)
+                        blob = await (await fetch(compact)).blob()
+                    }
+                    form.append('picture', blob, 'illustration.jpg')
+                } else {
+                    form.append('picture', pictureValue)
                 }
-                const response = await this.$http.post('/ill/', requestData, {
+                form.append('title', title)
+                form.append('description', description)
+                form.append('type', 'others')
+
+                const response = await this.$http.post('/ill/', form, {
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     }
                 })
@@ -1249,7 +1258,13 @@ export default {
                 }
             } catch (error) {
                 console.error('收集插画失败:', error)
-                const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试'
+                const data = error.response?.data
+                const inner = (typeof data?.message === 'object' && data?.message) ? data.message : null
+                const reason = (inner && (inner.message || inner.Message)) || (typeof data?.message === 'string' ? data.message : '') || data?.error || error.message || '保存失败，请重试'
+                let errorMessage = typeof reason === 'string' ? reason : String(reason)
+                if (errorMessage === 'request entity too large' || inner?.limit || String(JSON.stringify(data || {})).includes('entity too large')) {
+                    errorMessage = '内容超过大小限制。已用压缩后上传，若仍失败请先从本页「下载到本地」再到上传页提交'
+                }
                 ElMessage.error({ message: `收集插画失败: ${errorMessage}`, offset: 200 })
             } finally {
                 this.collecting = false
