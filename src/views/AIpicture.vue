@@ -78,7 +78,7 @@
                             <template v-if="inspirationSource === 'illustration'">
                                 <button type="button" class="style-list-item style-list-item--upload" @click="triggerReferenceUpload">
                                     <div class="style-list-item-thumb style-list-item-thumb--add">
-                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
                                             <line x1="12" y1="5" x2="12" y2="19" />
                                             <line x1="5" y1="12" x2="19" y2="12" />
                                         </svg>
@@ -1356,8 +1356,8 @@ export default {
 }
 
 .inspiration-column {
-    flex: 0 0 300px;
-    width: 300px;
+    flex: 0 0 380px;
+    width: 380px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -1976,16 +1976,15 @@ export default {
 .style-list-item {
     flex: 0 0 auto;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    min-height: 60px;
-    padding: 8px 10px;
-    border-radius: 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 8px 10px;
+    border-radius: 16px;
     border: 1px solid #ececf0;
     background: #fff;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
@@ -2002,9 +2001,10 @@ export default {
 }
 
 .style-list-item-thumb {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
+    width: 100%;
+    aspect-ratio: 1;
+    min-height: 0;
+    border-radius: 12px;
     overflow: hidden;
     flex-shrink: 0;
     position: relative;
@@ -2037,17 +2037,21 @@ export default {
 .style-list-item-body {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     min-width: 0;
-    flex: 1;
+    width: 100%;
+    align-items: center;
+    text-align: center;
 }
 
 .style-list-item-text {
-    font-size: 13px;
-    line-height: 1.35;
+    font-size: 12px;
+    line-height: 1.4;
     color: #1f1f1f;
     font-weight: 500;
     min-width: 0;
+    width: 100%;
+    text-align: center;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -2064,6 +2068,8 @@ export default {
     font-size: 11px;
     line-height: 1.3;
     color: #6b7280;
+    text-align: center;
+    width: 100%;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
