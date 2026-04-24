@@ -76,15 +76,6 @@
 
                         <div class="style-list" ref="styleListRef">
                             <template v-if="inspirationSource === 'illustration'">
-                                <button type="button" class="style-list-item style-list-item--upload" @click="triggerReferenceUpload">
-                                    <div class="style-list-item-thumb style-list-item-thumb--add">
-                                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="12" y1="5" x2="12" y2="19" />
-                                            <line x1="5" y1="12" x2="19" y2="12" />
-                                        </svg>
-                                    </div>
-                                    <span class="style-list-item-text">{{ $t('aiPicture.uploadPhoto') || '上传照片' }}</span>
-                                </button>
                                 <button
                                     v-for="style in displayedStyles"
                                     :key="style.id"
@@ -733,13 +724,7 @@ export default {
         }
     },
     mounted() {
-        if (this.styles.length > 0) {
-            this.selectedStyleId = this.styles[0].id
-            this.editableArtStyle = this.styles[0].artStyle
-            this.editableElementDetails = this.styles[0].elementDetails
-            this.displayOrder = this.styles.map(s => s.id)
-            this.applyStylePromptToInput(this.styles[0])
-        }
+        // 不预选风格、不预填提示词；由用户在左侧点击风格/模板后再写入 subjectScene
         this.restoreLatestGeneratedImage()
         document.addEventListener('click', this.handleDocClick)
         this._onStyleListScroll = () => {
@@ -2102,18 +2087,6 @@ export default {
     justify-content: center;
 }
 
-.style-list-item-thumb--add {
-    background: #f5f6f8;
-    color: #8a8e95;
-    border: 1.5px dashed #d6d9df;
-}
-
-.style-list-item--upload:hover .style-list-item-thumb--add {
-    border-color: #5b5bd6;
-    color: #5b5bd6;
-    background: #f9f9ff;
-}
-
 .style-list-item-img {
     width: 100%;
     height: 100%;
@@ -2166,12 +2139,6 @@ export default {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-/* 上传项 */
-.style-list-item--upload {
-    background: #fff;
-    border-style: dashed;
 }
 
 /* 悬停放大预览（挂到 body，避免在滚动层被裁切） */
