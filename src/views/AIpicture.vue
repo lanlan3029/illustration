@@ -1232,10 +1232,13 @@ export default {
                 // JSON + base64 整段易超过网关 1MB 限制，改为 multipart 上传，与 UploadIllustration 一致
                 const form = new FormData()
                 if (pictureValue && pictureValue.startsWith('data:')) {
-                    let compact = await this.compressDataUrlIfNeeded(pictureValue, 500 * 1024)
+                    // multipart 单图文件可接近 1MB；目标压在 1MB 内、尽量保画质，不再压到几百 KB
+                    const underOneMb = 1000 * 1024
+                    const targetBytes = 980 * 1024
+                    let compact = await this.compressDataUrlIfNeeded(pictureValue, targetBytes)
                     let blob = await (await fetch(compact)).blob()
-                    if (blob.size > 600 * 1024) {
-                        compact = await this.compressDataUrlIfNeeded(compact, 320 * 1024)
+                    if (blob.size > underOneMb) {
+                        compact = await this.compressDataUrlIfNeeded(compact, 900 * 1024)
                         blob = await (await fetch(compact)).blob()
                     }
                     form.append('picture', blob, 'illustration.jpg')
