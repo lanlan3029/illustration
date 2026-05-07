@@ -7,17 +7,22 @@
         <el-radio-button label="month">{{ $t('moodDiary.recapMonth') }}</el-radio-button>
       </el-radio-group>
     </div>
+    <p v-if="recapLoading" class="recap-status">{{ $t('moodDiary.recapAiLoading') }}</p>
+    <p v-else-if="recapAiError" class="recap-status recap-status--warn">{{ recapAiError }}</p>
     <div class="md-fill">
-      <pre class="recap-block">{{ recapText }}</pre>
+      <pre class="recap-block">{{ displayRecap }}</pre>
     </div>
-    <el-button type="primary" class="recap-footer-btn" @click="openPoster">{{ $t('moodDiary.openSharePoster') }}</el-button>
+    <el-button type="primary" class="recap-footer-btn" :disabled="recapLoading" @click="openPoster">
+      {{ $t('moodDiary.openSharePoster') }}
+    </el-button>
   </div>
 </template>
 
 <script>
-import { buildRecap, recapToReadable } from '@/utils/moodDiary/recapEngine'
+import { buildRecap, buildRecapCompletionPayload, recapToReadable } from '@/utils/moodDiary/recapEngine'
 import { getRecordsSorted } from '@/utils/moodDiary/records'
 import { findMoodById } from '@/utils/moodDiary/moodAssets'
+import { fetchRecapChatCompletion, getActiveMoodEndpoints } from '@/utils/moodDiary/api'
 
 const POSTER_KEY = 'mood_diary_share_poster_payload'
 
@@ -25,25 +30,81 @@ export default {
   name: 'MoodDiaryRecap',
   data() {
     return {
-      period: 'week'
+      period: 'week',
+      aiRecapText: '',
+      recapLoading: false,
+      recapAiError: ''
     }
   },
   computed: {
-    recapText() {
+    recapLocalText() {
       const rec = buildRecap(this.period, getRecordsSorted())
       return recapToReadable(rec, (k, params) => this.$t(k, params), (id) => {
         const isZh = this.$i18n?.locale === 'zh'
         return findMoodById(id, isZh)?.label || id
       })
+    },
+    displayRecap() {
+      const ai = (this.aiRecapText || '').trim()
+      if (ai) return ai
+      return this.recapLocalText
     }
   },
+  watch: {
+    period() {
+      this.scheduleRecapFetch()
+    }
+  },
+  mounted() {
+    this.scheduleRecapFetch()
+  },
   methods: {
+    scheduleRecapFetch() {
+      this.$nextTick(() => this.fetchAiRecap())
+    },
+    async fetchAiRecap() {
+      const cfg = getActiveMoodEndpoints()
+      if (!cfg.recapCompletionEndpoint) {
+        this.aiRecapText = ''
+        this.recapAiError = ''
+        return
+      }
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') || '' : ''
+      if (!token || token === 'undefined') {
+        this.aiRecapText = ''
+        this.recapAiError = this.$t('moodDiary.recapAiNeedLogin')
+        return
+      }
+
+      this.recapLoading = true
+      this.recapAiError = ''
+      this.aiRecapText = ''
+      try {
+        const records = getRecordsSorted()
+        const payload = buildRecapCompletionPayload(
+          this.period,
+          records,
+          (id) => {
+            const isZh = this.$i18n?.locale === 'zh'
+            return findMoodById(id, isZh)?.label || id
+          },
+          this.$i18n?.locale === 'en' ? 'en' : 'zh'
+        )
+        const text = await fetchRecapChatCompletion(payload, cfg.recapCompletionEndpoint)
+        this.aiRecapText = text
+      } catch (e) {
+        this.recapAiError = e.message || this.$t('moodDiary.recapAiFailed')
+        this.aiRecapText = ''
+      } finally {
+        this.recapLoading = false
+      }
+    },
     openPoster() {
       const title =
         this.period === 'week'
           ? this.$t('moodDiary.weeklyRecapShareTitle')
           : this.$t('moodDiary.monthlyRecapShareTitle')
-      const bodyLines = this.recapText.split('\n')
+      const bodyLines = this.displayRecap.split('\n')
       try {
         sessionStorage.setItem(
           POSTER_KEY,
@@ -98,6 +159,17 @@ export default {
 .seg {
   flex-shrink: 0;
   margin-bottom: 14px;
+}
+
+.recap-status {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #8167a9;
+  flex-shrink: 0;
+}
+
+.recap-status--warn {
+  color: #c45656;
 }
 
 .recap-footer-btn {

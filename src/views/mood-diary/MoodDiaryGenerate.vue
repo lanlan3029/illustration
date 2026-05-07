@@ -62,6 +62,7 @@ import {
   saveIllMood,
   getActiveMoodEndpoints
 } from '@/utils/moodDiary/api'
+import { MOOD_ILLUSTRATION_TYPE } from '@/utils/moodDiary/constants'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
 
 export default {
@@ -362,7 +363,8 @@ export default {
             await saveIllLegacyCreation(
               this.posterUrl,
               this.$t('moodDiary.creationTitle'),
-              d.narrative.trim()
+              d.narrative.trim(),
+              MOOD_ILLUSTRATION_TYPE
             )
           }
         }

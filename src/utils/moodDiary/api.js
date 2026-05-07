@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { MOOD_ILLUSTRATION_TYPE } from './constants'
 import { getMoodApiConfig, resolveApiUrl } from './config'
 
 function unwrapData(res) {
@@ -129,7 +130,13 @@ export async function createCharacterIllustration(payload) {
 
 export async function saveIllMood(payload, endpoint) {
   const url = resolveApiUrl(endpoint)
-  const res = await axios.post(url, payload, {
+  const body = {
+    ...payload,
+    type: payload.type ?? MOOD_ILLUSTRATION_TYPE,
+    // 兼容后端可能使用 illustration_type（若后端不需要可忽略该字段）
+    illustration_type: payload.illustration_type ?? payload.type ?? MOOD_ILLUSTRATION_TYPE
+  }
+  const res = await axios.post(url, body, {
     headers: { 'Content-Type': 'application/json' },
     timeout: 60000
   })
@@ -143,14 +150,14 @@ export async function saveIllMood(payload, endpoint) {
   return data
 }
 
-export async function saveIllLegacyCreation(dataUrl, title, description) {
+export async function saveIllLegacyCreation(dataUrl, title, description, illType = 'others') {
   const res = await axios.post(
     '/ill/',
     {
       picture: dataUrl,
       title,
       description,
-      type: 'others'
+      type: illType
     },
     {
       headers: {
@@ -167,4 +174,65 @@ export async function saveIllLegacyCreation(dataUrl, title, description) {
 
 export function getActiveMoodEndpoints() {
   return getMoodApiConfig()
+}
+
+/** 与「我的插画」列表一致：content 为 OSS 相对路径或完整 URL */
+export function resolveIllustrationContentUrl(content) {
+  if (content == null || content === '') return ''
+  const s = String(content)
+  if (/^https?:\/\//i.test(s) || s.startsWith('data:')) return s
+  return `https://static.kidstory.cc/${s.replace(/^\//, '')}`
+}
+
+/**
+ * 拉取当前用户类别为「心情」的插画（后端需支持 GET /ill/?type=心情）
+ * @returns {Promise<Array>}
+ */
+export async function fetchUserMoodIllustrations(page = 1) {
+  const type = encodeURIComponent(MOOD_ILLUSTRATION_TYPE)
+  const res = await axios.get(`/ill/?page=${page}&sort_param=createdAt&sort_num=desc&type=${type}`, {
+    headers: {
+      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
+    },
+    timeout: 30000
+  })
+  const data = unwrapData(res)
+  const ok = data.code === 0 || data.code === '0' || data.desc === 'success'
+  const raw = data.message ?? data.data
+  const list = Array.isArray(raw) ? raw : []
+  if (!ok && list.length === 0 && data.message && typeof data.message === 'string') {
+    throw new Error(data.message)
+  }
+  return list
+}
+
+/**
+ * 将选定时间段内的日记条目发给对话补全类接口做复盘分析。
+ * payload 建议使用 buildRecapCompletionPayload 生成。
+ */
+export async function fetchRecapChatCompletion(payload, endpoint) {
+  const url = resolveApiUrl(endpoint)
+  if (!url) throw new Error('recap completion endpoint missing')
+  const res = await axios.post(url, payload, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
+    },
+    timeout: 120000
+  })
+  const data = unwrapData(res)
+  const inner = data.message ?? data.data ?? data
+  if (typeof inner === 'string') return inner.trim()
+
+  let text =
+    pickFirstStr(inner, ['content', 'analysis', 'text', 'result', 'summary', 'reply']) ||
+    ''
+
+  const choiceMsg = inner?.choices?.[0]?.message ?? inner?.choices?.[0]
+  if (!text && choiceMsg?.content) text = String(choiceMsg.content).trim()
+
+  if (!text) text = typeof inner?.result === 'string' ? inner.result.trim() : ''
+
+  if (!text) throw new Error(data.message || pickFirstStr(data, ['desc']) || 'recap analysis failed')
+  return text
 }

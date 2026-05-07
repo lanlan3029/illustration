@@ -492,8 +492,8 @@ export default {
 
 .diary-entry-inner-tools {
   position: absolute;
-  left: 13px;
-  bottom: 32px;
+  left: var(--diary-toolbar-inset, 14px);
+  bottom: var(--diary-toolbar-inset, 14px);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -619,7 +619,7 @@ export default {
 
 .diary-entry-input :deep(.el-textarea__inner) {
   background: transparent;
-  padding-bottom: 52px;
+  padding-bottom: 56px;
   flex: 1;
   min-height: 220px;
   resize: vertical;
@@ -635,8 +635,7 @@ export default {
 
 @media (max-width: 767px) {
   .diary-entry-inner-tools {
-    left: 10px;
-    bottom: 34px;
+    --diary-toolbar-inset: 12px;
   }
 
   .diary-entry-input :deep(.el-textarea__inner) {

@@ -9,13 +9,15 @@ export function getMoodApiConfig() {
   const emotionAlign = process.env.VUE_APP_MOOD_EMOTION_ALIGN || ''
   const quotaSentence = process.env.VUE_APP_MOOD_QUOTA_SENTENCE || ''
   const illSave = process.env.VUE_APP_MOOD_ILL_SAVE || ''
+  const recapCompletion = process.env.VUE_APP_MOOD_RECAP_COMPLETION || ''
   return {
     captionPickEndpoint: pick.trim() || null,
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
     emotionPipelineEndpoint: emotionPipeline.trim() || null,
     emotionAlignEndpoint: emotionAlign.trim() || null,
     quotaSentenceEndpoint: quotaSentence.trim() || null,
-    illSaveEndpoint: illSave.trim() || null
+    illSaveEndpoint: illSave.trim() || null,
+    recapCompletionEndpoint: recapCompletion.trim() || null
   }
 }
 
