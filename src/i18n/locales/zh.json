@@ -305,7 +305,7 @@
     "title": "心情日记",
     "question": "你今天心情怎么样？",
     "selectedMood": "已选择心情",
-    "entryPlaceholder": "写下今天的故事、想法或感谢的事情...",
+    "entryPlaceholder": "描述您此刻的心情（可添加参考图片）。",
     "generating": "生成中...",
     "emptyPrompt": "请先输入日记内容",
     "generateSuccess": "插画生成成功",

@@ -2,15 +2,13 @@
   <div class="md-card md-insights">
     <div class="hdr">
       <h1 class="md-title">{{ $t('moodDiary.monthlyReportTitle') }}</h1>
-      <div class="month-nav">
-        <el-button size="small" @click="shiftMonth(-1)">‹</el-button>
-        <span class="month-label">{{ monthLabel }}</span>
-        <el-button size="small" @click="shiftMonth(1)">›</el-button>
-      </div>
+    </div>
+    <div class="month-nav">
+      <el-button size="small" @click="shiftMonth(-1)">‹</el-button>
+      <span class="month-label">{{ monthLabel }}</span>
+      <el-button size="small" @click="shiftMonth(1)">›</el-button>
     </div>
     <div class="md-fill">
-      <p class="share-hint">{{ $t('moodDiary.monthlyShareHint') }}</p>
-
       <div class="cal">
         <div class="cal-weekdays">
           <span v-for="w in weekdayLabels" :key="w">{{ w }}</span>
@@ -20,10 +18,10 @@
             v-for="cell in cells"
             :key="cell.key"
             class="cell"
-            :class="{ muted: !cell.inMonth, today: cell.isToday }"
+            :class="{ muted: !cell.inMonth, today: cell.isToday, 'has-mood': !!cell.moodId }"
           >
-            <span class="d-num">{{ cell.day }}</span>
-            <img v-if="cell.moodId" :src="moodSrc(cell.moodId)" class="m-ico" alt="" />
+            <span v-if="cell.inMonth && !cell.moodId" class="d-num">{{ cell.day }}</span>
+            <img v-if="cell.inMonth && cell.moodId" :src="moodSrc(cell.moodId)" class="m-ico" alt="" />
           </div>
         </div>
       </div>
@@ -51,8 +49,8 @@ export default {
     },
     weekdayLabels() {
       return this.$i18n?.locale === 'zh'
-        ? ['一', '二', '三', '四', '五', '六', '日']
-        : ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+        ? ['日', '一', '二', '三', '四', '五', '六']
+        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     },
     /** day -> mood id (last record wins) */
     dayMoodMap() {
@@ -71,7 +69,7 @@ export default {
       const y = this.cursor.getFullYear()
       const m = this.cursor.getMonth()
       const first = new Date(y, m, 1)
-      const pad = ((first.getDay() + 6) % 7)
+      const pad = first.getDay()
       const start = new Date(y, m, 1 - pad)
       const cells = []
       const today = new Date()
@@ -145,36 +143,42 @@ export default {
 .hdr {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
-  flex-wrap: wrap;
   margin-bottom: 8px;
   flex-shrink: 0;
 }
 
 .md-title {
-  margin: 0;
-  font-size: 20px;
-}
-
-.month-nav {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.month-label {
-  min-width: 96px;
-  text-align: center;
-  font-size: 14px;
+  margin: 0 auto 0 0;
+  font-size: 18px;
+  color: #5c6068;
   font-weight: 600;
 }
 
-.share-hint {
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin: 0 auto 48px;
   flex-shrink: 0;
-  margin: 0 0 16px;
-  font-size: 12px;
-  color: #909399;
+}
+
+.month-nav :deep(.el-button) {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.month-label {
+  min-width: 120px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #4a4f57;
 }
 
 .cal {
@@ -187,10 +191,10 @@ export default {
 .cal-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 6px;
-  font-size: 11px;
-  color: #a0a4ad;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #7b8088;
   text-align: center;
 }
 
@@ -199,38 +203,60 @@ export default {
   align-content: start;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 10px 8px;
 }
 
 .cell {
-  min-height: 64px;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 4px;
+  position: relative;
+  min-height: 84px;
+  border-radius: 14px;
+  padding: 6px 2px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  background: #fcfcff;
+  justify-content: flex-start;
+  gap: 4px;
+  background: transparent;
 }
 
 .cell.muted {
-  opacity: 0.35;
+  opacity: 0.18;
 }
 
 .cell.today {
-  border-color: #8167a9;
+  outline: none;
+}
+
+.cell.today:not(.has-mood)::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: 82px;
+  height: 74px;
+  transform: translateX(-50%);
+  border: 1px dashed rgba(120, 126, 136, 0.38);
+  border-radius: 14px;
+  pointer-events: none;
 }
 
 .d-num {
-  font-size: 12px;
-  color: #606266;
+  margin-top: 4px;
+  font-size: 30px;
+  line-height: 1;
+  color: #666b73;
+  font-weight: 500;
 }
 
 .m-ico {
-  width: 28px;
-  height: 28px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
+  margin-top: 2px;
+}
+
+.cell.has-mood .d-num {
+  display: none;
 }
 </style>

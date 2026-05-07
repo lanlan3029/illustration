@@ -290,7 +290,7 @@
     "title": "Mood Diary",
     "question": "How are you feeling today?",
     "selectedMood": "Selected mood",
-    "entryPlaceholder": "Write your story, thoughts, or gratitude for today...",
+    "entryPlaceholder": "Describe your current mood (optional reference image).",
     "generating": "Generating...",
     "emptyPrompt": "Please write your diary content first",
     "generateSuccess": "Illustration generated successfully",

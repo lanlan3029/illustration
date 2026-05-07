@@ -16,6 +16,11 @@ function fitContain(sourceW, sourceH, maxW, maxH) {
   return { width: sourceW * ratio, height: sourceH * ratio }
 }
 
+function fitCover(sourceW, sourceH, maxW, maxH) {
+  const ratio = Math.max(maxW / sourceW, maxH / sourceH)
+  return { width: sourceW * ratio, height: sourceH * ratio }
+}
+
 function wrapTextLines(text, maxCharsPerLine) {
   if (!text) return ['']
   const lines = []
@@ -84,73 +89,75 @@ export async function composeMoodPoster(imageUrl, diaryText, opts = {}) {
   const image = await loadImage(sourceUrl)
   const captionLine = (opts.captionLine || '').trim()
 
+  // 与小程序保持一致：逻辑尺寸 675x1200，导出倍率 x2 => 1350x2400
+  const POSTER_W = 675
+  const POSTER_H = 1200
+  const POSTER_EXPORT_MULTIPLIER = 2
+
+  const SX = POSTER_W / 300
+  const SY = POSTER_H / 500
+
   const canvas = document.createElement('canvas')
-  const canvasWidth = 1024
-  const imageHeight = 620
-  const padding = 44
-  const diaryLines = wrapTextLines(diaryText, 28)
-  const quoteLines = captionLine ? wrapTextLines(captionLine, 32) : []
-  const lineHeight = 42
-  const quoteExtra = quoteLines.length ? quoteLines.length * 34 + 40 : 0
-  const textHeight = Math.max(180, diaryLines.length * lineHeight + 60 + quoteExtra)
-  canvas.width = canvasWidth
-  canvas.height = imageHeight + textHeight + padding * 2
+  canvas.width = POSTER_W * POSTER_EXPORT_MULTIPLIER
+  canvas.height = POSTER_H * POSTER_EXPORT_MULTIPLIER
 
   const ctx = canvas.getContext('2d')
-  ctx.fillStyle = '#f5f7fa'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  if (!ctx) throw new Error('canvas context unavailable')
+  ctx.scale(POSTER_EXPORT_MULTIPLIER, POSTER_EXPORT_MULTIPLIER)
 
-  const cardX = 36
-  const cardY = 36
-  const cardWidth = canvasWidth - 72
-  const cardHeight = canvas.height - 72
-  roundRectPath(ctx, cardX, cardY, cardWidth, cardHeight, 34)
+  ctx.fillStyle = '#f5f7fa'
+  ctx.fillRect(0, 0, POSTER_W, POSTER_H)
+
+  const cardX = 8 * SX
+  const cardY = 8 * SY
+  const cardW = POSTER_W - cardX * 2
+  const cardH = POSTER_H - cardY * 2
+  roundRectPath(ctx, cardX, cardY, cardW, cardH, 12 * SX)
   ctx.save()
   ctx.fillStyle = '#ffffff'
-  ctx.shadowColor = 'rgba(42, 31, 66, 0.16)'
-  ctx.shadowBlur = 26
-  ctx.shadowOffsetY = 8
   ctx.fill()
   ctx.restore()
 
-  const imageX = cardX + 24
-  const imageY = cardY + 24
-  const imageW = cardWidth - 48
-  const imageH = imageHeight - 24
+  // 主图区域：w - 36*SX, 270*SY => 594x648（逻辑）
+  const imageW = POSTER_W - 36 * SX
+  const imageH = 270 * SY
+  const imageX = (POSTER_W - imageW) / 2
+  const imageY = cardY + 35 * SY
   ctx.save()
-  roundRectPath(ctx, imageX, imageY, imageW, imageH, 28)
+  roundRectPath(ctx, imageX, imageY, imageW, imageH, 12 * SX)
   ctx.clip()
-  const drawSize = fitContain(image.width, image.height, imageW, imageH)
+  const drawSize = fitCover(image.width, image.height, imageW, imageH)
   const drawX = imageX + (imageW - drawSize.width) / 2
   const drawY = imageY + (imageH - drawSize.height) / 2
-  ctx.filter = 'blur(0.3px)'
   ctx.drawImage(image, drawX, drawY, drawSize.width, drawSize.height)
   ctx.restore()
-  ctx.filter = 'none'
 
-  const textY = imageY + imageH + 36
-  const moodFontSize = 36
+  const diaryLines = wrapTextLines(diaryText, 19)
+  const quoteLines = captionLine ? wrapTextLines(captionLine, 22) : []
+  const textY = imageY + imageH + 28 * SY
+  const moodFontSize = Math.round(14 * SX)
+  const lineHeight = Math.round(22 * SY)
   const moodFontFamily =
     '"阿里妈妈灵动体", "苦累蛙圓體", "寒蝉圆体", "Caveat", "PingFang SC", "Microsoft YaHei", sans-serif'
   await ensureMoodFontReady('阿里妈妈灵动体', moodFontSize, diaryLines.join(''))
-  ctx.fillStyle = '#2a1f42'
+  ctx.fillStyle = '#2f3137'
   ctx.font = `400 ${moodFontSize}px ${moodFontFamily}`
   ctx.textBaseline = 'top'
   ctx.textAlign = 'center'
-  const textCenterX = imageX + imageW / 2
+  const textCenterX = POSTER_W / 2
   diaryLines.forEach((line, index) => {
     ctx.fillText(line, textCenterX, textY + index * lineHeight)
   })
 
-  let yAfter = textY + diaryLines.length * lineHeight + 16
+  let yAfter = textY + diaryLines.length * lineHeight + 10 * SY
   if (quoteLines.length) {
-    ctx.font = `italic 400 26px ${moodFontFamily}`
-    ctx.fillStyle = '#5a4b7a'
+    ctx.font = `italic 400 ${Math.round(11 * SX)}px ${moodFontFamily}`
+    ctx.fillStyle = '#5a5c63'
     quoteLines.forEach((line, i) => {
-      ctx.fillText(`「${line}」`, textCenterX, yAfter + i * 34)
+      ctx.fillText(`「${line}」`, textCenterX, yAfter + i * Math.round(16 * SY))
     })
-    yAfter += quoteLines.length * 34
+    yAfter += quoteLines.length * Math.round(16 * SY)
   }
 
-  return canvas.toDataURL('image/jpeg', 0.92)
+  return canvas.toDataURL('image/png')
 }

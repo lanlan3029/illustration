@@ -26,6 +26,7 @@
           @click="selectMood(m)"
         >
           <img :src="m.src" :alt="m.label" />
+          <span class="mood-btn-label mood-btn-label-primary">{{ m.label }}</span>
         </button>
       </div>
 
@@ -107,6 +108,8 @@ import { dataUrlToFile, fetchImageDescribe, getActiveMoodEndpoints } from '@/uti
 import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
 import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
 
+const HIDDEN_EXTRA_MOOD_IDS = new Set(['heart', 'thumbs-up', 'star-eyes'])
+
 export default {
   name: 'MoodDiaryNarrative',
   data() {
@@ -131,7 +134,7 @@ export default {
     },
     extraMoods() {
       const quick = new Set(quickMoodIds)
-      return this.moods.filter((m) => !quick.has(m.id))
+      return this.moods.filter((m) => !quick.has(m.id) && !HIDDEN_EXTRA_MOOD_IDS.has(m.id))
     }
   },
   watch: {
@@ -373,8 +376,10 @@ export default {
 
 .mood-btn-primary {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 8px;
   padding: 6px;
 }
 
@@ -459,6 +464,11 @@ export default {
   text-align: center;
   word-break: break-word;
   max-width: 100%;
+}
+
+.mood-btn-label-primary {
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .diary-input-wrap {
