@@ -157,7 +157,8 @@ export const INITIAL_BANKS = {
       "黑白涂鸦风",
       "质朴手绘风格",
       "极繁铜版印刷",
-      "Keith Haring 涂鸦"
+      "Keith Haring 涂鸦",
+      "极简波普风"
     ]
   },
   background_style: {

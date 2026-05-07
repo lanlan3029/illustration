@@ -283,12 +283,50 @@ const routes = [{
     },
     {
         path: '/mood-diary',
-        name: 'mood-diary',
         component: () =>
-            import ( /* webpackChunkName: "mood-diary" */ '../views/MoodDiary.vue'),
+            import ( /* webpackChunkName: "mood-diary-shell" */ '../views/mood-diary/MoodDiaryShell.vue'),
         meta: {
             requiresAuth: false
-        }
+        },
+        redirect: '/mood-diary/narrative',
+        children: [
+            {
+                path: 'narrative',
+                name: 'mood-diary-narrative',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-narrative" */ '../views/mood-diary/MoodDiaryNarrative.vue')
+            },
+            {
+                path: 'generate',
+                name: 'mood-diary-generate',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-generate" */ '../views/mood-diary/MoodDiaryGenerate.vue')
+            },
+            {
+                path: 'book',
+                name: 'mood-diary-book',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-book" */ '../views/mood-diary/MoodDiaryBook.vue')
+            },
+            {
+                path: 'insights',
+                name: 'mood-diary-insights',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-insights" */ '../views/mood-diary/MoodDiaryInsights.vue')
+            },
+            {
+                path: 'recap',
+                name: 'mood-diary-recap',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-recap" */ '../views/mood-diary/MoodDiaryRecap.vue')
+            },
+            {
+                path: 'share-poster',
+                name: 'mood-diary-share-poster',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-share-poster" */ '../views/mood-diary/MoodDiarySharePoster.vue')
+            }
+        ]
     },
     {
         path: '/maze',

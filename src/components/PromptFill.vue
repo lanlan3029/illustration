@@ -664,6 +664,7 @@ export default {
       const styleKeyMap = {
         'healingWatercolor': '治愈系水彩',
         'penLineArt': '钢笔线稿插画',
+        'minimalPopArt': '极简波普风',
         'colorfulOutlineRomanticism': '梦幻童话风格',
         'crayonNoiseHandDrawn': '蜡笔噪点手绘',
         'vintageSketch': '复古绘本草图',

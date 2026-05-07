@@ -113,6 +113,7 @@ export default {
             // 风格图片配置（与 AIpicture.vue 中的 styleConfigs 保持一致）
             styleImages: [
                 { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.webp') },
+                { key: 'minimalPopArt', id: 3, image: require('@/assets/prompt/3.webp') },
                 { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.webp') },
                 { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.webp') },
                 { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.webp') },

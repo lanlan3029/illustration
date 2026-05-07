@@ -45,7 +45,7 @@
           </li>
           -->
 
-          <li class="nav-item" :class="{ 'active': route.path === '/mood-diary' }">
+          <li class="nav-item" :class="{ 'active': isMoodDiaryRoute }">
             <router-link to="/mood-diary" class="nav-link nav-link-mood-diary" @click="closeSubmenu">{{ $t('nav.moodDiary') }}</router-link>
           </li>
 
@@ -148,8 +148,8 @@
           <li :class="{ active: route.path === '/books' }">
             <router-link to="/books" @click="closeMobileMenu">绘本</router-link>
           </li>
-          <li :class="{ active: route.path === '/mood-diary' }">
-            <router-link to="/mood-diary" @click="closeMobileMenu">{{ $t('nav.moodDiary') }}</router-link>
+        <li :class="{ active: isMoodDiaryRoute }">
+          <router-link to="/mood-diary" @click="closeMobileMenu">{{ $t('nav.moodDiary') }}</router-link>
           </li>
           <li :class="{ active: route.path === '/maze' }">
             <router-link to="/maze" @click="closeMobileMenu">{{ $t('nav.maze') }}</router-link>
@@ -207,6 +207,8 @@ export default {
                 p.startsWith('/user/upload/compose-illustration')
             )
         })
+
+        const isMoodDiaryRoute = computed(() => route.path.startsWith('/mood-diary'))
         
         // 当前语言（使用 ref 以便双向绑定）
         const currentLanguage = ref(locale.value)
@@ -490,6 +492,7 @@ export default {
             searchArry,
             route,
             isCreationNavActive,
+            isMoodDiaryRoute,
             currentLanguage,
             toggleLanguage,
             handleLanguageChange,

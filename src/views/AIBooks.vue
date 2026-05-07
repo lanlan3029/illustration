@@ -205,6 +205,7 @@ export default {
         const styleKeys = [
             'healingWatercolor',
             'penLineArt',
+            'minimalPopArt',
             'colorfulOutlineRomanticism',
             'crayonNoiseHandDrawn',
             'vintageSketch',
