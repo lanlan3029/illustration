@@ -249,7 +249,7 @@ export default {
           prompt: imagePrompt,
           character_name: 'mood_diary',
           character_type: 'illustration',
-          size: '1280x960',
+          size: '1024x1024',
           quality: 'standard',
           response_format: 'b64_json',
           watermark: false

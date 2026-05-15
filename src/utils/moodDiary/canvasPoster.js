@@ -11,11 +11,6 @@ function roundRectPath(ctx, x, y, width, height, radius) {
   ctx.closePath()
 }
 
-function fitContain(sourceW, sourceH, maxW, maxH) {
-  const ratio = Math.min(maxW / sourceW, maxH / sourceH)
-  return { width: sourceW * ratio, height: sourceH * ratio }
-}
-
 function fitCover(sourceW, sourceH, maxW, maxH) {
   const ratio = Math.max(maxW / sourceW, maxH / sourceH)
   return { width: sourceW * ratio, height: sourceH * ratio }

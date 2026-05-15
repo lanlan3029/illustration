@@ -41,7 +41,6 @@
 
 <script name="ImportJson" setup>
 import { ref } from 'vue';
-import useSelect from '@/components/editorPro/hooks/select';
 import { Message } from 'view-ui-plus';
 const emit = defineEmits(['set']);
 

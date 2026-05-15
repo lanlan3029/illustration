@@ -6,6 +6,48 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "2077532",
+      "name": "日历",
+      "font_class": "rili",
+      "unicode": "e63b",
+      "unicode_decimal": 58939
+    },
+    {
+      "icon_id": "4244910",
+      "name": "025-发送",
+      "font_class": "-fasong",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "8224493",
+      "name": "散文",
+      "font_class": "sanwen",
+      "unicode": "e62f",
+      "unicode_decimal": 58927
+    },
+    {
+      "icon_id": "12877423",
+      "name": "长图",
+      "font_class": "changtu",
+      "unicode": "e693",
+      "unicode_decimal": 59027
+    },
+    {
+      "icon_id": "15085894",
+      "name": "我的书架",
+      "font_class": "wodeshujia",
+      "unicode": "e63e",
+      "unicode_decimal": 58942
+    },
+    {
+      "icon_id": "21243078",
+      "name": "会员",
+      "font_class": "huiyuan",
+      "unicode": "e652",
+      "unicode_decimal": 58962
+    },
+    {
       "icon_id": "6196265",
       "name": "联系我们",
       "font_class": "lianxiwomen1",

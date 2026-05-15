@@ -207,7 +207,7 @@
                             @change="handleReferenceUpload"
                         />
 
-                        <!-- 尺寸（原「图片」位置） -->
+                        <!-- 比例 / 输出宽高 -->
                         <div class="size-select-wrap" ref="sizeSelectRef">
                             <button
                                 type="button"
@@ -225,7 +225,7 @@
                                 </svg>
                             </button>
                             <div v-if="sizeMenuOpen" class="size-menu">
-                                <template v-for="(group, gIdx) in sizeGroups" :key="group.label">
+                                <template v-for="(group, gIdx) in sizeGroups" :key="group.key || group.label">
                                     <div v-if="gIdx > 0" class="size-menu-divider"></div>
                                     <div class="size-menu-group-label">{{ group.label }}</div>
                                     <button
@@ -291,21 +291,11 @@
                             :title="$t('aiPicture.generate') || '生成'"
                         >
                             <span v-if="generating" class="send-spinner"></span>
-                            <svg
+                            <i
                                 v-else
-                                viewBox="0 0 24 24"
-                                width="20"
-                                height="20"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <circle cx="12" cy="12" r="9" />
-                                <circle cx="12" cy="12" r="4" />
-                                <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-                            </svg>
+                                class="iconfont icon--fasong send-btn-icon"
+                                aria-hidden="true"
+                            ></i>
                         </button>
                     </div>
                 </div>
@@ -502,46 +492,8 @@ export default {
             sizeMenuOpen: false,
             modelMenuOpen: false,
             qualityMenuOpen: false,
-            selectedSize: 'auto',
-            sizeGroups: [
-                {
-                    label: '默认',
-                    items: [
-                        { value: 'auto', label: '自动', iconW: 16, iconH: 16 }
-                    ]
-                },
-                {
-                    label: '常用',
-                    items: [
-                        { value: '1024x1024', label: '方图', iconW: 16, iconH: 16 },
-                        { value: '1536x1024', label: '横图', iconW: 20, iconH: 14 },
-                        { value: '1024x1536', label: '竖图', iconW: 14, iconH: 20 }
-                    ]
-                },
-                {
-                    label: '2K',
-                    items: [
-                        { value: '2048x2048', label: '方图 2K', iconW: 18, iconH: 18 },
-                        { value: '2048x1152', label: '横图 2K', iconW: 22, iconH: 12 }
-                    ]
-                },
-                {
-                    label: '4K',
-                    items: [
-                        { value: '3840x2160', label: '横图 4K', iconW: 22, iconH: 12 },
-                        { value: '2160x3840', label: '竖图 4K', iconW: 12, iconH: 22 }
-                    ]
-                },
-                {
-                    label: '其他',
-                    items: [
-                        { value: '1792x1024', label: '宽屏', iconW: 22, iconH: 12 },
-                        { value: '1024x1792', label: '长图', iconW: 12, iconH: 22 },
-                        { value: '512x512', label: '预览 512', iconW: 12, iconH: 12 },
-                        { value: '256x256', label: '缩略 256', iconW: 10, iconH: 10 }
-                    ]
-                }
-            ],
+            /** 默认横图 4:3（1280×960），与 buildCreateCharacterRequest 原 auto 默认一致 */
+            selectedSize: '1280x960',
 
             selectedModel: 'gpt-image-2',
             selectedQuality: 'medium',
@@ -640,12 +592,28 @@ export default {
         canGenerate() {
             return !!(this.subjectScene && this.subjectScene.trim())
         },
+        sizeGroups() {
+            return [
+                {
+                    key: 'aspect-ratio',
+                    label: this.$t('aiPicture.aspectRatioGroup'),
+                    items: [
+                        { value: '1024x1024', compactLabel: '1:1', label: this.$t('aiPicture.ratio1_1'), iconW: 16, iconH: 16 },
+                        { value: '640x960', compactLabel: '2:3', label: this.$t('aiPicture.ratio2_3'), iconW: 12, iconH: 18 },
+                        { value: '768x1024', compactLabel: '3:4', label: this.$t('aiPicture.ratio3_4'), iconW: 12, iconH: 16 },
+                        { value: '1280x960', compactLabel: '4:3', label: this.$t('aiPicture.ratio4_3'), iconW: 20, iconH: 15 },
+                        { value: '576x1024', compactLabel: '9:16', label: this.$t('aiPicture.ratio9_16'), iconW: 10, iconH: 18 },
+                        { value: '1024x576', compactLabel: '16:9', label: this.$t('aiPicture.ratio16_9'), iconW: 22, iconH: 12 }
+                    ]
+                }
+            ]
+        },
         currentSizeLabel() {
             for (const g of this.sizeGroups) {
                 const hit = g.items.find(o => o.value === this.selectedSize)
-                if (hit) return hit.label
+                if (hit) return hit.compactLabel || hit.label
             }
-            return this.$t('aiPicture.sizeAuto') || '自动'
+            return this.selectedSize || '4:3'
         },
         isDallE() {
             return typeof this.selectedModel === 'string' && this.selectedModel.startsWith('dall-e')
@@ -1038,9 +1006,7 @@ export default {
          */
         buildCreateCharacterRequest() {
             const prompt = (this.generatedPrompt || '').slice(0, 5000)
-            const size = this.selectedSize && this.selectedSize !== 'auto'
-                ? this.selectedSize
-                : '1280x960'
+            const size = this.selectedSize || '1280x960'
             return {
                 prompt,
                 size,
@@ -1876,6 +1842,12 @@ export default {
 
 .send-btn.is-loading {
     background: #5b5bd6;
+}
+
+.send-btn-icon {
+    font-size: 20px;
+    line-height: 1;
+    display: block;
 }
 
 .send-spinner {
