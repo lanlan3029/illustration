@@ -53,15 +53,18 @@ import {
 import {
   createCharacterIllustration,
   dataUrlToFile,
+  fetchCaptionImageDescribe,
   fetchCaptionPick,
-  fetchEmotionAlign,
   fetchEmotionPipeline,
-  fetchImageDescribe,
-  fetchQuotaSentence,
+  getActiveMoodEndpoints,
+  imageDescribeResultToDraftPatch,
   saveIllLegacyCreation,
-  saveIllMood,
-  getActiveMoodEndpoints
+  saveIllMood
 } from '@/utils/moodDiary/api'
+import {
+  buildLocalDiaryCaptionFromVision,
+  normalizeDiaryCaptionLength
+} from '@/utils/moodDiary/diaryCaption'
 import { MOOD_ILLUSTRATION_TYPE } from '@/utils/moodDiary/constants'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
 
@@ -74,7 +77,7 @@ export default {
       saving: false,
       posterUrl: null,
       stepLog: '',
-      quotaLine: ''
+      diaryCaptionLine: ''
     }
   },
   computed: {
@@ -105,7 +108,9 @@ export default {
     const d = getDraft()
     if (d.artStyleId) this.selectedStyleId = Number(d.artStyleId) || 1
     if (d.composedPosterDataUrl) this.posterUrl = d.composedPosterDataUrl
-    if (d.quotaSentence) this.quotaLine = d.quotaSentence
+    if (d.diaryCaption || d.quotaSentence) {
+      this.diaryCaptionLine = d.diaryCaption || d.quotaSentence
+    }
     setDraft({
       artStyleId: this.selectedStyleId,
       artStyle: this.selectedStyle.artStyle
@@ -210,22 +215,33 @@ export default {
           }
         }
 
-        let vision = draft.imageVisionCache
-        if (draft.inputImageDataUrl && cfg.captionImageDescribeEndpoint) {
+        const sceneCached =
+          (draft.sceneDescription || draft.imageVisionCache || '').trim()
+        const needsImageDescribe =
+          draft.inputImageDataUrl &&
+          cfg.captionImageDescribeEndpoint &&
+          (!sceneCached || !draft.diaryCaption)
+
+        if (needsImageDescribe) {
           this.stepLog = this.$t('moodDiary.stepImageDescribe')
-          if (!vision) {
-            const file = await dataUrlToFile(
-              draft.inputImageDataUrl,
-              draft.inputImageName || 'ref.jpg'
-            )
-            vision = await fetchImageDescribe(
-              file,
-              (draft.narrative || '').slice(0, 500),
-              cfg.captionImageDescribeEndpoint
-            )
-            setDraft({ imageVisionCache: vision })
-            draft = getDraft()
-          }
+          const file = await dataUrlToFile(
+            draft.inputImageDataUrl,
+            draft.inputImageName || 'ref.jpg'
+          )
+          const describeResult = await fetchCaptionImageDescribe(
+            file,
+            {
+              hint: (draft.narrative || '').slice(0, 500),
+              narrative: (draft.narrative || '').trim(),
+              moodLabel: draft.moodLabel || userMood,
+              targetLength: 90,
+              generateDiaryCaption: true,
+              filename: draft.inputImageName || 'ref.jpg'
+            },
+            cfg.captionImageDescribeEndpoint
+          )
+          setDraft(imageDescribeResultToDraftPatch(describeResult))
+          draft = getDraft()
         }
 
         let imagePrompt = captionApiGavePrompt ? pickSeedPrompt : ''
@@ -242,7 +258,9 @@ export default {
 
         if (!imagePrompt.trim()) imagePrompt = localPrompt
 
-        imagePrompt = this.mergeVision(imagePrompt, draft.imageVisionCache)
+        const sceneForPrompt =
+          (draft.sceneDescription || draft.imageVisionCache || '').trim()
+        imagePrompt = this.mergeVision(imagePrompt, sceneForPrompt)
 
         this.stepLog = this.$t('moodDiary.stepCreateCharacter')
         const createPayload = {
@@ -260,52 +278,36 @@ export default {
         const { imageUrl } = await createCharacterIllustration(createPayload)
         setDraft({ rawIllustrationUrl: imageUrl })
 
-        let matching = draft.matching
-        let quotaLine = draft.quotaSentence || ''
-
-        if (cfg.quotaSentenceEndpoint) {
-          this.stepLog = this.$t('moodDiary.stepQuotaSentence')
-          if (cfg.emotionAlignEndpoint && matching) {
-            try {
-              matching = await fetchEmotionAlign(matching, cfg.emotionAlignEndpoint)
-              setDraft({ matching })
-            } catch (_) {
-              /* optional */
-            }
+        let diaryCaptionLine = normalizeDiaryCaptionLength(
+          draft.diaryCaption || draft.quotaSentence || ''
+        )
+        if (!diaryCaptionLine) {
+          const sceneDescription = (
+            draft.sceneDescription ||
+            draft.imageVisionCache ||
+            ''
+          ).trim()
+          if (sceneDescription) {
+            diaryCaptionLine = buildLocalDiaryCaptionFromVision(sceneDescription, {
+              moodLabel: draft.moodLabel,
+              narrative: draft.narrative
+            })
+          } else if (draft.captionPicked) {
+            diaryCaptionLine = normalizeDiaryCaptionLength(draft.captionPicked)
           }
-          const qsBody = {
-            text: draft.narrative,
-            narrative: draft.narrative,
-            matching: matching || {
-              coords: [],
-              emoji: draft.moodEmojiId,
-              tags: [],
-              emotion_flow: draft.emotionFlow || []
-            },
-            userMood,
-            generate_illustration_prompt: imagePrompt,
-            illustration_style: illustrationStyle,
-            candidates: draft.captionCandidates || []
-          }
-          const qs = await fetchQuotaSentence(qsBody, cfg.quotaSentenceEndpoint)
-          quotaLine = qs.sentence || quotaLine
-          if (qs.matching) setDraft({ matching: qs.matching })
-        }
-
-        if (!quotaLine && draft.captionPicked) {
-          quotaLine = draft.captionPicked
         }
 
         this.stepLog = this.$t('moodDiary.stepCompose')
         const poster = await composeMoodPoster(imageUrl, draft.narrative.trim(), {
-          captionLine: quotaLine
+          captionLine: diaryCaptionLine
         })
 
         this.posterUrl = poster
-        this.quotaLine = quotaLine
+        this.diaryCaptionLine = diaryCaptionLine
         setDraft({
           composedPosterDataUrl: poster,
-          quotaSentence: quotaLine,
+          diaryCaption: diaryCaptionLine,
+          quotaSentence: diaryCaptionLine,
           generateIllustrationPrompt: imagePrompt,
           artStyleId: this.selectedStyleId,
           artStyle: illustrationStyle
@@ -342,7 +344,7 @@ export default {
           moodLabel: d.moodLabel,
           narrative: d.narrative,
           posterDataUrl: this.posterUrl,
-          caption: this.quotaLine || d.captionPicked || '',
+          caption: this.diaryCaptionLine || d.diaryCaption || d.captionPicked || '',
           emotionFlow: d.emotionFlow,
           artStyle: d.artStyle
         })
@@ -351,7 +353,7 @@ export default {
           await saveIllMood(
             {
               prompt: d.generateIllustrationPrompt,
-              caption: this.quotaLine || d.captionPicked,
+              caption: this.diaryCaptionLine || d.diaryCaption || d.captionPicked,
               image_url: this.posterUrl,
               emotionFlow: d.emotionFlow
             },

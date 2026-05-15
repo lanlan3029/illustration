@@ -17,25 +17,127 @@ function pickFirstStr(obj, keys) {
 }
 
 /**
+ * POST /api/v1/caption/image-describe（multipart）
+ * 默认 generate_diary_caption=true：返回画面描述 + 约 90 字日记配文。
  * @param {Blob|File} file
- * @param {string} hint
+ * @param {{
+ *   hint?: string,
+ *   narrative?: string,
+ *   moodLabel?: string,
+ *   userMood?: string,
+ *   targetLength?: number,
+ *   generateDiaryCaption?: boolean,
+ *   filename?: string
+ * }} [options]
  * @param {string} endpoint
+ * @returns {Promise<{ description: string, sceneDescription: string, diaryCaption: string }>}
+ */
+export async function fetchCaptionImageDescribe(file, options = {}, endpoint) {
+  const url = resolveApiUrl(endpoint)
+  if (!url) throw new Error('caption image-describe endpoint missing')
+
+  const {
+    hint = '',
+    narrative = '',
+    moodLabel = '',
+    userMood = '',
+    targetLength = 90,
+    generateDiaryCaption = true,
+    filename = 'reference.jpg'
+  } = options
+
+  const fd = new FormData()
+  fd.append('picture', file, filename)
+  fd.append('hint', hint || '')
+  const narrativeTrim = String(narrative || '').trim().slice(0, 500)
+  if (narrativeTrim) fd.append('narrative', narrativeTrim)
+  const mood = String(moodLabel || userMood || '').trim()
+  if (mood) {
+    fd.append('mood_label', mood)
+    fd.append('user_mood', mood)
+  }
+  fd.append('target_length', String(targetLength))
+  fd.append('generate_diary_caption', generateDiaryCaption ? 'true' : 'false')
+
+  const res = await axios.post(url, fd, {
+    timeout: 90000,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
+    }
+  })
+
+  const data = unwrapData(res)
+  const ok =
+    data.code === 0 ||
+    data.code === '0' ||
+    data.desc === 'success' ||
+    data.statuscode === 'success'
+
+  const payload = data.data ?? data.message ?? data
+  let description = ''
+  let sceneDescription = ''
+  let diaryCaption = ''
+
+  if (typeof payload === 'string') {
+    description = payload.trim()
+    sceneDescription = description
+  } else if (payload && typeof payload === 'object') {
+    description = pickFirstStr(payload, ['description', 'caption', 'text', 'result', 'content'])
+    sceneDescription =
+      pickFirstStr(payload, ['scene_description', 'sceneDescription', 'description']) ||
+      description
+    diaryCaption = pickFirstStr(payload, ['diary_caption', 'diaryCaption'])
+  }
+
+  if (!description && !sceneDescription) {
+    description = pickFirstStr(data, ['description', 'caption', 'text'])
+    sceneDescription = description
+  }
+
+  if (!ok && !sceneDescription && !description) {
+    throw new Error(
+      typeof data.message === 'string'
+        ? data.message
+        : pickFirstStr(data, ['desc']) || 'image-describe failed'
+    )
+  }
+
+  if (!sceneDescription) sceneDescription = description
+  if (!description) description = sceneDescription
+
+  return {
+    description,
+    sceneDescription,
+    diaryCaption
+  }
+}
+
+/** 写入草稿：画面描述 + 日记配文缓存 */
+export function imageDescribeResultToDraftPatch(result) {
+  const scene = (result.sceneDescription || result.description || '').trim()
+  const diary = (result.diaryCaption || '').trim()
+  const patch = {
+    imageVisionCache: scene,
+    sceneDescription: scene
+  }
+  if (diary) {
+    patch.diaryCaption = diary
+    patch.quotaSentence = diary
+  }
+  return patch
+}
+
+/**
+ * @deprecated 仅画面描述（generate_diary_caption=false）
  */
 export async function fetchImageDescribe(file, hint, endpoint) {
-  const url = resolveApiUrl(endpoint)
-  const fd = new FormData()
-  fd.append('picture', file, 'reference.jpg')
-  fd.append('hint', hint || '')
-  const res = await axios.post(url, fd, {
-    timeout: 120000,
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-  const data = unwrapData(res)
-  const msg = data.message || data.data || data
-  const text =
-    pickFirstStr(msg, ['description', 'caption', 'text', 'result', 'content']) ||
-    (typeof msg === 'string' ? msg : '')
-  return text || pickFirstStr(data, ['description', 'caption', 'text'])
+  const result = await fetchCaptionImageDescribe(
+    file,
+    { hint, generateDiaryCaption: false },
+    endpoint
+  )
+  return result.description || result.sceneDescription
 }
 
 /** @param {string} dataUrl */
@@ -76,21 +178,6 @@ export async function fetchEmotionAlign(matching, endpoint) {
     timeout: 60000
   })
   return unwrapData(res).message || unwrapData(res).data || unwrapData(res)
-}
-
-export async function fetchQuotaSentence(body, endpoint) {
-  const url = resolveApiUrl(endpoint)
-  const res = await axios.post(url, body, {
-    headers: { 'Content-Type': 'application/json' },
-    timeout: 90000
-  })
-  const data = unwrapData(res)
-  const msg = data.message || data.data || data
-  if (typeof msg === 'string') return { sentence: msg, matching: body.matching }
-  return {
-    sentence: pickFirstStr(msg, ['sentence', 'text', 'caption', 'quote']),
-    matching: msg.matching || msg.match || body.matching
-  }
 }
 
 export async function createCharacterIllustration(payload) {

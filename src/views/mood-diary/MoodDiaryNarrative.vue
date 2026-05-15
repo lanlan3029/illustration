@@ -104,7 +104,12 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
-import { dataUrlToFile, fetchImageDescribe, getActiveMoodEndpoints } from '@/utils/moodDiary/api'
+import {
+  dataUrlToFile,
+  fetchCaptionImageDescribe,
+  getActiveMoodEndpoints,
+  imageDescribeResultToDraftPatch
+} from '@/utils/moodDiary/api'
 import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
 import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
 
@@ -183,7 +188,10 @@ export default {
         moodEmojiId: null,
         moodLabel: '',
         mood: '',
-        imageVisionCache: null
+        imageVisionCache: null,
+        sceneDescription: '',
+        diaryCaption: '',
+        quotaSentence: ''
       })
     },
     clearRef() {
@@ -194,7 +202,10 @@ export default {
         inputImageDataUrl: null,
         inputImagePath: null,
         inputImageName: '',
-        imageVisionCache: null
+        imageVisionCache: null,
+        sceneDescription: '',
+        diaryCaption: '',
+        quotaSentence: ''
       })
     },
     onRefFile(ev) {
@@ -227,14 +238,32 @@ export default {
       }
       const cfg = getActiveMoodEndpoints()
 
-      let vision = null
+      const patch = {
+        narrative: this.narrative.trim(),
+        moodEmojiId: this.moodObj ? this.moodObj.id : null,
+        moodLabel: this.moodObj ? this.moodObj.label : '',
+        mood: this.moodObj ? this.moodObj.id : ''
+      }
+
       if (this.refDataUrl && cfg.captionImageDescribeEndpoint) {
         this.describeBusy = true
         try {
           const file =
             this.refFile ||
             (await dataUrlToFile(this.refDataUrl, this.refImageBasename()))
-          vision = await fetchImageDescribe(file, this.narrative.slice(0, 500), cfg.captionImageDescribeEndpoint)
+          const describeResult = await fetchCaptionImageDescribe(
+            file,
+            {
+              hint: this.narrative.slice(0, 500),
+              narrative: this.narrative.trim(),
+              moodLabel: this.moodObj ? this.moodObj.label : '',
+              targetLength: 90,
+              generateDiaryCaption: true,
+              filename: this.refImageBasename()
+            },
+            cfg.captionImageDescribeEndpoint
+          )
+          Object.assign(patch, imageDescribeResultToDraftPatch(describeResult))
         } catch (e) {
           ElMessage.error(e.message || this.$t('moodDiary.describeFailed'))
           this.describeBusy = false
@@ -242,14 +271,6 @@ export default {
         }
         this.describeBusy = false
       }
-
-      const patch = {
-        narrative: this.narrative.trim(),
-        moodEmojiId: this.moodObj ? this.moodObj.id : null,
-        moodLabel: this.moodObj ? this.moodObj.label : '',
-        mood: this.moodObj ? this.moodObj.id : ''
-      }
-      if (vision) patch.imageVisionCache = vision
 
       setDraft(patch)
       this.$router.push('/mood-diary/generate')

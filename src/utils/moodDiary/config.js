@@ -7,15 +7,14 @@ export function getMoodApiConfig() {
   const imageDescribe = process.env.VUE_APP_MOOD_IMAGE_DESCRIBE || ''
   const emotionPipeline = process.env.VUE_APP_MOOD_EMOTION_PIPELINE || ''
   const emotionAlign = process.env.VUE_APP_MOOD_EMOTION_ALIGN || ''
-  const quotaSentence = process.env.VUE_APP_MOOD_QUOTA_SENTENCE || ''
   const illSave = process.env.VUE_APP_MOOD_ILL_SAVE || ''
   const recapCompletion = process.env.VUE_APP_MOOD_RECAP_COMPLETION || ''
   return {
-    captionPickEndpoint: pick.trim() || null,
+    /** 默认 /api/v1/caption/image-describe：画面描述 + diary_caption（generate_diary_caption 默认 true） */
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
     emotionPipelineEndpoint: emotionPipeline.trim() || null,
     emotionAlignEndpoint: emotionAlign.trim() || null,
-    quotaSentenceEndpoint: quotaSentence.trim() || null,
+    captionPickEndpoint: pick.trim() || null,
     illSaveEndpoint: illSave.trim() || null,
     recapCompletionEndpoint: recapCompletion.trim() || null
   }

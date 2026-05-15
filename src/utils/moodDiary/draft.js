@@ -18,10 +18,13 @@ function defaultDraft() {
     artStyleId: 1,
     emotionFlow: null,
     imageVisionCache: null,
+    sceneDescription: '',
     captionCandidates: [],
     captionPicked: null,
     generateIllustrationPrompt: '',
     quotaSentence: '',
+    /** 海报底部日记体配文（由画面描述生成，约 90 字） */
+    diaryCaption: '',
     matching: null,
     rawIllustrationUrl: null,
     composedPosterDataUrl: null
