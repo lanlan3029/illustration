@@ -409,7 +409,7 @@ export default {
 
 @media (max-width: 767px) {
   .style-strip {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 720px), 1fr));
   }
 }
 
