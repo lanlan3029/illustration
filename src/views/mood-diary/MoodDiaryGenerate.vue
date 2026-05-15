@@ -402,27 +402,28 @@ export default {
 
 .style-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr));
+  gap: 10px;
   margin-bottom: 14px;
 }
 
 @media (max-width: 767px) {
   .style-strip {
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr));
   }
 }
 
 .style-chip {
   width: 100%;
+  min-width: 0;
   border: 1px solid #ebeef5;
   border-radius: 8px;
   background: #fff;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
 }
 
@@ -432,29 +433,30 @@ export default {
 }
 
 .style-chip img {
-  width: 72px;
-  height: 48px;
+  width: 100%;
+  max-width: 160px;
+  height: 72px;
   border-radius: 6px;
   object-fit: cover;
 }
 
 .style-chip span {
-  font-size: 9px;
+  font-size: 11px;
   color: #606266;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-  max-height: 3.6em;
+  max-height: 4.2em;
 }
 
 @media (max-width: 767px) {
   .style-chip img {
-    width: 100%;
-    height: 42px;
+    max-width: none;
+    height: 64px;
   }
 }
 
