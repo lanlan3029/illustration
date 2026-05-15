@@ -380,13 +380,15 @@ export default {
 </script>
 
 <style scoped>
-.md-card {
-  max-width: 880px;
+.md-card.md-generate {
+  width: 100%;
+  max-width: min(100%, 720px);
   margin: 0 auto;
   background: #fff;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 6px 20px rgba(31, 35, 41, 0.08);
+  box-sizing: border-box;
 }
 
 .md-title {
@@ -405,6 +407,12 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr));
   gap: 10px;
   margin-bottom: 14px;
+  /* 风格区单独滚动，避免把「开始生成」顶到整页最底下 */
+  max-height: min(calc(100vh - 240px), 680px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 767px) {
@@ -464,7 +472,19 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 8px;
+  /* 长风格列表滚动时，生成按钮始终贴在视口底部可见 */
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  padding: 14px 0 16px;
+  margin-top: 8px;
+  background: #fff;
+  border-top: 1px solid #ebeef5;
+  box-shadow: 0 -10px 28px rgba(31, 35, 41, 0.06);
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .step-log {
