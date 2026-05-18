@@ -17,16 +17,7 @@
       </button>
     </div>
 
-    <div class="toolbar">
-      <el-button type="primary" :loading="generating" @click="runPipeline">
-        {{ generating ? $t('moodDiary.generating') : $t('moodDiary.startGeneratePipeline') }}
-      </el-button>
-      <el-button v-if="posterUrl" @click="downloadPoster">{{ $t('moodDiary.downloadMood') }}</el-button>
-    </div>
-
-    <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
-
-    <div v-if="posterUrl" class="preview">
+    <div v-if="posterUrl" ref="previewRef" class="preview">
       <img :src="posterUrl" class="poster-img" alt="" />
       <div class="save-row">
         <button
@@ -39,6 +30,15 @@
           {{ saving ? $t('moodDiary.savingMood') : $t('moodDiary.saveToDiary') }}
         </button>
       </div>
+    </div>
+
+    <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
+
+    <div class="toolbar">
+      <el-button type="primary" :loading="generating" @click="runPipeline">
+        {{ generating ? $t('moodDiary.generating') : $t('moodDiary.startGeneratePipeline') }}
+      </el-button>
+      <el-button v-if="posterUrl" @click="downloadPoster">{{ $t('moodDiary.downloadMood') }}</el-button>
     </div>
   </div>
 </template>
@@ -220,7 +220,7 @@ export default {
         const needsImageDescribe =
           draft.inputImageDataUrl &&
           cfg.captionImageDescribeEndpoint &&
-          (!sceneCached || !draft.diaryCaption)
+          (!sceneCached || !(draft.diaryCaption || draft.quotaSentence || '').trim())
 
         if (needsImageDescribe) {
           this.stepLog = this.$t('moodDiary.stepImageDescribe')
@@ -298,9 +298,23 @@ export default {
         }
 
         this.stepLog = this.$t('moodDiary.stepCompose')
-        const poster = await composeMoodPoster(imageUrl, draft.narrative.trim(), {
-          captionLine: diaryCaptionLine
-        })
+        const userNarrative = (draft.narrative || '').trim()
+        const posterMain = diaryCaptionLine || userNarrative
+        const posterSub =
+          diaryCaptionLine && userNarrative && diaryCaptionLine !== userNarrative
+            ? userNarrative
+            : ''
+
+        let poster = ''
+        try {
+          poster = await composeMoodPoster(imageUrl, posterMain, {
+            captionLine: posterSub,
+            userNarrative: posterSub
+          })
+        } catch (composeErr) {
+          console.warn('[mood-diary] compose poster failed, fallback to illustration', composeErr)
+          poster = imageUrl
+        }
 
         this.posterUrl = poster
         this.diaryCaptionLine = diaryCaptionLine
@@ -314,11 +328,18 @@ export default {
         })
 
         ElMessage.success(this.$t('moodDiary.generateSuccess'))
+        this.$nextTick(() => this.scrollPreviewIntoView())
       } catch (e) {
         ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
       } finally {
         this.generating = false
         this.stepLog = ''
+      }
+    },
+    scrollPreviewIntoView() {
+      const el = this.$refs.previewRef
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     },
     downloadPoster() {
@@ -445,9 +466,11 @@ export default {
 .style-chip img {
   width: 100%;
   max-width: 160px;
-  height: 72px;
+  aspect-ratio: 1 / 1;
+  height: auto;
   border-radius: 6px;
   object-fit: cover;
+  display: block;
 }
 
 .style-chip span {
@@ -466,7 +489,6 @@ export default {
 @media (max-width: 767px) {
   .style-chip img {
     max-width: none;
-    height: 64px;
   }
 }
 
@@ -477,16 +499,8 @@ export default {
   justify-content: center;
   align-items: center;
   margin-bottom: 8px;
-  /* 长风格列表滚动时，生成按钮始终贴在视口底部可见 */
-  position: sticky;
-  bottom: 0;
-  z-index: 8;
-  padding: 14px 0 16px;
-  margin-top: 8px;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
-  box-shadow: 0 -10px 28px rgba(31, 35, 41, 0.06);
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 0 16px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }
 
 .step-log {
@@ -496,11 +510,12 @@ export default {
 }
 
 .preview {
-  margin-top: 12px;
+  margin: 16px 0;
   border: 1px solid #ebeef5;
   border-radius: 10px;
   padding: 10px;
   background: #f8f8fb;
+  scroll-margin-top: 16px;
 }
 
 .poster-img {

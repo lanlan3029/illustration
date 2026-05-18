@@ -77,12 +77,16 @@ export function loadImage(url) {
  * Compose illustration + diary text (+ optional caption line).
  * @param {string} imageUrl
  * @param {string} diaryText
- * @param {{ captionLine?: string }} opts
+ * @param {string} diaryText 主文案（优先为 AI 日记配文；无则用户正文）
+ * @param {{ captionLine?: string, userNarrative?: string }} opts
+ *   captionLine — 副文案（斜体引号区，多为用户手写日记）
+ *   userNarrative — 与 captionLine 等价，便于调用方传参
  */
 export async function composeMoodPoster(imageUrl, diaryText, opts = {}) {
   const sourceUrl = await normalizeImageUrl(imageUrl)
   const image = await loadImage(sourceUrl)
-  const captionLine = (opts.captionLine || '').trim()
+  const mainText = (diaryText || '').trim()
+  const captionLine = (opts.captionLine || opts.userNarrative || '').trim()
 
   // 与小程序保持一致：逻辑尺寸 675x1200，导出倍率 x2 => 1350x2400
   const POSTER_W = 675
@@ -127,8 +131,9 @@ export async function composeMoodPoster(imageUrl, diaryText, opts = {}) {
   ctx.drawImage(image, drawX, drawY, drawSize.width, drawSize.height)
   ctx.restore()
 
-  const diaryLines = wrapTextLines(diaryText, 19)
-  const quoteLines = captionLine ? wrapTextLines(captionLine, 22) : []
+  const diaryLines = wrapTextLines(mainText, 19)
+  const quoteLines =
+    captionLine && captionLine !== mainText ? wrapTextLines(captionLine, 22) : []
   const textY = imageY + imageH + 28 * SY
   const moodFontSize = Math.round(14 * SX)
   const lineHeight = Math.round(22 * SY)

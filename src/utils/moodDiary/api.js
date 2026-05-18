@@ -16,6 +16,45 @@ function pickFirstStr(obj, keys) {
   return ''
 }
 
+/** 解析 image-describe 返回（含后端 vision 单行 JSON 字符串） */
+function parseVisionDescribeFields(raw) {
+  let description = ''
+  let sceneDescription = ''
+  let diaryCaption = ''
+
+  const absorbObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return
+    diaryCaption =
+      diaryCaption ||
+      pickFirstStr(obj, ['diary_caption', 'diaryCaption', 'diary', 'caption_diary'])
+    sceneDescription =
+      sceneDescription ||
+      pickFirstStr(obj, ['scene_description', 'sceneDescription', 'description', 'vision'])
+    description = description || pickFirstStr(obj, ['description', 'scene_description', 'text'])
+  }
+
+  if (typeof raw === 'string') {
+    const s = raw.trim()
+    if (s.startsWith('{')) {
+      try {
+        absorbObject(JSON.parse(s))
+      } catch (_) {
+        description = s
+        sceneDescription = s
+      }
+    } else {
+      description = s
+      sceneDescription = s
+    }
+  } else if (raw && typeof raw === 'object') {
+    absorbObject(raw)
+  }
+
+  if (!sceneDescription) sceneDescription = description
+  if (!description) description = sceneDescription
+  return { description, sceneDescription, diaryCaption }
+}
+
 /**
  * POST /api/v1/caption/image-describe（multipart）
  * 默认 generate_diary_caption=true：返回画面描述 + 约 90 字日记配文。
@@ -75,24 +114,16 @@ export async function fetchCaptionImageDescribe(file, options = {}, endpoint) {
     data.statuscode === 'success'
 
   const payload = data.data ?? data.message ?? data
-  let description = ''
-  let sceneDescription = ''
-  let diaryCaption = ''
+  let { description, sceneDescription, diaryCaption } = parseVisionDescribeFields(payload)
 
-  if (typeof payload === 'string') {
-    description = payload.trim()
-    sceneDescription = description
-  } else if (payload && typeof payload === 'object') {
-    description = pickFirstStr(payload, ['description', 'caption', 'text', 'result', 'content'])
-    sceneDescription =
-      pickFirstStr(payload, ['scene_description', 'sceneDescription', 'description']) ||
-      description
-    diaryCaption = pickFirstStr(payload, ['diary_caption', 'diaryCaption'])
+  if (!diaryCaption) {
+    diaryCaption = pickFirstStr(data, ['diary_caption', 'diaryCaption'])
   }
-
-  if (!description && !sceneDescription) {
-    description = pickFirstStr(data, ['description', 'caption', 'text'])
-    sceneDescription = description
+  if (!sceneDescription && !description) {
+    const top = parseVisionDescribeFields(data)
+    description = top.description
+    sceneDescription = top.sceneDescription
+    diaryCaption = diaryCaption || top.diaryCaption
   }
 
   if (!ok && !sceneDescription && !description) {
