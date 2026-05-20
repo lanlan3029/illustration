@@ -330,16 +330,7 @@ export async function dataUrlToFile(dataUrl, filename = 'ref.jpg') {
   return new File([blob], filename, { type })
 }
 
-export async function fetchCaptionPick(body, endpoint) {
-  const url = resolveApiUrl(endpoint)
-  const res = await axios.post(url, body, {
-    headers: { 'Content-Type': 'application/json' },
-    timeout: 60000
-  })
-  return unwrapData(res)
-}
-
-export async function fetchEmotionPipeline(text, hasImage, endpoint) {
+export async function dataUrlToFile(dataUrl, filename = 'ref.jpg') {
   const url = resolveApiUrl(endpoint)
   const res = await axios.post(url, { input: { text, hasImage: !!hasImage } }, {
     headers: { 'Content-Type': 'application/json' },

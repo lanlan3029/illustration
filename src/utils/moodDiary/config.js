@@ -6,7 +6,6 @@
 const DEFAULT_CAPTION_IMAGE_DESCRIBE = '/caption/image-describe'
 
 export function getMoodApiConfig() {
-  const pick = process.env.VUE_APP_MOOD_CAPTION_PICK || ''
   const imageDescribe =
     (process.env.VUE_APP_MOOD_IMAGE_DESCRIBE || '').trim() ||
     DEFAULT_CAPTION_IMAGE_DESCRIBE
@@ -19,7 +18,6 @@ export function getMoodApiConfig() {
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
     emotionPipelineEndpoint: emotionPipeline.trim() || null,
     emotionAlignEndpoint: emotionAlign.trim() || null,
-    captionPickEndpoint: pick.trim() || null,
     illSaveEndpoint: illSave.trim() || null,
     recapCompletionEndpoint: recapCompletion.trim() || null
   }

@@ -54,7 +54,6 @@ import {
   createCharacterIllustration,
   dataUrlToFile,
   fetchCaptionImageDescribe,
-  fetchCaptionPick,
   fetchEmotionPipeline,
   getActiveMoodEndpoints,
   imageDescribeResultToDraftPatch,
@@ -117,50 +116,6 @@ export default {
     })
   },
   methods: {
-    absorbCaptionPickResponse(data) {
-      const inner = data?.message ?? data?.data ?? data
-      const cands =
-        inner?.candidates ||
-        inner?.caption_candidates ||
-        (Array.isArray(inner) ? inner : [])
-      const pickStr = (o, keys) => {
-        const base = o && typeof o === 'object' ? o : {}
-        for (const k of keys) {
-          if (typeof base[k] === 'string' && base[k].trim()) return base[k].trim()
-        }
-        return ''
-      }
-      const illustrationPrompt =
-        pickStr(inner, [
-          'generate_illustration_prompt',
-          'illustration_prompt',
-          'image_prompt',
-          'prompt'
-        ]) || ''
-
-      let captionPick = pickStr(inner, ['caption', 'quote', 'text'])
-
-      const out = {}
-      if (Array.isArray(cands) && cands.length) {
-        out.captionCandidates = cands
-      }
-      if (illustrationPrompt) {
-        out.generateIllustrationPrompt = illustrationPrompt
-      }
-      if (captionPick) {
-        out.captionPicked = captionPick
-      } else if (typeof cands[0] === 'string') {
-        out.captionPicked = cands[0]
-        captionPick = cands[0]
-      } else if (cands[0] && typeof cands[0] === 'object') {
-        const t = pickStr(cands[0], ['text', 'caption', 'content'])
-        if (t) {
-          out.captionPicked = t
-          captionPick = t
-        }
-      }
-      return out
-    },
     localCompositePrompt(d) {
       const text = (d.narrative || '').trim()
       const moodTxt = d.moodLabel ? `${this.$t('moodDiary.selectedMood')}：${d.moodLabel}。` : ''
@@ -189,31 +144,9 @@ export default {
         const userMood = draft.moodLabel || draft.mood || ''
         const illustrationStyle = this.selectedStyle.artStyle
         const localPrompt = this.localCompositePrompt(draft)
-        /** Body field for caption-pick matches mini program naming */
         let pickSeedPrompt = (draft.generateIllustrationPrompt || '').trim() || localPrompt
-        /** True only when caption-pick returned an illustration / image prompt */
+        /** image-describe 返回 illustration_prompt 时为 true，用于跳过 emotion 管线 */
         let captionApiGavePrompt = false
-
-        if (cfg.captionPickEndpoint) {
-          this.stepLog = this.$t('moodDiary.stepCaptionPick')
-          const pickBody = {
-            userMood,
-            generate_illustration_prompt: pickSeedPrompt,
-            illustration_style: illustrationStyle,
-            candidates: draft.captionCandidates || []
-          }
-          const pickRaw = await fetchCaptionPick(pickBody, cfg.captionPickEndpoint)
-          const absorbed = this.absorbCaptionPickResponse(pickRaw)
-          setDraft(absorbed)
-          draft = getDraft()
-          if (
-            absorbed.generateIllustrationPrompt &&
-            typeof absorbed.generateIllustrationPrompt === 'string'
-          ) {
-            pickSeedPrompt = absorbed.generateIllustrationPrompt.trim()
-            captionApiGavePrompt = true
-          }
-        }
 
         if (draft.inputImageDataUrl && !cfg.captionImageDescribeEndpoint) {
           console.warn(
