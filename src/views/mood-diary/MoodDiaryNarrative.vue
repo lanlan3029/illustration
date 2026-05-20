@@ -245,6 +245,10 @@ export default {
         mood: this.moodObj ? this.moodObj.id : ''
       }
 
+      if (this.refDataUrl && !cfg.captionImageDescribeEndpoint) {
+        console.warn('[mood-diary] 未配置 caption/image-describe，跳过画面描述与日记配文')
+      }
+
       if (this.refDataUrl && cfg.captionImageDescribeEndpoint) {
         this.describeBusy = true
         try {

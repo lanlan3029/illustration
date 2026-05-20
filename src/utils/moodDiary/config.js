@@ -2,9 +2,14 @@
  * Mood diary backend hooks (optional). Set in .env with VUE_APP_MOOD_*.
  * Empty = skip that step (pure local fallback).
  */
+/** 与 create-character 同域；未配置 env 时使用该默认路径 */
+const DEFAULT_CAPTION_IMAGE_DESCRIBE = '/caption/image-describe'
+
 export function getMoodApiConfig() {
   const pick = process.env.VUE_APP_MOOD_CAPTION_PICK || ''
-  const imageDescribe = process.env.VUE_APP_MOOD_IMAGE_DESCRIBE || ''
+  const imageDescribe =
+    (process.env.VUE_APP_MOOD_IMAGE_DESCRIBE || '').trim() ||
+    DEFAULT_CAPTION_IMAGE_DESCRIBE
   const emotionPipeline = process.env.VUE_APP_MOOD_EMOTION_PIPELINE || ''
   const emotionAlign = process.env.VUE_APP_MOOD_EMOTION_ALIGN || ''
   const illSave = process.env.VUE_APP_MOOD_ILL_SAVE || ''

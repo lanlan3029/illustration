@@ -215,14 +215,14 @@ export default {
           }
         }
 
-        const sceneCached =
-          (draft.sceneDescription || draft.imageVisionCache || '').trim()
-        const needsImageDescribe =
-          draft.inputImageDataUrl &&
-          cfg.captionImageDescribeEndpoint &&
-          (!sceneCached || !(draft.diaryCaption || draft.quotaSentence || '').trim())
+        if (draft.inputImageDataUrl && !cfg.captionImageDescribeEndpoint) {
+          console.warn(
+            '[mood-diary] 未配置 caption/image-describe，海报将无 AI 日记配文（请设置 VUE_APP_MOOD_IMAGE_DESCRIBE）'
+          )
+        }
 
-        if (needsImageDescribe) {
+        // 有参考图：生成前必调 image-describe（带当前所选画风；「此刻」未请求或缺 diary_caption 时在此补齐）
+        if (draft.inputImageDataUrl && cfg.captionImageDescribeEndpoint) {
           this.stepLog = this.$t('moodDiary.stepImageDescribe')
           const narrativeHint = (draft.narrative || '').slice(0, 500)
           const describeResult = await fetchCaptionImageDescribe(
@@ -282,9 +282,15 @@ export default {
         const { imageUrl } = await createCharacterIllustration(createPayload)
         setDraft({ rawIllustrationUrl: imageUrl })
 
+        draft = getDraft()
         let diaryCaptionLine = normalizeDiaryCaptionLength(
           draft.diaryCaption || draft.quotaSentence || ''
         )
+        if (!diaryCaptionLine && draft.inputImageDataUrl) {
+          console.warn(
+            '[mood-diary] 有参考图但未拿到 diary_caption，请检查 Network 中 POST /caption/image-describe 响应'
+          )
+        }
         if (!diaryCaptionLine) {
           const sceneDescription = (
             draft.sceneDescription ||
