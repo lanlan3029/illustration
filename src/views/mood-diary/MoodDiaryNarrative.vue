@@ -2,7 +2,17 @@
   <div class="md-dashboard">
     <!-- 左：此刻卡片 30vw × 100% -->
     <aside class="dash-now-card" :aria-label="$t('moodDiary.navNow')">
-      <MoodDiaryNowPanel />
+      <MoodDiaryPosterResult
+        v-if="pendingPosterUrl"
+        :poster-url="pendingPosterUrl"
+        :saving="posterSaving"
+        :loading="posterRegenerating"
+        @save="savePendingPoster"
+        @download="downloadPendingPoster"
+        @regenerate="goRegeneratePoster"
+        @back-to-write="dismissPosterPreview"
+      />
+      <MoodDiaryNowPanel v-else />
     </aside>
 
     <!-- 右：大卡片 — 海报在上；日历 | 文集 左右排列 -->
@@ -144,22 +154,30 @@
 
 <script>
 import MoodDiaryNowPanel from '@/components/moodDiary/MoodDiaryNowPanel.vue'
+import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.vue'
+import { getDraft, setDraft } from '@/utils/moodDiary/draft'
+import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
 import {
   buildCalendarCells,
   getRecentPosters,
   getRecordsForCalendarMonth,
   groupRecordsByMonth
 } from '@/utils/moodDiary/recordGroups'
+import { ElMessage } from 'element-plus'
 import { getRecordsSorted } from '@/utils/moodDiary/records'
 
 const PLACEHOLDER_COUNT = 4
 
 export default {
   name: 'MoodDiaryNarrative',
-  components: { MoodDiaryNowPanel },
+  components: { MoodDiaryNowPanel, MoodDiaryPosterResult },
   data() {
     const now = new Date()
     return {
+      pendingPosterUrl: null,
+      pendingDiaryCaption: '',
+      posterSaving: false,
+      posterRegenerating: false,
       refreshing: false,
       searchQuery: '',
       recentPosters: [],
@@ -225,9 +243,16 @@ export default {
   },
   mounted() {
     this.refreshData()
+    this.syncPosterFromDraft()
   },
   activated() {
+    this.syncPosterFromDraft()
     this.refreshData()
+  },
+  watch: {
+    '$route.fullPath'() {
+      this.syncPosterFromDraft()
+    }
   },
   methods: {
     refreshData() {
@@ -298,6 +323,38 @@ export default {
     },
     clearSearch() {
       this.searchQuery = ''
+    },
+    syncPosterFromDraft() {
+      const d = getDraft()
+      this.pendingPosterUrl = d.composedPosterDataUrl || null
+      this.pendingDiaryCaption = d.diaryCaption || d.quotaSentence || ''
+    },
+    dismissPosterPreview() {
+      setDraft({ composedPosterDataUrl: null })
+      this.pendingPosterUrl = null
+      this.pendingDiaryCaption = ''
+    },
+    downloadPendingPoster() {
+      downloadMoodPosterDataUrl(this.pendingPosterUrl)
+      ElMessage.success(this.$t('moodDiary.downloadSuccess'))
+    },
+    async savePendingPoster() {
+      if (!this.pendingPosterUrl) return
+      this.posterSaving = true
+      try {
+        await saveMoodPoster(this.pendingPosterUrl, this.pendingDiaryCaption, (k) => this.$t(k))
+        setDraft({ composedPosterDataUrl: null })
+        this.pendingPosterUrl = null
+        this.refreshData()
+        ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('moodDiary.saveCreationFailed'))
+      } finally {
+        this.posterSaving = false
+      }
+    },
+    goRegeneratePoster() {
+      this.$router.push('/mood-diary/generate')
     }
   }
 }

@@ -1,52 +1,48 @@
 <template>
-  <div class="md-card md-generate">
-    <h1 class="md-title">{{ $t('moodDiary.navGenerate') }}</h1>
-    <p class="muted">{{ draftHint }}</p>
-
-    <div class="style-strip" role="list">
-      <button
-        v-for="style in popularStyles"
-        :key="style.id"
-        type="button"
-        class="style-chip"
-        :class="{ active: selectedStyleId === style.id }"
-        @click="selectedStyleId = style.id"
-      >
-        <img :src="style.image" :alt="style.artStyle" />
-        <span>{{ style.artStyle }}</span>
-      </button>
-    </div>
-
-    <div v-if="posterUrl" ref="previewRef" class="preview">
-      <img :src="posterUrl" class="poster-img" alt="" />
-      <div class="save-row">
-        <button
-          type="button"
-          class="save-mood-btn"
-          :class="{ 'is-loading': saving }"
-          :disabled="saving"
-          @click="saveDiaryLocal"
-        >
-          {{ saving ? $t('moodDiary.savingMood') : $t('moodDiary.saveToDiary') }}
-        </button>
+  <div class="md-generate">
+    <template v-if="posterUrl">
+      <MoodDiaryPosterResult
+        :poster-url="posterUrl"
+        :saving="saving"
+        :loading="generating"
+        :show-back-to-write="false"
+        @save="saveDiaryLocal"
+        @download="downloadPoster"
+        @regenerate="runPipeline"
+      />
+    </template>
+    <template v-else>
+      <div class="md-generate__scroll">
+        <h1 class="md-title">{{ $t('moodDiary.navGenerate') }}</h1>
+        <p class="muted">{{ draftHint }}</p>
+        <div class="style-strip" role="list">
+          <button
+            v-for="style in popularStyles"
+            :key="style.id"
+            type="button"
+            class="style-chip"
+            :class="{ active: selectedStyleId === style.id }"
+            @click="selectedStyleId = style.id"
+          >
+            <img :src="style.image" :alt="style.artStyle" />
+            <span>{{ style.artStyle }}</span>
+          </button>
+        </div>
+        <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
       </div>
-    </div>
-
-    <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
-
-    <div class="toolbar">
-      <el-button type="primary" :loading="generating" @click="runPipeline">
-        {{ generating ? $t('moodDiary.generating') : $t('moodDiary.startGeneratePipeline') }}
-      </el-button>
-      <el-button v-if="posterUrl" @click="downloadPoster">{{ $t('moodDiary.downloadMood') }}</el-button>
-    </div>
+      <div class="md-generate__foot">
+        <el-button type="primary" :loading="generating" @click="runPipeline">
+          {{ generating ? $t('moodDiary.generating') : $t('moodDiary.startGeneratePipeline') }}
+        </el-button>
+      </div>
+    </template>
   </div>
 </template>
 
 <script>
 import { ElMessage } from 'element-plus'
+import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.vue'
 import { getDraft, setDraft } from '@/utils/moodDiary/draft'
-import { addRecord } from '@/utils/moodDiary/records'
 import {
   composeMoodPoster
 } from '@/utils/moodDiary/canvasPoster'
@@ -56,19 +52,18 @@ import {
   fetchCaptionImageDescribe,
   fetchEmotionPipeline,
   getActiveMoodEndpoints,
-  imageDescribeResultToDraftPatch,
-  saveIllLegacyCreation,
-  saveIllMood
+  imageDescribeResultToDraftPatch
 } from '@/utils/moodDiary/api'
 import {
   buildLocalDiaryCaptionFromVision,
   normalizeDiaryCaptionLength
 } from '@/utils/moodDiary/diaryCaption'
-import { MOOD_ILLUSTRATION_TYPE } from '@/utils/moodDiary/constants'
+import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
 
 export default {
   name: 'MoodDiaryGenerate',
+  components: { MoodDiaryPosterResult },
   data() {
     return {
       selectedStyleId: 1,
@@ -145,7 +140,6 @@ export default {
         const illustrationStyle = this.selectedStyle.artStyle
         const localPrompt = this.localCompositePrompt(draft)
         let pickSeedPrompt = (draft.generateIllustrationPrompt || '').trim() || localPrompt
-        /** image-describe 返回 illustration_prompt 时为 true，用于跳过 emotion 管线 */
         let captionApiGavePrompt = false
 
         if (draft.inputImageDataUrl && !cfg.captionImageDescribeEndpoint) {
@@ -154,7 +148,6 @@ export default {
           )
         }
 
-        // 有参考图：生成前必调 image-describe（带当前所选画风；「此刻」未请求或缺 diary_caption 时在此补齐）
         if (draft.inputImageDataUrl && cfg.captionImageDescribeEndpoint) {
           this.stepLog = this.$t('moodDiary.stepImageDescribe')
           const narrativeHint = (draft.narrative || '').slice(0, 500)
@@ -275,7 +268,7 @@ export default {
         })
 
         ElMessage.success(this.$t('moodDiary.generateSuccess'))
-        this.$nextTick(() => this.scrollPreviewIntoView())
+        this.$router.replace('/mood-diary/narrative')
       } catch (e) {
         ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
       } finally {
@@ -283,62 +276,17 @@ export default {
         this.stepLog = ''
       }
     },
-    scrollPreviewIntoView() {
-      const el = this.$refs.previewRef
-      if (el && typeof el.scrollIntoView === 'function') {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    },
     downloadPoster() {
-      if (!this.posterUrl) return
-      const ts = new Date()
-      const pad = (n) => String(n).padStart(2, '0')
-      const filename = `mood-diary-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}.jpg`
-      const link = document.createElement('a')
-      link.href = this.posterUrl
-      link.download = filename
-      link.rel = 'noopener'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      downloadMoodPosterDataUrl(this.posterUrl)
+      ElMessage.success(this.$t('moodDiary.downloadSuccess'))
     },
     async saveDiaryLocal() {
       if (!this.posterUrl) return
-      const d = getDraft()
       this.saving = true
       try {
-        addRecord({
-          moodEmojiId: d.moodEmojiId,
-          moodLabel: d.moodLabel,
-          narrative: d.narrative,
-          posterDataUrl: this.posterUrl,
-          caption: this.diaryCaptionLine || d.diaryCaption || d.captionPicked || '',
-          emotionFlow: d.emotionFlow,
-          artStyle: d.artStyle
-        })
-        const cfg = getActiveMoodEndpoints()
-        if (cfg.illSaveEndpoint) {
-          await saveIllMood(
-            {
-              prompt: d.generateIllustrationPrompt,
-              caption: this.diaryCaptionLine || d.diaryCaption || d.captionPicked,
-              image_url: this.posterUrl,
-              emotionFlow: d.emotionFlow
-            },
-            cfg.illSaveEndpoint
-          )
-        } else {
-          const token = localStorage.getItem('token') || ''
-          if (token) {
-            await saveIllLegacyCreation(
-              this.posterUrl,
-              this.$t('moodDiary.creationTitle'),
-              d.narrative.trim(),
-              MOOD_ILLUSTRATION_TYPE
-            )
-          }
-        }
-        ElMessage.success(this.$t('moodDiary.saveDiaryOk'))
+        await saveMoodPoster(this.posterUrl, this.diaryCaptionLine, (k) => this.$t(k))
+        ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
+        this.$router.replace('/mood-diary/narrative')
       } catch (e) {
         ElMessage.error(e.message || this.$t('moodDiary.saveCreationFailed'))
       } finally {
@@ -350,15 +298,39 @@ export default {
 </script>
 
 <style scoped>
-.md-card.md-generate {
+.md-generate {
   width: 100%;
-  max-width: min(100%, 720px);
-  margin: 0 auto;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
   background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 6px 20px rgba(31, 35, 41, 0.08);
+  border-radius: 16px;
+  border: 1px solid #e8ecf1;
+  box-shadow: 0 8px 28px rgba(31, 35, 41, 0.07);
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+.md-generate__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 20px 8px;
+}
+
+.md-generate__foot {
+  flex-shrink: 0;
+  padding: 12px 20px 20px;
+  border-top: 1px solid #ebeef5;
+  background: #fff;
+}
+
+.md-generate__foot :deep(.el-button) {
+  width: 100%;
 }
 
 .md-title {
@@ -374,21 +346,9 @@ export default {
 
 .style-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
   gap: 10px;
-  margin-bottom: 14px;
-  /* 风格区单独滚动，避免把「开始生成」顶到整页最底下 */
-  max-height: min(calc(100vh - 240px), 680px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 2px;
-  -webkit-overflow-scrolling: touch;
-}
-
-@media (max-width: 767px) {
-  .style-strip {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 720px), 1fr));
-  }
+  margin-bottom: 8px;
 }
 
 .style-chip {
@@ -412,7 +372,7 @@ export default {
 
 .style-chip img {
   width: 100%;
-  max-width: 160px;
+  max-width: 120px;
   aspect-ratio: 1 / 1;
   height: auto;
   border-radius: 6px;
@@ -425,75 +385,11 @@ export default {
   color: #606266;
   text-align: center;
   line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-  max-height: 4.2em;
-}
-
-@media (max-width: 767px) {
-  .style-chip img {
-    max-width: none;
-  }
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 8px;
-  padding: 8px 0 16px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }
 
 .step-log {
   font-size: 12px;
   color: #8167a9;
-  margin: 0 0 8px;
-}
-
-.preview {
-  margin: 16px 0;
-  border: 1px solid #ebeef5;
-  border-radius: 10px;
-  padding: 10px;
-  background: #f8f8fb;
-  scroll-margin-top: 16px;
-}
-
-.poster-img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  display: block;
-}
-
-.save-row {
-  margin-top: 12px;
-}
-
-.save-mood-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  height: 36px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  background: linear-gradient(135deg, #ff9a8b 0%, #ff6a88 45%, #8167a9 100%);
-}
-
-.save-mood-btn:disabled,
-.save-mood-btn.is-loading {
-  opacity: 0.75;
-  cursor: wait;
+  margin: 8px 0 0;
 }
 </style>
