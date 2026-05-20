@@ -10,7 +10,7 @@ export function getMoodApiConfig() {
   const illSave = process.env.VUE_APP_MOOD_ILL_SAVE || ''
   const recapCompletion = process.env.VUE_APP_MOOD_RECAP_COMPLETION || ''
   return {
-    /** 默认 /api/v1/caption/image-describe：画面描述 + diary_caption（generate_diary_caption 默认 true） */
+    /** POST /caption/image-describe（multipart 或 JSON）；默认一次返回描述 + 日记 + illustration_prompt */
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
     emotionPipelineEndpoint: emotionPipeline.trim() || null,
     emotionAlignEndpoint: emotionAlign.trim() || null,

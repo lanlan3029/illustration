@@ -224,16 +224,15 @@ export default {
 
         if (needsImageDescribe) {
           this.stepLog = this.$t('moodDiary.stepImageDescribe')
-          const file = await dataUrlToFile(
-            draft.inputImageDataUrl,
-            draft.inputImageName || 'ref.jpg'
-          )
+          const narrativeHint = (draft.narrative || '').slice(0, 500)
           const describeResult = await fetchCaptionImageDescribe(
-            file,
+            draft.inputImageDataUrl,
             {
-              hint: (draft.narrative || '').slice(0, 500),
+              hint: narrativeHint,
+              extraHint: narrativeHint,
               narrative: (draft.narrative || '').trim(),
               moodLabel: draft.moodLabel || userMood,
+              illustrationStyle,
               targetLength: 90,
               generateDiaryCaption: true,
               filename: draft.inputImageName || 'ref.jpg'
@@ -242,6 +241,11 @@ export default {
           )
           setDraft(imageDescribeResultToDraftPatch(describeResult))
           draft = getDraft()
+          const illFromDescribe = (draft.generateIllustrationPrompt || describeResult.illustrationPrompt || '').trim()
+          if (illFromDescribe) {
+            pickSeedPrompt = illFromDescribe
+            captionApiGavePrompt = true
+          }
         }
 
         let imagePrompt = captionApiGavePrompt ? pickSeedPrompt : ''

@@ -248,18 +248,21 @@ export default {
       if (this.refDataUrl && cfg.captionImageDescribeEndpoint) {
         this.describeBusy = true
         try {
-          const file =
+          const imageInput =
+            this.refDataUrl ||
             this.refFile ||
             (await dataUrlToFile(this.refDataUrl, this.refImageBasename()))
           const describeResult = await fetchCaptionImageDescribe(
-            file,
+            imageInput,
             {
               hint: this.narrative.slice(0, 500),
+              extraHint: this.narrative.slice(0, 500),
               narrative: this.narrative.trim(),
               moodLabel: this.moodObj ? this.moodObj.label : '',
               targetLength: 90,
               generateDiaryCaption: true,
-              filename: this.refImageBasename()
+              filename: this.refImageBasename(),
+              preferMultipart: !!this.refFile && !this.refDataUrl
             },
             cfg.captionImageDescribeEndpoint
           )

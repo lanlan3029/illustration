@@ -16,11 +16,13 @@ function pickFirstStr(obj, keys) {
   return ''
 }
 
-/** 解析 image-describe 返回（含后端 vision 单行 JSON 字符串） */
+/** 解析 image-describe 的 data 载荷（含 vision 返回的单行 JSON 字符串） */
 function parseVisionDescribeFields(raw) {
   let description = ''
   let sceneDescription = ''
   let diaryCaption = ''
+  let illustrationPrompt = ''
+  let illustrationStyle = ''
 
   const absorbObject = (obj) => {
     if (!obj || typeof obj !== 'object') return
@@ -30,7 +32,19 @@ function parseVisionDescribeFields(raw) {
     sceneDescription =
       sceneDescription ||
       pickFirstStr(obj, ['scene_description', 'sceneDescription', 'description', 'vision'])
-    description = description || pickFirstStr(obj, ['description', 'scene_description', 'text'])
+    description =
+      description || pickFirstStr(obj, ['description', 'scene_description', 'text'])
+    illustrationPrompt =
+      illustrationPrompt ||
+      pickFirstStr(obj, [
+        'illustration_prompt',
+        'illustrationPrompt',
+        'image_prompt',
+        'imagePrompt',
+        'prompt'
+      ])
+    illustrationStyle =
+      illustrationStyle || pickFirstStr(obj, ['illustration_style', 'illustrationStyle'])
   }
 
   if (typeof raw === 'string') {
@@ -52,99 +66,220 @@ function parseVisionDescribeFields(raw) {
 
   if (!sceneDescription) sceneDescription = description
   if (!description) description = sceneDescription
-  return { description, sceneDescription, diaryCaption }
+  return {
+    description,
+    sceneDescription,
+    diaryCaption,
+    illustrationPrompt,
+    illustrationStyle
+  }
 }
 
-/**
- * POST /api/v1/caption/image-describe（multipart）
- * 默认 generate_diary_caption=true：返回画面描述 + 约 90 字日记配文。
- * @param {Blob|File} file
- * @param {{
- *   hint?: string,
- *   narrative?: string,
- *   moodLabel?: string,
- *   userMood?: string,
- *   targetLength?: number,
- *   generateDiaryCaption?: boolean,
- *   filename?: string
- * }} [options]
- * @param {string} endpoint
- * @returns {Promise<{ description: string, sceneDescription: string, diaryCaption: string }>}
- */
-export async function fetchCaptionImageDescribe(file, options = {}, endpoint) {
-  const url = resolveApiUrl(endpoint)
-  if (!url) throw new Error('caption image-describe endpoint missing')
-
-  const {
-    hint = '',
-    narrative = '',
-    moodLabel = '',
-    userMood = '',
-    targetLength = 90,
-    generateDiaryCaption = true,
-    filename = 'reference.jpg'
-  } = options
-
-  const fd = new FormData()
-  fd.append('picture', file, filename)
-  fd.append('hint', hint || '')
-  const narrativeTrim = String(narrative || '').trim().slice(0, 500)
-  if (narrativeTrim) fd.append('narrative', narrativeTrim)
-  const mood = String(moodLabel || userMood || '').trim()
-  if (mood) {
-    fd.append('mood_label', mood)
-    fd.append('user_mood', mood)
+function assertImageDescribeResponse(data, httpStatus) {
+  const code = data?.code
+  if (httpStatus === 429 || code === -2 || code === '-2') {
+    const err = new Error(
+      typeof data?.message === 'string' ? data.message : '请求过于频繁，请稍后再试'
+    )
+    err.rateLimited = true
+    throw err
   }
-  fd.append('target_length', String(targetLength))
-  fd.append('generate_diary_caption', generateDiaryCaption ? 'true' : 'false')
-
-  const res = await axios.post(url, fd, {
-    timeout: 90000,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
-    }
-  })
-
-  const data = unwrapData(res)
+  if (code === -1 || code === '-1') {
+    throw new Error(typeof data?.message === 'string' ? data.message : 'image-describe failed')
+  }
   const ok =
-    data.code === 0 ||
-    data.code === '0' ||
-    data.desc === 'success' ||
-    data.statuscode === 'success'
-
-  const payload = data.data ?? data.message ?? data
-  let { description, sceneDescription, diaryCaption } = parseVisionDescribeFields(payload)
-
-  if (!diaryCaption) {
-    diaryCaption = pickFirstStr(data, ['diary_caption', 'diaryCaption'])
-  }
-  if (!sceneDescription && !description) {
-    const top = parseVisionDescribeFields(data)
-    description = top.description
-    sceneDescription = top.sceneDescription
-    diaryCaption = diaryCaption || top.diaryCaption
-  }
-
-  if (!ok && !sceneDescription && !description) {
+    code === 0 ||
+    code === '0' ||
+    data?.desc === 'success' ||
+    data?.statuscode === 'success'
+  if (!ok && code != null && code !== undefined) {
     throw new Error(
-      typeof data.message === 'string'
+      typeof data?.message === 'string'
         ? data.message
         : pickFirstStr(data, ['desc']) || 'image-describe failed'
     )
   }
-
-  if (!sceneDescription) sceneDescription = description
-  if (!description) description = sceneDescription
-
-  return {
-    description,
-    sceneDescription,
-    diaryCaption
-  }
 }
 
-/** 写入草稿：画面描述 + 日记配文缓存 */
+function extractImageDescribeResult(data) {
+  const payload = data?.data ?? data?.message ?? data
+  let result = parseVisionDescribeFields(payload)
+
+  if (!result.diaryCaption) {
+    result = {
+      ...result,
+      diaryCaption: pickFirstStr(data, ['diary_caption', 'diaryCaption'])
+    }
+  }
+  if (!result.sceneDescription && !result.description) {
+    const top = parseVisionDescribeFields(data)
+    result = { ...top, ...result, diaryCaption: result.diaryCaption || top.diaryCaption }
+  }
+  if (!result.illustrationPrompt && payload && typeof payload === 'object') {
+    result.illustrationPrompt = pickFirstStr(payload, [
+      'illustration_prompt',
+      'illustrationPrompt',
+      'image_prompt'
+    ])
+  }
+
+  if (!result.sceneDescription) result.sceneDescription = result.description
+  if (!result.description) result.description = result.sceneDescription
+
+  return result
+}
+
+function shouldUseJsonBody(imageInput, options) {
+  if (options.preferMultipart) return false
+  if (options.imageUrl) return true
+  if (options.imageBase64) return true
+  if (typeof imageInput === 'string') {
+    return imageInput.startsWith('data:') || /^https?:\/\//i.test(imageInput)
+  }
+  return false
+}
+
+function appendDescribeFormFields(fd, options) {
+  const hint = String(options.hint || options.extraHint || '').trim()
+  if (hint) {
+    fd.append('hint', hint)
+    fd.append('extra_hint', hint)
+  }
+  const narrativeTrim = String(options.narrative || '').trim().slice(0, 500)
+  if (narrativeTrim) fd.append('narrative', narrativeTrim)
+  const mood = String(options.moodLabel || options.userMood || '').trim()
+  if (mood) {
+    fd.append('mood_label', mood)
+    fd.append('user_mood', mood)
+  }
+  const style = String(options.illustrationStyle || '').trim()
+  if (style) fd.append('illustration_style', style)
+  fd.append('target_length', String(options.targetLength ?? 90))
+  fd.append(
+    'generate_diary_caption',
+    options.generateDiaryCaption !== false ? 'true' : 'false'
+  )
+}
+
+function buildDescribeJsonBody(imageInput, options) {
+  const body = {
+    target_length: options.targetLength ?? 90,
+    generate_diary_caption: options.generateDiaryCaption !== false
+  }
+  const imageUrl = options.imageUrl || ''
+  if (imageUrl) {
+    body.image_url = imageUrl
+  } else if (options.imageBase64) {
+    body.image_base64 = options.imageBase64
+  } else if (typeof imageInput === 'string') {
+    if (imageInput.startsWith('data:')) body.image_base64 = imageInput
+    else if (/^https?:\/\//i.test(imageInput)) body.image_url = imageInput
+  }
+
+  const hint = String(options.hint || options.extraHint || '').trim()
+  if (hint) {
+    body.hint = hint
+    body.extra_hint = hint
+  }
+  const narrativeTrim = String(options.narrative || '').trim().slice(0, 500)
+  if (narrativeTrim) body.narrative = narrativeTrim
+  const mood = String(options.moodLabel || options.userMood || '').trim()
+  if (mood) {
+    body.mood_label = mood
+    body.user_mood = mood
+  }
+  const style = String(options.illustrationStyle || '').trim()
+  if (style) body.illustration_style = style
+  return body
+}
+
+/**
+ * POST /caption/image-describe
+ * multipart（File）或 JSON（image_base64 / image_url）二选一。
+ * @param {File|Blob|string|null} imageInput File/Blob 走 multipart；data URL / http URL 走 JSON
+ * @param {{
+ *   hint?: string,
+ *   extraHint?: string,
+ *   narrative?: string,
+ *   moodLabel?: string,
+ *   userMood?: string,
+ *   illustrationStyle?: string,
+ *   targetLength?: number,
+ *   generateDiaryCaption?: boolean,
+ *   filename?: string,
+ *   imageUrl?: string,
+ *   imageBase64?: string,
+ *   preferMultipart?: boolean
+ * }} [options]
+ * @param {string} endpoint
+ */
+export async function fetchCaptionImageDescribe(imageInput, options = {}, endpoint) {
+  const url = resolveApiUrl(endpoint)
+  if (!url) throw new Error('caption image-describe endpoint missing')
+
+  const authHeaders = {
+    Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
+  }
+
+  let res
+  try {
+    if (shouldUseJsonBody(imageInput, options)) {
+      const body = buildDescribeJsonBody(imageInput, options)
+      if (!body.image_base64 && !body.image_url) {
+        throw new Error('image_base64 or image_url required for JSON image-describe')
+      }
+      res = await axios.post(url, body, {
+        timeout: 90000,
+        headers: { ...authHeaders, 'Content-Type': 'application/json' }
+      })
+    } else {
+      let file = imageInput
+      if (!(file instanceof Blob)) {
+        if (!file) throw new Error('image file required for multipart image-describe')
+        file = await dataUrlToFile(file, options.filename || 'reference.jpg')
+      }
+      const filename = options.filename || (file.name || 'reference.jpg')
+      const fd = new FormData()
+      fd.append('picture', file, filename)
+      fd.append('image', file, filename)
+      appendDescribeFormFields(fd, options)
+      res = await axios.post(url, fd, {
+        timeout: 90000,
+        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' }
+      })
+    }
+  } catch (err) {
+    const status = err?.response?.status
+    const data = err?.response ? unwrapData(err.response) : null
+    console.warn('[mood-diary] POST /caption/image-describe 失败', {
+      status,
+      data,
+      message: err?.message
+    })
+    if (status === 429 || data?.code === -2 || data?.code === '-2') {
+      throw new Error(data?.message || '请求过于频繁，请稍后再试')
+    }
+    if (data?.code === -1 || data?.code === '-1') {
+      throw new Error(data?.message || 'image-describe failed')
+    }
+    throw err
+  }
+
+  const data = unwrapData(res)
+  console.log('[mood-diary] POST /caption/image-describe 响应', {
+    httpStatus: res?.status,
+    code: data?.code,
+    desc: data?.desc,
+    message: data?.message,
+    data: data?.data ?? null
+  })
+  assertImageDescribeResponse(data, res?.status)
+  const parsed = extractImageDescribeResult(data)
+  console.log('[mood-diary] POST /caption/image-describe 解析结果', parsed)
+  return parsed
+}
+
+/** 写入草稿：画面描述、日记配文、文生图 prompt */
 export function imageDescribeResultToDraftPatch(result) {
   const scene = (result.sceneDescription || result.description || '').trim()
   const diary = (result.diaryCaption || '').trim()
@@ -155,6 +290,14 @@ export function imageDescribeResultToDraftPatch(result) {
   if (diary) {
     patch.diaryCaption = diary
     patch.quotaSentence = diary
+  }
+  const illPrompt = (result.illustrationPrompt || '').trim()
+  if (illPrompt) {
+    patch.generateIllustrationPrompt = illPrompt
+  }
+  const illStyle = (result.illustrationStyle || '').trim()
+  if (illStyle) {
+    patch.artStyle = illStyle
   }
   return patch
 }
