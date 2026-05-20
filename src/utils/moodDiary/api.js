@@ -129,14 +129,26 @@ function extractImageDescribeResult(data) {
   return result
 }
 
+/**
+ * 推荐 multipart 传图；仅无本地文件且为远程 URL 时用 JSON（image_url）。
+ */
 function shouldUseJsonBody(imageInput, options) {
+  if (options.preferJson) return true
   if (options.preferMultipart) return false
-  if (options.imageUrl) return true
-  if (options.imageBase64) return true
-  if (typeof imageInput === 'string') {
-    return imageInput.startsWith('data:') || /^https?:\/\//i.test(imageInput)
+  if (imageInput instanceof Blob) return false
+  const remote =
+    options.imageUrl ||
+    (typeof imageInput === 'string' && /^https?:\/\//i.test(imageInput))
+  return !!remote
+}
+
+/** data URL / File → Blob，统一走 multipart */
+async function resolveDescribeUploadFile(imageInput, options) {
+  if (imageInput instanceof Blob) return imageInput
+  if (typeof imageInput === 'string' && imageInput.trim()) {
+    return dataUrlToFile(imageInput, options.filename || 'reference.jpg')
   }
-  return false
+  return null
 }
 
 function appendDescribeFormFields(fd, options) {
@@ -169,11 +181,8 @@ function buildDescribeJsonBody(imageInput, options) {
   const imageUrl = options.imageUrl || ''
   if (imageUrl) {
     body.image_url = imageUrl
-  } else if (options.imageBase64) {
-    body.image_base64 = options.imageBase64
-  } else if (typeof imageInput === 'string') {
-    if (imageInput.startsWith('data:')) body.image_base64 = imageInput
-    else if (/^https?:\/\//i.test(imageInput)) body.image_url = imageInput
+  } else if (typeof imageInput === 'string' && /^https?:\/\//i.test(imageInput)) {
+    body.image_url = imageInput
   }
 
   const hint = String(options.hint || options.extraHint || '').trim()
@@ -193,10 +202,13 @@ function buildDescribeJsonBody(imageInput, options) {
   return body
 }
 
+/** image-describe 超时（与小程序一致，vision 较慢） */
+const IMAGE_DESCRIBE_TIMEOUT_MS = 130000
+
 /**
  * POST /caption/image-describe
- * multipart（File）或 JSON（image_base64 / image_url）二选一。
- * @param {File|Blob|string|null} imageInput File/Blob 走 multipart；data URL / http URL 走 JSON
+ * 默认 multipart 传图（与小程序一致）；勿用整段 base64 JSON。
+ * @param {File|Blob|string|null} imageInput File/Blob，或 data URL（会转为 File 再 multipart）
  * @param {{
  *   hint?: string,
  *   extraHint?: string,
@@ -208,8 +220,7 @@ function buildDescribeJsonBody(imageInput, options) {
  *   generateDiaryCaption?: boolean,
  *   filename?: string,
  *   imageUrl?: string,
- *   imageBase64?: string,
- *   preferMultipart?: boolean
+ *   preferJson?: boolean
  * }} [options]
  * @param {string} endpoint
  */
@@ -225,27 +236,24 @@ export async function fetchCaptionImageDescribe(imageInput, options = {}, endpoi
   try {
     if (shouldUseJsonBody(imageInput, options)) {
       const body = buildDescribeJsonBody(imageInput, options)
-      if (!body.image_base64 && !body.image_url) {
-        throw new Error('image_base64 or image_url required for JSON image-describe')
+      if (!body.image_url) {
+        throw new Error('image_url required for JSON image-describe')
       }
       res = await axios.post(url, body, {
-        timeout: 90000,
+        timeout: IMAGE_DESCRIBE_TIMEOUT_MS,
         headers: { ...authHeaders, 'Content-Type': 'application/json' }
       })
     } else {
-      let file = imageInput
-      if (!(file instanceof Blob)) {
-        if (!file) throw new Error('image file required for multipart image-describe')
-        file = await dataUrlToFile(file, options.filename || 'reference.jpg')
-      }
-      const filename = options.filename || (file.name || 'reference.jpg')
+      const file = await resolveDescribeUploadFile(imageInput, options)
+      if (!file) throw new Error('image file required for multipart image-describe')
+      const filename = options.filename || file.name || 'reference.jpg'
       const fd = new FormData()
       fd.append('picture', file, filename)
-      fd.append('image', file, filename)
       appendDescribeFormFields(fd, options)
+      // 不手动设置 Content-Type，由运行时附带 boundary（与 wx.request 一致）
       res = await axios.post(url, fd, {
-        timeout: 90000,
-        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' }
+        timeout: IMAGE_DESCRIBE_TIMEOUT_MS,
+        headers: authHeaders
       })
     }
   } catch (err) {

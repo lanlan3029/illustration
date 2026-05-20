@@ -225,8 +225,12 @@ export default {
         if (draft.inputImageDataUrl && cfg.captionImageDescribeEndpoint) {
           this.stepLog = this.$t('moodDiary.stepImageDescribe')
           const narrativeHint = (draft.narrative || '').slice(0, 500)
-          const describeResult = await fetchCaptionImageDescribe(
+          const refFile = await dataUrlToFile(
             draft.inputImageDataUrl,
+            draft.inputImageName || 'ref.jpg'
+          )
+          const describeResult = await fetchCaptionImageDescribe(
+            refFile,
             {
               hint: narrativeHint,
               extraHint: narrativeHint,
