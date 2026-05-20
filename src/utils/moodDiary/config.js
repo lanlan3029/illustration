@@ -4,6 +4,11 @@
  */
 /** 与 create-character 同域；未配置 env 时使用该默认路径 */
 const DEFAULT_CAPTION_IMAGE_DESCRIBE = '/caption/image-describe'
+/**
+ * 与 KidStory 生产一致时可配完整 URL，例如 https://api.kidstory.cc/caption/mood-recap
+ * 兼容旧网关路径 /api/v1/caption/mood-recap（服务端会重写到 /caption/mood-recap）
+ */
+const DEFAULT_CAPTION_MOOD_RECAP = '/caption/mood-recap'
 
 export function getMoodApiConfig() {
   const imageDescribe =
@@ -12,13 +17,16 @@ export function getMoodApiConfig() {
   const emotionPipeline = process.env.VUE_APP_MOOD_EMOTION_PIPELINE || ''
   const emotionAlign = process.env.VUE_APP_MOOD_EMOTION_ALIGN || ''
   const illSave = process.env.VUE_APP_MOOD_ILL_SAVE || ''
-  const recapCompletion = process.env.VUE_APP_MOOD_RECAP_COMPLETION || ''
+  const recapCompletion =
+    (process.env.VUE_APP_MOOD_RECAP_COMPLETION || '').trim() ||
+    DEFAULT_CAPTION_MOOD_RECAP
   return {
     /** POST /caption/image-describe（multipart 或 JSON）；默认一次返回描述 + 日记 + illustration_prompt */
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
     emotionPipelineEndpoint: emotionPipeline.trim() || null,
     emotionAlignEndpoint: emotionAlign.trim() || null,
     illSaveEndpoint: illSave.trim() || null,
+    /** POST /caption/mood-recap（JSON）；与 image-describe 同套 code/data 包装 */
     recapCompletionEndpoint: recapCompletion.trim() || null
   }
 }

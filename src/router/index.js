@@ -297,6 +297,12 @@ const routes = [{
                     import ( /* webpackChunkName: "mood-diary-narrative" */ '../views/mood-diary/MoodDiaryNarrative.vue')
             },
             {
+                path: 'write',
+                name: 'mood-diary-write',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-write" */ '../views/mood-diary/MoodDiaryWrite.vue')
+            },
+            {
                 path: 'generate',
                 name: 'mood-diary-generate',
                 component: () =>

@@ -75,7 +75,8 @@ function parseVisionDescribeFields(raw) {
   }
 }
 
-function assertImageDescribeResponse(data, httpStatus) {
+/** /caption/* 统一响应：code 0 成功，-1 失败，-2 / 429 限流 */
+function assertCaptionApiResponse(data, httpStatus, failLabel = 'caption request') {
   const code = data?.code
   if (httpStatus === 429 || code === -2 || code === '-2') {
     const err = new Error(
@@ -85,7 +86,7 @@ function assertImageDescribeResponse(data, httpStatus) {
     throw err
   }
   if (code === -1 || code === '-1') {
-    throw new Error(typeof data?.message === 'string' ? data.message : 'image-describe failed')
+    throw new Error(typeof data?.message === 'string' ? data.message : failLabel)
   }
   const ok =
     code === 0 ||
@@ -96,9 +97,13 @@ function assertImageDescribeResponse(data, httpStatus) {
     throw new Error(
       typeof data?.message === 'string'
         ? data.message
-        : pickFirstStr(data, ['desc']) || 'image-describe failed'
+        : pickFirstStr(data, ['desc']) || failLabel
     )
   }
+}
+
+function assertImageDescribeResponse(data, httpStatus) {
+  assertCaptionApiResponse(data, httpStatus, 'image-describe failed')
 }
 
 function extractImageDescribeResult(data) {
@@ -127,6 +132,185 @@ function extractImageDescribeResult(data) {
   if (!result.description) result.description = result.sceneDescription
 
   return result
+}
+
+function normalizeRecapThemes(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map((x) => String(x || '').trim()).filter(Boolean)
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw
+      .split(/[,，、\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
+/** 解析 mood-recap 的 data（含 LLM 单行 JSON 字符串） */
+function parseRecapDataFields(raw) {
+  let overview = ''
+  let moodTrend = ''
+  let themes = []
+  let highlight = ''
+  let suggestion = ''
+  let recapText = ''
+
+  const absorbObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return
+    overview = overview || pickFirstStr(obj, ['overview', 'summary', 'opening'])
+    moodTrend =
+      moodTrend || pickFirstStr(obj, ['mood_trend', 'moodTrend', 'trend', 'mood_change'])
+    if (!themes.length) themes = normalizeRecapThemes(obj.themes ?? obj.topics ?? obj.tags)
+    highlight = highlight || pickFirstStr(obj, ['highlight', 'moment', 'memorable'])
+    suggestion =
+      suggestion || pickFirstStr(obj, ['suggestion', 'advice', 'gentle_suggestion', 'tip'])
+    recapText =
+      recapText ||
+      pickFirstStr(obj, [
+        'recap_text',
+        'recapText',
+        'content',
+        'analysis',
+        'text',
+        'result',
+        'summary',
+        'reply'
+      ])
+  }
+
+  if (typeof raw === 'string') {
+    const s = raw.trim()
+    if (s.startsWith('{')) {
+      try {
+        absorbObject(JSON.parse(s))
+      } catch (_) {
+        recapText = s
+      }
+    } else {
+      recapText = s
+    }
+  } else if (raw && typeof raw === 'object') {
+    absorbObject(raw)
+  }
+
+  if (!recapText && overview) {
+    recapText = [overview, moodTrend, highlight, suggestion].filter(Boolean).join('\n\n')
+  }
+
+  return { overview, moodTrend, themes, highlight, suggestion, recapText }
+}
+
+function extractRecapResult(data) {
+  const payload = data?.data ?? data?.message ?? data
+  let result = parseRecapDataFields(payload)
+
+  if (!result.recapText && !result.overview) {
+    const top = parseRecapDataFields(data)
+    result = {
+      overview: result.overview || top.overview,
+      moodTrend: result.moodTrend || top.moodTrend,
+      themes: result.themes.length ? result.themes : top.themes,
+      highlight: result.highlight || top.highlight,
+      suggestion: result.suggestion || top.suggestion,
+      recapText: result.recapText || top.recapText
+    }
+  }
+
+  const choiceMsg = payload?.choices?.[0]?.message ?? payload?.choices?.[0]
+  if (!result.recapText && choiceMsg?.content) {
+    result = { ...result, ...parseRecapDataFields(choiceMsg.content) }
+  }
+
+  if (!result.recapText && typeof data?.message === 'string' && !String(data.message).startsWith('{')) {
+    result.recapText = String(data.message).trim()
+  }
+
+  return result
+}
+
+/** mood-recap 超时（LLM 分析多条日记） */
+const MOOD_RECAP_TIMEOUT_MS = 120000
+
+/**
+ * POST /caption/mood-recap（须 Bearer；与 KidStory caption.ts 契约一致）
+ * - 成功：HTTP 200 + code 0 + data（结构化六段或仅 recap_text）
+ * - 未登录：HTTP 401 + code -1
+ * - 限流：HTTP 429 + code -2（可选 retryAfter）
+ * - LLM 失败/超时：HTTP 200 + code -1
+ * 请求体见 buildRecapCompletionPayload。
+ * @param {object} payload
+ * @param {string} endpoint
+ * @returns {Promise<{ overview: string, moodTrend: string, themes: string[], highlight: string, suggestion: string, recapText: string }>}
+ */
+export async function fetchCaptionMoodRecap(payload, endpoint) {
+  const url = resolveApiUrl(endpoint)
+  if (!url) throw new Error('caption mood-recap endpoint missing')
+
+  const authHeaders = {
+    Authorization: 'Bearer ' + (localStorage.getItem('token') || ''),
+    'Content-Type': 'application/json'
+  }
+
+  let res
+  try {
+    res = await axios.post(url, payload, {
+      timeout: MOOD_RECAP_TIMEOUT_MS,
+      headers: authHeaders
+    })
+  } catch (err) {
+    const status = err?.response?.status
+    const data = err?.response ? unwrapData(err.response) : null
+    console.warn('[mood-diary] POST /caption/mood-recap 失败', {
+      status,
+      data,
+      message: err?.message
+    })
+    if (status === 401) {
+      const msg =
+        typeof data?.message === 'string' && data.message.trim()
+          ? data.message.trim()
+          : '请先登录'
+      throw new Error(msg)
+    }
+    if (status === 429 || data?.code === -2 || data?.code === '-2') {
+      let msg = data?.message || '请求过于频繁，请稍后再试'
+      const ra = data?.retryAfter
+      if (ra != null && Number.isFinite(Number(ra))) {
+        msg += `（约 ${Number(ra)}s 后可重试）`
+      }
+      throw new Error(msg)
+    }
+    if (data?.code === -1 || data?.code === '-1') {
+      throw new Error(data?.message || 'mood-recap failed')
+    }
+    throw err
+  }
+
+  const data = unwrapData(res)
+  console.log('[mood-diary] POST /caption/mood-recap 响应', {
+    httpStatus: res?.status,
+    code: data?.code,
+    desc: data?.desc,
+    message: data?.message,
+    data: data?.data ?? null
+  })
+  assertCaptionApiResponse(data, res?.status, 'mood-recap failed')
+  const parsed = extractRecapResult(data)
+  console.log('[mood-diary] POST /caption/mood-recap 解析结果', parsed)
+  if (
+    !parsed.recapText &&
+    !parsed.overview &&
+    !parsed.moodTrend &&
+    !parsed.highlight &&
+    !parsed.suggestion &&
+    !parsed.themes?.length
+  ) {
+    throw new Error(
+      typeof data?.message === 'string' ? data.message : 'mood-recap empty result'
+    )
+  }
+  return parsed
 }
 
 /**
@@ -330,7 +514,7 @@ export async function dataUrlToFile(dataUrl, filename = 'ref.jpg') {
   return new File([blob], filename, { type })
 }
 
-export async function dataUrlToFile(dataUrl, filename = 'ref.jpg') {
+export async function fetchEmotionPipeline(text, hasImage, endpoint) {
   const url = resolveApiUrl(endpoint)
   const res = await axios.post(url, { input: { text, hasImage: !!hasImage } }, {
     headers: { 'Content-Type': 'application/json' },
@@ -467,32 +651,10 @@ export async function fetchUserMoodIllustrations(page = 1) {
 }
 
 /**
- * 将选定时间段内的日记条目发给对话补全类接口做复盘分析。
+ * @deprecated 请用 fetchCaptionMoodRecap；保留为返回纯文本的薄封装。
  * payload 建议使用 buildRecapCompletionPayload 生成。
  */
 export async function fetchRecapChatCompletion(payload, endpoint) {
-  const url = resolveApiUrl(endpoint)
-  if (!url) throw new Error('recap completion endpoint missing')
-  const res = await axios.post(url, payload, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
-    },
-    timeout: 120000
-  })
-  const data = unwrapData(res)
-  const inner = data.message ?? data.data ?? data
-  if (typeof inner === 'string') return inner.trim()
-
-  let text =
-    pickFirstStr(inner, ['content', 'analysis', 'text', 'result', 'summary', 'reply']) ||
-    ''
-
-  const choiceMsg = inner?.choices?.[0]?.message ?? inner?.choices?.[0]
-  if (!text && choiceMsg?.content) text = String(choiceMsg.content).trim()
-
-  if (!text) text = typeof inner?.result === 'string' ? inner.result.trim() : ''
-
-  if (!text) throw new Error(data.message || pickFirstStr(data, ['desc']) || 'recap analysis failed')
-  return text
+  const result = await fetchCaptionMoodRecap(payload, endpoint)
+  return (result.recapText || result.overview || '').trim()
 }

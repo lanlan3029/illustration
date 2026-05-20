@@ -1,693 +1,969 @@
 <template>
-  <div class="md-card md-narrative">
-    <div class="page-title-row">
-      <div class="page-title-side" aria-hidden="true" />
-      <h1 class="md-title">{{ $t('moodDiary.question') }}</h1>
-      <div class="page-title-side page-title-side--end">
-        <button
-          v-if="narrative.trim() || moodObj"
-          type="button"
-          class="clear-entry-btn"
-          @click="clearLocal"
-        >
-          {{ $t('moodDiary.clearEntry') }}
-        </button>
-      </div>
-    </div>
+  <div class="md-dashboard">
+    <!-- 左：此刻卡片 30vw × 100% -->
+    <aside class="dash-now-card" :aria-label="$t('moodDiary.navNow')">
+      <MoodDiaryNowPanel />
+    </aside>
 
-    <section class="mood-zone" :aria-label="$t('moodDiary.question')">
-      <div class="primary-moods" role="group">
-        <button
-          v-for="m in quickMoods"
-          :key="m.id"
-          type="button"
-          class="mood-btn mood-btn-primary"
-          :class="{ active: moodObj && moodObj.id === m.id }"
-          @click="selectMood(m)"
-        >
-          <img :src="m.src" :alt="m.label" />
-          <span class="mood-btn-label mood-btn-label-primary">{{ m.label }}</span>
-        </button>
-      </div>
-
-      <div class="more-moods-block">
-        <button type="button" class="linkish" @click="showExtraMoods = !showExtraMoods">
-          {{ showExtraMoods ? $t('moodDiary.collapseMoreMoods') : $t('moodDiary.moreMoods') }}
-        </button>
-        <div v-show="showExtraMoods" class="extra-moods" role="list">
+    <!-- 右：大卡片 — 海报在上；日历 | 文集 左右排列 -->
+    <div class="dash-main-card">
+      <section class="dash-block dash-block--posters" :aria-label="$t('moodDiary.moodPostersTitle')">
+        <div class="dash-block-head">
+          <div>
+            <h2 class="dash-block-title">{{ $t('moodDiary.moodPostersTitle') }}</h2>
+            <p class="dash-block-sub">{{ $t('moodDiary.moodPostersSubtitle') }}</p>
+          </div>
+          <router-link class="section-link section-link--pill" to="/mood-diary/book">{{ $t('moodDiary.viewAllJournal') }}</router-link>
+        </div>
+        <div class="poster-showcase">
           <button
-            v-for="m in extraMoods"
-            :key="m.id"
+            v-for="(slot, idx) in recentSlots"
+            :key="slot.id || `empty-${idx}`"
             type="button"
-            class="mood-btn mood-btn-extra"
-            :class="{ active: moodObj && moodObj.id === m.id }"
-            @click="selectMood(m)"
+            class="poster-card"
+            :class="{ 'poster-card--empty': !slot.posterDataUrl }"
+            :disabled="!slot.posterDataUrl"
+            @click="onPosterClick(slot)"
           >
-            <img :src="m.src" :alt="m.label" />
-            <span class="mood-btn-label">{{ m.label }}</span>
+            <img v-if="slot.posterDataUrl" :src="slot.posterDataUrl" class="poster-card-img" alt="" />
+            <span v-else class="poster-card-placeholder" :aria-label="$t('moodDiary.posterSlotEmpty')" />
+            <div v-if="slot.posterDataUrl" class="poster-card-meta">
+              <span class="poster-card-date">{{ formatShortDate(slot.createdAt) }}</span>
+              <span v-if="slot.moodLabel" class="poster-card-mood">{{ slot.moodLabel }}</span>
+            </div>
           </button>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <div class="diary-input-wrap">
-      <img v-if="moodObj" :src="moodObj.src" :alt="moodObj.label" class="diary-mood-bg" />
-      <div class="diary-entry-shell">
-          <input
-            ref="refInput"
-            type="file"
-            accept="image/*"
-            class="hidden-file"
-            tabindex="-1"
-            @change="onRefFile"
-          />
-          <el-input
-            v-model="narrative"
-            type="textarea"
-            :rows="8"
-            :placeholder="$t('moodDiary.entryPlaceholder')"
-            maxlength="1000"
-            show-word-limit
-            class="diary-entry-input"
-          />
-          <div class="diary-entry-inner-tools" aria-hidden="false">
+      <div class="dash-split-row">
+      <section class="dash-block dash-block--calendar" :aria-label="$t('moodDiary.moodCalendar')">
+        <div class="dash-block-head">
+          <h2 class="dash-block-title">{{ $t('moodDiary.moodCalendar') }}</h2>
+          <div class="cal-nav">
+            <button type="button" class="cal-nav-btn" :aria-label="$t('moodDiary.prevMonth')" @click="shiftMonth(-1)">‹</button>
+            <span class="cal-month-label">{{ calendarMonthLabel }}</span>
+            <button type="button" class="cal-nav-btn" :aria-label="$t('moodDiary.nextMonth')" @click="shiftMonth(1)">›</button>
             <button
               type="button"
-              class="attach-img-btn"
-              :title="$t('moodDiary.pickRefImage')"
-              :aria-label="$t('moodDiary.pickRefImage')"
-              @mousedown.prevent
-              @click="$refs.refInput.click()"
+              class="dash-icon-btn"
+              :title="$t('moodDiary.pullRefresh')"
+              :disabled="refreshing"
+              @click="refreshData"
             >
-              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="M21 15l-5-5L5 21" />
-              </svg>
+              <span class="dash-bell" aria-hidden="true" />
             </button>
-            <div v-if="refPreview" class="ref-thumb-inline">
-              <img :src="refPreview" alt="" />
-              <button type="button" class="ref-clear-chip" :title="$t('moodDiary.removeRefImage')" tabindex="0" @click.stop="clearRef">
-                ×
-              </button>
-            </div>
           </div>
         </div>
-      </div>
+        <div class="cal-shell">
+        <div class="cal-weekdays">
+          <span v-for="w in weekdayLabels" :key="w">{{ w }}</span>
+        </div>
+        <div class="cal-grid">
+          <button
+            v-for="(cell, i) in calendarCells"
+            :key="`c-${i}`"
+            type="button"
+            class="cal-day"
+            :class="{
+              'cal-day--muted': !cell.day,
+              'cal-day--has': cell.day && dayRecords(cell.day).length,
+              'cal-day--selected': cell.day && cell.day === selectedDay
+            }"
+            :disabled="!cell.day"
+            @click="cell.day && selectDay(cell.day)"
+          >
+            <span v-if="cell.day" class="cal-day-num">{{ cell.day }}</span>
+          </button>
+        </div>
+        </div>
+        <div v-if="selectedDayRecords.length" class="cal-day-detail">
+          <p class="cal-day-detail-title">{{ selectedDayLabel }}</p>
+          <button
+            v-for="r in selectedDayRecords"
+            :key="r.id"
+            type="button"
+            class="cal-day-entry"
+            @click="openRecord(r)"
+          >
+            <img v-if="r.posterDataUrl" :src="r.posterDataUrl" alt="" />
+            <span>{{ excerpt(r.caption || r.narrative, 40) }}</span>
+          </button>
+        </div>
+      </section>
 
-    <div class="row-actions">
-      <el-button type="primary" :loading="describeBusy" @click="nextToGenerate">{{ $t('moodDiary.nextToGenerate') }}</el-button>
+      <section class="dash-block dash-block--anthology" :aria-label="$t('moodDiary.monthlyAnthology')">
+        <div class="dash-block-head">
+          <h2 class="dash-block-title">{{ $t('moodDiary.monthlyAnthology') }}</h2>
+          <div class="dash-block-tools">
+            <label class="dash-search-wrap">
+              <span class="sr-only">{{ $t('moodDiary.dashboardSearchPlaceholder') }}</span>
+              <input
+                v-model="searchQuery"
+                type="search"
+                class="dash-search-input"
+                :placeholder="$t('moodDiary.dashboardSearchPlaceholder')"
+                autocomplete="off"
+              />
+            </label>
+            <span class="section-count">{{ $t('moodDiary.recapRecords', { n: totalRecords }) }}</span>
+            <button type="button" class="btn-filters" @click="clearSearch">{{ $t('moodDiary.filtersBtn') }}</button>
+          </div>
+        </div>
+
+        <div v-if="!filteredMonthGroups.length" class="dash-empty">
+          <span class="dash-empty-icon" aria-hidden="true">📔</span>
+          <p class="dash-empty-text">{{ $t('moodDiary.bookEmpty') }}</p>
+          <router-link class="dash-empty-cta" to="/mood-diary/write">{{ $t('moodDiary.exploreCardCta') }}</router-link>
+        </div>
+
+        <div v-for="group in filteredMonthGroups" :key="group.key" class="month-block">
+          <h3 class="month-label">{{ group.label }}</h3>
+          <ul class="anthology-list">
+            <li v-for="r in group.records" :key="r.id">
+              <button type="button" class="anthology-row" @click="openRecord(r)">
+                <img v-if="r.posterDataUrl" :src="r.posterDataUrl" class="anthology-thumb" alt="" />
+                <span v-else class="anthology-thumb anthology-thumb--empty" />
+                <div class="anthology-info">
+                  <span class="anthology-date">{{ formatShortDate(r.createdAt) }}</span>
+                  <span class="anthology-caption">{{ excerpt(r.caption || r.narrative) }}</span>
+                </div>
+                <span v-if="r.moodLabel" class="anthology-mood">{{ r.moodLabel }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </section>
+      </div>
     </div>
+
+    <el-dialog v-model="previewOpen" width="min(520px, 92vw)" :title="$t('moodDiary.previewTitle')">
+      <img v-if="previewPoster" :src="previewPoster" class="dlg-img" alt="" />
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { ElMessage } from 'element-plus'
-import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
+import MoodDiaryNowPanel from '@/components/moodDiary/MoodDiaryNowPanel.vue'
 import {
-  dataUrlToFile,
-  fetchCaptionImageDescribe,
-  getActiveMoodEndpoints,
-  imageDescribeResultToDraftPatch
-} from '@/utils/moodDiary/api'
-import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
-import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
+  buildCalendarCells,
+  getRecentPosters,
+  getRecordsForCalendarMonth,
+  groupRecordsByMonth
+} from '@/utils/moodDiary/recordGroups'
+import { getRecordsSorted } from '@/utils/moodDiary/records'
 
-const HIDDEN_EXTRA_MOOD_IDS = new Set(['heart', 'thumbs-up', 'star-eyes'])
+const PLACEHOLDER_COUNT = 4
 
 export default {
   name: 'MoodDiaryNarrative',
+  components: { MoodDiaryNowPanel },
   data() {
+    const now = new Date()
     return {
-      narrative: '',
-      moodObj: null,
-      refPreview: null,
-      refFile: null,
-      refDataUrl: null,
-      showExtraMoods: false,
-      describeBusy: false
+      refreshing: false,
+      searchQuery: '',
+      recentPosters: [],
+      monthGroups: [],
+      totalRecords: 0,
+      calYear: now.getFullYear(),
+      calMonth: now.getMonth(),
+      selectedDay: now.getDate(),
+      recordsByDay: new Map(),
+      previewOpen: false,
+      previewPoster: ''
     }
   },
   computed: {
-    moods() {
-      const isZh = this.$i18n?.locale === 'zh'
-      return resolveMoodList(isZh)
+    filteredMonthGroups() {
+      const q = (this.searchQuery || '').trim().toLowerCase()
+      if (!q) return this.monthGroups
+      return this.monthGroups
+        .map((g) => ({
+          ...g,
+          records: g.records.filter((r) => {
+            const blob = `${r.caption || ''} ${r.narrative || ''} ${r.moodLabel || ''}`.toLowerCase()
+            return blob.includes(q)
+          })
+        }))
+        .filter((g) => g.records.length > 0)
     },
-    quickMoods() {
-      const map = new Map(this.moods.map((m) => [m.id, m]))
-      return quickMoodIds.map((id) => map.get(id)).filter(Boolean)
+    recentSlots() {
+      const filled = this.recentPosters
+      const slots = [...filled]
+      while (slots.length < PLACEHOLDER_COUNT) {
+        slots.push({ id: null, posterDataUrl: null })
+      }
+      return slots.slice(0, PLACEHOLDER_COUNT)
     },
-    extraMoods() {
-      const quick = new Set(quickMoodIds)
-      return this.moods.filter((m) => !quick.has(m.id) && !HIDDEN_EXTRA_MOOD_IDS.has(m.id))
-    }
-  },
-  watch: {
-    narrative() {
-      this.persist()
+    calendarCells() {
+      return buildCalendarCells(this.calYear, this.calMonth)
     },
-    moodObj() {
-      this.persist()
+    calendarMonthLabel() {
+      const locale = this.$i18n?.locale === 'zh' ? 'zh-CN' : 'en-US'
+      return new Date(this.calYear, this.calMonth, 1).toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'long'
+      })
+    },
+    weekdayLabels() {
+      if (this.$i18n?.locale === 'zh') {
+        return ['日', '一', '二', '三', '四', '五', '六']
+      }
+      return ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+    },
+    selectedDayRecords() {
+      return this.dayRecords(this.selectedDay)
+    },
+    selectedDayLabel() {
+      if (!this.selectedDay) return ''
+      const locale = this.$i18n?.locale === 'zh' ? 'zh-CN' : 'en-US'
+      return new Date(this.calYear, this.calMonth, this.selectedDay).toLocaleDateString(locale, {
+        month: 'short',
+        day: 'numeric'
+      })
     }
   },
   mounted() {
-    this.hydrate()
+    this.refreshData()
+  },
+  activated() {
+    this.refreshData()
   },
   methods: {
-    hydrate() {
-      const d = getDraft()
-      this.narrative = typeof d.narrative === 'string' ? d.narrative : ''
-      const isZh = this.$i18n?.locale === 'zh'
-      this.moodObj = findMoodById(d.moodEmojiId || d.mood, isZh)
-      if (d.inputImageDataUrl) {
-        this.refPreview = d.inputImageDataUrl
-        this.refDataUrl = d.inputImageDataUrl
+    refreshData() {
+      this.refreshing = true
+      const sorted = getRecordsSorted()
+      this.totalRecords = sorted.length
+      this.recentPosters = getRecentPosters(4)
+      this.monthGroups = groupRecordsByMonth(this.$i18n?.locale)
+      this.recordsByDay = getRecordsForCalendarMonth(this.calYear, this.calMonth)
+      const today = new Date()
+      if (this.calYear === today.getFullYear() && this.calMonth === today.getMonth()) {
+        this.selectedDay = today.getDate()
+      } else if (!this.recordsByDay.has(this.selectedDay)) {
+        const first = [...this.recordsByDay.keys()].sort((a, b) => a - b)[0]
+        this.selectedDay = first || 1
       }
-      const sid = this.moodObj?.id
-      if (sid && !quickMoodIds.includes(sid)) {
-        this.showExtraMoods = true
+      setTimeout(() => {
+        this.refreshing = false
+      }, 200)
+    },
+    dayRecords(day) {
+      return this.recordsByDay.get(day) || []
+    },
+    shiftMonth(delta) {
+      let m = this.calMonth + delta
+      let y = this.calYear
+      if (m < 0) {
+        m = 11
+        y -= 1
+      } else if (m > 11) {
+        m = 0
+        y += 1
       }
+      this.calMonth = m
+      this.calYear = y
+      this.recordsByDay = getRecordsForCalendarMonth(y, m)
+      this.selectedDay = 1
     },
-    selectMood(m) {
-      this.moodObj = m
+    selectDay(day) {
+      this.selectedDay = day
     },
-    persist() {
-      setDraft({
-        narrative: this.narrative,
-        moodEmojiId: this.moodObj ? this.moodObj.id : null,
-        moodLabel: this.moodObj ? this.moodObj.label : '',
-        mood: this.moodObj ? this.moodObj.id : ''
-      })
+    formatShortDate(ts) {
+      const d = new Date(ts || Date.now())
+      const locale = this.$i18n?.locale === 'zh' ? 'zh-CN' : 'en-US'
+      return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
     },
-    clearLocal() {
-      this.narrative = ''
-      this.moodObj = null
-      this.clearRef()
-      setDraft({
-        narrative: '',
-        moodEmojiId: null,
-        moodLabel: '',
-        mood: '',
-        imageVisionCache: null,
-        sceneDescription: '',
-        diaryCaption: '',
-        quotaSentence: ''
-      })
+    excerpt(s, max = 56) {
+      const t = (s || '').trim()
+      if (!t) return '—'
+      if (t.length <= max) return t
+      return t.slice(0, max) + '…'
     },
-    clearRef() {
-      this.refPreview = null
-      this.refFile = null
-      this.refDataUrl = null
-      setDraft({
-        inputImageDataUrl: null,
-        inputImagePath: null,
-        inputImageName: '',
-        imageVisionCache: null,
-        sceneDescription: '',
-        diaryCaption: '',
-        quotaSentence: ''
-      })
+    openPreview(url) {
+      this.previewPoster = url || ''
+      this.previewOpen = !!this.previewPoster
     },
-    onRefFile(ev) {
-      const file = ev.target.files && ev.target.files[0]
-      ev.target.value = ''
-      if (!file || !file.type.startsWith('image/')) return
-      if (file.size > 6 * 1024 * 1024) {
-        ElMessage.warning(this.$t('moodDiary.refTooLarge'))
+    openRecord(r) {
+      if (r.posterDataUrl) {
+        this.openPreview(r.posterDataUrl)
         return
       }
-      this.refFile = file
-      const reader = new FileReader()
-      reader.onload = () => {
-        this.refPreview = reader.result
-        this.refDataUrl = reader.result
-        setDraft({
-          inputImageDataUrl: reader.result,
-          inputImagePath: dataUrlToPathHint(file.name),
-          inputImageName: file.name || 'image.jpg',
-          imageVisionCache: null
-        })
-      }
-      reader.readAsDataURL(file)
+      this.$router.push('/mood-diary/book')
     },
-    async nextToGenerate() {
-      const safe = checkTextSafe(this.narrative, (k) => this.$t(k))
-      if (!safe.ok) {
-        ElMessage.warning(safe.message)
-        return
+    onPosterClick(slot) {
+      if (slot.posterDataUrl) {
+        this.openPreview(slot.posterDataUrl)
       }
-      const cfg = getActiveMoodEndpoints()
-
-      const patch = {
-        narrative: this.narrative.trim(),
-        moodEmojiId: this.moodObj ? this.moodObj.id : null,
-        moodLabel: this.moodObj ? this.moodObj.label : '',
-        mood: this.moodObj ? this.moodObj.id : ''
-      }
-
-      if (this.refDataUrl && !cfg.captionImageDescribeEndpoint) {
-        console.warn('[mood-diary] 未配置 caption/image-describe，跳过画面描述与日记配文')
-      }
-
-      if (this.refDataUrl && cfg.captionImageDescribeEndpoint) {
-        this.describeBusy = true
-        try {
-          const file =
-            this.refFile ||
-            (await dataUrlToFile(this.refDataUrl, this.refImageBasename()))
-          const describeResult = await fetchCaptionImageDescribe(
-            file,
-            {
-              hint: this.narrative.slice(0, 500),
-              extraHint: this.narrative.slice(0, 500),
-              narrative: this.narrative.trim(),
-              moodLabel: this.moodObj ? this.moodObj.label : '',
-              targetLength: 90,
-              generateDiaryCaption: true,
-              filename: this.refImageBasename()
-            },
-            cfg.captionImageDescribeEndpoint
-          )
-          Object.assign(patch, imageDescribeResultToDraftPatch(describeResult))
-        } catch (e) {
-          ElMessage.error(e.message || this.$t('moodDiary.describeFailed'))
-          this.describeBusy = false
-          return
-        }
-        this.describeBusy = false
-      }
-
-      setDraft(patch)
-      this.$router.push('/mood-diary/generate')
     },
-    refImageBasename() {
-      return getDraft().inputImageName || 'reference.jpg'
+    clearSearch() {
+      this.searchQuery = ''
     }
   }
 }
 </script>
 
 <style scoped>
-.md-card.md-narrative {
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.md-dashboard {
+  --md-accent: #20c997;
+  --md-accent-soft: rgba(32, 201, 151, 0.12);
+  --md-surface: #f8fafc;
+  --md-border: #e8ecf1;
   width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  flex: 1;
-  min-height: 0;
-  align-self: center;
+  height: 100%;
+  min-height: calc(100vh - 140px);
   display: flex;
-  flex-direction: column;
-  background: #fff;
-  border-radius: 14px;
-  padding: 22px 22px 26px;
-  box-shadow: 0 8px 28px rgba(42, 31, 66, 0.07);
+  flex-direction: row;
+  align-items: stretch;
+  gap: 18px;
   box-sizing: border-box;
 }
 
-.page-title-row {
-  flex-shrink: 0;
-  display: grid;
-  grid-template-columns: minmax(44px, 1fr) minmax(0, auto) minmax(44px, 1fr);
-  align-items: start;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.page-title-side {
-  min-height: 30px;
-}
-
-.page-title-side--end {
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-}
-
-.md-title {
-  margin: 0;
-  justify-self: center;
-  grid-column: 2;
-  text-align: center;
-  font-size: 19px;
-  font-weight: 600;
-  color: #2b2640;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-}
-
-.clear-entry-btn {
-  flex-shrink: 0;
-  border: 1px solid #dcd7e8;
-  background: #faf9fc;
-  color: #6b6578;
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-.clear-entry-btn:hover {
-  border-color: #b9a9d6;
-  color: #574a73;
+.dash-now-card {
+  width: 30vw;
+  flex: 0 0 30vw;
+  height: 100%;
+  min-height: 0;
   background: #fff;
-}
-
-.mood-zone {
-  flex-shrink: 0;
-  margin-bottom: 22px;
-  padding: 18px 14px 20px;
-  border-radius: 12px;
-  background: linear-gradient(165deg, #f9f8ff 0%, #fafbfd 52%, #fff 100%);
-  border: 1px solid rgba(129, 103, 169, 0.12);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
-}
-
-.primary-moods {
-  flex-shrink: 0;
+  border-radius: 24px;
+  border: 1px solid var(--md-border);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 36px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
   display: flex;
+  flex-direction: column;
+}
+
+.dash-main-card {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: linear-gradient(180deg, #fafbfc 0%, #fff 12%);
+  border-radius: 24px;
+  border: 1px solid var(--md-border);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 36px rgba(15, 23, 42, 0.07);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dash-block {
+  flex-shrink: 0;
+  padding: 22px 24px;
+  box-sizing: border-box;
+}
+
+.dash-block--posters {
+  padding-bottom: 20px;
+}
+
+.dash-split-row {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 14px;
+  padding: 0 16px 16px;
+}
+
+.dash-split-row .dash-block--calendar,
+.dash-split-row .dash-block--anthology {
+  border-bottom: none;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 18px 20px;
+  background: var(--md-surface);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+.dash-block-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 18px 24px;
   margin-bottom: 16px;
 }
 
-.mood-btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.15s ease, filter 0.15s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mood-btn:hover {
-  transform: scale(1.06);
-}
-
-.mood-btn:focus-visible {
-  outline: 2px solid #8167a9;
-  outline-offset: 4px;
-  border-radius: 8px;
-}
-
-.mood-btn.active {
-  transform: scale(1.12);
-  filter: drop-shadow(0 2px 8px rgba(129, 103, 169, 0.35));
-}
-
-.mood-btn-primary {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 6px;
-}
-
-.mood-btn-primary img {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  display: block;
-}
-
-.more-moods-block {
-  flex-shrink: 0;
-  margin-bottom: 0;
-  padding-top: 2px;
-  text-align: center;
-}
-
-.more-moods-block::before {
-  content: '';
-  display: block;
-  width: 44px;
-  height: 1px;
-  margin: 0 auto 14px;
-  background: linear-gradient(90deg, transparent, rgba(129, 103, 169, 0.22), transparent);
-}
-
-.linkish {
-  border: none;
-  background: rgba(129, 103, 169, 0.08);
-  padding: 6px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #684f9e;
-  cursor: pointer;
-  border-radius: 999px;
-  text-decoration: none;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.12s ease;
-}
-
-.linkish:hover {
-  background: rgba(129, 103, 169, 0.14);
-  color: #4f3a78;
-}
-
-.linkish:active {
-  transform: scale(0.98);
-}
-
-.extra-moods {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 14px 12px;
-  margin-top: 18px;
-  padding: 4px 0 0;
-  justify-items: center;
-}
-
-.mood-btn-extra {
-  min-height: 0;
-  padding: 4px;
+.dash-block-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  gap: 8px;
+}
+
+.dash-block-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--md-accent);
+  flex-shrink: 0;
+}
+
+.dash-block-sub {
+  margin: 6px 0 0 12px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.dash-block-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.section-link {
+  font-size: 13px;
+  color: var(--md-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.section-link--pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--md-accent-soft);
+  font-weight: 600;
+  font-size: 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.section-link--pill:hover {
+  background: var(--md-accent);
+  color: #fff;
+  text-decoration: none;
+}
+
+.section-count {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.dash-search-wrap {
+  min-width: 140px;
+  max-width: 220px;
+  flex: 1;
+}
+
+.dash-search-input {
+  width: 100%;
+  padding: 9px 14px 9px 36px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #334155;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3 3'/%3E%3C/svg%3E")
+    12px center no-repeat;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-sizing: border-box;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-search-input:focus {
+  outline: none;
+  border-color: rgba(32, 201, 151, 0.35);
+  box-shadow: 0 0 0 3px var(--md-accent-soft);
+}
+
+.btn-filters {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.btn-filters:hover {
+  color: var(--md-accent);
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.mood-btn-extra img {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-  display: block;
+.cal-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  border: none;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.mood-btn-label {
-  font-size: 11px;
-  line-height: 1.2;
-  color: #5c6270;
+.cal-nav-btn:hover {
+  background: var(--md-accent-soft);
+  color: #0f766e;
+}
+
+.cal-month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 96px;
   text-align: center;
-  word-break: break-word;
+}
+
+.cal-shell {
+  padding: 14px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.dash-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.dash-icon-btn:disabled {
+  opacity: 0.55;
+}
+
+.dash-bell {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px 8px 0 0;
+  border: 2px solid #64748b;
+  border-bottom: none;
+  position: relative;
+}
+
+.dash-bell::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  width: 100%;
   max-width: 100%;
 }
 
-.mood-btn-label-primary {
+.cal-day {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-day--muted {
+  pointer-events: none;
+}
+
+.cal-day:not(:disabled):not(.cal-day--muted) {
+  cursor: pointer;
+}
+
+.cal-day--has .cal-day-num {
+  background: var(--md-accent-soft);
+  color: #0d9488;
+  font-weight: 600;
+}
+
+.cal-day--selected .cal-day-num {
+  background: linear-gradient(135deg, #2dd4a8 0%, var(--md-accent) 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(32, 201, 151, 0.35);
+}
+
+.cal-day:not(:disabled):not(.cal-day--muted):hover .cal-day-num {
+  background: #f1f5f9;
+}
+
+.cal-day--selected:hover .cal-day-num {
+  background: linear-gradient(135deg, #2dd4a8 0%, var(--md-accent) 100%);
+}
+
+.cal-day-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
-  font-weight: 500;
+  color: #475569;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.diary-input-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
+.cal-day-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.cal-day-detail-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.cal-day-entry {
+  width: 100%;
+  max-width: 400px;
   display: flex;
-  flex-direction: column;
-  margin-bottom: 0;
-  border: 1px solid #dcdfe6;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.96);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.diary-input-wrap:focus-within {
-  border-color: rgba(129, 103, 169, 0.4);
-  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.1);
-}
-
-.diary-entry-shell {
-  position: relative;
-  z-index: 2;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.diary-entry-inner-tools {
-  position: absolute;
-  left: var(--diary-toolbar-inset, 14px);
-  bottom: var(--diary-toolbar-inset, 14px);
-  display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 8px;
-  z-index: 5;
-  pointer-events: none;
-}
-
-.diary-entry-inner-tools .attach-img-btn,
-.diary-entry-inner-tools .ref-thumb-inline {
-  pointer-events: auto;
-}
-
-.attach-img-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border: 1px solid rgba(144, 147, 153, 0.45);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #909399;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: 10px;
+  background: #f8fafc;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(31, 35, 41, 0.06);
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  font-size: 12px;
+  color: #334155;
+  text-align: left;
 }
 
-.attach-img-btn:hover {
-  border-color: #8167a9;
-  color: #8167a9;
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.attach-img-btn:focus-visible {
-  outline: 2px solid #8167a9;
-  outline-offset: 2px;
-}
-
-.hidden-file {
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-}
-
-.ref-thumb-inline {
-  position: relative;
-  width: 38px;
-  flex-shrink: 0;
-}
-
-.ref-thumb-inline img {
-  width: 38px;
-  height: 38px;
+.cal-day-entry img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(235, 238, 245, 0.95);
-  display: block;
-  box-shadow: 0 1px 4px rgba(31, 35, 41, 0.06);
 }
 
-.ref-clear-chip {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: #606266;
-  color: #fff;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.poster-showcase {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
 }
 
-.ref-clear-chip:hover {
-  background: #e14a4a;
-}
-
-.diary-mood-bg {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 100px;
-  height: 100px;
-  transform: translate(-50%, -50%);
-  object-fit: contain;
-  opacity: 0.28;
-  pointer-events: none;
-  z-index: 1;
-  filter: saturate(0.92);
-}
-
-.diary-entry-input {
-  width: 100%;
+.poster-card {
   position: relative;
-  z-index: 2;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.diary-entry-input :deep(.el-textarea),
-.diary-entry-input :deep(.el-input__wrapper) {
-  flex: 1;
-  min-height: 0;
-}
-
-.diary-entry-input :deep(.el-textarea) {
-  display: flex;
-  flex-direction: column;
-}
-
-.diary-entry-input :deep(.el-textarea__inner) {
-  background: transparent;
-  padding-bottom: 56px;
-  flex: 1;
-  min-height: 220px;
-  resize: vertical;
   border: none;
-  border-radius: 12px;
+  padding: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  max-height: 240px;
+  background: #e2e8f0;
+  cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.06),
+    0 8px 24px rgba(15, 23, 42, 0.08);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.poster-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.08),
+    0 16px 32px rgba(32, 201, 151, 0.12);
+}
+
+.poster-card--empty {
+  background: #e2e8f0;
+  box-shadow: none;
+  cursor: default;
+}
+
+.poster-card--empty:hover {
+  transform: none;
+  background: #e2e8f0;
   box-shadow: none;
 }
 
-.diary-entry-input :deep(.el-textarea__inner:focus),
-.diary-entry-input :deep(.el-textarea__inner:focus-visible) {
-  outline: none;
+.poster-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-@media (max-width: 767px) {
-  .diary-entry-inner-tools {
-    --diary-toolbar-inset: 12px;
-  }
-
-  .diary-entry-input :deep(.el-textarea__inner) {
-    padding-bottom: 54px;
-    min-height: 200px;
-  }
+.poster-card-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #e2e8f0;
 }
 
-.row-actions {
-  flex-shrink: 0;
-  margin-top: auto;
-  padding-top: 22px;
+.poster-card-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 32px 14px 14px;
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.75) 100%);
+  color: #fff;
+  font-size: 11px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.poster-card-mood {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+}
+
+.month-block {
+  margin-bottom: 16px;
+}
+
+.month-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.anthology-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anthology-row {
+  width: 100%;
+  display: flex;
   align-items: center;
-  gap: 12px 14px;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.anthology-row:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.anthology-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.anthology-thumb--empty {
+  background: linear-gradient(135deg, #e2e8f0, #f1f5f9);
+}
+
+.anthology-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.anthology-date {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.anthology-caption {
+  font-size: 13px;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anthology-mood {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #0d9488;
+  background: var(--md-accent-soft);
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.dash-empty {
+  margin: 8px 0 0;
+  padding: 36px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.dash-empty-icon {
+  font-size: 40px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.dash-empty-text {
+  margin: 0;
+  max-width: 280px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.dash-empty-cta {
+  margin-top: 4px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--md-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(32, 201, 151, 0.3);
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.dash-empty-cta:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.dlg-img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* 手机端：此刻卡片 100% 宽，上下堆叠 */
+@media (max-width: 768px) {
+  .md-dashboard {
+    flex-direction: column;
+    min-height: auto;
+    height: auto;
+  }
+
+  .dash-now-card {
+    width: 100%;
+    flex: none;
+    height: auto;
+    min-height: min(72vh, 640px);
+    max-height: none;
+  }
+
+  .dash-main-card {
+    width: 100%;
+    flex: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .dash-split-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-split-row .dash-block--calendar,
+  .dash-split-row .dash-block--anthology {
+    padding: 18px 16px;
+  }
+
+  .poster-showcase {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .poster-showcase {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-block-tools {
+    width: 100%;
+  }
+
+  .dash-search-wrap {
+    max-width: none;
+    width: 100%;
+  }
 }
 </style>
