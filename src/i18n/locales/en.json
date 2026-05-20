@@ -292,6 +292,7 @@
     "selectedMood": "Selected mood",
     "entryPlaceholder": "Describe your current mood (optional reference image).",
     "generating": "Generating...",
+    "posterLoadingHint": "Creating your mood poster…",
     "emptyPrompt": "Please write your diary content first",
     "generateSuccess": "Illustration generated successfully",
     "generateFailed": "Failed to generate illustration, please try again",

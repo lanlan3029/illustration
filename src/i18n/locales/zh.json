@@ -307,6 +307,7 @@
     "selectedMood": "已选择心情",
     "entryPlaceholder": "描述您此刻的心情（可添加参考图片）。",
     "generating": "生成中...",
+    "posterLoadingHint": "正在生成心情海报，请稍候…",
     "emptyPrompt": "请先输入日记内容",
     "generateSuccess": "插画生成成功",
     "generateFailed": "插画生成失败，请重试",

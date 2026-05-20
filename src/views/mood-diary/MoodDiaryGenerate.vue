@@ -32,14 +32,25 @@
       </div>
     </div>
 
-    <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
+    <p v-if="stepLog && !generating" class="step-log">{{ stepLog }}</p>
 
     <div class="toolbar">
-      <el-button type="primary" :loading="generating" @click="runPipeline">
+      <el-button type="primary" :disabled="generating" @click="runPipeline">
         {{ generating ? $t('moodDiary.generating') : $t('moodDiary.startGeneratePipeline') }}
       </el-button>
-      <el-button v-if="posterUrl" @click="downloadPoster">{{ $t('moodDiary.downloadMood') }}</el-button>
+      <el-button v-if="posterUrl" :disabled="generating" @click="downloadPoster">{{ $t('moodDiary.downloadMood') }}</el-button>
     </div>
+
+    <teleport to="body">
+      <transition name="md-book-fade">
+        <div v-if="generating" class="mood-book-overlay" role="status" aria-live="polite">
+          <div class="mood-book-overlay-inner">
+            <BookFlipLoader :aria-label="$t('moodDiary.posterLoadingHint')" />
+            <p class="mood-book-overlay-text">{{ stepLog || $t('moodDiary.posterLoadingHint') }}</p>
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
@@ -66,9 +77,11 @@ import {
 } from '@/utils/moodDiary/diaryCaption'
 import { MOOD_ILLUSTRATION_TYPE } from '@/utils/moodDiary/constants'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
+import BookFlipLoader from '@/components/moodDiary/BookFlipLoader.vue'
 
 export default {
   name: 'MoodDiaryGenerate',
+  components: { BookFlipLoader },
   data() {
     return {
       selectedStyleId: 1,
@@ -495,5 +508,46 @@ export default {
 .save-mood-btn.is-loading {
   opacity: 0.75;
   cursor: wait;
+}
+
+.mood-book-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.mood-book-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 32px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 40px rgba(90, 70, 120, 0.12);
+}
+
+.mood-book-overlay-text {
+  margin: 0;
+  font-size: 14px;
+  color: #5c4f6e;
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.45;
+}
+
+.md-book-fade-enter-active,
+.md-book-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.md-book-fade-enter-from,
+.md-book-fade-leave-to {
+  opacity: 0;
 }
 </style>
