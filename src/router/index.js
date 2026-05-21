@@ -298,9 +298,10 @@ const routes = [{
             },
             {
                 path: 'write',
-                name: 'mood-diary-write',
-                component: () =>
-                    import ( /* webpackChunkName: "mood-diary-write" */ '../views/mood-diary/MoodDiaryWrite.vue')
+                redirect: (to) => ({
+                    path: '/mood-diary/narrative',
+                    query: { ...to.query, write: '1' }
+                })
             },
             {
                 path: 'generate',
@@ -313,12 +314,6 @@ const routes = [{
                 name: 'mood-diary-book',
                 component: () =>
                     import ( /* webpackChunkName: "mood-diary-book" */ '../views/mood-diary/MoodDiaryBook.vue')
-            },
-            {
-                path: 'insights',
-                name: 'mood-diary-insights',
-                component: () =>
-                    import ( /* webpackChunkName: "mood-diary-insights" */ '../views/mood-diary/MoodDiaryInsights.vue')
             },
             {
                 path: 'recap',

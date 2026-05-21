@@ -1,0 +1,67 @@
+<template>
+  <el-dialog
+    v-model="visible"
+    :title="$t('moodDiary.writeDialogTitle')"
+    width="min(580px, 94vw)"
+    class="mood-write-dialog"
+    modal-class="mood-write-overlay"
+    align-center
+    append-to-body
+    destroy-on-close
+    :close-on-click-modal="false"
+    @closed="onClosed"
+  >
+    <MoodDiaryNowPanel in-dialog @submitted="onSubmitted" />
+  </el-dialog>
+</template>
+
+<script>
+import MoodDiaryNowPanel from '@/components/moodDiary/MoodDiaryNowPanel.vue'
+
+export default {
+  name: 'MoodDiaryWriteDialog',
+  components: { MoodDiaryNowPanel },
+  data() {
+    return {
+      visible: false
+    }
+  },
+  methods: {
+    open() {
+      this.visible = true
+    },
+    close() {
+      this.visible = false
+    },
+    onSubmitted() {
+      this.close()
+    },
+    onClosed() {
+      this.visible = false
+    }
+  }
+}
+</script>
+
+<style>
+.mood-write-overlay {
+  background-color: rgba(0, 0, 0, 0.62) !important;
+}
+
+.mood-write-dialog .el-dialog {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.mood-write-dialog .el-dialog__body {
+  padding-top: 8px;
+  max-height: min(82vh, 860px);
+  overflow-y: auto;
+}
+
+.mood-write-dialog .now-panel--dialog {
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+}
+</style>

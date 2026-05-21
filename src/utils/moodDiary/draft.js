@@ -27,7 +27,18 @@ function defaultDraft() {
     diaryCaption: '',
     matching: null,
     rawIllustrationUrl: null,
-    composedPosterDataUrl: null
+    composedPosterDataUrl: null,
+    /** photo = 原图海报；illustration = AI 插画海报 */
+    posterMode: 'illustration',
+    posterTemplateId: 'creamCard',
+    colorBlockPlacement: 'top',
+    imagePlacement: 'below',
+    dominantHex: '',
+    describeInputHash: '',
+    artStyleElementDetails: '',
+    /** Dashboard poster slot loading while pipeline runs */
+    posterGenerating: false,
+    posterGeneratingSlot: 0
   }
 }
 

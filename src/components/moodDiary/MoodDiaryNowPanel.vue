@@ -1,93 +1,148 @@
 <template>
-  <div class="now-panel">
-    <div class="now-panel-head">
-      <h2 class="now-panel-title">{{ $t('moodDiary.navNow') }}</h2>
+  <div class="now-panel" :class="[`now-panel--${atmosphere.key}`, { 'now-panel--has-mood': moodObj, 'now-panel--dialog': inDialog }]" :style="atmosphereStyle">
+    <header v-if="narrative.trim() || moodObj" class="now-hero now-hero--toolbar">
       <button
-        v-if="narrative.trim() || moodObj"
         type="button"
         class="now-clear-btn"
         @click="clearLocal"
       >
         {{ $t('moodDiary.clearEntry') }}
       </button>
-    </div>
+    </header>
 
-    <section class="now-mood-zone" :aria-label="$t('moodDiary.question')">
-      <p class="now-question">{{ $t('moodDiary.question') }}</p>
-      <div class="now-primary-moods" role="group">
-        <button
-          v-for="m in quickMoods"
-          :key="m.id"
-          type="button"
-          class="now-mood-btn"
-          :class="{ active: moodObj && moodObj.id === m.id }"
-          @click="selectMood(m)"
-        >
-          <img :src="m.src" :alt="m.label" />
-          <span>{{ m.label }}</span>
+    <section class="now-mood-hero" :aria-label="$t('moodDiary.question')">
+      <template v-if="moodObj && !showMoodPicker">
+        <button type="button" class="now-mood-featured" @click="showMoodPicker = true">
+          <img :src="moodObj.src" :alt="moodObj.label" class="now-mood-featured-img" />
+          <span class="now-mood-featured-label">{{ moodObj.label }}</span>
+          <span class="now-mood-featured-change">{{ $t('moodDiary.changeMood') }}</span>
         </button>
-      </div>
-      <button type="button" class="now-more-btn" @click="showExtraMoods = !showExtraMoods">
-        {{ showExtraMoods ? $t('moodDiary.collapseMoreMoods') : $t('moodDiary.moreMoods') }}
-      </button>
-      <div v-show="showExtraMoods" class="now-extra-moods">
-        <button
-          v-for="m in extraMoods"
-          :key="m.id"
-          type="button"
-          class="now-mood-btn now-mood-btn--sm"
-          :class="{ active: moodObj && moodObj.id === m.id }"
-          @click="selectMood(m)"
-        >
-          <img :src="m.src" :alt="m.label" />
+      </template>
+      <template v-else>
+        <div class="now-primary-moods" role="group">
+          <button
+            v-for="m in quickMoods"
+            :key="m.id"
+            type="button"
+            class="now-mood-btn"
+            :class="{ 'now-mood-btn--picked': moodObj && moodObj.id === m.id }"
+            @click="selectMood(m)"
+          >
+            <span class="now-mood-btn-ring">
+              <img :src="m.src" :alt="m.label" />
+            </span>
+            <span class="now-mood-btn-label">{{ m.label }}</span>
+          </button>
+        </div>
+        <button type="button" class="now-more-btn" @click="showExtraMoods = !showExtraMoods">
+          {{ showExtraMoods ? $t('moodDiary.collapseMoreMoods') : $t('moodDiary.moreMoods') }}
         </button>
-      </div>
+        <div v-show="showExtraMoods" class="now-extra-moods">
+          <button
+            v-for="m in extraMoods"
+            :key="m.id"
+            type="button"
+            class="now-mood-btn"
+            :class="{ 'now-mood-btn--picked': moodObj && moodObj.id === m.id }"
+            @click="selectMood(m)"
+          >
+            <span class="now-mood-btn-ring">
+              <img :src="m.src" :alt="m.label" />
+            </span>
+            <span class="now-mood-btn-label">{{ m.label }}</span>
+          </button>
+        </div>
+      </template>
     </section>
 
-    <div class="now-input-wrap">
-      <img v-if="moodObj" :src="moodObj.src" :alt="moodObj.label" class="now-mood-bg" />
-      <input
-        ref="refInput"
-        type="file"
-        accept="image/*"
-        class="hidden-file"
-        tabindex="-1"
-        @change="onRefFile"
-      />
-      <el-input
-        v-model="narrative"
-        type="textarea"
-        :rows="6"
-        :placeholder="$t('moodDiary.entryPlaceholder')"
-        maxlength="1000"
-        show-word-limit
-        class="now-entry-input"
-      />
-      <div class="now-input-tools">
-        <button
-          type="button"
-          class="now-attach-btn"
-          :title="$t('moodDiary.pickRefImage')"
-          @mousedown.prevent
-          @click="$refs.refInput.click()"
+    <div class="now-compose-grid">
+      <div class="now-compose-main">
+        <section
+          class="now-memory-zone"
+          :class="{
+            'now-memory-zone--accent': moodObj,
+            'now-memory-zone--drag': refDragOver,
+            'now-memory-zone--filled': !!refPreview
+          }"
+          :aria-label="$t('moodDiary.refImageOptional')"
+          @dragover.prevent="onRefDragOver"
+          @dragleave.prevent="onRefDragLeave"
+          @drop.prevent="onRefDrop"
         >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="M21 15l-5-5L5 21" />
-          </svg>
-        </button>
-        <div v-if="refPreview" class="now-ref-thumb">
-          <img :src="refPreview" alt="" />
-          <button type="button" class="now-ref-clear" @click.stop="clearRef">×</button>
+          <input
+            ref="refInput"
+            type="file"
+            accept="image/*"
+            class="hidden-file"
+            tabindex="-1"
+            @change="onRefFile"
+          />
+          <p class="now-memory-label">{{ $t('moodDiary.refImageOptional') }}</p>
+
+          <div v-if="refPreview" class="now-ref-preview">
+            <div class="now-ref-preview-media">
+              <img :src="refPreview" class="now-ref-preview-img" alt="" />
+            </div>
+            <div class="now-ref-preview-bar">
+              <button type="button" class="now-ref-preview-btn" @click="$refs.refInput.click()">
+                {{ $t('moodDiary.replaceRefImage') }}
+              </button>
+              <button
+                type="button"
+                class="now-ref-preview-btn now-ref-preview-btn--ghost"
+                @click="clearRef"
+              >
+                {{ $t('moodDiary.removeRefImage') }}
+              </button>
+            </div>
+          </div>
+
+          <button
+            v-else
+            type="button"
+            class="now-memory-entry"
+            @click="$refs.refInput.click()"
+          >
+            <span class="now-memory-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="8.5" cy="10.5" r="1.5" fill="currentColor" stroke="none" />
+                <path d="M21 16l-5.5-5.5a2 2 0 0 0-2.8 0L3 18" />
+              </svg>
+            </span>
+            <span class="now-memory-title">{{ $t('moodDiary.pickRefImage') }}</span>
+            <span class="now-memory-hint">{{ $t('moodDiary.refUploadDragHint') }}</span>
+          </button>
+        </section>
+
+        <div class="now-input-wrap" :class="{ 'now-input-wrap--accent': moodObj }">
+          <el-input
+            v-model="narrative"
+            type="textarea"
+            :rows="5"
+            :placeholder="entryPlaceholder"
+            maxlength="240"
+            show-word-limit
+            class="now-entry-input"
+          />
+        </div>
+
+        <div class="now-panel-foot">
+          <el-tooltip :content="$t('moodDiary.submitNeedNarrative')" :disabled="canSubmit" placement="top">
+            <span class="now-submit-wrap">
+              <el-button
+                type="primary"
+                class="now-submit"
+                :class="`now-submit--${atmosphere.key}`"
+                :disabled="!canSubmit"
+                @click="nextToGenerate"
+              >
+                {{ $t('moodDiary.actionGenerate') }}
+              </el-button>
+            </span>
+          </el-tooltip>
         </div>
       </div>
-    </div>
-
-    <div class="now-panel-foot">
-      <el-button type="primary" class="now-submit" :loading="describeBusy" @click="nextToGenerate">
-        {{ $t('moodDiary.nextToGenerate') }}
-      </el-button>
     </div>
   </div>
 </template>
@@ -95,20 +150,21 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
-import {
-  dataUrlToFile,
-  fetchCaptionImageDescribe,
-  getActiveMoodEndpoints,
-  imageDescribeResultToDraftPatch
-} from '@/utils/moodDiary/api'
 import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
 import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
+import {
+  atmosphereCssVars,
+  getMoodAtmosphere
+} from '@/utils/moodDiary/moodTheme'
 
 const HIDDEN_EXTRA_MOOD_IDS = new Set(['heart', 'thumbs-up', 'star-eyes'])
 
 export default {
   name: 'MoodDiaryNowPanel',
-  emits: ['submitted'],
+  props: {
+    inDialog: { type: Boolean, default: false }
+  },
+  emits: ['submitted', 'mood-change'],
   data() {
     return {
       narrative: '',
@@ -117,10 +173,26 @@ export default {
       refFile: null,
       refDataUrl: null,
       showExtraMoods: false,
-      describeBusy: false
+      showMoodPicker: false,
+      refDragOver: false
     }
   },
   computed: {
+    hasNarrative() {
+      return !!(this.narrative || '').trim()
+    },
+    canSubmit() {
+      return this.hasNarrative
+    },
+    atmosphere() {
+      return getMoodAtmosphere(this.moodObj?.id)
+    },
+    atmosphereStyle() {
+      return atmosphereCssVars(this.moodObj?.id)
+    },
+    entryPlaceholder() {
+      return this.$t(this.atmosphere.placeholderKey)
+    },
     moods() {
       const isZh = this.$i18n?.locale === 'zh'
       return resolveMoodList(isZh)
@@ -138,12 +210,14 @@ export default {
     narrative() {
       this.persist()
     },
-    moodObj() {
+    moodObj(val) {
       this.persist()
+      this.$emit('mood-change', val ? val.id : null)
     }
   },
   mounted() {
     this.hydrate()
+    this.$emit('mood-change', this.moodObj ? this.moodObj.id : null)
   },
   methods: {
     hydrate() {
@@ -162,6 +236,39 @@ export default {
     },
     selectMood(m) {
       this.moodObj = m
+      this.showExtraMoods = false
+      this.showMoodPicker = false
+    },
+    applyRefFile(file) {
+      if (!file || !file.type.startsWith('image/')) return
+      if (file.size > 6 * 1024 * 1024) {
+        ElMessage.warning(this.$t('moodDiary.refTooLarge'))
+        return
+      }
+      this.refFile = file
+      const reader = new FileReader()
+      reader.onload = () => {
+        this.refPreview = reader.result
+        this.refDataUrl = reader.result
+        setDraft({
+          inputImageDataUrl: reader.result,
+          inputImagePath: dataUrlToPathHint(file.name),
+          inputImageName: file.name || 'image.jpg',
+          imageVisionCache: null
+        })
+      }
+      reader.readAsDataURL(file)
+    },
+    onRefDragOver() {
+      this.refDragOver = true
+    },
+    onRefDragLeave() {
+      this.refDragOver = false
+    },
+    onRefDrop(ev) {
+      this.refDragOver = false
+      const file = ev.dataTransfer?.files?.[0]
+      if (file) this.applyRefFile(file)
     },
     persist() {
       setDraft({
@@ -174,6 +281,7 @@ export default {
     clearLocal() {
       this.narrative = ''
       this.moodObj = null
+      this.showMoodPicker = false
       this.clearRef()
       setDraft({
         narrative: '',
@@ -203,66 +311,27 @@ export default {
     onRefFile(ev) {
       const file = ev.target.files && ev.target.files[0]
       ev.target.value = ''
-      if (!file || !file.type.startsWith('image/')) return
-      if (file.size > 6 * 1024 * 1024) {
-        ElMessage.warning(this.$t('moodDiary.refTooLarge'))
-        return
-      }
-      this.refFile = file
-      const reader = new FileReader()
-      reader.onload = () => {
-        this.refPreview = reader.result
-        this.refDataUrl = reader.result
-        setDraft({
-          inputImageDataUrl: reader.result,
-          inputImagePath: dataUrlToPathHint(file.name),
-          inputImageName: file.name || 'image.jpg',
-          imageVisionCache: null
-        })
-      }
-      reader.readAsDataURL(file)
+      if (file) this.applyRefFile(file)
     },
     async nextToGenerate() {
+      if (!this.canSubmit) {
+        ElMessage.info(this.$t('moodDiary.submitNeedNarrative'))
+        return
+      }
       const safe = checkTextSafe(this.narrative, (k) => this.$t(k))
       if (!safe.ok) {
         ElMessage.warning(safe.message)
         return
       }
-      const cfg = getActiveMoodEndpoints()
-      const patch = {
+      setDraft({
         narrative: this.narrative.trim(),
         moodEmojiId: this.moodObj ? this.moodObj.id : null,
         moodLabel: this.moodObj ? this.moodObj.label : '',
-        mood: this.moodObj ? this.moodObj.id : ''
-      }
-      if (this.refDataUrl && cfg.captionImageDescribeEndpoint) {
-        this.describeBusy = true
-        try {
-          const file =
-            this.refFile ||
-            (await dataUrlToFile(this.refDataUrl, getDraft().inputImageName || 'reference.jpg'))
-          const describeResult = await fetchCaptionImageDescribe(
-            file,
-            {
-              hint: this.narrative.slice(0, 500),
-              extraHint: this.narrative.slice(0, 500),
-              narrative: this.narrative.trim(),
-              moodLabel: this.moodObj ? this.moodObj.label : '',
-              targetLength: 90,
-              generateDiaryCaption: true,
-              filename: getDraft().inputImageName || 'reference.jpg'
-            },
-            cfg.captionImageDescribeEndpoint
-          )
-          Object.assign(patch, imageDescribeResultToDraftPatch(describeResult))
-        } catch (e) {
-          ElMessage.error(e.message || this.$t('moodDiary.describeFailed'))
-          this.describeBusy = false
-          return
-        }
-        this.describeBusy = false
-      }
-      setDraft(patch)
+        mood: this.moodObj ? this.moodObj.id : '',
+        composedPosterDataUrl: null,
+        rawIllustrationUrl: null,
+        posterGenerating: false
+      })
       this.$emit('submitted')
       this.$router.push('/mood-diary/generate')
     }
@@ -276,64 +345,56 @@ export default {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 18px 16px 20px;
+  padding: 22px 20px 24px;
   box-sizing: border-box;
+  background: var(--md-atm-hero, #fff);
+  transition: background 0.6s ease;
+  overflow-y: auto;
 }
 
-.now-panel-head {
+.now-hero {
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   margin-bottom: 12px;
 }
 
-.now-panel-title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.02em;
+.now-hero--toolbar {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .now-clear-btn {
   border: none;
-  background: #f1f5f9;
-  color: #64748b;
+  background: transparent;
+  color: var(--md-muted);
   font-size: 11px;
-  padding: 5px 11px;
+  padding: 4px 8px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease;
 }
 
 .now-clear-btn:hover {
-  background: #e2e8f0;
-  color: #334155;
+  color: var(--md-text);
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.now-mood-zone {
+.now-mood-hero {
   flex-shrink: 0;
-  margin-bottom: 12px;
-  padding: 14px 12px;
-  border-radius: 16px;
-  background: linear-gradient(165deg, #f8fafc 0%, #f0fdfa 100%);
-  border: 1px solid rgba(32, 201, 151, 0.1);
-}
-
-.now-question {
-  margin: 0 0 10px;
-  font-size: 13px;
-  color: #64748b;
-  text-align: center;
+  margin-bottom: 18px;
+  padding: 18px 14px 16px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
 .now-primary-moods {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 12px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: clamp(4px, 1.2vw, 10px);
 }
 
 .now-mood-btn {
@@ -343,144 +404,370 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
-  font-size: 10px;
-  color: #64748b;
-  transition: transform 0.15s ease;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 2px;
+  transition: transform 0.2s ease;
+}
+
+.now-mood-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+
+.now-mood-btn-ring {
+  width: clamp(52px, 11vw, 64px);
+  height: clamp(52px, 11vw, 64px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 6px 16px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.now-mood-btn--picked .now-mood-btn-ring,
+.now-panel--has-mood .now-mood-btn:hover .now-mood-btn-ring {
+  box-shadow:
+    0 0 0 3px var(--now-mood-soft, rgba(255, 255, 255, 0.5)),
+    0 0 0 5px var(--now-mood-accent, var(--md-accent));
 }
 
 .now-mood-btn img {
-  width: 44px;
-  height: 44px;
+  width: clamp(38px, 8vw, 46px);
+  height: clamp(38px, 8vw, 46px);
   object-fit: contain;
 }
 
-.now-mood-btn.active {
-  transform: scale(1.08);
+.now-mood-btn-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--md-text);
+  max-width: 100%;
+  text-align: center;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.now-mood-featured {
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.now-mood-featured-img {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.08));
+}
+
+.now-mood-featured-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--md-text);
+}
+
+.now-mood-featured-change {
+  font-size: 12px;
+  color: var(--md-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .now-more-btn {
   display: block;
-  margin: 10px auto 0;
+  margin: 14px auto 0;
   border: none;
-  background: #f1f5f9;
-  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 6px 14px;
   font-size: 11px;
-  color: #475569;
+  color: var(--md-muted);
   border-radius: 999px;
   cursor: pointer;
 }
 
 .now-extra-moods {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px 8px;
+  margin-top: 12px;
 }
 
-.now-mood-btn--sm img {
-  width: 32px;
-  height: 32px;
+.now-extra-moods .now-mood-btn {
+  flex: none;
+  width: 100%;
 }
 
-.now-input-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  border: none;
-  border-radius: 16px;
-  background: #fff;
-  overflow: hidden;
-  box-shadow:
-    inset 0 0 0 1px #e8ecf1,
-    0 2px 8px rgba(15, 23, 42, 0.04);
-}
-
-.now-mood-bg {
-  position: absolute;
-  left: 50%;
-  top: 45%;
-  width: 72px;
-  height: 72px;
-  transform: translate(-50%, -50%);
-  opacity: 0.22;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.now-entry-input {
+.now-compose-grid {
   flex: 1;
   min-height: 0;
-  z-index: 2;
-}
-
-.now-entry-input :deep(.el-textarea) {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
-.now-entry-input :deep(.el-textarea__inner) {
-  flex: 1;
-  min-height: 100px;
-  height: 100% !important;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding-bottom: 48px;
-  resize: none;
+.now-panel--dialog {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
-.now-input-tools {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
+.now-compose-main {
+  min-width: 0;
   display: flex;
-  gap: 6px;
-  z-index: 3;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.now-attach-btn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #64748b;
+.now-memory-zone {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.now-memory-zone--accent .now-memory-entry {
+  border-color: var(--now-mood-soft, rgba(94, 184, 232, 0.35));
+  background: var(--now-mood-soft, rgba(248, 250, 252, 0.9));
+}
+
+.now-memory-zone--drag .now-memory-entry {
+  border-color: var(--now-mood-accent, var(--md-accent));
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px var(--now-mood-soft, rgba(94, 184, 232, 0.2));
+}
+
+.now-memory-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-muted);
+  letter-spacing: 0.02em;
+}
+
+.now-memory-entry {
+  width: 100%;
+  min-height: 112px;
+  border: 1.5px dashed var(--md-border);
+  border-radius: 16px;
+  background: var(--md-surface, #f8fafc);
+  padding: 20px 16px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.now-memory-entry:hover {
+  border-color: var(--now-mood-accent, var(--md-accent));
+  background: #fff;
+}
+
+.now-memory-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--now-mood-accent, var(--md-accent));
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.now-ref-thumb {
-  position: relative;
-  width: 34px;
+.now-memory-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
-.now-ref-thumb img {
-  width: 34px;
-  height: 34px;
-  object-fit: cover;
-  border-radius: 8px;
+.now-memory-title {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--md-text);
 }
 
-.now-ref-clear {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 50%;
-  background: #64748b;
-  color: #fff;
+.now-memory-hint {
+  margin: 0;
   font-size: 12px;
+  line-height: 1.45;
+  color: var(--md-muted);
+  text-align: center;
+}
+
+.now-ref-preview {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--md-border);
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.now-ref-preview-media {
+  height: 140px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+  background: var(--md-surface, #f8fafc);
+  overflow: hidden;
+}
+
+.now-ref-preview-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.now-ref-preview-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--md-surface, #f8fafc);
+  border-top: 1px solid var(--md-border);
+}
+
+.now-ref-preview-btn {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  background: var(--now-mood-accent, var(--md-accent));
+  color: #fff;
+  transition: filter 0.2s ease;
+}
+
+.now-ref-preview-btn:hover {
+  filter: brightness(1.05);
+}
+
+.now-ref-preview-btn--ghost {
+  flex: 0 0 auto;
+  background: transparent;
+  color: var(--md-muted);
+  border: 1px solid var(--md-border);
+}
+
+.now-ref-preview-btn--ghost:hover {
+  color: var(--md-text);
+  background: #fff;
+  filter: none;
+}
+
+.now-panel--dialog .now-memory-zone {
+  margin: 0;
+}
+
+.now-panel--dialog .now-memory-entry {
+  min-height: 100px;
+}
+
+.now-panel--dialog .now-input-wrap {
+  border-radius: 16px;
+}
+
+.now-panel--dialog .now-mood-hero {
+  margin-bottom: 4px;
+  padding: 12px 10px 10px;
+  border-radius: 16px;
+  background: var(--md-surface, #f8fafc);
+  border: 1px solid var(--md-border);
+  box-shadow: none;
+}
+
+.now-panel--dialog .now-mood-featured-img {
+  width: 72px;
+  height: 72px;
+}
+
+.now-input-wrap {
+  flex: 1;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--md-border);
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.now-input-wrap--accent {
+  border-color: var(--now-mood-accent, var(--md-border));
+  box-shadow:
+    0 0 0 1px var(--now-mood-soft, transparent),
+    0 8px 28px rgba(0, 0, 0, 0.06);
+}
+
+.now-entry-input :deep(.el-textarea__inner) {
+  min-height: 88px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 8px 14px 12px;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.now-panel-foot :deep(.el-button) {
+  width: 100%;
+  border-radius: 999px;
+  font-weight: 600;
+  height: 46px;
+  border: none;
+  background: var(--now-mood-accent, var(--md-accent));
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
+}
+
+.now-panel--sad .now-panel-foot :deep(.el-button:not(.is-disabled)),
+.now-panel--lonely .now-panel-foot :deep(.el-button:not(.is-disabled)) {
+  animation: none;
+}
+
+.now-panel-foot :deep(.el-button:not(.is-disabled):hover) {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.now-panel-foot :deep(.el-button.is-disabled) {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--md-muted);
+}
+
+.now-submit-wrap {
+  display: block;
+  width: 100%;
 }
 
 .hidden-file {
@@ -488,20 +775,5 @@ export default {
   width: 0;
   height: 0;
   opacity: 0;
-}
-
-.now-panel-foot {
-  flex-shrink: 0;
-  margin-top: 14px;
-}
-
-.now-panel-foot :deep(.el-button) {
-  width: 100%;
-  border-radius: 12px;
-  font-weight: 600;
-  height: 42px;
-  border: none;
-  background: linear-gradient(135deg, #2dd4a8 0%, #20c997 100%);
-  box-shadow: 0 4px 14px rgba(32, 201, 151, 0.28);
 }
 </style>

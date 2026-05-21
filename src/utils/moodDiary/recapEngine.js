@@ -1,6 +1,6 @@
 /** 与后端 caption/mood-recap 一致：每条正文类字段约 500 字；最多传 50 条 */
 export const MOOD_RECAP_MAX_ENTRIES = 50
-const MOOD_RECAP_ENTRY_FIELD_MAX = 500
+const MOOD_RECAP_ENTRY_FIELD_MAX = 240
 const MOOD_RECAP_TOP_MOOD_MAX = 40
 const MOOD_RECAP_TONE_MAX = 20
 const MOOD_RECAP_SYSTEM_HINT_MAX = 800
@@ -11,13 +11,109 @@ function clampStr(s, max) {
   return t.slice(0, max)
 }
 
-/** @param {'week'|'month'} period */
-export function getRecordsInRecapWindow(period, records) {
-  const ms = period === 'week' ? 7 * 86400000 : 30 * 86400000
-  const cutoff = Date.now() - ms
+export const MOOD_RECAP_MAX_RANGE_DAYS = 365
+
+function startOfDay(input) {
+  const d = new Date(input)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+function endOfDay(input) {
+  const d = new Date(input)
+  d.setHours(23, 59, 59, 999)
+  return d.getTime()
+}
+
+function formatDateISO(input) {
+  const d = new Date(input)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * @param {'week'|'month'|{ mode: 'custom', start: Date|string|number, end: Date|string|number }} range
+ */
+export function normalizeRecapRange(range) {
+  if (typeof range === 'string') {
+    return { mode: 'preset', period: range === 'month' ? 'month' : 'week' }
+  }
+  if (range?.mode === 'custom' && range.start != null && range.end != null) {
+    const startMs = startOfDay(range.start)
+    const endMs = endOfDay(range.end)
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) {
+      return { mode: 'custom', invalid: true }
+    }
+    const dayCount = Math.floor((endMs - startMs) / 86400000) + 1
+    return {
+      mode: 'custom',
+      startMs,
+      endMs,
+      startDate: formatDateISO(startMs),
+      endDate: formatDateISO(endMs),
+      dayCount,
+      tooLong: dayCount > MOOD_RECAP_MAX_RANGE_DAYS
+    }
+  }
+  return { mode: 'preset', period: 'week' }
+}
+
+function resolveRecapWindow(range) {
+  const normalized = normalizeRecapRange(range)
+  if (normalized.mode === 'custom') {
+    if (normalized.invalid || normalized.tooLong) {
+      return { startMs: 0, endMs: -1, normalized }
+    }
+    return {
+      startMs: normalized.startMs,
+      endMs: normalized.endMs,
+      normalized
+    }
+  }
+  const ms = normalized.period === 'month' ? 30 * 86400000 : 7 * 86400000
+  return {
+    startMs: Date.now() - ms,
+    endMs: Date.now(),
+    normalized
+  }
+}
+
+/** @param {'week'|'month'|object} range */
+export function getRecordsInRecapWindow(range, records) {
+  const { startMs, endMs } = resolveRecapWindow(range)
+  if (endMs < startMs) return []
   return records
-    .filter((r) => (r.createdAt || 0) >= cutoff)
+    .filter((r) => {
+      const t = r.createdAt || 0
+      return t >= startMs && t <= endMs
+    })
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+}
+
+export function formatRecapRangeLabel(range, locale = 'zh') {
+  const normalized = normalizeRecapRange(range)
+  if (normalized.mode === 'custom') {
+    if (normalized.invalid) return ''
+    const isEn = locale === 'en' || locale?.startsWith?.('en')
+    if (isEn) return `${normalized.startDate} – ${normalized.endDate}`
+    return `${normalized.startDate.replace(/-/g, '/')} – ${normalized.endDate.replace(/-/g, '/')}`
+  }
+  return normalized.period === 'month' ? 'month' : 'week'
+}
+
+function recapTargetLength(range) {
+  const normalized = normalizeRecapRange(range)
+  if (normalized.mode === 'custom' && normalized.dayCount) {
+    if (normalized.dayCount <= 7) return 380
+    if (normalized.dayCount <= 30) return 520
+    return 640
+  }
+  return normalized.period === 'month' ? 520 : 380
+}
+
+function recapPayloadPeriod(range) {
+  const normalized = normalizeRecapRange(range)
+  if (normalized.mode === 'custom') return 'custom'
+  return normalized.period === 'month' ? 'month' : 'week'
 }
 
 function formatEntryDateTime(ts, locale = 'zh') {
@@ -63,11 +159,12 @@ export function buildRecapEntry(r, moodLabelResolver, locale = 'zh') {
 
 /**
  * 本地统计（与 AI 无关的兜底）
- * @param {'week'|'month'} period
+ * @param {'week'|'month'|object} range
  * @param {Array} records
  */
-export function buildRecap(period, records) {
-  const subset = getRecordsInRecapWindow(period, records)
+export function buildRecap(range, records) {
+  const subset = getRecordsInRecapWindow(range, records)
+  const normalized = normalizeRecapRange(range)
 
   const moodCounts = {}
   for (const r of subset) {
@@ -77,7 +174,18 @@ export function buildRecap(period, records) {
   const sorted = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])
   const topId = sorted[0]?.[0]
 
-  const title = period === 'week' ? 'weeklyRecapTitle' : 'monthlyRecapTitle'
+  const period =
+    normalized.mode === 'custom'
+      ? 'custom'
+      : normalized.period === 'month'
+        ? 'month'
+        : 'week'
+  const title =
+    period === 'month'
+      ? 'monthlyRecapTitle'
+      : period === 'week'
+        ? 'weeklyRecapTitle'
+        : 'customRecapTitle'
   const lines = []
   lines.push(subset.length ? `recordsCount:${subset.length}` : 'recordsCount:0')
   if (topId && topId !== 'unknown') {
@@ -96,6 +204,9 @@ export function buildRecap(period, records) {
 
   return {
     period,
+    rangeMode: normalized.mode,
+    startDate: normalized.startDate || null,
+    endDate: normalized.endDate || null,
     titleKey: title,
     topMoodId: topId || null,
     count: subset.length,
@@ -107,7 +218,7 @@ export function buildRecap(period, records) {
 
 /**
  * POST /caption/mood-recap 请求体（对齐 image-describe 字段风格）
- * @param {'week'|'month'} period
+ * @param {'week'|'month'|object} range
  * @param {Array} records
  * @param {(id: string) => string} moodLabelResolver
  * @param {string} locale
@@ -117,10 +228,11 @@ export function buildRecap(period, records) {
  *   systemHint?: string
  * }} [options]
  */
-export function buildRecapCompletionPayload(period, records, moodLabelResolver, locale = 'zh', options = {}) {
+export function buildRecapCompletionPayload(range, records, moodLabelResolver, locale = 'zh', options = {}) {
   const isEn = locale === 'en' || locale?.startsWith?.('en')
-  const subset = getRecordsInRecapWindow(period, records)
-  const localRecap = buildRecap(period, records)
+  const normalized = normalizeRecapRange(range)
+  const subset = getRecordsInRecapWindow(range, records)
+  const localRecap = buildRecap(range, records)
   const entries = subset
     .slice(0, MOOD_RECAP_MAX_ENTRIES)
     .map((r) => buildRecapEntry(r, moodLabelResolver, locale))
@@ -146,8 +258,8 @@ export function buildRecapCompletionPayload(period, records, moodLabelResolver, 
           })
           .join('\n\n')
 
-  const rawTarget = options.targetLength ?? (period === 'week' ? 380 : 520)
-  const targetLength = Math.min(900, Math.max(200, Number(rawTarget) || (period === 'week' ? 380 : 520)))
+  const rawTarget = options.targetLength ?? recapTargetLength(range)
+  const targetLength = Math.min(900, Math.max(200, Number(rawTarget) || recapTargetLength(range)))
 
   const baseHint = isEn
     ? 'Analyze mood diary entries. Output one JSON line only with keys: overview, mood_trend, themes (array of strings), highlight, suggestion, recap_text. Warm diary tone; no medical claims.'
@@ -156,8 +268,8 @@ export function buildRecapCompletionPayload(period, records, moodLabelResolver, 
   const systemHintMerged = extraHint ? `${baseHint}\n\n${extraHint}` : baseHint
   const system_hint = systemHintMerged.slice(0, MOOD_RECAP_SYSTEM_HINT_MAX)
 
-  return {
-    period: period === 'month' ? 'month' : 'week',
+  const payload = {
+    period: recapPayloadPeriod(range),
     locale: isEn ? 'en' : 'zh',
     target_length: targetLength,
     generate_structured_recap: options.generateStructuredRecap !== false,
@@ -177,6 +289,15 @@ export function buildRecapCompletionPayload(period, records, moodLabelResolver, 
     },
     system_hint
   }
+
+  if (normalized.mode === 'custom' && normalized.startDate && normalized.endDate) {
+    payload.date_from = normalized.startDate
+    payload.date_to = normalized.endDate
+    payload.start_date = normalized.startDate
+    payload.end_date = normalized.endDate
+  }
+
+  return payload
 }
 
 /** @typedef {{ overview: string, moodTrend: string, themes: string[], highlight: string, suggestion: string, recapText: string }} RecapAiResult */
@@ -209,10 +330,18 @@ export function recapAiResultToReadable(result, t) {
 }
 
 export function recapToReadable(recap, t, moodLabelResolver) {
-  const periodLabel =
-    recap.period === 'week'
-      ? t('moodDiary.recapPeriodWeek')
-      : t('moodDiary.recapPeriodMonth')
+  let periodLabel
+  if (recap.period === 'custom' && recap.startDate && recap.endDate) {
+    periodLabel = t('moodDiary.recapPeriodCustom', {
+      start: recap.startDate.replace(/-/g, '/'),
+      end: recap.endDate.replace(/-/g, '/')
+    })
+  } else {
+    periodLabel =
+      recap.period === 'month'
+        ? t('moodDiary.recapPeriodMonth')
+        : t('moodDiary.recapPeriodWeek')
+  }
   const blocks = [`${periodLabel} · ${t('moodDiary.recapRecords', { n: recap.count })}`]
   if (recap.topMoodId && recap.topMoodId !== 'unknown') {
     const label = moodLabelResolver(recap.topMoodId) || recap.topMoodId

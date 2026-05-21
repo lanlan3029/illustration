@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { MOOD_ILLUSTRATION_TYPE } from './constants'
+import { MOOD_ILLUSTRATION_TYPE, MOOD_DIARY_NARRATIVE_MAX } from './constants'
 import { getMoodApiConfig, resolveApiUrl } from './config'
 
 function unwrapData(res) {
@@ -341,7 +341,7 @@ function appendDescribeFormFields(fd, options) {
     fd.append('hint', hint)
     fd.append('extra_hint', hint)
   }
-  const narrativeTrim = String(options.narrative || '').trim().slice(0, 500)
+  const narrativeTrim = String(options.narrative || '').trim().slice(0, MOOD_DIARY_NARRATIVE_MAX)
   if (narrativeTrim) fd.append('narrative', narrativeTrim)
   const mood = String(options.moodLabel || options.userMood || '').trim()
   if (mood) {
@@ -374,7 +374,7 @@ function buildDescribeJsonBody(imageInput, options) {
     body.hint = hint
     body.extra_hint = hint
   }
-  const narrativeTrim = String(options.narrative || '').trim().slice(0, 500)
+  const narrativeTrim = String(options.narrative || '').trim().slice(0, MOOD_DIARY_NARRATIVE_MAX)
   if (narrativeTrim) body.narrative = narrativeTrim
   const mood = String(options.moodLabel || options.userMood || '').trim()
   if (mood) {

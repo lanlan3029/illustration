@@ -1,13 +1,14 @@
 <template>
   <div class="poster-result">
-    <header class="poster-result__head">
-      <h2 class="poster-result__title">{{ $t('moodDiary.navNow') }}</h2>
-      <button v-if="showBackToWrite" type="button" class="poster-result__back" @click="$emit('back-to-write')">
+    <header v-if="showBackToWrite" class="poster-result__head">
+      <button type="button" class="poster-result__back" @click="$emit('back-to-write')">
         {{ $t('moodDiary.backToWrite') }}
       </button>
     </header>
-    <div class="poster-result__frame">
-      <img :src="posterUrl" class="poster-result__img" alt="" />
+    <div class="poster-result__stage">
+      <div class="poster-result__slot">
+        <img :src="posterUrl" class="poster-result__img" alt="" />
+      </div>
     </div>
     <div class="poster-result__actions">
       <el-button
@@ -44,11 +45,13 @@ export default {
 
 <style scoped>
 .poster-result {
+  width: 100%;
+  max-width: 480px;
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 16px 14px 14px;
+  padding: 8px 0 0;
   box-sizing: border-box;
 }
 
@@ -56,22 +59,15 @@ export default {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
-  margin-bottom: 10px;
-}
-
-.poster-result__title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: #0f172a;
+  margin-bottom: 8px;
 }
 
 .poster-result__back {
   border: none;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--md-surface);
+  color: var(--md-text);
   font-size: 11px;
   padding: 5px 10px;
   border-radius: 999px;
@@ -79,32 +75,71 @@ export default {
 }
 
 .poster-result__back:hover {
-  background: #e2e8f0;
-  color: #334155;
+  background: var(--md-surface);
+  color: var(--md-text);
+  opacity: 0.85;
 }
 
-.poster-result__frame {
+.poster-result__stage {
   flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  border-radius: 14px;
-  background: #f1f5f9;
-  border: 1px solid #e8ecf1;
+  padding: 10px 6px 18px;
+  overflow: visible;
+}
+
+.poster-result__slot {
+  position: relative;
+  height: min(68vh, 580px);
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 16px;
   overflow: hidden;
+  transform: rotate(-2.5deg);
+  transform-origin: center center;
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 1px rgba(107, 83, 68, 0.14),
+    0 14px 32px rgba(79, 86, 104, 0.16),
+    0 5px 12px rgba(79, 86, 104, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  background: var(--md-poster-slot);
+}
+
+.poster-result:hover .poster-result__slot {
+  transform: rotate(-1.5deg) translateY(-3px);
+  box-shadow:
+    0 0 0 1px rgba(107, 83, 68, 0.16),
+    0 18px 36px rgba(79, 86, 104, 0.18),
+    0 8px 16px rgba(79, 86, 104, 0.1);
 }
 
 .poster-result__img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.poster-result__actions :deep(.el-button--primary) {
+  --el-button-bg-color: var(--md-accent);
+  --el-button-border-color: var(--md-accent);
+  --el-button-hover-bg-color: var(--md-accent-deep);
+  --el-button-hover-border-color: var(--md-accent-deep);
+  --el-button-active-bg-color: var(--md-accent-deep);
+  --el-button-active-border-color: var(--md-accent-deep);
+}
+
+.poster-result__actions :deep(.el-button--default) {
+  --el-button-text-color: var(--md-text);
+  --el-button-border-color: var(--md-border);
+  --el-button-bg-color: var(--md-card);
+  --el-button-hover-text-color: var(--md-accent-deep);
+  --el-button-hover-bg-color: var(--md-surface);
+  --el-button-hover-border-color: var(--md-border);
 }
 
 .poster-result__actions {
@@ -125,5 +160,22 @@ export default {
 
 .poster-result__actions :deep(.el-button + .el-button) {
   margin-left: 0;
+}
+
+@media (max-width: 900px) {
+  .poster-result {
+    height: auto;
+    min-height: 0;
+    max-width: 100%;
+  }
+
+  .poster-result__stage {
+    flex: none;
+    min-height: 0;
+  }
+
+  .poster-result__slot {
+    height: min(52vh, 440px);
+  }
 }
 </style>

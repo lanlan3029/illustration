@@ -1,63 +1,132 @@
 <template>
-  <div class="md-card md-recap">
-    <h1 class="md-title">{{ $t('moodDiary.navRecap') }}</h1>
-    <div class="seg">
-      <el-radio-group v-model="period" :disabled="recapLoading">
+  <div class="md-recap">
+    <header class="recap-head">
+      <h1 class="recap-head__title">{{ $t('moodDiary.navRecap') }}</h1>
+      <el-radio-group
+        v-model="rangeMode"
+        size="small"
+        class="recap-period"
+        :disabled="recapLoading"
+        @change="onRangeModeChange"
+      >
         <el-radio-button label="week">{{ $t('moodDiary.recapWeek') }}</el-radio-button>
         <el-radio-button label="month">{{ $t('moodDiary.recapMonth') }}</el-radio-button>
+        <el-radio-button label="custom">{{ $t('moodDiary.recapCustom') }}</el-radio-button>
       </el-radio-group>
+    </header>
+
+    <div v-if="rangeMode === 'custom'" class="recap-range">
+      <span class="recap-range__label">{{ $t('moodDiary.recapStatRange') }}</span>
+      <el-date-picker
+        v-model="customRange"
+        type="daterange"
+        class="recap-range__picker"
+        :disabled="recapLoading"
+        :editable="false"
+        :clearable="false"
+        :disabled-date="disableFutureDate"
+        format="YYYY-MM-DD"
+        value-format="YYYY-MM-DD"
+        :range-separator="$t('moodDiary.recapRangeSeparator')"
+        :start-placeholder="$t('moodDiary.recapRangeStart')"
+        :end-placeholder="$t('moodDiary.recapRangeEnd')"
+        @change="onCustomRangeChange"
+      />
     </div>
-    <p v-if="recapLoading" class="recap-status">{{ $t('moodDiary.recapAiLoading') }}</p>
-    <p v-else-if="recapAiError" class="recap-status recap-status--warn">{{ recapAiError }}</p>
-    <div class="md-fill">
-      <div v-if="recapLoading" class="recap-skeleton" aria-busy="true" :aria-label="$t('moodDiary.recapAiLoading')">
-        <div class="recap-skeleton__shine" />
-        <div class="recap-skeleton__block">
-          <div class="recap-skeleton__line recap-skeleton__line--long" />
-          <div class="recap-skeleton__line recap-skeleton__line--med" />
-          <div class="recap-skeleton__line recap-skeleton__line--short" />
-        </div>
-        <div class="recap-skeleton__block recap-skeleton__block--narrow">
-          <div class="recap-skeleton__line recap-skeleton__line--med" />
-          <div class="recap-skeleton__line recap-skeleton__line--long" />
-        </div>
+
+    <div class="recap-stats" :aria-label="$t('moodDiary.navRecap')">
+      <div class="recap-stat">
+        <span class="recap-stat__value">{{ localRecap.count }}</span>
+        <span class="recap-stat__label">{{ $t('moodDiary.recapStatEntries') }}</span>
       </div>
-      <div v-else-if="aiRecapSections.length" class="recap-stream">
-        <article
-          v-for="block in aiRecapSections"
-          :key="block.key"
-          class="recap-article"
-          :class="[
-            `recap-article--${block.key}`,
-            block.key === 'overview' ? 'recap-article--hero' : ''
-          ]"
-        >
-          <header v-if="block.title" class="recap-article__head">
-            <span class="recap-article__mark" aria-hidden="true" />
-            <h2 class="recap-article__title">{{ block.title }}</h2>
-          </header>
-          <ul v-if="block.themes" class="recap-chips" role="list">
-            <li v-for="(item, i) in block.themes" :key="i" class="recap-chip" role="listitem">
-              {{ item }}
-            </li>
+      <div class="recap-stat">
+        <template v-if="topMoodInfo">
+          <img v-if="topMoodInfo.src" :src="topMoodInfo.src" class="recap-stat__mood" alt="" />
+          <span v-else class="recap-stat__value recap-stat__value--sm">{{ topMoodInfo.label }}</span>
+          <span class="recap-stat__label">
+            {{ $t('moodDiary.recapTopMood', { mood: topMoodInfo.label, n: topMoodInfo.count }) }}
+          </span>
+        </template>
+        <template v-else>
+          <span class="recap-stat__value recap-stat__value--sm">—</span>
+          <span class="recap-stat__label">{{ $t('moodDiary.recapStatNoMood') }}</span>
+        </template>
+      </div>
+      <div class="recap-stat">
+        <span class="recap-stat__value recap-stat__value--sm">{{ periodLabel }}</span>
+        <span class="recap-stat__label">{{ $t('moodDiary.recapStatRange') }}</span>
+      </div>
+    </div>
+
+    <p v-if="rangeMode === 'custom' && rangeValidationMessage" class="recap-banner recap-banner--warn">
+      {{ rangeValidationMessage }}
+    </p>
+    <p v-if="recapLoading" class="recap-banner recap-banner--info">{{ $t('moodDiary.recapAiLoading') }}</p>
+    <p v-else-if="recapAiError" class="recap-banner recap-banner--warn">{{ recapAiError }}</p>
+    <p v-else-if="showLocalFallbackBadge" class="recap-banner">{{ $t('moodDiary.recapLocalSummaryBadge') }}</p>
+
+    <div class="recap-scroll">
+      <div v-if="recapLoading" class="recap-loading" aria-busy="true">
+        <div v-for="i in 4" :key="i" class="recap-loading__row" />
+      </div>
+
+      <template v-else-if="hasStructuredAi">
+        <p v-if="aiRecapResult.overview" class="recap-lead">{{ aiRecapResult.overview }}</p>
+
+        <section v-if="aiRecapResult.moodTrend" class="recap-block">
+          <h2 class="recap-block__title">{{ $t('moodDiary.recapSectionTrend') }}</h2>
+          <p class="recap-block__text">{{ aiRecapResult.moodTrend }}</p>
+        </section>
+
+        <section v-if="aiRecapResult.themes?.length" class="recap-block">
+          <h2 class="recap-block__title">{{ $t('moodDiary.recapSectionThemes') }}</h2>
+          <ul class="recap-tags">
+            <li v-for="(item, i) in aiRecapResult.themes" :key="i">{{ item }}</li>
           </ul>
-          <p
-            v-else-if="block.body"
-            class="recap-article__body"
-            :class="{ 'recap-article__body--lead': block.key === 'overview' }"
-          >
-            {{ block.body }}
-          </p>
-        </article>
-      </div>
-      <div v-else class="recap-panel recap-panel--local">
-        <span v-if="showLocalFallbackBadge" class="recap-local-badge">{{ $t('moodDiary.recapLocalSummaryBadge') }}</span>
-        <pre class="recap-block">{{ displayRecap }}</pre>
-      </div>
+        </section>
+
+        <section v-if="aiRecapResult.highlight" class="recap-block">
+          <h2 class="recap-block__title">{{ $t('moodDiary.recapSectionHighlight') }}</h2>
+          <p class="recap-block__text">{{ aiRecapResult.highlight }}</p>
+        </section>
+
+        <section v-if="aiRecapResult.suggestion" class="recap-block">
+          <h2 class="recap-block__title">{{ $t('moodDiary.recapSectionSuggestion') }}</h2>
+          <p class="recap-block__text">{{ aiRecapResult.suggestion }}</p>
+        </section>
+      </template>
+
+      <template v-else-if="aiRecapResult?.recapText">
+        <section class="recap-block">
+          <h2 class="recap-block__title">{{ $t('moodDiary.recapSectionFull') }}</h2>
+          <p class="recap-block__text">{{ aiRecapResult.recapText }}</p>
+        </section>
+      </template>
+
+      <template v-else>
+        <div v-if="localRecap.count === 0" class="recap-empty-wrap">
+          <p class="recap-empty">{{ $t('moodDiary.recapEmptyHint') }}</p>
+          <button type="button" class="recap-empty-btn" @click="openWriteEntry">
+            {{ $t('moodDiary.actionWrite') }}
+          </button>
+        </div>
+        <template v-else>
+          <p class="recap-lead">{{ localToneText }}</p>
+          <section v-if="topMoodInfo" class="recap-block">
+            <h2 class="recap-block__title">{{ $t('moodDiary.recapSectionOverview') }}</h2>
+            <p class="recap-block__text">
+              {{ $t('moodDiary.recapTopMood', { mood: topMoodInfo.label, n: topMoodInfo.count }) }}
+            </p>
+          </section>
+        </template>
+      </template>
     </div>
-    <el-button type="primary" class="recap-footer-btn" :disabled="recapLoading" @click="openPoster">
-      {{ $t('moodDiary.openSharePoster') }}
-    </el-button>
+
+    <footer class="recap-foot">
+      <el-button type="primary" :disabled="recapLoading || !canShare" @click="openPoster">
+        {{ $t('moodDiary.openSharePoster') }}
+      </el-button>
+    </footer>
   </div>
 </template>
 
@@ -65,20 +134,28 @@
 import {
   buildRecap,
   buildRecapCompletionPayload,
+  formatRecapRangeLabel,
+  MOOD_RECAP_MAX_RANGE_DAYS,
+  normalizeRecapRange,
   recapAiResultToReadable,
   recapToReadable
 } from '@/utils/moodDiary/recapEngine'
 import { getRecordsSorted } from '@/utils/moodDiary/records'
 import { findMoodById } from '@/utils/moodDiary/moodAssets'
 import { fetchCaptionMoodRecap, getActiveMoodEndpoints } from '@/utils/moodDiary/api'
+import { requestOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
 
 const POSTER_KEY = 'mood_diary_share_poster_payload'
 
 export default {
   name: 'MoodDiaryRecap',
   data() {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 6)
     return {
-      period: 'week',
+      rangeMode: 'week',
+      customRange: [formatIsoDate(start), formatIsoDate(end)],
       aiRecapResult: null,
       recapLoading: false,
       recapAiError: ''
@@ -91,70 +168,83 @@ export default {
         return findMoodById(id, isZh)?.label || id
       }
     },
-    recapLocalText() {
-      const rec = buildRecap(this.period, getRecordsSorted())
-      return recapToReadable(rec, (k, params) => this.$t(k, params), this.moodLabelResolver)
+    recapRange() {
+      if (this.rangeMode === 'custom') {
+        if (!this.customRange || this.customRange.length !== 2) return { mode: 'custom', invalid: true }
+        return {
+          mode: 'custom',
+          start: this.customRange[0],
+          end: this.customRange[1]
+        }
+      }
+      return this.rangeMode
+    },
+    rangeValidationMessage() {
+      if (this.rangeMode !== 'custom') return ''
+      const normalized = normalizeRecapRange(this.recapRange)
+      if (normalized.invalid) return this.$t('moodDiary.recapCustomRangeInvalid')
+      if (normalized.tooLong) {
+        return this.$t('moodDiary.recapRangeTooLong', { n: MOOD_RECAP_MAX_RANGE_DAYS })
+      }
+      return ''
+    },
+    rangeReady() {
+      if (this.rangeMode !== 'custom') return true
+      const normalized = normalizeRecapRange(this.recapRange)
+      return !normalized.invalid && !normalized.tooLong
+    },
+    localRecap() {
+      return buildRecap(this.recapRange, getRecordsSorted())
+    },
+    periodLabel() {
+      const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
+      if (this.rangeMode === 'custom') {
+        const label = formatRecapRangeLabel(this.recapRange, locale)
+        return label || this.$t('moodDiary.recapCustom')
+      }
+      return this.rangeMode === 'week'
+        ? this.$t('moodDiary.recapPeriodWeek')
+        : this.$t('moodDiary.recapPeriodMonth')
+    },
+    topMoodInfo() {
+      const id = this.localRecap.topMoodId
+      if (!id || id === 'unknown') return null
+      const isZh = this.$i18n?.locale === 'zh'
+      const mood = findMoodById(id, isZh)
+      return {
+        label: mood?.label || this.moodLabelResolver(id),
+        count: this.localRecap.stats.sortedMoods[0]?.[1] || 0,
+        src: mood?.src || ''
+      }
+    },
+    hasStructuredAi() {
+      const r = this.aiRecapResult
+      if (!r) return false
+      return !!(r.overview || r.moodTrend || r.themes?.length || r.highlight || r.suggestion)
     },
     showLocalFallbackBadge() {
-      return !this.recapLoading && !this.aiRecapSections.length
+      return !this.recapLoading && !this.hasStructuredAi && !this.aiRecapResult?.recapText
     },
-    aiRecapSections() {
-      const r = this.aiRecapResult
-      if (!r) return []
-      const blocks = []
-      if (r.overview) {
-        blocks.push({
-          key: 'overview',
-          title: this.$t('moodDiary.recapSectionOverview'),
-          body: r.overview
-        })
-      }
-      if (r.moodTrend) {
-        blocks.push({
-          key: 'trend',
-          title: this.$t('moodDiary.recapSectionTrend'),
-          body: r.moodTrend
-        })
-      }
-      if (r.themes?.length) {
-        blocks.push({
-          key: 'themes',
-          title: this.$t('moodDiary.recapSectionThemes'),
-          themes: r.themes
-        })
-      }
-      if (r.highlight) {
-        blocks.push({
-          key: 'highlight',
-          title: this.$t('moodDiary.recapSectionHighlight'),
-          body: r.highlight
-        })
-      }
-      if (r.suggestion) {
-        blocks.push({
-          key: 'suggestion',
-          title: this.$t('moodDiary.recapSectionSuggestion'),
-          body: r.suggestion
-        })
-      }
-      if (!blocks.length && r.recapText) {
-        blocks.push({
-          key: 'recap_text',
-          title: this.$t('moodDiary.recapSectionFull'),
-          body: r.recapText
-        })
-      }
-      return blocks
+    localToneText() {
+      const rec = this.localRecap
+      if (rec.count === 0) return ''
+      if (rec.tone === 'up') return this.$t('moodDiary.recapToneUp')
+      if (rec.tone === 'reflective') return this.$t('moodDiary.recapToneCare')
+      return this.$t('moodDiary.recapToneMixed')
     },
     displayRecap() {
       if (this.aiRecapResult) {
         return recapAiResultToReadable(this.aiRecapResult, (k, params) => this.$t(k, params))
       }
-      return this.recapLocalText
+      return recapToReadable(this.localRecap, (k, params) => this.$t(k, params), this.moodLabelResolver)
+    },
+    canShare() {
+      if (this.localRecap.count === 0) return false
+      return !!this.displayRecap.trim()
     }
   },
   watch: {
-    period() {
+    rangeMode() {
       this.scheduleRecapFetch()
     }
   },
@@ -162,10 +252,27 @@ export default {
     this.scheduleRecapFetch()
   },
   methods: {
+    onRangeModeChange(mode) {
+      if (mode !== 'custom') return
+      if (!this.customRange || this.customRange.length !== 2) {
+        this.customRange = defaultCustomRange(6)
+      }
+    },
+    onCustomRangeChange() {
+      this.scheduleRecapFetch()
+    },
+    disableFutureDate(time) {
+      return time.getTime() > endOfToday()
+    },
     scheduleRecapFetch() {
       this.$nextTick(() => this.fetchAiRecap())
     },
     async fetchAiRecap() {
+      if (!this.rangeReady) {
+        this.aiRecapResult = null
+        this.recapAiError = ''
+        return
+      }
       const cfg = getActiveMoodEndpoints()
       if (!cfg.recapCompletionEndpoint) {
         this.aiRecapResult = null
@@ -186,7 +293,7 @@ export default {
         const records = getRecordsSorted()
         const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
         const payload = buildRecapCompletionPayload(
-          this.period,
+          this.recapRange,
           records,
           this.moodLabelResolver,
           locale
@@ -202,19 +309,25 @@ export default {
         this.recapLoading = false
       }
     },
+    openWriteEntry() {
+      requestOpenWriteDialog()
+    },
     openPoster() {
-      const title =
-        this.period === 'week'
-          ? this.$t('moodDiary.weeklyRecapShareTitle')
-          : this.$t('moodDiary.monthlyRecapShareTitle')
+      let title
+      if (this.rangeMode === 'month') {
+        title = this.$t('moodDiary.monthlyRecapShareTitle')
+      } else if (this.rangeMode === 'week') {
+        title = this.$t('moodDiary.weeklyRecapShareTitle')
+      } else {
+        title = this.$t('moodDiary.customRecapShareTitle')
+      }
       const bodyLines = this.displayRecap.split('\n')
       try {
         sessionStorage.setItem(
           POSTER_KEY,
           JSON.stringify({
             title,
-            bodyLines,
-            siteLine: 'kidstory.cc · mood diary'
+            bodyLines: bodyLines.filter((line) => String(line || '').trim())
           })
         )
       } catch (_) {
@@ -222,320 +335,254 @@ export default {
       }
       this.$router.push({
         path: '/mood-diary/share-poster',
-        query: { period: this.period }
+        query: { period: this.rangeMode }
       })
     }
   }
 }
+
+function formatIsoDate(date) {
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function endOfToday() {
+  const d = new Date()
+  d.setHours(23, 59, 59, 999)
+  return d.getTime()
+}
+
+function defaultCustomRange(daysBack) {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - daysBack)
+  return [formatIsoDate(start), formatIsoDate(end)]
+}
 </script>
 
 <style scoped>
-.md-card.md-recap {
-  --recap-purple: #6b5b95;
-  --recap-purple-soft: rgba(107, 91, 149, 0.12);
-  --recap-teal: #3d8b8b;
-  --recap-teal-soft: rgba(61, 139, 139, 0.12);
-  --recap-rose: #b56576;
-  --recap-rose-soft: rgba(181, 101, 118, 0.1);
-  --recap-amber: #c9a227;
-  --recap-amber-soft: rgba(201, 162, 39, 0.12);
-  --recap-slate: #303133;
-  --recap-muted: #606266;
-  --recap-border: #e8ecf1;
-  --recap-page: #f4f6fa;
-
+.md-recap {
   width: 100%;
-  max-width: 100%;
-  margin: 0;
+  max-width: 680px;
+  margin: 0 auto;
   flex: 1;
   min-height: 0;
   align-self: stretch;
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border-radius: 16px;
-  padding: 22px 22px 20px;
-  box-shadow: 0 8px 28px rgba(31, 35, 41, 0.07);
+  gap: 16px;
+  padding: 8px 4px 12px;
   box-sizing: border-box;
 }
 
-.md-fill {
-  flex: 1;
-  min-height: 0;
+.recap-head {
   display: flex;
-  flex-direction: column;
-  min-height: 200px;
-}
-
-.md-title {
-  margin: 0 0 14px;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--recap-slate);
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   flex-shrink: 0;
 }
 
-.seg {
-  flex-shrink: 0;
-  margin-bottom: 16px;
+.recap-head__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--md-text);
 }
 
-.seg :deep(.el-radio-button__inner) {
-  padding: 8px 18px;
+.recap-period :deep(.el-radio-button__inner) {
+  padding: 6px 14px;
+  border-color: var(--md-border) !important;
+  color: var(--md-muted);
+  background: rgba(255, 252, 254, 0.88);
+  box-shadow: none !important;
 }
 
-.recap-status {
-  margin: 0 0 12px;
-  font-size: 13px;
-  color: var(--recap-purple);
-  flex-shrink: 0;
-  line-height: 1.5;
+.recap-period :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background: var(--md-accent-soft) !important;
+  border-color: var(--md-accent) !important;
+  color: var(--md-accent-deep) !important;
 }
 
-.recap-status--warn {
-  color: #c45656;
-}
-
-.recap-footer-btn {
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin-top: 18px;
-}
-
-/* ---- loading skeleton ---- */
-.recap-skeleton {
-  position: relative;
-  flex: 1;
-  min-height: 180px;
+.recap-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
   border-radius: 14px;
-  background: var(--recap-page);
-  border: 1px solid var(--recap-border);
-  overflow: hidden;
-  padding: 20px;
+  background: rgba(255, 252, 254, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 2px 10px rgba(196, 181, 224, 0.08);
 }
 
-.recap-skeleton__shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 40%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 60%
-  );
-  background-size: 200% 100%;
-  animation: recap-shine 1.8s ease-in-out infinite;
-  pointer-events: none;
+.recap-range__label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-muted);
 }
 
-@keyframes recap-shine {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
+.recap-range__picker {
+  flex: 1;
+  min-width: 240px;
 }
 
-.recap-skeleton__block {
-  margin-bottom: 20px;
-}
-
-.recap-skeleton__block--narrow {
-  max-width: 72%;
-}
-
-.recap-skeleton__line {
-  height: 12px;
-  border-radius: 6px;
-  background: #e2e6ed;
-  margin-bottom: 12px;
-}
-
-.recap-skeleton__line--long {
+.recap-range__picker :deep(.el-range-editor) {
   width: 100%;
 }
 
-.recap-skeleton__line--med {
-  width: 88%;
+.recap-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.recap-skeleton__line--short {
-  width: 56%;
+.recap-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 84px;
+  padding: 12px 10px;
+  border-radius: 16px;
+  background: rgba(255, 252, 254, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 2px 10px rgba(196, 181, 224, 0.08);
+  text-align: center;
 }
 
-/* ---- AI structured stream ---- */
-.recap-stream {
+.recap-stat__value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--md-text);
+}
+
+.recap-stat__value--sm {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.recap-stat__mood {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.recap-stat__label {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--md-muted);
+}
+
+.recap-banner {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--md-muted);
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
+  flex-shrink: 0;
+}
+
+.recap-banner--info {
+  color: var(--md-accent-deep);
+  background: var(--md-accent-soft);
+  border-color: rgba(168, 224, 210, 0.45);
+}
+
+.recap-banner--warn {
+  color: #9a6b6b;
+  background: var(--md-peach-soft);
+  border-color: rgba(255, 200, 216, 0.55);
+}
+
+.recap-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 4px 2px 6px;
-  scrollbar-gutter: stable;
+  gap: 18px;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
-.recap-article {
-  position: relative;
-  margin: 0;
-  padding: 16px 18px 16px 20px;
-  border-radius: 14px;
-  background: #fff;
-  border: 1px solid var(--recap-border);
-  box-shadow: 0 2px 10px rgba(31, 35, 41, 0.04);
-}
-
-.recap-article::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--recap-purple);
-  opacity: 0.85;
-}
-
-.recap-article--overview::before {
-  background: linear-gradient(180deg, #7c6bae, var(--recap-purple));
-}
-
-.recap-article--trend::before {
-  background: linear-gradient(180deg, #5c7cfa, #4b6cb7);
-}
-
-.recap-article--themes::before {
-  background: linear-gradient(180deg, #3d9a9a, var(--recap-teal));
-}
-
-.recap-article--highlight::before {
-  background: linear-gradient(180deg, #c97b88, var(--recap-rose));
-}
-
-.recap-article--suggestion::before {
-  background: linear-gradient(180deg, #d4b84a, var(--recap-amber));
-}
-
-.recap-article--recap_text::before {
-  background: linear-gradient(180deg, #909399, #606266);
-}
-
-.recap-article--hero {
-  background: linear-gradient(135deg, #faf9ff 0%, #fff 55%);
-  border-color: #e8e4f2;
-}
-
-.recap-article__head {
+.recap-loading {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 10px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
 }
 
-.recap-article__mark {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--recap-purple);
-  opacity: 0.55;
+.recap-loading__row {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--md-surface);
+  animation: recap-pulse 1.4s ease-in-out infinite;
 }
 
-.recap-article--trend .recap-article__mark {
-  background: #4b6cb7;
+.recap-loading__row:nth-child(1) {
+  width: 92%;
 }
 
-.recap-article--themes .recap-article__mark {
-  background: var(--recap-teal);
+.recap-loading__row:nth-child(2) {
+  width: 78%;
 }
 
-.recap-article--highlight .recap-article__mark {
-  background: var(--recap-rose);
+.recap-loading__row:nth-child(3) {
+  width: 64%;
 }
 
-.recap-article--suggestion .recap-article__mark {
-  background: var(--recap-amber);
+.recap-loading__row:nth-child(4) {
+  width: 48%;
 }
 
-.recap-article--recap_text .recap-article__mark {
-  background: #909399;
+@keyframes recap-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 
-.recap-article__title {
+.recap-lead {
   margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--recap-purple);
+  font-size: 17px;
+  line-height: 1.75;
+  font-weight: 500;
+  color: var(--md-text);
 }
 
-.recap-article--trend .recap-article__title {
-  color: #4b6cb7;
+.recap-block {
+  margin: 0;
 }
 
-.recap-article--themes .recap-article__title {
-  color: var(--recap-teal);
+.recap-block__title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-muted);
+  letter-spacing: 0.02em;
 }
 
-.recap-article--highlight .recap-article__title {
-  color: var(--recap-rose);
-}
-
-.recap-article--suggestion .recap-article__title {
-  color: #9a7b1a;
-}
-
-.recap-article--recap_text .recap-article__title {
-  color: var(--recap-muted);
-}
-
-.recap-article__body {
+.recap-block__text {
   margin: 0;
   font-size: 15px;
-  line-height: 1.72;
-  color: var(--recap-slate);
+  line-height: 1.75;
+  color: var(--md-text);
   white-space: pre-wrap;
 }
 
-.recap-article__body--lead {
-  font-size: 16px;
-  line-height: 1.75;
-  font-weight: 500;
-  color: #252830;
-}
-
-.recap-article--highlight {
-  background: var(--recap-rose-soft);
-  border-color: rgba(181, 101, 118, 0.18);
-}
-
-.recap-article--highlight .recap-article__body {
-  padding-left: 2px;
-  border-left: 2px solid rgba(181, 101, 118, 0.35);
-  margin-left: 2px;
-  padding-left: 14px;
-}
-
-.recap-article--suggestion {
-  background: var(--recap-amber-soft);
-  border-color: rgba(201, 162, 39, 0.25);
-}
-
-.recap-article--suggestion .recap-article__body {
-  color: #4a4428;
-}
-
-/* nested hero fix — overview block should not duplicate outer article */
-.recap-article--overview.recap-article--hero {
-  padding-bottom: 18px;
-}
-
-/* theme chips */
-.recap-chips {
+.recap-tags {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -544,56 +591,99 @@ export default {
   gap: 8px;
 }
 
-.recap-chip {
-  display: inline-flex;
-  align-items: center;
+.recap-tags li {
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 13px;
   line-height: 1.4;
-  color: #2a5c5c;
-  background: var(--recap-teal-soft);
-  border: 1px solid rgba(61, 139, 139, 0.22);
+  color: var(--md-text);
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
 }
 
-/* ---- local fallback ---- */
-.recap-panel {
-  flex: 1;
-  min-height: 0;
+.recap-empty-wrap {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  padding: 0 12px;
 }
 
-.recap-panel--local {
-  position: relative;
-}
-
-.recap-local-badge {
-  align-self: flex-start;
-  margin-bottom: 10px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--recap-muted);
-  background: #eef1f5;
-  border-radius: 6px;
-}
-
-.recap-block {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.72;
-  color: var(--recap-slate);
-  background: var(--recap-page);
-  border-radius: 14px;
-  padding: 16px 18px;
+.recap-empty {
   margin: 0;
-  border: 1px solid var(--recap-border);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--md-muted);
+}
+
+.recap-empty-btn {
+  min-width: 160px;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  background: var(--md-accent-deep);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 22px rgba(126, 203, 184, 0.34);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.recap-empty-btn:hover {
+  background: var(--md-mint-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(126, 203, 184, 0.4);
+}
+
+.recap-foot {
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.recap-foot :deep(.el-button--primary) {
+  --el-button-bg-color: var(--md-accent);
+  --el-button-border-color: var(--md-accent);
+  --el-button-hover-bg-color: var(--md-accent-deep);
+  --el-button-hover-border-color: var(--md-accent-deep);
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .md-recap {
+    max-width: none;
+    padding: 4px 0 8px;
+  }
+
+  .recap-range {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recap-range__picker {
+    min-width: 0;
+  }
+
+  .recap-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .recap-stat {
+    min-height: 0;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 10px;
+  }
+
+  .recap-stat__label {
+    flex: 1;
+  }
 }
 </style>

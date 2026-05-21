@@ -3,7 +3,7 @@
  * Blocks empty / too short / trivial dangerous patterns only.
  */
 const MIN_LEN = 2
-const MAX_LEN = 2000
+const MAX_LEN = 240
 
 export function checkTextSafe(text, t) {
   const s = typeof text === 'string' ? text.trim() : ''

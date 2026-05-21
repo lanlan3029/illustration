@@ -2,7 +2,14 @@
   <div class="md-book-page">
     <header class="book-toolbar">
       <h1 class="book-title">{{ $t('moodDiary.navBook') }}</h1>
-      <el-button :loading="refreshing" @click="pullRefresh">{{ $t('moodDiary.pullRefresh') }}</el-button>
+      <div class="book-toolbar-actions">
+        <el-tooltip :content="$t('moodDiary.exportPdfHint')" placement="bottom">
+          <el-button :loading="exportingPdf" :disabled="!monthTimeline.length" @click="exportPdf">
+            {{ $t('moodDiary.exportPdfLabel') }}
+          </el-button>
+        </el-tooltip>
+        <el-button :loading="refreshing" @click="pullRefresh">{{ $t('moodDiary.pullRefresh') }}</el-button>
+      </div>
     </header>
 
     <div v-if="tokenOk" class="cloud-bar">
@@ -122,6 +129,7 @@
 import { ElMessage } from 'element-plus'
 import { groupRecordsByMonth } from '@/utils/moodDiary/recordGroups'
 import { fetchUserMoodIllustrations, resolveIllustrationContentUrl } from '@/utils/moodDiary/api'
+import { exportMoodDiaryPdf } from '@/utils/moodDiary/exportMoodDiaryPdf'
 
 const MONTHS_PER_PAGE = 2
 
@@ -133,6 +141,7 @@ export default {
       visibleMonthCount: MONTHS_PER_PAGE,
       loadingMore: false,
       refreshing: false,
+      exportingPdf: false,
       previewOpen: false,
       previewPoster: '',
       cloudMoodIlls: [],
@@ -246,6 +255,31 @@ export default {
     openPreview(r) {
       this.previewPoster = r.posterDataUrl || ''
       this.previewOpen = !!this.previewPoster
+    },
+    async exportPdf() {
+      if (!this.monthTimeline.length || this.exportingPdf) return
+      this.exportingPdf = true
+      ElMessage.info(this.$t('moodDiary.exportPdfExporting'))
+      const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
+      try {
+        await exportMoodDiaryPdf({
+          locale,
+          title: this.$t('moodDiary.title'),
+          exportedLabel: this.$t('moodDiary.exportPdfExportedOn', {
+            date: this.formatExportDate(locale)
+          }),
+          emptyMessage: this.$t('moodDiary.exportPdfEmpty')
+        })
+        ElMessage.success(this.$t('moodDiary.exportPdfSuccess'))
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('moodDiary.exportPdfFailed'))
+      } finally {
+        this.exportingPdf = false
+      }
+    },
+    formatExportDate(locale) {
+      const loc = locale === 'zh' ? 'zh-CN' : 'en-US'
+      return new Date().toLocaleDateString(loc, { year: 'numeric', month: 'long', day: 'numeric' })
     }
   }
 }
@@ -275,6 +309,13 @@ export default {
   justify-content: space-between;
   gap: 12px;
   padding: 20px 24px 12px;
+}
+
+.book-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .book-title {
@@ -426,8 +467,10 @@ export default {
 }
 
 .entry-img--empty {
-  min-height: 140px;
-  background: #e2e8f0;
+  aspect-ratio: 9 / 16;
+  min-height: 0;
+  background: #f1f3f6;
+  box-shadow: inset 0 0 0 1px rgba(79, 86, 104, 0.06);
 }
 
 .entry-body {
