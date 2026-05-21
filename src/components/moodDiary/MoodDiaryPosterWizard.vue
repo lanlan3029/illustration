@@ -109,7 +109,7 @@
 import { ElMessage } from 'element-plus'
 import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.vue'
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
-import { getDraft, setDraft } from '@/utils/moodDiary/draft'
+import { getDraft, setDraft, resolvePosterMode } from '@/utils/moodDiary/draft'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
 import { composePosterFromDraft, runPosterPipeline } from '@/utils/moodDiary/posterPipeline'
 import { ensurePosterDescribe } from '@/utils/moodDiary/posterDescribe'
@@ -126,7 +126,7 @@ export default {
     const d = getDraft()
     return {
       step: 'mode',
-      posterMode: d.posterMode || (d.inputImageDataUrl ? 'photo' : 'illustration'),
+      posterMode: resolvePosterMode(d),
       selectedStyleId: Number(d.artStyleId) || 1,
       templateId: d.posterTemplateId || pref.templateId || 'creamCard',
       colorBlockPlacement: d.colorBlockPlacement || pref.colorBlockPlacement || 'top',
@@ -201,7 +201,10 @@ export default {
       this.step = 'result'
       return
     }
-    if (!this.hasPhoto) {
+    if (this.hasPhoto) {
+      this.step = 'mode'
+      this.posterMode = resolvePosterMode(this.draft)
+    } else {
       this.posterMode = 'illustration'
       this.step = 'style'
     }

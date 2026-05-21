@@ -28,8 +28,8 @@ function defaultDraft() {
     matching: null,
     rawIllustrationUrl: null,
     composedPosterDataUrl: null,
-    /** photo = 原图海报；illustration = AI 插画海报 */
-    posterMode: 'illustration',
+    /** photo | illustration；空表示尚未选择 */
+    posterMode: '',
     posterTemplateId: 'creamCard',
     colorBlockPlacement: 'top',
     imagePlacement: 'below',
@@ -59,6 +59,14 @@ function migrateOldDraft() {
   } catch (_) {
     return null
   }
+}
+
+export function resolvePosterMode(draft) {
+  const d = draft || getDraft()
+  if (d.posterMode === 'photo' || d.posterMode === 'illustration') {
+    return d.posterMode
+  }
+  return d.inputImageDataUrl ? 'photo' : 'illustration'
 }
 
 export function getDraft() {

@@ -421,6 +421,7 @@
     "shareFallbackDownload": "Poster downloaded — share it manually with friends",
     "describeFailed": "Image description failed",
     "refTooLarge": "Keep images under 6MB",
+    "refImageLoading": "Still loading the image, please wait",
     "startGeneratePipeline": "Start generation",
     "generateNeedNarrative": "Write something under “Write now” first.",
     "generateReadyHint": "Choose format, style and template to create your mood poster.",

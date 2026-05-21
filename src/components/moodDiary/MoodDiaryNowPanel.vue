@@ -150,7 +150,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
-import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
+import { dataUrlToPathHint, getDraft, setDraft, resolvePosterMode } from '@/utils/moodDiary/draft'
 import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
 import {
   atmosphereCssVars,
@@ -323,14 +323,26 @@ export default {
         ElMessage.warning(safe.message)
         return
       }
+      if (this.refFile && !this.refDataUrl) {
+        ElMessage.info(this.$t('moodDiary.refImageLoading'))
+        return
+      }
       setDraft({
         narrative: this.narrative.trim(),
         moodEmojiId: this.moodObj ? this.moodObj.id : null,
         moodLabel: this.moodObj ? this.moodObj.label : '',
         mood: this.moodObj ? this.moodObj.id : '',
+        ...(this.refDataUrl
+          ? {
+              inputImageDataUrl: this.refDataUrl,
+              inputImageName: this.refFile?.name || getDraft().inputImageName || 'image.jpg',
+              inputImagePath: dataUrlToPathHint(this.refFile?.name || getDraft().inputImageName || 'image.jpg')
+            }
+          : {}),
         composedPosterDataUrl: null,
         rawIllustrationUrl: null,
-        posterGenerating: false
+        posterGenerating: false,
+        posterMode: this.refDataUrl ? resolvePosterMode({ ...getDraft(), inputImageDataUrl: this.refDataUrl }) : ''
       })
       this.$emit('submitted')
       this.$router.push('/mood-diary/generate')

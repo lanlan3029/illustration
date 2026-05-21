@@ -436,6 +436,7 @@
     "shareFallbackDownload": "已为你下载海报，可手动分享给好友",
     "describeFailed": "参考图描述失败，请重试",
     "refTooLarge": "图片请小于 6MB",
+    "refImageLoading": "图片正在读取，请稍候再试",
     "startGeneratePipeline": "开始生成",
     "generateNeedNarrative": "请先在「写此刻」写好正文。",
     "generateReadyHint": "选择呈现方式、风格与模版，生成专属心情海报。",
