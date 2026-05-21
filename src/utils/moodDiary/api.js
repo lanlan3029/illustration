@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { MOOD_ILLUSTRATION_TYPE, MOOD_DIARY_NARRATIVE_MAX } from './constants'
 import { getMoodApiConfig, resolveApiUrl } from './config'
+import { resolvePictureUploadBlob, compressDataUrlForUpload } from './posterUpload'
 
 function unwrapData(res) {
   const d = res && res.data !== undefined ? res.data : res
@@ -625,15 +626,19 @@ export async function createCharacterIllustration(payload) {
 
 export async function saveIllMood(payload, endpoint) {
   const url = resolveApiUrl(endpoint)
+  let imageUrl = payload.image_url
+  if (imageUrl?.startsWith?.('data:')) {
+    imageUrl = await compressDataUrlForUpload(imageUrl)
+  }
   const body = {
     ...payload,
+    image_url: imageUrl,
     type: payload.type ?? MOOD_ILLUSTRATION_TYPE,
-    // 兼容后端可能使用 illustration_type（若后端不需要可忽略该字段）
     illustration_type: payload.illustration_type ?? payload.type ?? MOOD_ILLUSTRATION_TYPE
   }
   const res = await axios.post(url, body, {
     headers: { 'Content-Type': 'application/json' },
-    timeout: 60000
+    timeout: 120000
   })
   const data = unwrapData(res)
   const ok =
@@ -646,21 +651,19 @@ export async function saveIllMood(payload, endpoint) {
 }
 
 export async function saveIllLegacyCreation(dataUrl, title, description, illType = 'others') {
-  const res = await axios.post(
-    '/ill/',
-    {
-      picture: dataUrl,
-      title,
-      description,
-      type: illType
+  const blob = await resolvePictureUploadBlob(dataUrl)
+  const form = new FormData()
+  form.append('picture', blob, 'mood-poster.jpg')
+  form.append('title', title || '')
+  form.append('description', description || '')
+  form.append('type', illType)
+
+  const res = await axios.post('/ill/', form, {
+    headers: {
+      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
     },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
-      }
-    }
-  )
+    timeout: 120000
+  })
   const data = unwrapData(res)
   const ok = data?.desc === 'success' || data?.code === 0 || data?.code === '0'
   if (!ok) throw new Error(data.message || 'save failed')
