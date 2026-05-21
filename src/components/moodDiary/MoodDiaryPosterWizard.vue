@@ -162,6 +162,7 @@ export default {
       templatePreviewsBusy: false,
       prepareBusy: false,
       illustrateBusy: false,
+      illustrationPreviewUrl: d.rawIllustrationUrl || '',
       previewTimer: null,
       posterUrl: d.composedPosterDataUrl || '',
       diaryCaptionLine: d.diaryCaption || d.quotaSentence || '',
@@ -316,7 +317,8 @@ export default {
     },
     resolveIllustrationEntryStep() {
       this.syncDraftMeta()
-      if (!this.illustrationNeedsPrepare() && !this.illustrationNeedsIllustrate()) {
+      this.illustrationPreviewUrl = getDraft().rawIllustrationUrl || this.illustrationPreviewUrl || ''
+      if (!this.illustrationNeedsPrepare() && !this.illustrationNeedsIllustrate() && this.hasIllustrationImage()) {
         return 'template'
       }
       return 'style'
@@ -365,7 +367,9 @@ export default {
           elementDetails: this.selectedStyle?.elementDetails,
           t: (k) => this.$t(k)
         })
-        this.diaryCaptionLine = getDraft().diaryCaption || getDraft().quotaSentence || ''
+        const latest = getDraft()
+        this.illustrationPreviewUrl = latest.rawIllustrationUrl || ''
+        this.diaryCaptionLine = latest.diaryCaption || latest.quotaSentence || ''
         this.step = 'template'
         this.scheduleTemplatePreviews()
       } catch (e) {
@@ -399,7 +403,10 @@ export default {
       if (this.posterMode === 'photo') {
         return d.inputImageDataUrl || ''
       }
-      return d.rawIllustrationUrl || ''
+      return d.rawIllustrationUrl || this.illustrationPreviewUrl || ''
+    },
+    hasIllustrationImage() {
+      return !!this.resolvePreviewImageSource()
     },
     scheduleTemplatePreviews() {
       if (this.previewTimer) clearTimeout(this.previewTimer)
@@ -427,7 +434,8 @@ export default {
                 locale: this.locale
               })
               return [tpl.id, url]
-            } catch (_) {
+            } catch (err) {
+              console.warn('[mood-diary] template preview failed', tpl.id, err?.message || err)
               return [tpl.id, '']
             }
           })
@@ -486,9 +494,12 @@ export default {
         } else if (this.illustrationNeedsIllustrate()) {
           this.step = 'illustrate'
           this.runIllustrationStep()
-        } else {
+        } else if (this.hasIllustrationImage()) {
           this.step = 'template'
           this.scheduleTemplatePreviews()
+        } else {
+          this.step = 'prepare'
+          this.runIllustrationPrepare()
         }
         return
       }
@@ -508,7 +519,7 @@ export default {
         this.runPhotoPrepare()
         return
       }
-      if (posterMode === 'illustration' && !getDraft().rawIllustrationUrl) {
+      if (posterMode === 'illustration' && !this.hasIllustrationImage()) {
         ElMessage.warning(this.$t('moodDiary.previewNeedImage'))
         this.step = 'style'
         return

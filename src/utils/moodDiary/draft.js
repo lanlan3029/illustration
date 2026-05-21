@@ -3,9 +3,11 @@ import axios from 'axios'
 const GLOBAL_DRAFT_KEY = 'mood_diary_global_draft_v2'
 const OLD_DRAFT_KEY = 'mood_diary_draft_v1'
 const REF_IMAGE_SESSION_KEY = 'mood_diary_ref_image_v1'
+const ILLUSTRATION_SESSION_KEY = 'mood_diary_raw_illustration_v1'
 
 /** 同页内存缓存，避免 localStorage 配额导致大图丢失 */
 let refImageMemory = null
+let illustrationMemory = null
 
 function loadRefImageFromSession() {
   if (refImageMemory) return refImageMemory
@@ -27,12 +29,44 @@ function saveRefImageToSession(dataUrl) {
   }
 }
 
+function loadIllustrationFromSession() {
+  if (illustrationMemory) return illustrationMemory
+  try {
+    illustrationMemory = sessionStorage.getItem(ILLUSTRATION_SESSION_KEY)
+  } catch (_) {
+    /* ignore */
+  }
+  return illustrationMemory || null
+}
+
+function saveIllustrationToSession(url) {
+  illustrationMemory = url || null
+  try {
+    if (url) sessionStorage.setItem(ILLUSTRATION_SESSION_KEY, url)
+    else sessionStorage.removeItem(ILLUSTRATION_SESSION_KEY)
+  } catch (_) {
+    /* ignore */
+  }
+}
+
 function attachRefImage(draft) {
   const d = { ...draft }
   if (!d.inputImageDataUrl && (d.hasInputImage || loadRefImageFromSession())) {
     d.inputImageDataUrl = loadRefImageFromSession()
   }
   return d
+}
+
+function attachIllustrationUrl(draft) {
+  const d = { ...draft }
+  if (!d.rawIllustrationUrl && (d.hasRawIllustration || loadIllustrationFromSession())) {
+    d.rawIllustrationUrl = loadIllustrationFromSession()
+  }
+  return d
+}
+
+function attachDraftAssets(draft) {
+  return attachIllustrationUrl(attachRefImage(draft))
 }
 
 function slimDraftForStorage(draft) {
@@ -42,6 +76,14 @@ function slimDraftForStorage(draft) {
     slim.hasInputImage = true
   } else if (!slim.inputImageDataUrl) {
     slim.hasInputImage = false
+  }
+  if (slim.rawIllustrationUrl?.startsWith?.('data:')) {
+    slim.rawIllustrationUrl = null
+    slim.hasRawIllustration = true
+  } else if (slim.rawIllustrationUrl) {
+    slim.hasRawIllustration = true
+  } else {
+    slim.hasRawIllustration = false
   }
   return slim
 }
@@ -71,6 +113,7 @@ function defaultDraft() {
     diaryCaption: '',
     matching: null,
     rawIllustrationUrl: null,
+    hasRawIllustration: false,
     composedPosterDataUrl: null,
     /** photo | illustration；空表示尚未选择 */
     posterMode: '',
@@ -119,19 +162,19 @@ export function getDraft() {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed && typeof parsed === 'object') {
-        return attachRefImage({ ...defaultDraft(), ...parsed })
+        return attachDraftAssets({ ...defaultDraft(), ...parsed })
       }
     }
     const migrated = migrateOldDraft()
     if (migrated) {
-      const merged = attachRefImage({ ...defaultDraft(), ...migrated, savedAt: Date.now() })
+      const merged = attachDraftAssets({ ...defaultDraft(), ...migrated, savedAt: Date.now() })
       localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(slimDraftForStorage(merged)))
       return merged
     }
   } catch (_) {
     /* ignore */
   }
-  return attachRefImage(defaultDraft())
+  return attachDraftAssets(defaultDraft())
 }
 
 export function setDraft(partial) {
@@ -139,13 +182,19 @@ export function setDraft(partial) {
   if ('inputImageDataUrl' in partial) {
     saveRefImageToSession(partial.inputImageDataUrl || null)
   }
-  const merged = attachRefImage({
+  if ('rawIllustrationUrl' in partial) {
+    saveIllustrationToSession(partial.rawIllustrationUrl || null)
+  }
+  const merged = attachDraftAssets({
     ...prev,
     ...partial,
     savedAt: Date.now()
   })
   if (merged.inputImageDataUrl?.startsWith?.('data:')) {
     saveRefImageToSession(merged.inputImageDataUrl)
+  }
+  if (merged.rawIllustrationUrl) {
+    saveIllustrationToSession(merged.rawIllustrationUrl)
   }
   try {
     localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(slimDraftForStorage(merged)))
