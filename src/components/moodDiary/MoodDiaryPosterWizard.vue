@@ -65,32 +65,36 @@
 
       <!-- Step 3: 模版 -->
       <div v-else-if="step === 'template'" class="wizard-body wizard-body--template">
-        <div class="template-strip">
+        <div v-loading="templatePreviewsBusy" class="template-grid">
           <button
             v-for="tpl in templateList"
             :key="tpl.id"
             type="button"
-            class="template-chip"
-            :class="{ active: templateId === tpl.id }"
+            class="template-card"
+            :class="{ 'template-card--active': templateId === tpl.id }"
             @click="selectTemplate(tpl.id)"
           >
-            {{ $t(tpl.nameKey) }}
+            <div class="template-card__preview">
+              <img
+                v-if="templatePreviews[tpl.id]"
+                :src="templatePreviews[tpl.id]"
+                :alt="$t(tpl.nameKey)"
+                class="template-card__img"
+              />
+              <div v-else class="template-card__placeholder" aria-hidden="true" />
+            </div>
+            <span class="template-card__name">{{ $t(tpl.nameKey) }}</span>
           </button>
         </div>
 
         <div v-if="templateId === 'colorBlock'" class="placement-row">
           <span class="placement-label">{{ $t('moodDiary.posterColorBlockPlacement') }}</span>
-          <el-radio-group v-model="colorBlockPlacement" size="small" @change="schedulePreview">
+          <el-radio-group v-model="colorBlockPlacement" size="small" @change="scheduleTemplatePreviews">
             <el-radio-button label="top">{{ $t('moodDiary.placementTop') }}</el-radio-button>
             <el-radio-button label="bottom">{{ $t('moodDiary.placementBottom') }}</el-radio-button>
             <el-radio-button label="left">{{ $t('moodDiary.placementLeft') }}</el-radio-button>
             <el-radio-button label="right">{{ $t('moodDiary.placementRight') }}</el-radio-button>
           </el-radio-group>
-        </div>
-
-        <div v-loading="previewBusy" class="preview-stage">
-          <img v-if="previewUrl" :src="previewUrl" class="preview-img" alt="" />
-          <p v-else-if="!previewBusy" class="preview-empty">{{ $t('moodDiary.previewNeedImage') }}</p>
         </div>
 
         <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
@@ -131,8 +135,8 @@ export default {
       templateId: d.posterTemplateId || pref.templateId || 'creamCard',
       colorBlockPlacement: d.colorBlockPlacement || pref.colorBlockPlacement || 'top',
       imagePlacement: d.imagePlacement || pref.imagePlacement || 'below',
-      previewUrl: '',
-      previewBusy: false,
+      templatePreviews: {},
+      templatePreviewsBusy: false,
       previewTimer: null,
       posterUrl: d.composedPosterDataUrl || '',
       diaryCaptionLine: d.diaryCaption || d.quotaSentence || '',
@@ -217,7 +221,14 @@ export default {
     }
     this.syncDraftMeta()
     if (this.step === 'template') {
-      this.schedulePreview()
+      this.scheduleTemplatePreviews()
+    }
+  },
+  watch: {
+    step(val) {
+      if (val === 'template') {
+        this.scheduleTemplatePreviews()
+      }
     }
   },
   beforeUnmount() {
@@ -238,39 +249,52 @@ export default {
     selectTemplate(id) {
       this.templateId = id
       this.syncDraftMeta()
-      this.schedulePreview()
     },
-    schedulePreview() {
-      if (this.previewTimer) clearTimeout(this.previewTimer)
-      this.previewTimer = setTimeout(() => this.refreshPreview(), 280)
-    },
-    async refreshPreview() {
+    resolvePreviewImageSource() {
       const d = getDraft()
-      const previewImage =
-        this.posterMode === 'photo'
-          ? d.inputImageDataUrl
-          : d.rawIllustrationUrl || d.inputImageDataUrl
+      if (this.posterMode === 'photo') {
+        return d.inputImageDataUrl || ''
+      }
+      return d.rawIllustrationUrl || d.inputImageDataUrl || this.selectedStyle?.image || ''
+    },
+    scheduleTemplatePreviews() {
+      if (this.previewTimer) clearTimeout(this.previewTimer)
+      this.previewTimer = setTimeout(() => this.refreshAllTemplatePreviews(), 280)
+    },
+    async refreshAllTemplatePreviews() {
+      const previewImage = this.resolvePreviewImageSource()
       if (!previewImage) {
-        this.previewUrl = ''
+        this.templatePreviews = {}
         return
       }
-      this.previewBusy = true
+      this.templatePreviewsBusy = true
       try {
+        const d = getDraft()
         if (d.inputImageDataUrl && this.posterMode === 'photo') {
           await ensurePosterDescribe(d, { illustrationStyle: this.selectedStyle?.artStyle })
         }
-        this.previewUrl = await composePosterFromDraft(getDraft(), {
-          posterMode: this.posterMode,
-          templateId: this.templateId,
-          previewImageUrl: previewImage,
-          colorBlockPlacement: this.colorBlockPlacement,
-          imagePlacement: this.imagePlacement,
-          locale: this.locale
-        })
-      } catch (_) {
-        this.previewUrl = ''
+        const draft = getDraft()
+        const entries = await Promise.all(
+          this.templateList.map(async (tpl) => {
+            try {
+              const url = await composePosterFromDraft(draft, {
+                posterMode: this.posterMode,
+                templateId: tpl.id,
+                previewImageUrl: previewImage,
+                colorBlockPlacement:
+                  tpl.id === 'colorBlock' ? this.colorBlockPlacement : draft.colorBlockPlacement || 'top',
+                imagePlacement: this.imagePlacement,
+                locale: this.locale
+              })
+              return [tpl.id, url]
+            } catch (_) {
+              return [tpl.id, '']
+            }
+          })
+        )
+        this.templatePreviews = Object.fromEntries(entries.filter(([, url]) => url))
       } finally {
-        this.previewBusy = false
+        this.templatePreviewsBusy = false
       }
     },
     goBack() {
@@ -300,14 +324,14 @@ export default {
           this.step = 'style'
         } else {
           this.step = 'template'
-          this.schedulePreview()
+          this.scheduleTemplatePreviews()
         }
         return
       }
       if (this.step === 'style') {
         this.syncDraftMeta()
         this.step = 'template'
-        this.schedulePreview()
+        this.scheduleTemplatePreviews()
         return
       }
       this.runGenerate()
@@ -357,7 +381,7 @@ export default {
       this.step = 'template'
       this.posterUrl = ''
       setDraft({ composedPosterDataUrl: null })
-      this.schedulePreview()
+      this.scheduleTemplatePreviews()
     },
     downloadPoster() {
       downloadMoodPosterDataUrl(this.posterUrl)
@@ -474,11 +498,70 @@ export default {
   color: var(--md-muted);
 }
 
-.style-strip,
-.template-strip {
+.style-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1.5px solid var(--md-border);
+  background: var(--md-card);
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.template-card--active {
+  border-color: var(--md-accent-deep);
+  box-shadow: 0 0 0 2px rgba(168, 224, 210, 0.35);
+}
+
+.template-card__preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--md-surface);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.template-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.template-card__placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.template-card__name {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--md-text);
+  padding: 0 2px 2px;
+}
+
+.template-card--active .template-card__name {
+  color: var(--md-accent-deep);
+  font-weight: 600;
 }
 
 .style-chip {
@@ -494,8 +577,7 @@ export default {
   align-items: center;
 }
 
-.style-chip.active,
-.template-chip.active {
+.style-chip.active {
   border-color: var(--md-accent-deep);
   box-shadow: 0 0 0 2px rgba(168, 224, 210, 0.3);
 }
@@ -513,22 +595,6 @@ export default {
   text-align: center;
 }
 
-.template-chip {
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--md-border);
-  background: var(--md-card);
-  font-size: 12px;
-  color: var(--md-muted);
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.template-chip.active {
-  color: var(--md-accent-deep);
-  font-weight: 600;
-}
-
 .placement-row {
   display: flex;
   flex-wrap: wrap;
@@ -538,31 +604,6 @@ export default {
 
 .placement-label {
   font-size: 12px;
-  color: var(--md-muted);
-}
-
-.preview-stage {
-  flex: 1;
-  min-height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  border-radius: 16px;
-  background: var(--md-surface);
-  border: 1px dashed var(--md-border);
-}
-
-.preview-img {
-  width: min(100%, 260px);
-  height: auto;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(196, 181, 224, 0.18);
-}
-
-.preview-empty {
-  margin: 0;
-  font-size: 13px;
   color: var(--md-muted);
 }
 
@@ -593,6 +634,10 @@ export default {
 @media (max-width: 900px) {
   .mode-cards {
     grid-template-columns: 1fr;
+  }
+
+  .template-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

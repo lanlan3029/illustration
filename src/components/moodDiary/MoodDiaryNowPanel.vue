@@ -143,7 +143,7 @@
           <el-input
             v-model="narrative"
             type="textarea"
-            :rows="5"
+            :rows="inDialog ? 6 : 5"
             :placeholder="entryPlaceholder"
             maxlength="240"
             show-word-limit
@@ -438,13 +438,13 @@ export default {
 .now-diary-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 16px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  background: var(--md-sky-soft, #edf6fc);
+  border: 1px solid rgba(184, 223, 240, 0.45);
+  box-shadow: inset 0 1px 2px rgba(184, 223, 240, 0.12);
 }
 
 .now-diary-tab {
@@ -462,24 +462,22 @@ export default {
     box-shadow 0.25s ease;
 }
 
-.now-diary-tab:hover {
+.now-diary-tab:hover:not(.now-diary-tab--active) {
   color: var(--md-text);
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .now-diary-tab--active {
-  background: #fff;
-  color: var(--now-mood-accent, var(--md-accent));
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  background: var(--md-sky, #b8dff0);
+  color: #fff;
+  box-shadow:
+    0 2px 10px rgba(142, 184, 212, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
-.now-panel--dialog .now-diary-tabs {
-  margin-top: 0;
-}
-
-.now-panel--dialog .now-diary-tab {
-  font-size: 12px;
-  padding: 9px 8px;
-  line-height: 1.35;
+.now-diary-tab--active:hover {
+  color: #fff;
+  filter: brightness(0.97);
 }
 
 .now-hero {
@@ -650,8 +648,23 @@ export default {
 
 .now-panel--dialog {
   height: auto;
-  min-height: 0;
+  min-height: min(68vh, 700px);
   overflow: visible;
+}
+
+.now-panel--dialog .now-diary-tabs {
+  margin-top: 0;
+  border-radius: 999px;
+}
+
+.now-panel--dialog .now-diary-tab {
+  font-size: 12px;
+  padding: 10px 8px;
+  line-height: 1.35;
+}
+
+.now-panel--dialog .now-compose-main {
+  gap: 14px;
 }
 
 .now-compose-main {
@@ -826,20 +839,30 @@ export default {
 }
 
 .now-panel--dialog .now-memory-entry {
-  min-height: 100px;
+  min-height: 128px;
+  border-radius: 20px;
+}
+
+.now-panel--dialog .now-ref-preview {
+  border-radius: 20px;
 }
 
 .now-panel--dialog .now-input-wrap {
-  border-radius: 16px;
+  border-radius: 20px;
+  min-height: 132px;
 }
 
 .now-panel--dialog .now-mood-hero {
   margin-bottom: 4px;
-  padding: 12px 10px 10px;
-  border-radius: 16px;
+  padding: 14px 12px 12px;
+  border-radius: 22px;
   background: var(--md-surface, #f8fafc);
   border: 1px solid var(--md-border);
   box-shadow: none;
+}
+
+.now-panel--dialog .now-entry-input :deep(.el-textarea__inner) {
+  min-height: 108px;
 }
 
 .now-panel--dialog .now-mood-featured-img {

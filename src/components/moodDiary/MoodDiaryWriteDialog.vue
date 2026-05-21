@@ -50,7 +50,7 @@ export default {
 }
 
 .mood-write-dialog .el-dialog {
-  border-radius: 20px;
+  border-radius: 28px;
   overflow: hidden;
 }
 
@@ -69,8 +69,9 @@ export default {
 }
 
 .mood-write-dialog .el-dialog__body {
-  padding: 8px 20px 20px;
-  max-height: min(82vh, 860px);
+  padding: 12px 24px 28px;
+  min-height: min(72vh, 760px);
+  max-height: min(90vh, 960px);
   overflow-y: auto;
 }
 
