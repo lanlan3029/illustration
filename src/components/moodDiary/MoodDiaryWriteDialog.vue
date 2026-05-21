@@ -8,6 +8,7 @@
     align-center
     append-to-body
     destroy-on-close
+    :show-close="true"
     :close-on-click-modal="false"
     @closed="onClosed"
   >
@@ -53,8 +54,22 @@ export default {
   overflow: hidden;
 }
 
+.mood-write-dialog .el-dialog__header {
+  padding: 8px 12px 0;
+  margin-right: 0;
+}
+
+.mood-write-dialog .el-dialog__headerbtn {
+  top: 8px;
+  right: 12px;
+}
+
+.mood-write-dialog .el-dialog__title {
+  display: none;
+}
+
 .mood-write-dialog .el-dialog__body {
-  padding-top: 8px;
+  padding: 8px 20px 20px;
   max-height: min(82vh, 860px);
   overflow-y: auto;
 }

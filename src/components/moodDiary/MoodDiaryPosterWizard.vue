@@ -201,7 +201,14 @@ export default {
       this.step = 'result'
       return
     }
-    if (this.hasPhoto) {
+    const presetMode = this.draft.posterMode
+    if (presetMode === 'photo') {
+      this.posterMode = 'photo'
+      this.step = 'template'
+    } else if (presetMode === 'illustration') {
+      this.posterMode = 'illustration'
+      this.step = 'style'
+    } else if (this.hasPhoto) {
       this.step = 'mode'
       this.posterMode = resolvePosterMode(this.draft)
     } else {
@@ -209,6 +216,9 @@ export default {
       this.step = 'style'
     }
     this.syncDraftMeta()
+    if (this.step === 'template') {
+      this.schedulePreview()
+    }
   },
   beforeUnmount() {
     if (this.previewTimer) clearTimeout(this.previewTimer)
@@ -264,10 +274,23 @@ export default {
       }
     },
     goBack() {
+      const modeLocked = this.draft.posterMode === 'photo' || this.draft.posterMode === 'illustration'
       if (this.step === 'template') {
-        this.step = this.posterMode === 'illustration' ? 'style' : 'mode'
-      } else if (this.step === 'style') {
-        this.step = this.hasPhoto ? 'mode' : 'mode'
+        if (this.posterMode === 'illustration') {
+          this.step = 'style'
+        } else if (modeLocked) {
+          this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
+        } else {
+          this.step = 'mode'
+        }
+        return
+      }
+      if (this.step === 'style') {
+        if (modeLocked) {
+          this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
+        } else {
+          this.step = 'mode'
+        }
       }
     },
     onPrimary() {

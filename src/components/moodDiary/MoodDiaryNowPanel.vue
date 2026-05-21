@@ -1,5 +1,28 @@
 <template>
   <div class="now-panel" :class="[`now-panel--${atmosphere.key}`, { 'now-panel--has-mood': moodObj, 'now-panel--dialog': inDialog }]" :style="atmosphereStyle">
+    <nav class="now-diary-tabs" role="tablist" :aria-label="$t('moodDiary.writeDialogTitle')">
+      <button
+        type="button"
+        role="tab"
+        class="now-diary-tab"
+        :class="{ 'now-diary-tab--active': diaryTab === 'photo' }"
+        :aria-selected="diaryTab === 'photo' ? 'true' : 'false'"
+        @click="selectDiaryTab('photo')"
+      >
+        {{ $t('moodDiary.tabPhotoDiary') }}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="now-diary-tab"
+        :class="{ 'now-diary-tab--active': diaryTab === 'illustration' }"
+        :aria-selected="diaryTab === 'illustration' ? 'true' : 'false'"
+        @click="selectDiaryTab('illustration')"
+      >
+        {{ $t('moodDiary.tabIllustrationDiary') }}
+      </button>
+    </nav>
+
     <header v-if="narrative.trim() || moodObj" class="now-hero now-hero--toolbar">
       <button
         type="button"
@@ -62,9 +85,10 @@
           :class="{
             'now-memory-zone--accent': moodObj,
             'now-memory-zone--drag': refDragOver,
-            'now-memory-zone--filled': !!refPreview
+            'now-memory-zone--filled': !!refPreview,
+            'now-memory-zone--required-missing': isPhotoTab && !refPreview
           }"
-          :aria-label="$t('moodDiary.refImageOptional')"
+          :aria-label="refImageLabel"
           @dragover.prevent="onRefDragOver"
           @dragleave.prevent="onRefDragLeave"
           @drop.prevent="onRefDrop"
@@ -77,7 +101,7 @@
             tabindex="-1"
             @change="onRefFile"
           />
-          <p class="now-memory-label">{{ $t('moodDiary.refImageOptional') }}</p>
+          <p class="now-memory-label">{{ refImageLabel }}</p>
 
           <div v-if="refPreview" class="now-ref-preview">
             <div class="now-ref-preview-media">
@@ -128,19 +152,22 @@
         </div>
 
         <div class="now-panel-foot">
-          <el-tooltip :content="$t('moodDiary.submitNeedNarrative')" :disabled="canSubmit" placement="top">
+          <el-tooltip :content="submitTooltip" :disabled="canSubmit" placement="top">
             <span class="now-submit-wrap">
               <el-button
                 type="primary"
                 class="now-submit"
                 :class="`now-submit--${atmosphere.key}`"
                 :disabled="!canSubmit"
-                @click="nextToGenerate"
+                @click="startPosterFlow"
               >
-                {{ $t('moodDiary.actionGenerate') }}
+                {{ $t('moodDiary.nextToGenerate') }}
               </el-button>
             </span>
           </el-tooltip>
+          <p v-if="isIllustrationTab" class="now-submit-points-hint">
+            {{ $t('moodDiary.illustrationDiaryPointsHint') }}
+          </p>
         </div>
       </div>
     </div>
@@ -150,7 +177,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
-import { dataUrlToPathHint, getDraft, setDraft, resolvePosterMode } from '@/utils/moodDiary/draft'
+import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
 import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
 import {
   atmosphereCssVars,
@@ -174,15 +201,34 @@ export default {
       refDataUrl: null,
       showExtraMoods: false,
       showMoodPicker: false,
-      refDragOver: false
+      refDragOver: false,
+      diaryTab: 'photo'
     }
   },
   computed: {
+    isPhotoTab() {
+      return this.diaryTab === 'photo'
+    },
+    isIllustrationTab() {
+      return this.diaryTab === 'illustration'
+    },
+    refImageLabel() {
+      return this.isPhotoTab
+        ? this.$t('moodDiary.refImageRequired')
+        : this.$t('moodDiary.refImageOptional')
+    },
     hasNarrative() {
       return !!(this.narrative || '').trim()
     },
     canSubmit() {
-      return this.hasNarrative
+      if (!this.hasNarrative) return false
+      if (this.isPhotoTab) return !!this.refDataUrl
+      return true
+    },
+    submitTooltip() {
+      if (!this.hasNarrative) return this.$t('moodDiary.submitNeedNarrative')
+      if (this.isPhotoTab && !this.refDataUrl) return this.$t('moodDiary.submitNeedPhoto')
+      return ''
     },
     atmosphere() {
       return getMoodAtmosphere(this.moodObj?.id)
@@ -229,6 +275,9 @@ export default {
         this.refPreview = d.inputImageDataUrl
         this.refDataUrl = d.inputImageDataUrl
       }
+      if (d.posterMode === 'photo' || d.posterMode === 'illustration') {
+        this.diaryTab = d.posterMode
+      }
       const sid = this.moodObj?.id
       if (sid && !quickMoodIds.includes(sid)) {
         this.showExtraMoods = true
@@ -238,6 +287,11 @@ export default {
       this.moodObj = m
       this.showExtraMoods = false
       this.showMoodPicker = false
+    },
+    selectDiaryTab(tab) {
+      if (this.diaryTab === tab) return
+      this.diaryTab = tab
+      setDraft({ posterMode: tab })
     },
     applyRefFile(file) {
       if (!file || !file.type.startsWith('image/')) return
@@ -282,12 +336,17 @@ export default {
       this.narrative = ''
       this.moodObj = null
       this.showMoodPicker = false
+      this.diaryTab = 'photo'
       this.clearRef()
       setDraft({
         narrative: '',
         moodEmojiId: null,
         moodLabel: '',
         mood: '',
+        posterMode: '',
+        rawIllustrationUrl: null,
+        composedPosterDataUrl: null,
+        posterGenerating: false,
         imageVisionCache: null,
         sceneDescription: '',
         diaryCaption: '',
@@ -313,9 +372,13 @@ export default {
       ev.target.value = ''
       if (file) this.applyRefFile(file)
     },
-    async nextToGenerate() {
-      if (!this.canSubmit) {
+    async startPosterFlow() {
+      if (!this.hasNarrative) {
         ElMessage.info(this.$t('moodDiary.submitNeedNarrative'))
+        return
+      }
+      if (this.isPhotoTab && !this.refDataUrl) {
+        ElMessage.info(this.$t('moodDiary.submitNeedPhoto'))
         return
       }
       const safe = checkTextSafe(this.narrative, (k) => this.$t(k))
@@ -327,6 +390,7 @@ export default {
         ElMessage.info(this.$t('moodDiary.refImageLoading'))
         return
       }
+      const mode = this.diaryTab
       setDraft({
         narrative: this.narrative.trim(),
         moodEmojiId: this.moodObj ? this.moodObj.id : null,
@@ -338,11 +402,18 @@ export default {
               inputImageName: this.refFile?.name || getDraft().inputImageName || 'image.jpg',
               inputImagePath: dataUrlToPathHint(this.refFile?.name || getDraft().inputImageName || 'image.jpg')
             }
-          : {}),
+          : mode === 'illustration'
+            ? {
+                inputImageDataUrl: null,
+                inputImagePath: null,
+                inputImageName: '',
+                imageVisionCache: null
+              }
+            : {}),
         composedPosterDataUrl: null,
         rawIllustrationUrl: null,
         posterGenerating: false,
-        posterMode: this.refDataUrl ? resolvePosterMode({ ...getDraft(), inputImageDataUrl: this.refDataUrl }) : ''
+        posterMode: mode
       })
       this.$emit('submitted')
       this.$router.push('/mood-diary/generate')
@@ -362,6 +433,53 @@ export default {
   background: var(--md-atm-hero, #fff);
   transition: background 0.6s ease;
   overflow-y: auto;
+}
+
+.now-diary-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.now-diary-tab {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-muted);
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.now-diary-tab:hover {
+  color: var(--md-text);
+}
+
+.now-diary-tab--active {
+  background: #fff;
+  color: var(--now-mood-accent, var(--md-accent));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.now-panel--dialog .now-diary-tabs {
+  margin-top: 0;
+}
+
+.now-panel--dialog .now-diary-tab {
+  font-size: 12px;
+  padding: 9px 8px;
+  line-height: 1.35;
 }
 
 .now-hero {
@@ -559,6 +677,15 @@ export default {
   border-color: var(--now-mood-accent, var(--md-accent));
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 0 0 3px var(--now-mood-soft, rgba(94, 184, 232, 0.2));
+}
+
+.now-memory-zone--required-missing .now-memory-entry {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(254, 242, 242, 0.65);
+}
+
+.now-memory-zone--required-missing .now-memory-label {
+  color: #dc2626;
 }
 
 .now-memory-label {
@@ -760,6 +887,14 @@ export default {
   color: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
+}
+
+.now-submit-points-hint {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--md-muted);
+  line-height: 1.3;
 }
 
 .now-panel--sad .now-panel-foot :deep(.el-button:not(.is-disabled)),
