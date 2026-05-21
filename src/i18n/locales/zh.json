@@ -358,6 +358,7 @@
     "refImageRequired": "照片（必填）",
     "illustrationDiaryPointsHint": "扣除2积分",
     "submitNeedPhoto": "请先上传照片",
+    "refImageSaveFailed": "照片保存失败，请换一张较小的图片后重试",
     "nowCardEmpty": "还没有心情海报",
     "nowCardEmptyHint": "点击下方按钮，写下第一条日记吧",
     "windowSceneAria": "心情窗景",

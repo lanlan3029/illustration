@@ -343,6 +343,7 @@
     "refImageRequired": "Photo (required)",
     "illustrationDiaryPointsHint": "Costs 2 points",
     "submitNeedPhoto": "Upload a photo first",
+    "refImageSaveFailed": "Could not save the photo. Try a smaller image.",
     "nowCardEmpty": "No mood poster yet",
     "nowCardEmptyHint": "Tap below to write your first entry",
     "windowSceneAria": "Mood window scene",

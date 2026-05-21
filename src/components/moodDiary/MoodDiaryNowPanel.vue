@@ -296,7 +296,7 @@ export default {
       setDraft({ posterMode: tab })
     },
     resolveRefImageDataUrl() {
-      return this.refDataUrl || getDraft().inputImageDataUrl || ''
+      return this.refDataUrl || this.refPreview || getDraft().inputImageDataUrl || ''
     },
     buildRefImageDraftFields(imageDataUrl) {
       if (!imageDataUrl) return {}
@@ -425,6 +425,11 @@ export default {
         posterGenerating: false,
         posterMode: mode
       })
+      const saved = getDraft()
+      if (mode === 'photo' && !saved.inputImageDataUrl) {
+        ElMessage.warning(this.$t('moodDiary.refImageSaveFailed'))
+        return
+      }
       this.$emit('submitted')
       this.$router.push('/mood-diary/generate')
     }

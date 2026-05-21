@@ -2,6 +2,49 @@ import axios from 'axios'
 
 const GLOBAL_DRAFT_KEY = 'mood_diary_global_draft_v2'
 const OLD_DRAFT_KEY = 'mood_diary_draft_v1'
+const REF_IMAGE_SESSION_KEY = 'mood_diary_ref_image_v1'
+
+/** 同页内存缓存，避免 localStorage 配额导致大图丢失 */
+let refImageMemory = null
+
+function loadRefImageFromSession() {
+  if (refImageMemory) return refImageMemory
+  try {
+    refImageMemory = sessionStorage.getItem(REF_IMAGE_SESSION_KEY)
+  } catch (_) {
+    /* ignore */
+  }
+  return refImageMemory || null
+}
+
+function saveRefImageToSession(dataUrl) {
+  refImageMemory = dataUrl || null
+  try {
+    if (dataUrl) sessionStorage.setItem(REF_IMAGE_SESSION_KEY, dataUrl)
+    else sessionStorage.removeItem(REF_IMAGE_SESSION_KEY)
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+function attachRefImage(draft) {
+  const d = { ...draft }
+  if (!d.inputImageDataUrl && (d.hasInputImage || loadRefImageFromSession())) {
+    d.inputImageDataUrl = loadRefImageFromSession()
+  }
+  return d
+}
+
+function slimDraftForStorage(draft) {
+  const slim = { ...draft }
+  if (slim.inputImageDataUrl?.startsWith?.('data:')) {
+    slim.inputImageDataUrl = null
+    slim.hasInputImage = true
+  } else if (!slim.inputImageDataUrl) {
+    slim.hasInputImage = false
+  }
+  return slim
+}
 
 function defaultDraft() {
   return {
@@ -14,6 +57,7 @@ function defaultDraft() {
     inputImagePath: null,
     inputImageDataUrl: null,
     inputImageName: '',
+    hasInputImage: false,
     artStyle: '',
     artStyleId: 1,
     emotionFlow: null,
@@ -74,29 +118,37 @@ export function getDraft() {
     const raw = localStorage.getItem(GLOBAL_DRAFT_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') return { ...defaultDraft(), ...parsed }
+      if (parsed && typeof parsed === 'object') {
+        return attachRefImage({ ...defaultDraft(), ...parsed })
+      }
     }
     const migrated = migrateOldDraft()
     if (migrated) {
-      const merged = { ...defaultDraft(), ...migrated, savedAt: Date.now() }
-      localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(merged))
+      const merged = attachRefImage({ ...defaultDraft(), ...migrated, savedAt: Date.now() })
+      localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(slimDraftForStorage(merged)))
       return merged
     }
   } catch (_) {
     /* ignore */
   }
-  return defaultDraft()
+  return attachRefImage(defaultDraft())
 }
 
 export function setDraft(partial) {
   const prev = getDraft()
-  const merged = {
+  if ('inputImageDataUrl' in partial) {
+    saveRefImageToSession(partial.inputImageDataUrl || null)
+  }
+  const merged = attachRefImage({
     ...prev,
     ...partial,
     savedAt: Date.now()
+  })
+  if (merged.inputImageDataUrl?.startsWith?.('data:')) {
+    saveRefImageToSession(merged.inputImageDataUrl)
   }
   try {
-    localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(merged))
+    localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(slimDraftForStorage(merged)))
   } catch (_) {
     /* quota */
   }
