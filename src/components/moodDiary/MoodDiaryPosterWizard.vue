@@ -130,7 +130,8 @@ export default {
     const d = getDraft()
     return {
       step: 'mode',
-      posterMode: resolvePosterMode(d),
+      posterMode:
+        d.posterMode === 'photo' || d.posterMode === 'illustration' ? d.posterMode : 'illustration',
       selectedStyleId: Number(d.artStyleId) || 1,
       templateId: d.posterTemplateId || pref.templateId || 'creamCard',
       colorBlockPlacement: d.colorBlockPlacement || pref.colorBlockPlacement || 'top',
@@ -208,6 +209,11 @@ export default {
     const presetMode = this.draft.posterMode
     if (presetMode === 'photo') {
       this.posterMode = 'photo'
+      if (!this.hasPhoto) {
+        ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
+        this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
+        return
+      }
       this.step = 'template'
     } else if (presetMode === 'illustration') {
       this.posterMode = 'illustration'
@@ -323,6 +329,10 @@ export default {
         if (this.posterMode === 'illustration') {
           this.step = 'style'
         } else {
+          if (!this.draft.inputImageDataUrl) {
+            ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
+            return
+          }
           this.step = 'template'
           this.scheduleTemplatePreviews()
         }
@@ -342,6 +352,14 @@ export default {
         this.$store.commit('showMask')
         return
       }
+      const draft = getDraft()
+      const posterMode = draft.posterMode || this.posterMode
+      this.posterMode = posterMode
+      if (posterMode === 'photo' && !draft.inputImageDataUrl) {
+        ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
+        this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
+        return
+      }
       this.generating = true
       this.stepLog = ''
       this.syncDraftMeta()
@@ -351,8 +369,9 @@ export default {
         imagePlacement: this.imagePlacement
       })
       try {
+        const draft = getDraft()
         const result = await runPosterPipeline({
-          posterMode: this.posterMode,
+          posterMode: draft.posterMode || this.posterMode,
           templateId: this.templateId,
           artStyle: this.selectedStyle?.artStyle,
           elementDetails: this.selectedStyle?.elementDetails,
@@ -371,7 +390,11 @@ export default {
         this.step = 'result'
         ElMessage.success(this.$t('moodDiary.generateSuccess'))
       } catch (e) {
-        ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
+        const msg =
+          e.message === 'photo mode requires image'
+            ? this.$t('moodDiary.submitNeedPhoto')
+            : e.message || this.$t('moodDiary.generateFailed')
+        ElMessage.error(msg)
       } finally {
         this.generating = false
         this.stepLog = ''

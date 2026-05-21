@@ -222,12 +222,14 @@ export default {
     },
     canSubmit() {
       if (!this.hasNarrative) return false
-      if (this.isPhotoTab) return !!this.refDataUrl
+      if (this.refFile && !this.refDataUrl) return false
+      if (this.isPhotoTab) return !!this.resolveRefImageDataUrl()
       return true
     },
     submitTooltip() {
       if (!this.hasNarrative) return this.$t('moodDiary.submitNeedNarrative')
-      if (this.isPhotoTab && !this.refDataUrl) return this.$t('moodDiary.submitNeedPhoto')
+      if (this.refFile && !this.refDataUrl) return this.$t('moodDiary.refImageLoading')
+      if (this.isPhotoTab && !this.resolveRefImageDataUrl()) return this.$t('moodDiary.submitNeedPhoto')
       return ''
     },
     atmosphere() {
@@ -292,6 +294,17 @@ export default {
       if (this.diaryTab === tab) return
       this.diaryTab = tab
       setDraft({ posterMode: tab })
+    },
+    resolveRefImageDataUrl() {
+      return this.refDataUrl || getDraft().inputImageDataUrl || ''
+    },
+    buildRefImageDraftFields(imageDataUrl) {
+      if (!imageDataUrl) return {}
+      return {
+        inputImageDataUrl: imageDataUrl,
+        inputImageName: this.refFile?.name || getDraft().inputImageName || 'image.jpg',
+        inputImagePath: dataUrlToPathHint(this.refFile?.name || getDraft().inputImageName || 'image.jpg')
+      }
     },
     applyRefFile(file) {
       if (!file || !file.type.startsWith('image/')) return
@@ -377,7 +390,9 @@ export default {
         ElMessage.info(this.$t('moodDiary.submitNeedNarrative'))
         return
       }
-      if (this.isPhotoTab && !this.refDataUrl) {
+      const mode = this.diaryTab
+      const imageDataUrl = this.resolveRefImageDataUrl()
+      if (mode === 'photo' && !imageDataUrl) {
         ElMessage.info(this.$t('moodDiary.submitNeedPhoto'))
         return
       }
@@ -390,18 +405,13 @@ export default {
         ElMessage.info(this.$t('moodDiary.refImageLoading'))
         return
       }
-      const mode = this.diaryTab
       setDraft({
         narrative: this.narrative.trim(),
         moodEmojiId: this.moodObj ? this.moodObj.id : null,
         moodLabel: this.moodObj ? this.moodObj.label : '',
         mood: this.moodObj ? this.moodObj.id : '',
-        ...(this.refDataUrl
-          ? {
-              inputImageDataUrl: this.refDataUrl,
-              inputImageName: this.refFile?.name || getDraft().inputImageName || 'image.jpg',
-              inputImagePath: dataUrlToPathHint(this.refFile?.name || getDraft().inputImageName || 'image.jpg')
-            }
+        ...(imageDataUrl
+          ? this.buildRefImageDraftFields(imageDataUrl)
           : mode === 'illustration'
             ? {
                 inputImageDataUrl: null,
