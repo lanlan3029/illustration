@@ -165,7 +165,11 @@ export function drawBodyText(ctx, text, x, y, width, align, colors, compact) {
   return y + lines.length * lineHeight
 }
 
-export function drawExcerpt(ctx, text, x, y, width, align, color, maxLines = 2) {
+export function getBodyLineHeight(compact) {
+  return compact ? POSTER_QUOTE_LINE_COMPACT : Math.round(16 * SY)
+}
+
+export function drawExcerpt(ctx, text, x, y, width, align, color, maxLines = 2, quoted = false) {
   const t = String(text || '').trim()
   if (!t) return y
   const fontSize = Math.round(7 * SF)
@@ -177,9 +181,44 @@ export function drawExcerpt(ctx, text, x, y, width, align, color, maxLines = 2) 
   const lines = wrapTextByWidth(ctx, t, width, maxLines)
   lines.forEach((ln, i) => {
     const ax = align === 'right' ? x + width : align === 'center' ? x + width / 2 : x
-    ctx.fillText(`「${ln}」`, ax, y + i * lineHeight)
+    const display = quoted ? `「${ln}」` : ln
+    ctx.fillText(display, ax, y + i * lineHeight)
   })
   return y + lines.length * lineHeight
+}
+
+/** 主文 + 空一行 + 次要描述（用户输入为主，API 描述为次） */
+export function drawPosterBodyBlock(ctx, opts) {
+  const {
+    bodyText,
+    excerptText,
+    x,
+    y,
+    width,
+    align,
+    theme,
+    excerptColor,
+    excerptMaxLines = 2,
+    quoted = false
+  } = opts
+  const body = prepareBodyText(bodyText)
+  let nextY = drawBodyText(ctx, body.text, x, y, width, align, theme, body.compact)
+  const excerpt = String(excerptText || '').trim()
+  if (excerpt && excerpt !== String(bodyText || '').trim()) {
+    nextY += getBodyLineHeight(body.compact)
+    nextY = drawExcerpt(
+      ctx,
+      excerpt,
+      x,
+      nextY,
+      width,
+      align,
+      excerptColor,
+      excerptMaxLines,
+      quoted
+    )
+  }
+  return nextY
 }
 
 export function drawPosterHeader(ctx, opts) {

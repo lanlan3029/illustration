@@ -268,27 +268,13 @@ export default {
       }
     } else if (presetMode === 'illustration') {
       this.posterMode = 'illustration'
-      if (this.illustrationNeedsPrepare()) {
-        this.step = 'prepare'
-        this.runIllustrationPrepare()
-      } else if (this.illustrationNeedsIllustrate()) {
-        this.step = 'style'
-      } else {
-        this.step = 'template'
-      }
+      this.step = this.resolveIllustrationEntryStep()
     } else if (this.hasPhoto) {
       this.step = 'mode'
       this.posterMode = resolvePosterMode(this.draft)
     } else {
       this.posterMode = 'illustration'
-      if (this.illustrationNeedsPrepare()) {
-        this.step = 'prepare'
-        this.runIllustrationPrepare()
-      } else if (this.illustrationNeedsIllustrate()) {
-        this.step = 'style'
-      } else {
-        this.step = 'template'
-      }
+      this.step = this.resolveIllustrationEntryStep()
     }
     this.syncDraftMeta()
     if (this.step === 'template') {
@@ -325,7 +311,15 @@ export default {
       return isPhotoDescribeStale(getDraft())
     },
     illustrationNeedsPrepare() {
+      this.syncDraftMeta()
       return isDescribeStale(getDraft())
+    },
+    resolveIllustrationEntryStep() {
+      this.syncDraftMeta()
+      if (!this.illustrationNeedsPrepare() && !this.illustrationNeedsIllustrate()) {
+        return 'template'
+      }
+      return 'style'
     },
     illustrationNeedsIllustrate() {
       return isIllustrationStale(getDraft(), {
@@ -337,14 +331,18 @@ export default {
       if (this.prepareBusy) return
       this.prepareBusy = true
       this.stepLog = this.prepareStepText
+      this.syncDraftMeta()
       try {
         await ensureIllustrationPosterDescribe(getDraft(), {
-          illustrationStyle: this.draft.artStyle || ''
+          illustrationStyle: this.selectedStyle?.artStyle || '',
+          elementDetails: this.selectedStyle?.elementDetails || ''
         })
         this.diaryCaptionLine = getDraft().diaryCaption || getDraft().quotaSentence || ''
-        this.step = 'style'
+        this.step = 'illustrate'
+        await this.runIllustrationStep()
       } catch (e) {
         ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
+        this.step = 'style'
       } finally {
         this.prepareBusy = false
         this.stepLog = ''
@@ -453,10 +451,7 @@ export default {
       }
       if (this.step === 'style') {
         if (this.posterMode === 'illustration') {
-          if (this.illustrationNeedsPrepare()) {
-            this.step = 'prepare'
-            this.runIllustrationPrepare()
-          } else if (modeLocked) {
+          if (modeLocked) {
             this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
           } else {
             this.step = 'mode'
@@ -472,12 +467,7 @@ export default {
       if (this.step === 'mode') {
         this.syncDraftMeta()
         if (this.posterMode === 'illustration') {
-          if (this.illustrationNeedsPrepare()) {
-            this.step = 'prepare'
-            this.runIllustrationPrepare()
-          } else {
-            this.step = 'style'
-          }
+          this.step = 'style'
         } else {
           if (!this.draft.inputImageDataUrl) {
             ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
@@ -490,7 +480,10 @@ export default {
       }
       if (this.step === 'style') {
         this.syncDraftMeta()
-        if (this.illustrationNeedsIllustrate()) {
+        if (this.illustrationNeedsPrepare()) {
+          this.step = 'prepare'
+          this.runIllustrationPrepare()
+        } else if (this.illustrationNeedsIllustrate()) {
           this.step = 'illustrate'
           this.runIllustrationStep()
         } else {
@@ -515,17 +508,10 @@ export default {
         this.runPhotoPrepare()
         return
       }
-      if (posterMode === 'illustration') {
-        if (this.illustrationNeedsPrepare()) {
-          this.step = 'prepare'
-          this.runIllustrationPrepare()
-          return
-        }
-        if (this.illustrationNeedsIllustrate()) {
-          this.step = 'illustrate'
-          this.runIllustrationStep()
-          return
-        }
+      if (posterMode === 'illustration' && !getDraft().rawIllustrationUrl) {
+        ElMessage.warning(this.$t('moodDiary.previewNeedImage'))
+        this.step = 'style'
+        return
       }
       this.generating = true
       this.stepLog = ''

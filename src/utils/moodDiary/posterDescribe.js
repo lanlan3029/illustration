@@ -29,7 +29,10 @@ export function buildDescribeInputHash(draft) {
       (draft.narrative || '').trim(),
       draft.moodEmojiId || draft.mood || '',
       draft.moodLabel || '',
-      imagePart
+      imagePart,
+      draft.artStyleId || '',
+      draft.artStyle || '',
+      draft.artStyleElementDetails || ''
     ].join('|')
   )
 }

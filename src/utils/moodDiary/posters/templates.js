@@ -3,12 +3,14 @@ import {
   POSTER_H,
   POSTER_W,
   SF,
+  SX,
   SY,
   createPosterCanvas,
   drawBodyText,
   drawExcerpt,
   drawImageContain,
   drawImageCover,
+  drawPosterBodyBlock,
   drawPosterFooter,
   drawPosterHeader,
   isLightHex,
@@ -47,11 +49,18 @@ export function composeCoverStory(ctx, img, opts) {
   drawPosterHeader(ctx, { theme, ...opts })
   const textW = POSTER_W - 100
   const textX = 50
-  let y = POSTER_H * 0.62
-  y = drawBodyText(ctx, body.text, textX, y, textW, 'center', theme, body.compact)
-  if (excerpt) {
-    drawExcerpt(ctx, excerpt, textX, y + 8, textW, 'center', 'rgba(255,255,255,0.78)', 2)
-  }
+  const textY = POSTER_H * 0.62
+  drawPosterBodyBlock(ctx, {
+    bodyText: body.text,
+    excerptText: excerpt,
+    x: textX,
+    y: textY,
+    width: textW,
+    align: 'center',
+    theme,
+    excerptColor: 'rgba(255,255,255,0.78)',
+    excerptMaxLines: 2
+  })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 
@@ -61,27 +70,34 @@ export function composeCreamCard(ctx, img, opts) {
   ctx.fillStyle = COLORS.bgPage
   ctx.fillRect(0, 0, POSTER_W, POSTER_H)
 
-  const cardX = 18
-  const cardY = 19.2
-  const cardW = POSTER_W - 36
-  const cardH = POSTER_H - 38.4
+  const cardX = 8 * SX
+  const cardY = 8 * SY
+  const cardW = POSTER_W - cardX * 2
+  const cardH = POSTER_H - cardY * 2
   roundRectPath(ctx, cardX, cardY, cardW, cardH, 14 * SF)
   ctx.fillStyle = COLORS.bgCard
   ctx.fill()
 
   drawPosterHeader(ctx, { theme, ...opts })
 
-  const imageX = 40.5
-  const imageY = 158.4
-  const imageW = 594
-  const imageH = 648
+  const imagePadX = 10 * SX
+  const imageW = cardW - imagePadX * 2
+  const imageX = cardX + imagePadX
+  const imageY = 66 * SY
+  const imageH = 270 * SY
   drawImageCover(ctx, img, imageX, imageY, imageW, imageH, 14 * SF)
 
-  let y = imageY + imageH + 20 * SY
-  y = drawBodyText(ctx, body.text, imageX, y, imageW, 'right', theme, body.compact)
-  if (excerpt) {
-    drawExcerpt(ctx, excerpt, imageX, y + 6, imageW, 'right', '#a39e96', 2)
-  }
+  drawPosterBodyBlock(ctx, {
+    bodyText: body.text,
+    excerptText: excerpt,
+    x: imageX,
+    y: imageY + imageH + 20 * SY,
+    width: imageW,
+    align: 'center',
+    theme,
+    excerptColor: '#a39e96',
+    excerptMaxLines: 2
+  })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 
@@ -92,18 +108,23 @@ export function composeGazette(ctx, img, opts) {
   ctx.fillRect(0, 0, POSTER_W, POSTER_H)
   drawPosterHeader(ctx, { theme, ...opts })
 
-  const boxX = 70
-  const boxY = 150
-  const boxW = 535
-  const boxH = 540
+  const boxW = 238 * SX
+  const boxH = 225 * SY
+  const boxX = (POSTER_W - boxW) / 2
+  const boxY = 62.5 * SY
   drawImageContain(ctx, img, boxX, boxY, boxW, boxH)
 
-  let y = boxY + boxH + 80
-  const pad = 50
-  y = drawBodyText(ctx, body.text, pad, y, POSTER_W - pad * 2, 'center', theme, body.compact)
-  if (excerpt) {
-    drawExcerpt(ctx, excerpt, pad, y + 8, POSTER_W - pad * 2, 'center', COLORS.textSecondary, 3)
-  }
+  drawPosterBodyBlock(ctx, {
+    bodyText: body.text,
+    excerptText: excerpt,
+    x: 50,
+    y: boxY + boxH + 80,
+    width: POSTER_W - 100,
+    align: 'center',
+    theme,
+    excerptColor: COLORS.textSecondary,
+    excerptMaxLines: 3
+  })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 
@@ -115,10 +136,10 @@ export function composeFramedPhoto(ctx, img, opts) {
   ctx.fillRect(0, 0, POSTER_W, POSTER_H)
   drawPosterHeader(ctx, { theme, ...opts })
 
-  const boxW = 430
-  const boxH = 540
+  const boxW = 191 * SX
+  const boxH = 225 * SY
   const boxX = (POSTER_W - boxW) / 2
-  const boxY = 200
+  const boxY = 83.33 * SY
   drawImageContain(ctx, img, boxX, boxY, boxW, boxH)
   ctx.strokeStyle = theme.textColor
   ctx.lineWidth = 4
@@ -132,11 +153,17 @@ export function composeFramedPhoto(ctx, img, opts) {
   ctx.fillRect(barX, barY, barW, barH)
 
   let y = barY + 28 * SY
-  y = drawBodyText(ctx, body.text, 60, y, POSTER_W - 120, 'center', theme, body.compact)
-  if (excerpt) {
-    const exColor = light ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.7)'
-    drawExcerpt(ctx, excerpt, 60, y + 8, POSTER_W - 120, 'center', exColor, 3)
-  }
+  drawPosterBodyBlock(ctx, {
+    bodyText: body.text,
+    excerptText: excerpt,
+    x: 60,
+    y,
+    width: POSTER_W - 120,
+    align: 'center',
+    theme,
+    excerptColor: light ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.7)',
+    excerptMaxLines: 3
+  })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 
@@ -168,29 +195,17 @@ export function composeColorBlock(ctx, img, opts) {
   const blockTheme = { ...theme, textColor: theme.textColor }
   const padX = placement === 'left' || placement === 'right' ? 30 : 60
   const padY = 80
-  let y = blockRect.y + padY
-  y = drawBodyText(
-    ctx,
-    body.text,
-    blockRect.x + padX,
-    y,
-    blockRect.w - padX * 2,
-    'center',
-    blockTheme,
-    body.compact
-  )
-  if (excerpt) {
-    drawExcerpt(
-      ctx,
-      excerpt,
-      blockRect.x + padX,
-      y + 8,
-      blockRect.w - padX * 2,
-      'center',
-      blockTheme.textColor,
-      3
-    )
-  }
+  drawPosterBodyBlock(ctx, {
+    bodyText: body.text,
+    excerptText: excerpt,
+    x: blockRect.x + padX,
+    y: blockRect.y + padY,
+    width: blockRect.w - padX * 2,
+    align: 'center',
+    theme: blockTheme,
+    excerptColor: blockTheme.textColor,
+    excerptMaxLines: 3
+  })
 
   drawPosterHeader(ctx, { theme, ...opts })
   drawPosterFooter(ctx, theme, opts.footerName)
@@ -211,20 +226,11 @@ export function composeTitleAbove(ctx, img, opts) {
 
   const titleBottom = imageTop - 24
   const titleTop = Math.max(42 * SY, titleBottom - 120)
-  drawBodyText(
-    ctx,
-    body.text,
-    60,
-    titleTop,
-    POSTER_W - 120,
-    'center',
-    theme,
-    body.compact
-  )
+  drawBodyText(ctx, body.text, 60, titleTop, POSTER_W - 120, 'center', theme, body.compact)
 
   if (excerpt) {
     const y = Math.max(imageTop + imageH + 16, POSTER_H - 180)
-    drawExcerpt(ctx, excerpt, 60, y, POSTER_W - 120, 'center', theme.textColor, 3)
+    drawExcerpt(ctx, excerpt, 60, y, POSTER_W - 120, 'center', theme.textColor, 3, false)
   }
   drawPosterFooter(ctx, theme, opts.footerName)
 }
@@ -269,7 +275,7 @@ export function composeMagazine(ctx, img, opts) {
   const colW = imgX - leftPad - 5
   drawBodyText(ctx, body.text, leftPad, 520, colW, 'left', panelTheme, body.compact)
   if (excerpt) {
-    drawExcerpt(ctx, excerpt, imgX, imgY + imgH + 12, imgW, 'center', panelTheme.textColor, 2)
+    drawExcerpt(ctx, excerpt, imgX, imgY + imgH + 12, imgW, 'center', panelTheme.textColor, 2, false)
   }
   drawPosterFooter(ctx, panelTheme, opts.footerName)
 }
@@ -296,10 +302,17 @@ export function composeMultiGrid(ctx, img, opts) {
   const gridH = bottom - top - textBlockH - 20
   drawImageCover(ctx, img, side, gridY, POSTER_W - side * 2, gridH, 8)
 
-  let y = drawBodyText(ctx, body.text, side, textY, POSTER_W - side * 2, 'left', theme, body.compact)
-  if (excerpt) {
-    drawExcerpt(ctx, excerpt, side, y + 8, POSTER_W - side * 2, 'left', COLORS.textSecondary, 3)
-  }
+  drawPosterBodyBlock(ctx, {
+    bodyText: body.text,
+    excerptText: excerpt,
+    x: side,
+    y: textY,
+    width: POSTER_W - side * 2,
+    align: 'left',
+    theme,
+    excerptColor: COLORS.textSecondary,
+    excerptMaxLines: 3
+  })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 

@@ -92,9 +92,11 @@ export function resolvePosterBodyTexts(draft) {
     }
   }
   const userNarrative = (draft.narrative || '').trim()
-  const posterMain = diaryCaptionLine || userNarrative
+  const posterMain = userNarrative || diaryCaptionLine
   const posterSub =
-    diaryCaptionLine && userNarrative && diaryCaptionLine !== userNarrative ? userNarrative : ''
+    userNarrative && diaryCaptionLine && diaryCaptionLine !== userNarrative
+      ? diaryCaptionLine
+      : ''
   return { posterMain, posterSub, diaryCaptionLine }
 }
 

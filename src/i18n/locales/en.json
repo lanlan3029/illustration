@@ -440,7 +440,7 @@
     "wizardStepPrepare": "Understanding your photo",
     "wizardStepPrepareHint": "Generating diary copy. Template previews will appear once this finishes.",
     "wizardStepPrepareText": "Understanding your words",
-    "wizardStepPrepareIllustrationHint": "Analyzing your entry and building illustration prompts. Pick a style next.",
+    "wizardStepPrepareIllustrationHint": "Using your chosen style to generate diary copy and illustration prompts.",
     "wizardStepIllustrate": "Create illustration",
     "wizardStepIllustrateHint": "Redraw your photo or generate art in the chosen style, then preview layouts.",
     "wizardStepTemplate": "Layout template",

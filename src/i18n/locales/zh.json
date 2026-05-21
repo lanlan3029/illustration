@@ -455,7 +455,7 @@
     "wizardStepPrepare": "理解照片与心情",
     "wizardStepPrepareHint": "正在生成日记文案，完成后可预览各模版的排版效果。",
     "wizardStepPrepareText": "理解文字与心情",
-    "wizardStepPrepareIllustrationHint": "正在分析内容并生成插画提示词，完成后选择风格。",
+    "wizardStepPrepareIllustrationHint": "已按所选风格分析内容，正在生成日记文案与插画提示词。",
     "wizardStepIllustrate": "生成插画",
     "wizardStepIllustrateHint": "按所选风格重绘照片或生成插画，完成后可预览模版。",
     "wizardStepTemplate": "选择排版模版",
