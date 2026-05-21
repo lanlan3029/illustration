@@ -14,7 +14,7 @@
 
     <template v-else>
       <header class="wizard-head">
-        <button v-if="step !== 'mode'" type="button" class="wizard-back" @click="goBack">
+        <button v-if="step !== 'mode' && step !== 'prepare' && step !== 'illustrate'" type="button" class="wizard-back" @click="goBack">
           ← {{ $t('moodDiary.wizardBack') }}
         </button>
         <h1 class="wizard-title">{{ stepTitle }}</h1>
@@ -63,6 +63,22 @@
         </div>
       </div>
 
+      <!-- 照片/插画日记：describe 完成后再选风格或模版 -->
+      <div v-else-if="step === 'prepare'" class="wizard-body wizard-body--prepare">
+        <div v-loading="prepareBusy" class="wizard-prepare">
+          <p class="wizard-prepare-text">{{ stepLog || prepareStepText }}</p>
+          <p class="wizard-prepare-hint">{{ prepareStepHint }}</p>
+        </div>
+      </div>
+
+      <!-- 插画日记：按风格生成插画 -->
+      <div v-else-if="step === 'illustrate'" class="wizard-body wizard-body--prepare">
+        <div v-loading="illustrateBusy" class="wizard-prepare">
+          <p class="wizard-prepare-text">{{ stepLog || $t('moodDiary.stepCreateCharacter') }}</p>
+          <p class="wizard-prepare-hint">{{ $t('moodDiary.wizardStepIllustrateHint') }}</p>
+        </div>
+      </div>
+
       <!-- Step 3: 模版 -->
       <div v-else-if="step === 'template'" class="wizard-body wizard-body--template">
         <div v-loading="templatePreviewsBusy" class="template-grid">
@@ -100,7 +116,7 @@
         <p v-if="stepLog" class="step-log">{{ stepLog }}</p>
       </div>
 
-      <footer class="wizard-foot">
+      <footer v-if="step !== 'prepare' && step !== 'illustrate'" class="wizard-foot">
         <el-button type="primary" :loading="generating" :disabled="!canNext" @click="onPrimary">
           {{ primaryLabel }}
         </el-button>
@@ -115,8 +131,14 @@ import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
 import { getDraft, setDraft, resolvePosterMode } from '@/utils/moodDiary/draft'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
-import { composePosterFromDraft, runPosterPipeline } from '@/utils/moodDiary/posterPipeline'
-import { ensurePosterDescribe } from '@/utils/moodDiary/posterDescribe'
+import { composePosterFromDraft, recomposePoster } from '@/utils/moodDiary/posterPipeline'
+import { generateIllustrationImage, isIllustrationStale, resolvePosterBodyTexts } from '@/utils/moodDiary/posterIllustrate'
+import {
+  ensureIllustrationPosterDescribe,
+  ensurePosterDescribe,
+  isDescribeStale,
+  isPhotoDescribeStale
+} from '@/utils/moodDiary/posterDescribe'
 import { POSTER_TEMPLATE_META } from '@/utils/moodDiary/posters'
 import { getPosterTemplatePref, savePosterTemplatePref } from '@/utils/moodDiary/posterTemplatePref'
 import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
@@ -138,6 +160,8 @@ export default {
       imagePlacement: d.imagePlacement || pref.imagePlacement || 'below',
       templatePreviews: {},
       templatePreviewsBusy: false,
+      prepareBusy: false,
+      illustrateBusy: false,
       previewTimer: null,
       posterUrl: d.composedPosterDataUrl || '',
       diaryCaptionLine: d.diaryCaption || d.quotaSentence || '',
@@ -173,14 +197,34 @@ export default {
     },
     stepTitle() {
       if (this.step === 'mode') return this.$t('moodDiary.wizardStepMode')
+      if (this.step === 'prepare') {
+        if (this.posterMode === 'illustration' && !this.hasPhoto) {
+          return this.$t('moodDiary.wizardStepPrepareText')
+        }
+        return this.$t('moodDiary.wizardStepPrepare')
+      }
       if (this.step === 'style') return this.$t('moodDiary.wizardStepStyle')
+      if (this.step === 'illustrate') return this.$t('moodDiary.wizardStepIllustrate')
       return this.$t('moodDiary.wizardStepTemplate')
     },
     stepHint() {
       if (this.step === 'mode' && this.hasPhoto) return this.$t('moodDiary.wizardStepModeHint')
+      if (this.step === 'prepare' || this.step === 'illustrate') return ''
       if (this.step === 'style') return this.$t('moodDiary.wizardStepStyleHint')
       if (this.step === 'template') return this.$t('moodDiary.wizardStepTemplateHint')
       return ''
+    },
+    prepareStepText() {
+      if (this.posterMode === 'photo' || this.hasPhoto) {
+        return this.$t('moodDiary.stepImageDescribe')
+      }
+      return this.$t('moodDiary.stepTextDescribe')
+    },
+    prepareStepHint() {
+      if (this.posterMode === 'illustration') {
+        return this.$t('moodDiary.wizardStepPrepareIllustrationHint')
+      }
+      return this.$t('moodDiary.wizardStepPrepareHint')
     },
     primaryLabel() {
       if (this.step === 'template') {
@@ -190,6 +234,7 @@ export default {
     },
     canNext() {
       if (!this.hasNarrative) return false
+      if (this.step === 'prepare' || this.step === 'illustrate') return false
       if (this.step === 'mode' && this.posterMode === 'photo' && !this.hasPhoto) return false
       return true
     },
@@ -207,23 +252,43 @@ export default {
       return
     }
     const presetMode = this.draft.posterMode
-    if (presetMode === 'photo') {
+      if (presetMode === 'photo') {
       this.posterMode = 'photo'
       if (!this.hasPhoto) {
         ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
         this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
         return
       }
-      this.step = 'template'
+      if (this.photoNeedsPrepare()) {
+        this.step = 'prepare'
+        this.runPhotoPrepare()
+      } else {
+        this.step = 'template'
+        this.scheduleTemplatePreviews()
+      }
     } else if (presetMode === 'illustration') {
       this.posterMode = 'illustration'
-      this.step = 'style'
+      if (this.illustrationNeedsPrepare()) {
+        this.step = 'prepare'
+        this.runIllustrationPrepare()
+      } else if (this.illustrationNeedsIllustrate()) {
+        this.step = 'style'
+      } else {
+        this.step = 'template'
+      }
     } else if (this.hasPhoto) {
       this.step = 'mode'
       this.posterMode = resolvePosterMode(this.draft)
     } else {
       this.posterMode = 'illustration'
-      this.step = 'style'
+      if (this.illustrationNeedsPrepare()) {
+        this.step = 'prepare'
+        this.runIllustrationPrepare()
+      } else if (this.illustrationNeedsIllustrate()) {
+        this.step = 'style'
+      } else {
+        this.step = 'template'
+      }
     }
     this.syncDraftMeta()
     if (this.step === 'template') {
@@ -256,12 +321,87 @@ export default {
       this.templateId = id
       this.syncDraftMeta()
     },
+    photoNeedsPrepare() {
+      return isPhotoDescribeStale(getDraft())
+    },
+    illustrationNeedsPrepare() {
+      return isDescribeStale(getDraft())
+    },
+    illustrationNeedsIllustrate() {
+      return isIllustrationStale(getDraft(), {
+        artStyleId: this.selectedStyleId,
+        artStyle: this.selectedStyle?.artStyle || ''
+      })
+    },
+    async runIllustrationPrepare() {
+      if (this.prepareBusy) return
+      this.prepareBusy = true
+      this.stepLog = this.prepareStepText
+      try {
+        await ensureIllustrationPosterDescribe(getDraft(), {
+          illustrationStyle: this.draft.artStyle || ''
+        })
+        this.diaryCaptionLine = getDraft().diaryCaption || getDraft().quotaSentence || ''
+        this.step = 'style'
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
+      } finally {
+        this.prepareBusy = false
+        this.stepLog = ''
+      }
+    },
+    async runIllustrationStep() {
+      if (this.illustrateBusy) return
+      if (!isMoodDiaryLoggedIn()) {
+        ElMessage.warning(this.$t('moodDiary.writeNeedLogin'))
+        this.$store.commit('showMask')
+        this.step = 'style'
+        return
+      }
+      this.illustrateBusy = true
+      this.stepLog = this.$t('moodDiary.stepCreateCharacter')
+      this.syncDraftMeta()
+      try {
+        await generateIllustrationImage(getDraft(), {
+          artStyle: this.selectedStyle?.artStyle,
+          elementDetails: this.selectedStyle?.elementDetails,
+          t: (k) => this.$t(k)
+        })
+        this.diaryCaptionLine = getDraft().diaryCaption || getDraft().quotaSentence || ''
+        this.step = 'template'
+        this.scheduleTemplatePreviews()
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
+        this.step = 'style'
+      } finally {
+        this.illustrateBusy = false
+        this.stepLog = ''
+      }
+    },
+    async runPhotoPrepare() {
+      if (this.prepareBusy) return
+      this.prepareBusy = true
+      this.stepLog = this.$t('moodDiary.stepImageDescribe')
+      try {
+        await ensurePosterDescribe(getDraft(), {
+          illustrationStyle: this.draft.artStyle || ''
+        })
+        this.diaryCaptionLine = getDraft().diaryCaption || getDraft().quotaSentence || ''
+        this.step = 'template'
+        this.scheduleTemplatePreviews()
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
+      } finally {
+        this.prepareBusy = false
+        this.stepLog = ''
+      }
+    },
     resolvePreviewImageSource() {
       const d = getDraft()
       if (this.posterMode === 'photo') {
         return d.inputImageDataUrl || ''
       }
-      return d.rawIllustrationUrl || d.inputImageDataUrl || this.selectedStyle?.image || ''
+      return d.rawIllustrationUrl || ''
     },
     scheduleTemplatePreviews() {
       if (this.previewTimer) clearTimeout(this.previewTimer)
@@ -275,10 +415,6 @@ export default {
       }
       this.templatePreviewsBusy = true
       try {
-        const d = getDraft()
-        if (d.inputImageDataUrl && this.posterMode === 'photo') {
-          await ensurePosterDescribe(d, { illustrationStyle: this.selectedStyle?.artStyle })
-        }
         const draft = getDraft()
         const entries = await Promise.all(
           this.templateList.map(async (tpl) => {
@@ -316,7 +452,16 @@ export default {
         return
       }
       if (this.step === 'style') {
-        if (modeLocked) {
+        if (this.posterMode === 'illustration') {
+          if (this.illustrationNeedsPrepare()) {
+            this.step = 'prepare'
+            this.runIllustrationPrepare()
+          } else if (modeLocked) {
+            this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
+          } else {
+            this.step = 'mode'
+          }
+        } else if (modeLocked) {
           this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
         } else {
           this.step = 'mode'
@@ -327,31 +472,36 @@ export default {
       if (this.step === 'mode') {
         this.syncDraftMeta()
         if (this.posterMode === 'illustration') {
-          this.step = 'style'
+          if (this.illustrationNeedsPrepare()) {
+            this.step = 'prepare'
+            this.runIllustrationPrepare()
+          } else {
+            this.step = 'style'
+          }
         } else {
           if (!this.draft.inputImageDataUrl) {
             ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
             return
           }
-          this.step = 'template'
-          this.scheduleTemplatePreviews()
+          this.step = 'prepare'
+          this.runPhotoPrepare()
         }
         return
       }
       if (this.step === 'style') {
         this.syncDraftMeta()
-        this.step = 'template'
-        this.scheduleTemplatePreviews()
+        if (this.illustrationNeedsIllustrate()) {
+          this.step = 'illustrate'
+          this.runIllustrationStep()
+        } else {
+          this.step = 'template'
+          this.scheduleTemplatePreviews()
+        }
         return
       }
       this.runGenerate()
     },
     async runGenerate() {
-      if (this.posterMode === 'illustration' && !isMoodDiaryLoggedIn()) {
-        ElMessage.warning(this.$t('moodDiary.writeNeedLogin'))
-        this.$store.commit('showMask')
-        return
-      }
       const draft = getDraft()
       const posterMode = draft.posterMode || this.posterMode
       this.posterMode = posterMode
@@ -359,6 +509,23 @@ export default {
         ElMessage.warning(this.$t('moodDiary.submitNeedPhoto'))
         this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
         return
+      }
+      if (posterMode === 'photo' && this.photoNeedsPrepare()) {
+        this.step = 'prepare'
+        this.runPhotoPrepare()
+        return
+      }
+      if (posterMode === 'illustration') {
+        if (this.illustrationNeedsPrepare()) {
+          this.step = 'prepare'
+          this.runIllustrationPrepare()
+          return
+        }
+        if (this.illustrationNeedsIllustrate()) {
+          this.step = 'illustrate'
+          this.runIllustrationStep()
+          return
+        }
       }
       this.generating = true
       this.stepLog = ''
@@ -369,24 +536,17 @@ export default {
         imagePlacement: this.imagePlacement
       })
       try {
-        const draft = getDraft()
-        const result = await runPosterPipeline({
-          posterMode: draft.posterMode || this.posterMode,
+        this.stepLog = this.$t('moodDiary.stepCompose')
+        const posterUrl = await recomposePoster({
+          posterMode,
           templateId: this.templateId,
-          artStyle: this.selectedStyle?.artStyle,
-          elementDetails: this.selectedStyle?.elementDetails,
-          artStyleId: this.selectedStyleId,
           colorBlockPlacement: this.colorBlockPlacement,
           imagePlacement: this.imagePlacement,
-          locale: this.locale,
-          onStep: (key) => {
-            if (key === 'describe') this.stepLog = this.$t('moodDiary.stepImageDescribe')
-            if (key === 'illustrate') this.stepLog = this.$t('moodDiary.stepCreateCharacter')
-            if (key === 'compose') this.stepLog = this.$t('moodDiary.stepCompose')
-          }
+          locale: this.locale
         })
-        this.posterUrl = result.posterUrl
-        this.diaryCaptionLine = result.diaryCaptionLine
+        const { diaryCaptionLine } = resolvePosterBodyTexts(getDraft())
+        this.posterUrl = posterUrl
+        this.diaryCaptionLine = diaryCaptionLine
         this.step = 'result'
         ElMessage.success(this.$t('moodDiary.generateSuccess'))
       } catch (e) {
@@ -401,6 +561,19 @@ export default {
       }
     },
     backToTemplate() {
+      if (this.posterMode === 'photo' && this.photoNeedsPrepare()) {
+        this.step = 'prepare'
+        this.posterUrl = ''
+        setDraft({ composedPosterDataUrl: null })
+        this.runPhotoPrepare()
+        return
+      }
+      if (this.posterMode === 'illustration' && this.illustrationNeedsIllustrate()) {
+        this.step = 'style'
+        this.posterUrl = ''
+        setDraft({ composedPosterDataUrl: null })
+        return
+      }
       this.step = 'template'
       this.posterUrl = ''
       setDraft({ composedPosterDataUrl: null })
@@ -481,6 +654,38 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.wizard-body--prepare {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+
+.wizard-prepare {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  border-radius: 16px;
+  background: var(--md-surface);
+  border: 1px dashed var(--md-border);
+  text-align: center;
+}
+
+.wizard-prepare-text {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--md-text);
+}
+
+.wizard-prepare-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--md-muted);
 }
 
 .mode-cards {

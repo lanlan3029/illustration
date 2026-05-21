@@ -390,6 +390,57 @@ function buildDescribeJsonBody(imageInput, options) {
 const IMAGE_DESCRIBE_TIMEOUT_MS = 130000
 
 /**
+ * POST /caption/image-describe（纯文字，无图）
+ * 用于插画日记：根据 narrative + mood 生成 diaryCaption / illustrationPrompt
+ */
+export async function fetchCaptionNarrativeDescribe(options = {}, endpoint) {
+  const url = resolveApiUrl(endpoint)
+  if (!url) throw new Error('caption image-describe endpoint missing')
+
+  const authHeaders = {
+    Authorization: 'Bearer ' + (localStorage.getItem('token') || ''),
+    'Content-Type': 'application/json'
+  }
+  const body = buildDescribeJsonBody(null, options)
+
+  let res
+  try {
+    res = await axios.post(url, body, {
+      timeout: IMAGE_DESCRIBE_TIMEOUT_MS,
+      headers: authHeaders
+    })
+  } catch (err) {
+    const status = err?.response?.status
+    const data = err?.response ? unwrapData(err.response) : null
+    console.warn('[mood-diary] POST /caption/image-describe (text) 失败', {
+      status,
+      data,
+      message: err?.message
+    })
+    if (status === 429 || data?.code === -2 || data?.code === '-2') {
+      throw new Error(data?.message || '请求过于频繁，请稍后再试')
+    }
+    if (data?.code === -1 || data?.code === '-1') {
+      throw new Error(data?.message || 'image-describe failed')
+    }
+    throw err
+  }
+
+  const data = unwrapData(res)
+  console.log('[mood-diary] POST /caption/image-describe (text) 响应', {
+    httpStatus: res?.status,
+    code: data?.code,
+    desc: data?.desc,
+    message: data?.message,
+    data: data?.data ?? null
+  })
+  assertImageDescribeResponse(data, res?.status)
+  const parsed = extractImageDescribeResult(data)
+  console.log('[mood-diary] POST /caption/image-describe (text) 解析结果', parsed)
+  return parsed
+}
+
+/**
  * POST /caption/image-describe
  * 默认 multipart 传图（与小程序一致）；勿用整段 base64 JSON。
  * @param {File|Blob|string|null} imageInput File/Blob，或 data URL（会转为 File 再 multipart）

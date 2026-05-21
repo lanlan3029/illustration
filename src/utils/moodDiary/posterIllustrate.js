@@ -25,7 +25,7 @@ export function buildLocalIllustrationPrompt(draft, styleLabel, styleDetails, t)
 export async function generateIllustrationImage(draft, options = {}) {
   const cfg = getActiveMoodEndpoints()
   const styleLabel = options.artStyle || draft.artStyle || ''
-  const styleDetails = options.elementDetails || ''
+  const styleDetails = options.elementDetails || draft.artStyleElementDetails || ''
   const localPrompt = buildLocalIllustrationPrompt(
     draft,
     styleLabel,
@@ -33,21 +33,29 @@ export async function generateIllustrationImage(draft, options = {}) {
     options.t
   )
 
-  let imagePrompt = (draft.generateIllustrationPrompt || '').trim() || localPrompt
+  let imagePrompt = (draft.generateIllustrationPrompt || '').trim()
 
-  if (!draft.generateIllustrationPrompt && cfg.emotionPipelineEndpoint) {
-    const ep = await fetchEmotionPipeline(
-      draft.narrative,
-      !!draft.inputImageDataUrl,
-      cfg.emotionPipelineEndpoint
-    )
-    if (ep) imagePrompt = ep
+  if (imagePrompt && styleLabel && !imagePrompt.includes(styleLabel)) {
+    imagePrompt = `${imagePrompt}，${styleLabel}${styleDetails ? `，${styleDetails}` : ''}`
+  }
+
+  if (!imagePrompt) {
+    if (cfg.emotionPipelineEndpoint) {
+      const ep = await fetchEmotionPipeline(
+        draft.narrative,
+        !!draft.inputImageDataUrl,
+        cfg.emotionPipelineEndpoint
+      )
+      if (ep) imagePrompt = ep
+    }
   }
 
   if (!imagePrompt.trim()) imagePrompt = localPrompt
 
   const sceneForPrompt = (draft.sceneDescription || draft.imageVisionCache || '').trim()
-  imagePrompt = mergeVision(imagePrompt, sceneForPrompt)
+  if (sceneForPrompt && !draft.generateIllustrationPrompt) {
+    imagePrompt = mergeVision(imagePrompt, sceneForPrompt)
+  }
 
   const createPayload = {
     prompt: imagePrompt,
@@ -88,6 +96,17 @@ export function resolvePosterBodyTexts(draft) {
   const posterSub =
     diaryCaptionLine && userNarrative && diaryCaptionLine !== userNarrative ? userNarrative : ''
   return { posterMain, posterSub, diaryCaptionLine }
+}
+
+/** 风格变更或未生成插画时需重跑 illustrate */
+export function isIllustrationStale(draft, styleOptions = {}) {
+  const d = draft
+  if (!d?.rawIllustrationUrl) return true
+  const styleId = styleOptions.artStyleId ?? d.artStyleId
+  const artStyle = styleOptions.artStyle ?? d.artStyle ?? ''
+  if (Number(d.artStyleId) !== Number(styleId)) return true
+  if ((d.artStyle || '') !== (artStyle || '')) return true
+  return false
 }
 
 export async function resolveMainImageUrl(draft, posterMode) {
