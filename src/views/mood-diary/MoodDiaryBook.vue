@@ -22,41 +22,39 @@
     <p v-if="!monthTimeline.length" class="book-empty">{{ $t('moodDiary.bookEmpty') }}</p>
 
     <div v-else ref="scrollRoot" class="book-scroll" @scroll="onScroll">
-      <div class="timeline">
+      <div class="book-album">
         <section
           v-for="group in visibleMonthGroups"
           :key="group.key"
-          class="month-section"
+          class="month-block"
         >
-          <div class="month-head">
-            <span class="month-dot" aria-hidden="true" />
+          <header class="month-head">
             <h2 class="month-label">{{ group.label }}</h2>
             <span class="month-count">{{ group.records.length }}</span>
-          </div>
+          </header>
 
-          <ul class="month-entries">
-            <li v-for="r in group.records" :key="r.id">
-              <article class="entry-row" @click="openPreview(r)">
-                <div class="entry-thumb-wrap">
-                  <img
-                    v-if="r.posterDataUrl"
-                    :src="r.posterDataUrl"
-                    class="entry-thumb"
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div v-else class="entry-thumb entry-thumb--empty" />
-                </div>
-                <div class="entry-info">
-                  <div class="entry-meta">
-                    <time class="entry-date">{{ formatDay(r.createdAt) }}</time>
-                    <span v-if="r.moodLabel" class="entry-mood">{{ r.moodLabel }}</span>
-                  </div>
-                  <p class="entry-text">{{ excerpt(r.caption || r.narrative, 48) }}</p>
-                </div>
-              </article>
-            </li>
-          </ul>
+          <div class="month-grid">
+            <button
+              v-for="r in group.records"
+              :key="r.id"
+              type="button"
+              class="grid-cell"
+              @click="openPreview(r)"
+            >
+              <img
+                v-if="r.posterDataUrl"
+                :src="r.posterDataUrl"
+                class="grid-img"
+                alt=""
+                loading="lazy"
+              />
+              <span v-else class="grid-img grid-img--empty" />
+              <span class="grid-overlay">
+                <time class="grid-day">{{ formatGridDay(r.createdAt) }}</time>
+                <span v-if="r.moodLabel" class="grid-mood">{{ r.moodLabel }}</span>
+              </span>
+            </button>
+          </div>
         </section>
       </div>
 
@@ -65,8 +63,25 @@
       <p v-else-if="visibleMonthGroups.length" class="book-end">{{ $t('moodDiary.timelineEnd') }}</p>
     </div>
 
-    <el-dialog v-model="previewOpen" width="min(520px, 92vw)" :title="$t('moodDiary.previewTitle')">
-      <img v-if="previewPoster" :src="previewPoster" class="dlg-img" alt="" />
+    <el-dialog
+      v-model="previewOpen"
+      width="min(420px, 92vw)"
+      class="preview-dialog"
+      :title="$t('moodDiary.previewTitle')"
+    >
+      <div v-if="previewRecord" class="preview-body">
+        <img
+          v-if="previewRecord.posterDataUrl"
+          :src="previewRecord.posterDataUrl"
+          class="dlg-img"
+          alt=""
+        />
+        <div class="preview-meta">
+          <time class="preview-date">{{ formatDay(previewRecord.createdAt) }}</time>
+          <span v-if="previewRecord.moodLabel" class="preview-mood">{{ previewRecord.moodLabel }}</span>
+        </div>
+        <p v-if="previewText" class="preview-text">{{ previewText }}</p>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -78,7 +93,7 @@ import { getRecordsSorted } from '@/utils/moodDiary/records'
 import { fetchUserMoodIllustrations, mapIllToBookRecord } from '@/utils/moodDiary/api'
 import { exportMoodDiaryPdf } from '@/utils/moodDiary/exportMoodDiaryPdf'
 
-const MONTHS_PER_PAGE = 2
+const MONTHS_PER_PAGE = 4
 
 export default {
   name: 'MoodDiaryBook',
@@ -90,7 +105,7 @@ export default {
       refreshing: false,
       exportingPdf: false,
       previewOpen: false,
-      previewPoster: '',
+      previewRecord: null,
       cloudMoodIlls: [],
       cloudLoading: false,
       cloudLoaded: false,
@@ -107,6 +122,10 @@ export default {
     },
     hasMore() {
       return this.visibleMonthCount < this.monthTimeline.length
+    },
+    previewText() {
+      const t = (this.previewRecord?.caption || this.previewRecord?.narrative || '').trim()
+      return t || ''
     }
   },
   mounted() {
@@ -183,12 +202,14 @@ export default {
     formatDay(ts) {
       const d = new Date(ts || Date.now())
       const locale = this.$i18n?.locale === 'zh' ? 'zh-CN' : 'en-US'
-      return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+      return d.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
     },
-    excerpt(s, max = 100) {
-      const t = (s || '').trim()
-      if (t.length <= max) return t || '—'
-      return t.slice(0, max) + '…'
+    formatGridDay(ts) {
+      const d = new Date(ts || Date.now())
+      if (this.$i18n?.locale === 'zh' || this.$i18n?.locale?.startsWith?.('zh')) {
+        return `${d.getMonth() + 1}/${d.getDate()}`
+      }
+      return d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
     },
     async loadCloudMoodIlls() {
       if (!this.tokenOk) return
@@ -200,8 +221,9 @@ export default {
       }
     },
     openPreview(r) {
-      this.previewPoster = r.posterDataUrl || ''
-      this.previewOpen = !!this.previewPoster
+      if (!r?.posterDataUrl) return
+      this.previewRecord = r
+      this.previewOpen = true
     },
     async exportPdf() {
       if (!this.monthTimeline.length || this.exportingPdf) return
@@ -302,61 +324,39 @@ export default {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 24px 28px;
+  padding: 4px 20px 28px;
   -webkit-overflow-scrolling: touch;
 }
 
-.timeline {
-  max-width: 560px;
+.book-album {
+  width: 100%;
+  max-width: 920px;
   margin: 0 auto;
-  position: relative;
-  padding-left: 28px;
 }
 
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: linear-gradient(180deg, #20c997 0%, #e2e8f0 85%);
-  border-radius: 2px;
+.month-block {
+  margin-bottom: 22px;
 }
 
-.month-section {
-  position: relative;
-  margin-bottom: 24px;
-}
-
-.month-section:last-child {
-  margin-bottom: 8px;
+.month-block:last-child {
+  margin-bottom: 6px;
 }
 
 .month-head {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  position: relative;
-}
-
-.month-dot {
-  position: absolute;
-  left: -28px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #20c997;
-  box-shadow: 0 0 0 4px rgba(32, 201, 151, 0.2);
-  flex-shrink: 0;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 4px 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, #fff 75%, rgba(255, 255, 255, 0));
 }
 
 .month-label {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e293b;
 }
@@ -364,106 +364,123 @@ export default {
 .month-count {
   font-size: 12px;
   color: #94a3b8;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .month-grid {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 10px;
+  }
+}
+
+.grid-cell {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 9 / 16;
   background: #f1f5f9;
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.month-entries {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.month-entries > li {
-  margin: 0;
-  padding: 0;
-}
-
-.entry-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid #e8ecf1;
-  border-radius: 12px;
-  background: #fff;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   transition:
-    border-color 0.15s ease,
+    transform 0.15s ease,
     box-shadow 0.15s ease;
 }
 
-.entry-row:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+.grid-cell:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
-.entry-thumb-wrap {
-  flex-shrink: 0;
-  width: 56px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #f1f5f9;
+.grid-cell:focus-visible {
+  outline: 2px solid #20c997;
+  outline-offset: 2px;
 }
 
-.entry-thumb {
+.grid-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.entry-thumb--empty {
-  width: 100%;
-  height: 100%;
+.grid-img--empty {
   background: #e2e8f0;
 }
 
-.entry-info {
-  flex: 1;
-  min-width: 0;
-  padding-top: 2px;
+.grid-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 6px 6px 5px;
+  background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.55));
+  pointer-events: none;
 }
 
-.entry-meta {
+.grid-day {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1;
+}
+
+.grid-mood {
+  font-size: 10px;
+  color: #fff;
+  background: rgba(32, 201, 151, 0.85);
+  padding: 2px 5px;
+  border-radius: 4px;
+  max-width: 52%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 4px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
-.entry-date {
+.preview-date {
   color: #64748b;
-  font-weight: 500;
 }
 
-.entry-mood {
+.preview-mood {
   color: #0d9488;
   background: rgba(32, 201, 151, 0.12);
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 11px;
-  flex-shrink: 0;
+  font-size: 12px;
 }
 
-.entry-text {
+.preview-text {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #334155;
-  line-height: 1.45;
+  line-height: 1.55;
   word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .book-loading,
