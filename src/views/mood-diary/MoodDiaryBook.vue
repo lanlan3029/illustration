@@ -22,97 +22,43 @@
     <p v-if="!monthTimeline.length" class="book-empty">{{ $t('moodDiary.bookEmpty') }}</p>
 
     <div v-else ref="scrollRoot" class="book-scroll" @scroll="onScroll">
-      <section
-        v-for="group in visibleMonthGroups"
-        :key="group.key"
-        class="month-section"
-      >
-        <div class="month-axis">
-          <span class="month-dot" aria-hidden="true" />
-          <h2 class="month-label">{{ group.label }}</h2>
-          <span class="month-count">{{ group.records.length }}</span>
-        </div>
-
-        <div class="month-stream masonry-lane">
-          <article
-            v-for="(r, idx) in group.records"
-            :key="`m-${r.id}`"
-            class="entry-card entry-card--stream"
-            :class="{ 'entry-card--right': idx % 2 === 1 }"
-            @click="openPreview(r)"
-          >
-            <img
-              v-if="r.posterDataUrl"
-              :src="r.posterDataUrl"
-              class="entry-img"
-              alt=""
-              loading="lazy"
-            />
-            <div v-else class="entry-img entry-img--empty" />
-            <div class="entry-body">
-              <div class="entry-meta">
-                <time class="entry-date">{{ formatDay(r.createdAt) }}</time>
-                <span v-if="r.moodLabel" class="entry-mood">{{ r.moodLabel }}</span>
-              </div>
-              <p class="entry-text">{{ excerpt(r.caption || r.narrative) }}</p>
-            </div>
-          </article>
-        </div>
-
-        <div class="month-lanes">
-          <div class="lane lane--left masonry-lane">
-            <article
-              v-for="r in laneRecords(group, 'left')"
-              :key="r.id"
-              class="entry-card"
-              @click="openPreview(r)"
-            >
-              <img
-                v-if="r.posterDataUrl"
-                :src="r.posterDataUrl"
-                class="entry-img"
-                alt=""
-                loading="lazy"
-              />
-              <div v-else class="entry-img entry-img--empty" />
-              <div class="entry-body">
-                <div class="entry-meta">
-                  <time class="entry-date">{{ formatDay(r.createdAt) }}</time>
-                  <span v-if="r.moodLabel" class="entry-mood">{{ r.moodLabel }}</span>
-                </div>
-                <p class="entry-text">{{ excerpt(r.caption || r.narrative) }}</p>
-              </div>
-            </article>
+      <div class="timeline">
+        <section
+          v-for="group in visibleMonthGroups"
+          :key="group.key"
+          class="month-section"
+        >
+          <div class="month-head">
+            <span class="month-dot" aria-hidden="true" />
+            <h2 class="month-label">{{ group.label }}</h2>
+            <span class="month-count">{{ group.records.length }}</span>
           </div>
 
-          <div class="lane-spine" aria-hidden="true" />
-
-          <div class="lane lane--right masonry-lane">
-            <article
-              v-for="r in laneRecords(group, 'right')"
-              :key="r.id"
-              class="entry-card"
-              @click="openPreview(r)"
-            >
-              <img
-                v-if="r.posterDataUrl"
-                :src="r.posterDataUrl"
-                class="entry-img"
-                alt=""
-                loading="lazy"
-              />
-              <div v-else class="entry-img entry-img--empty" />
-              <div class="entry-body">
-                <div class="entry-meta">
-                  <time class="entry-date">{{ formatDay(r.createdAt) }}</time>
-                  <span v-if="r.moodLabel" class="entry-mood">{{ r.moodLabel }}</span>
+          <ul class="month-entries">
+            <li v-for="r in group.records" :key="r.id">
+              <article class="entry-row" @click="openPreview(r)">
+                <div class="entry-thumb-wrap">
+                  <img
+                    v-if="r.posterDataUrl"
+                    :src="r.posterDataUrl"
+                    class="entry-thumb"
+                    alt=""
+                    loading="lazy"
+                  />
+                  <div v-else class="entry-thumb entry-thumb--empty" />
                 </div>
-                <p class="entry-text">{{ excerpt(r.caption || r.narrative) }}</p>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
+                <div class="entry-info">
+                  <div class="entry-meta">
+                    <time class="entry-date">{{ formatDay(r.createdAt) }}</time>
+                    <span v-if="r.moodLabel" class="entry-mood">{{ r.moodLabel }}</span>
+                  </div>
+                  <p class="entry-text">{{ excerpt(r.caption || r.narrative, 48) }}</p>
+                </div>
+              </article>
+            </li>
+          </ul>
+        </section>
+      </div>
 
       <div v-if="loadingMore" class="book-loading">{{ $t('moodDiary.loadingMore') }}</div>
       <div v-else-if="hasMore" ref="loadSentinel" class="load-sentinel" aria-hidden="true" />
@@ -129,11 +75,7 @@
 import { ElMessage } from 'element-plus'
 import { groupRecordsFromList, mergeBookRecords } from '@/utils/moodDiary/recordGroups'
 import { getRecordsSorted } from '@/utils/moodDiary/records'
-import {
-  fetchUserMoodIllustrations,
-  mapIllToBookRecord,
-  resolveIllustrationContentUrl
-} from '@/utils/moodDiary/api'
+import { fetchUserMoodIllustrations, mapIllToBookRecord } from '@/utils/moodDiary/api'
 import { exportMoodDiaryPdf } from '@/utils/moodDiary/exportMoodDiaryPdf'
 
 const MONTHS_PER_PAGE = 2
@@ -192,18 +134,9 @@ export default {
         }
       }
       const merged = mergeBookRecords(getRecordsSorted(), cloudRecords)
-      this.monthTimeline = groupRecordsFromList(merged, locale).map((g) => ({
-        ...g,
-        records: g.records.map((r, i) => ({ ...r, _laneIndex: i }))
-      }))
+      this.monthTimeline = groupRecordsFromList(merged, locale)
       this.visibleMonthCount = Math.min(MONTHS_PER_PAGE, this.monthTimeline.length || MONTHS_PER_PAGE)
       this.$nextTick(() => this.setupInfiniteLoad())
-    },
-    laneRecords(group, side) {
-      return group.records.filter((r) => {
-        const onLeft = r._laneIndex % 2 === 0
-        return side === 'left' ? onLeft : !onLeft
-      })
     },
     setupInfiniteLoad() {
       this.observer?.disconnect()
@@ -252,13 +185,10 @@ export default {
       const locale = this.$i18n?.locale === 'zh' ? 'zh-CN' : 'en-US'
       return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
     },
-    excerpt(s) {
+    excerpt(s, max = 100) {
       const t = (s || '').trim()
-      if (t.length <= 100) return t || '—'
-      return t.slice(0, 100) + '…'
-    },
-    illCover(item) {
-      return resolveIllustrationContentUrl(item?.content || item?.picture || '')
+      if (t.length <= max) return t || '—'
+      return t.slice(0, max) + '…'
     },
     async loadCloudMoodIlls() {
       if (!this.tokenOk) return
@@ -372,25 +302,50 @@ export default {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 20px 28px;
+  padding: 8px 24px 28px;
   -webkit-overflow-scrolling: touch;
 }
 
-.month-section {
-  width: 100%;
-  margin-bottom: 28px;
+.timeline {
+  max-width: 560px;
+  margin: 0 auto;
+  position: relative;
+  padding-left: 28px;
 }
 
-.month-axis {
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, #20c997 0%, #e2e8f0 85%);
+  border-radius: 2px;
+}
+
+.month-section {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.month-section:last-child {
+  margin-bottom: 8px;
+}
+
+.month-head {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   position: relative;
 }
 
 .month-dot {
+  position: absolute;
+  left: -28px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -401,7 +356,7 @@ export default {
 
 .month-label {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: #1e293b;
 }
@@ -414,84 +369,66 @@ export default {
   border-radius: 999px;
 }
 
-.month-stream {
-  display: none;
+.month-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.month-lanes {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr);
-  gap: 0 16px;
-  align-items: start;
-  position: relative;
+.month-entries > li {
+  margin: 0;
+  padding: 0;
 }
 
-.lane-spine {
-  width: 2px;
-  background: linear-gradient(180deg, #20c997 0%, #e2e8f0 100%);
-  border-radius: 2px;
-  min-height: 100%;
-  align-self: stretch;
-}
-
-/* 瀑布流：每侧多列 masonry */
-.masonry-lane {
-  column-gap: 14px;
-}
-
-.lane--left {
-  column-count: 2;
-}
-
-.lane--right {
-  column-count: 2;
-}
-
-@media (max-width: 900px) {
-  .lane--left,
-  .lane--right {
-    column-count: 1;
-  }
-}
-
-.entry-card {
-  width: 100%;
-  break-inside: avoid;
-  margin-bottom: 14px;
+.entry-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
   border: 1px solid #e8ecf1;
-  border-radius: 16px;
-  overflow: hidden;
+  border-radius: 12px;
   background: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
   transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-  display: inline-block;
-  box-sizing: border-box;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.entry-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+.entry-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
-.entry-img {
+.entry-thumb-wrap {
+  flex-shrink: 0;
+  width: 56px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.entry-thumb {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
-  vertical-align: top;
 }
 
-.entry-img--empty {
-  aspect-ratio: 9 / 16;
-  min-height: 0;
-  background: #f1f3f6;
-  box-shadow: inset 0 0 0 1px rgba(79, 86, 104, 0.06);
+.entry-thumb--empty {
+  width: 100%;
+  height: 100%;
+  background: #e2e8f0;
 }
 
-.entry-body {
-  padding: 12px 14px 14px;
+.entry-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
 }
 
 .entry-meta {
@@ -499,12 +436,13 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 12px;
 }
 
 .entry-date {
   color: #64748b;
+  font-weight: 500;
 }
 
 .entry-mood {
@@ -520,8 +458,12 @@ export default {
   margin: 0;
   font-size: 13px;
   color: #334155;
-  line-height: 1.5;
+  line-height: 1.45;
   word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .book-loading,
@@ -540,24 +482,5 @@ export default {
   width: 100%;
   height: auto;
   border-radius: 8px;
-}
-
-.entry-card--stream {
-  max-width: 88%;
-}
-
-.entry-card--stream.entry-card--right {
-  margin-left: auto;
-}
-
-@media (max-width: 768px) {
-  .month-stream {
-    display: block;
-    column-count: 1;
-  }
-
-  .month-lanes {
-    display: none;
-  }
 }
 </style>
