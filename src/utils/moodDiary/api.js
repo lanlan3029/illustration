@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { MOOD_ILLUSTRATION_TYPE, MOOD_DIARY_NARRATIVE_MAX } from './constants'
+import { CAPTION_PICK_NARRATIVE_MAX, MOOD_DIARY_NARRATIVE_MAX, MOOD_ILLUSTRATION_TYPE } from './constants'
 import { getMoodApiConfig, resolveApiUrl } from './config'
 import { resolvePictureUploadBlob, compressDataUrlForUpload } from './posterUpload'
 
@@ -389,56 +389,72 @@ function buildDescribeJsonBody(imageInput, options) {
 
 /** image-describe 超时（与小程序一致，vision 较慢） */
 const IMAGE_DESCRIBE_TIMEOUT_MS = 130000
+const CAPTION_PICK_TIMEOUT_MS = 90000
 
 /**
- * POST /caption/image-describe（纯文字，无图）
- * 用于插画日记：根据 narrative + mood 生成 diaryCaption / illustrationPrompt
+ * POST /caption/pick（无图插画日记）
+ * generate_illustration_prompt=true，根据心情 + 文字 + 风格生成文生图 prompt
  */
-export async function fetchCaptionNarrativeDescribe(options = {}, endpoint) {
+export async function fetchCaptionPickIllustrationPrompt(options = {}, endpoint) {
   const url = resolveApiUrl(endpoint)
-  if (!url) throw new Error('caption image-describe endpoint missing')
+  if (!url) throw new Error('caption pick endpoint missing')
 
-  const authHeaders = {
-    Authorization: 'Bearer ' + (localStorage.getItem('token') || ''),
-    'Content-Type': 'application/json'
+  const mood = String(options.moodLabel || options.userMood || '').trim()
+  const narrative = String(options.narrative || '').trim().slice(0, CAPTION_PICK_NARRATIVE_MAX)
+  const style = String(options.illustrationStyle || '').trim()
+  const body = {
+    generate_illustration_prompt: true,
+    user_mood: mood,
+    userMood: mood,
+    narrative,
+    illustration_style: style,
+    illustrationStyle: style
   }
-  const body = buildDescribeJsonBody(null, options)
+  const instruction = String(options.instruction || options.hint || '').trim()
+  if (instruction) body.instruction = instruction.slice(0, CAPTION_PICK_NARRATIVE_MAX)
+  if (Array.isArray(options.candidates) && options.candidates.length) {
+    body.candidates = options.candidates
+  }
 
   let res
   try {
     res = await axios.post(url, body, {
-      timeout: IMAGE_DESCRIBE_TIMEOUT_MS,
-      headers: authHeaders
+      timeout: CAPTION_PICK_TIMEOUT_MS,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
+      }
     })
   } catch (err) {
     const status = err?.response?.status
     const data = err?.response ? unwrapData(err.response) : null
-    console.warn('[mood-diary] POST /caption/image-describe (text) 失败', {
-      status,
-      data,
-      message: err?.message
-    })
+    console.warn('[mood-diary] POST /caption/pick 失败', { status, data, message: err?.message })
     if (status === 429 || data?.code === -2 || data?.code === '-2') {
       throw new Error(data?.message || '请求过于频繁，请稍后再试')
     }
     if (data?.code === -1 || data?.code === '-1') {
-      throw new Error(data?.message || 'image-describe failed')
+      throw new Error(data?.message || 'caption pick failed')
     }
     throw err
   }
 
   const data = unwrapData(res)
-  console.log('[mood-diary] POST /caption/image-describe (text) 响应', {
-    httpStatus: res?.status,
-    code: data?.code,
-    desc: data?.desc,
-    message: data?.message,
-    data: data?.data ?? null
+  assertCaptionApiResponse(data, res?.status, 'caption pick failed')
+  const payload = data?.data ?? data?.message ?? data
+  const illustrationPrompt = pickFirstStr(payload, [
+    'illustration_prompt',
+    'illustrationPrompt',
+    'prompt',
+    'image_prompt'
+  ])
+  const illustrationStyle = pickFirstStr(payload, ['illustration_style', 'illustrationStyle'])
+  const diaryCaption = pickFirstStr(payload, ['diary_caption', 'diaryCaption', 'caption'])
+  console.log('[mood-diary] POST /caption/pick 解析结果', {
+    illustrationPrompt,
+    illustrationStyle,
+    diaryCaption
   })
-  assertImageDescribeResponse(data, res?.status)
-  const parsed = extractImageDescribeResult(data)
-  console.log('[mood-diary] POST /caption/image-describe (text) 解析结果', parsed)
-  return parsed
+  return { illustrationPrompt, illustrationStyle, diaryCaption }
 }
 
 /**

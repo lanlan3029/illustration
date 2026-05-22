@@ -321,6 +321,7 @@ export default {
           inputImageDataUrl: reader.result,
           inputImagePath: dataUrlToPathHint(file.name),
           inputImageName: file.name || 'image.jpg',
+          hasInputImage: true,
           imageVisionCache: null
         })
       }
@@ -374,6 +375,7 @@ export default {
         inputImageDataUrl: null,
         inputImagePath: null,
         inputImageName: '',
+        hasInputImage: false,
         imageVisionCache: null,
         sceneDescription: '',
         diaryCaption: '',
@@ -412,14 +414,16 @@ export default {
         mood: this.moodObj ? this.moodObj.id : '',
         ...(imageDataUrl
           ? this.buildRefImageDraftFields(imageDataUrl)
-          : mode === 'illustration'
-            ? {
-                inputImageDataUrl: null,
-                inputImagePath: null,
-                inputImageName: '',
-                imageVisionCache: null
-              }
-            : {}),
+          : {
+              inputImageDataUrl: null,
+              inputImagePath: null,
+              inputImageName: '',
+              hasInputImage: false,
+              imageVisionCache: null,
+              sceneDescription: '',
+              diaryCaption: '',
+              quotaSentence: ''
+            }),
         composedPosterDataUrl: null,
         rawIllustrationUrl: null,
         posterGenerating: false,

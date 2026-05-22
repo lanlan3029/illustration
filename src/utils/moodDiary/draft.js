@@ -51,7 +51,7 @@ function saveIllustrationToSession(url) {
 
 function attachRefImage(draft) {
   const d = { ...draft }
-  if (!d.inputImageDataUrl && (d.hasInputImage || loadRefImageFromSession())) {
+  if (!d.inputImageDataUrl && d.hasInputImage) {
     d.inputImageDataUrl = loadRefImageFromSession()
   }
   return d

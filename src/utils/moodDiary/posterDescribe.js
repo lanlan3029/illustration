@@ -1,7 +1,7 @@
 import {
   dataUrlToFile,
   fetchCaptionImageDescribe,
-  fetchCaptionNarrativeDescribe,
+  fetchCaptionPickIllustrationPrompt,
   fetchEmotionPipeline,
   getActiveMoodEndpoints,
   imageDescribeResultToDraftPatch
@@ -61,7 +61,23 @@ function buildDescribeRequestOptions(draft, options = {}) {
     illustrationStyle: options.illustrationStyle || draft.artStyle || '',
     targetLength: 90,
     generateDiaryCaption: true,
-    filename: draft.inputImageName || 'reference.jpg'
+    filename: draft.inputImageName || 'reference.jpg',
+    instruction: narrativeHint,
+    candidates: Array.isArray(draft.captionCandidates) ? draft.captionCandidates : undefined
+  }
+}
+
+function pickResultToDescribeResult(pickResult, draft) {
+  const narrative = (draft.narrative || '').trim()
+  const diaryCaption =
+    (pickResult.diaryCaption || '').trim() ||
+    normalizeDiaryCaptionLength(narrative)
+  return {
+    description: '',
+    sceneDescription: '',
+    diaryCaption,
+    illustrationPrompt: pickResult.illustrationPrompt || '',
+    illustrationStyle: pickResult.illustrationStyle || ''
   }
 }
 
@@ -109,7 +125,9 @@ function applyDescribePatch(draft, result, options = {}) {
 }
 
 /**
- * 插画日记：有图走 vision describe，无图走文字 describe；结果供后续按风格重绘
+ * 插画日记 prepare：
+ * - 有图 → image-describe（vision + 日记 + prompt）
+ * - 无图 → caption/pick（generate_illustration_prompt，纯文本 LLM）
  */
 export async function ensureIllustrationPosterDescribe(draft, options = {}) {
   const d = draft || getDraft()
@@ -127,8 +145,9 @@ export async function ensureIllustrationPosterDescribe(draft, options = {}) {
       reqOpts,
       cfg.captionImageDescribeEndpoint
     )
-  } else if (cfg.captionImageDescribeEndpoint) {
-    result = await fetchCaptionNarrativeDescribe(reqOpts, cfg.captionImageDescribeEndpoint)
+  } else if (cfg.captionPickEndpoint) {
+    const pickResult = await fetchCaptionPickIllustrationPrompt(reqOpts, cfg.captionPickEndpoint)
+    result = pickResultToDescribeResult(pickResult, d)
   } else {
     result = await buildTextOnlyDescribeFallback(d, options)
   }
