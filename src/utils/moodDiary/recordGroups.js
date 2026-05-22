@@ -10,9 +10,25 @@ export function getRecentPosters(limit = 3) {
     }))
 }
 
+/** 合并本地与云端记录，云端优先保留 */
+export function mergeBookRecords(localRecords, cloudRecords) {
+  const seen = new Set()
+  const merged = []
+  const push = (r) => {
+    if (!r?.posterDataUrl) return
+    const key = r.cloudId || r.id || r.posterDataUrl
+    if (seen.has(key)) return
+    seen.add(key)
+    merged.push(r)
+  }
+  for (const r of cloudRecords) push(r)
+  for (const r of localRecords) push(r)
+  return merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+}
+
 /** @returns {{ key: string, label: string, records: object[] }[]} */
-export function groupRecordsByMonth(locale = 'zh') {
-  const sorted = getRecordsSorted()
+export function groupRecordsFromList(records, locale = 'zh') {
+  const sorted = [...records].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
   const map = new Map()
   for (const r of sorted) {
     const d = new Date(r.createdAt || Date.now())
@@ -20,11 +36,16 @@ export function groupRecordsByMonth(locale = 'zh') {
     if (!map.has(key)) map.set(key, [])
     map.get(key).push(r)
   }
-  return [...map.entries()].map(([key, records]) => ({
+  return [...map.entries()].map(([key, recordsInMonth]) => ({
     key,
     label: formatMonthLabel(key, locale),
-    records
+    records: recordsInMonth
   }))
+}
+
+/** @returns {{ key: string, label: string, records: object[] }[]} */
+export function groupRecordsByMonth(locale = 'zh') {
+  return groupRecordsFromList(getRecordsSorted(), locale)
 }
 
 function formatMonthLabel(key, locale) {

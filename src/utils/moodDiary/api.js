@@ -698,6 +698,27 @@ export function resolveIllustrationContentUrl(content) {
   return `https://static.kidstory.cc/${s.replace(/^\//, '')}`
 }
 
+/** 云端 /ill/ 条目 → 日记页卡片结构 */
+export function mapIllToBookRecord(item) {
+  if (!item || typeof item !== 'object') return null
+  const createdAt = item.createdAt ? new Date(item.createdAt).getTime() : Date.now()
+  const posterDataUrl = resolveIllustrationContentUrl(
+    item.content || item.picture || item.image_url || item.image || ''
+  )
+  if (!posterDataUrl) return null
+  const text = String(item.description || item.title || '').trim()
+  return {
+    id: String(item._id || item.id || createdAt),
+    cloudId: String(item._id || item.id || ''),
+    posterDataUrl,
+    createdAt,
+    caption: text,
+    narrative: text,
+    moodLabel: String(item.mood_label || item.moodLabel || '').trim(),
+    source: 'cloud'
+  }
+}
+
 /**
  * 拉取当前用户类别为「心情」的插画（后端需支持 GET /ill/?type=心情）
  * @returns {Promise<Array>}

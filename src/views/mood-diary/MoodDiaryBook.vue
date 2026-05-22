@@ -127,8 +127,13 @@
 
 <script>
 import { ElMessage } from 'element-plus'
-import { groupRecordsByMonth } from '@/utils/moodDiary/recordGroups'
-import { fetchUserMoodIllustrations, resolveIllustrationContentUrl } from '@/utils/moodDiary/api'
+import { groupRecordsFromList, mergeBookRecords } from '@/utils/moodDiary/recordGroups'
+import { getRecordsSorted } from '@/utils/moodDiary/records'
+import {
+  fetchUserMoodIllustrations,
+  mapIllToBookRecord,
+  resolveIllustrationContentUrl
+} from '@/utils/moodDiary/api'
 import { exportMoodDiaryPdf } from '@/utils/moodDiary/exportMoodDiaryPdf'
 
 const MONTHS_PER_PAGE = 2
@@ -164,16 +169,30 @@ export default {
   },
   mounted() {
     this.load()
-    if (this.tokenOk) this.loadCloudMoodIlls()
-    this.$nextTick(() => this.setupInfiniteLoad())
   },
   beforeUnmount() {
     this.observer?.disconnect()
     this.observer = null
   },
   methods: {
-    load() {
-      this.monthTimeline = groupRecordsByMonth(this.$i18n?.locale).map((g) => ({
+    async load() {
+      const locale = this.$i18n?.locale
+      let cloudRecords = []
+      if (this.tokenOk) {
+        try {
+          const list = await fetchUserMoodIllustrations(1)
+          this.cloudMoodIlls = list
+          cloudRecords = list.map(mapIllToBookRecord).filter(Boolean)
+        } catch (e) {
+          this.cloudMoodIlls = []
+          console.warn('[mood-diary] load cloud mood illustrations failed', e)
+        } finally {
+          this.cloudLoaded = true
+          this.cloudLoading = false
+        }
+      }
+      const merged = mergeBookRecords(getRecordsSorted(), cloudRecords)
+      this.monthTimeline = groupRecordsFromList(merged, locale).map((g) => ({
         ...g,
         records: g.records.map((r, i) => ({ ...r, _laneIndex: i }))
       }))
@@ -219,12 +238,14 @@ export default {
     },
     pullRefresh() {
       this.refreshing = true
-      setTimeout(async () => {
-        this.load()
-        if (this.tokenOk) await this.loadCloudMoodIlls()
-        this.refreshing = false
-        ElMessage.success(this.$t('moodDiary.refreshed'))
-      }, 280)
+      this.cloudLoading = true
+      this.load()
+        .then(() => {
+          ElMessage.success(this.$t('moodDiary.refreshed'))
+        })
+        .finally(() => {
+          this.refreshing = false
+        })
     },
     formatDay(ts) {
       const d = new Date(ts || Date.now())
@@ -243,13 +264,9 @@ export default {
       if (!this.tokenOk) return
       this.cloudLoading = true
       try {
-        this.cloudMoodIlls = await fetchUserMoodIllustrations(1)
+        await this.load()
       } catch (e) {
-        this.cloudMoodIlls = []
         ElMessage.error(e.message || this.$t('moodDiary.cloudMoodLoadFailed'))
-      } finally {
-        this.cloudLoaded = true
-        this.cloudLoading = false
       }
     },
     openPreview(r) {
