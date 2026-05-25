@@ -10,6 +10,26 @@
         <img :src="posterUrl" class="poster-result__img" alt="" />
       </div>
     </div>
+
+    <aside v-if="suggestedQuote" class="poster-result__quote-egg">
+      <p class="poster-result__quote-egg-title">{{ $t('moodDiary.waitingQuoteEggTitle') }}</p>
+      <blockquote class="poster-result__quote-egg-text">{{ suggestedQuote.text }}</blockquote>
+      <div class="poster-result__quote-egg-actions">
+        <el-button
+          type="primary"
+          size="small"
+          :loading="loading"
+          :disabled="saving"
+          @click="$emit('apply-quote', suggestedQuote)"
+        >
+          {{ $t('moodDiary.waitingQuoteEggApply') }}
+        </el-button>
+        <el-button link size="small" @click="$emit('dismiss-quote')">
+          {{ $t('moodDiary.waitingQuoteEggDismiss') }}
+        </el-button>
+      </div>
+    </aside>
+
     <div class="poster-result__actions">
       <el-button
         type="primary"
@@ -37,9 +57,10 @@ export default {
     posterUrl: { type: String, required: true },
     saving: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
-    showBackToWrite: { type: Boolean, default: true }
+    showBackToWrite: { type: Boolean, default: true },
+    suggestedQuote: { type: Object, default: null }
   },
-  emits: ['save', 'download', 'regenerate', 'back-to-write']
+  emits: ['save', 'download', 'regenerate', 'back-to-write', 'apply-quote', 'dismiss-quote']
 }
 </script>
 
@@ -122,6 +143,40 @@ export default {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.poster-result__quote-egg {
+  flex-shrink: 0;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px dashed var(--md-border);
+  background: linear-gradient(165deg, #faf3e8 0%, var(--md-cream-soft, #fffdfb) 100%);
+  box-shadow: 0 4px 14px rgba(196, 181, 224, 0.1);
+}
+
+.poster-result__quote-egg-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-text);
+}
+
+.poster-result__quote-egg-text {
+  margin: 0 0 12px;
+  padding: 0;
+  border: none;
+  font-family: 'Ma Shan Zheng', 'STXingkai', 'KaiTi', cursive;
+  font-size: 20px;
+  line-height: 1.6;
+  color: #5f5970;
+}
+
+.poster-result__quote-egg-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .poster-result__actions :deep(.el-button--primary) {

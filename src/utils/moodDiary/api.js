@@ -720,6 +720,54 @@ export function mapIllToBookRecord(item) {
 }
 
 /**
+ * GET /mood/waiting-quotes — 等待页句子
+ * Query: locale, mood, mood_label, limit (1–10)
+ * @returns {Promise<object[]>}
+ */
+export async function fetchWaitingQuotesFromApi(options = {}) {
+  const cfg = getMoodApiConfig()
+  const endpoint = resolveApiUrl(cfg.waitingQuotesEndpoint)
+  if (!endpoint) return []
+
+  const localeRaw = String(options.locale || 'zh').toLowerCase()
+  const locale = encodeURIComponent(localeRaw.startsWith('en') ? 'en' : 'zh')
+  const mood = encodeURIComponent(String(options.mood || ''))
+  const moodLabel = encodeURIComponent(String(options.mood_label || options.moodLabel || ''))
+  const limitNum = Math.min(10, Math.max(1, Number(options.limit) || 10))
+  const limit = encodeURIComponent(String(limitNum))
+  const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}locale=${locale}&mood=${mood}&mood_label=${moodLabel}&limit=${limit}`
+
+  const res = await axios.get(url, { timeout: 12000 })
+  const data = unwrapData(res)
+  const ok = data.code === 0 || data.code === '0' || data.desc === 'success'
+  const raw = data.message ?? data.data ?? data.list
+  const list = Array.isArray(raw) ? raw : []
+
+  if (!ok && list.length === 0 && data.message && typeof data.message === 'string') {
+    throw new Error(data.message)
+  }
+
+  const seen = new Set()
+  return list
+    .map((row) => {
+      if (typeof row === 'string') {
+        return { hitokoto: row.trim() }
+      }
+      return row
+    })
+    .filter((row) => {
+      if (!row || typeof row !== 'object') return false
+      const text = String(row.hitokoto || row.text || row.content || row.sentence || '').trim()
+      if (!text) return false
+      const key = String(row._id || row.uuid || text)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .slice(0, limitNum)
+}
+
+/**
  * 拉取当前用户类别为「心情」的插画（后端需支持 GET /ill/?type=心情）
  * @returns {Promise<Array>}
  */

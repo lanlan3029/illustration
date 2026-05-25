@@ -6,9 +6,12 @@
         :saving="saving"
         :loading="generating"
         :show-back-to-write="false"
+        :suggested-quote="waitingQuoteEgg"
         @save="savePoster"
         @download="downloadPoster"
         @regenerate="backToTemplate"
+        @apply-quote="applyWaitingQuoteToPoster"
+        @dismiss-quote="dismissWaitingQuoteEgg"
       />
     </template>
 
@@ -65,18 +68,26 @@
 
       <!-- 照片/插画日记：describe 完成后再选风格或模版 -->
       <div v-else-if="step === 'prepare'" class="wizard-body wizard-body--prepare">
-        <div v-loading="prepareBusy" class="wizard-prepare">
-          <p class="wizard-prepare-text">{{ stepLog || prepareStepText }}</p>
-          <p class="wizard-prepare-hint">{{ prepareStepHint }}</p>
-        </div>
+        <MoodDiaryWaitingJournal
+          active
+          :mood-emoji-id="draft.moodEmojiId"
+          :mood-label="draft.moodLabel"
+          :stage-text="stepLog || prepareStepText"
+          :locale="locale"
+          @quote-change="onWaitingQuoteChange"
+        />
       </div>
 
       <!-- 插画日记：按风格生成插画 -->
       <div v-else-if="step === 'illustrate'" class="wizard-body wizard-body--prepare">
-        <div v-loading="illustrateBusy" class="wizard-prepare">
-          <p class="wizard-prepare-text">{{ stepLog || $t('moodDiary.stepCreateCharacter') }}</p>
-          <p class="wizard-prepare-hint">{{ $t('moodDiary.wizardStepIllustrateHint') }}</p>
-        </div>
+        <MoodDiaryWaitingJournal
+          active
+          :mood-emoji-id="draft.moodEmojiId"
+          :mood-label="draft.moodLabel"
+          :stage-text="stepLog || $t('moodDiary.stepCreateCharacter')"
+          :locale="locale"
+          @quote-change="onWaitingQuoteChange"
+        />
       </div>
 
       <!-- Step 3: 模版 -->
@@ -128,8 +139,10 @@
 <script>
 import { ElMessage } from 'element-plus'
 import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.vue'
+import MoodDiaryWaitingJournal from '@/components/moodDiary/MoodDiaryWaitingJournal.vue'
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
 import { getDraft, setDraft, resolvePosterMode } from '@/utils/moodDiary/draft'
+import { quoteAlreadyInDraft } from '@/utils/moodDiary/waitingQuotes'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
 import { composePosterFromDraft, recomposePoster } from '@/utils/moodDiary/posterPipeline'
 import { generateIllustrationImage, isIllustrationStale, resolvePosterBodyTexts } from '@/utils/moodDiary/posterIllustrate'
@@ -145,7 +158,7 @@ import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/pos
 
 export default {
   name: 'MoodDiaryPosterWizard',
-  components: { MoodDiaryPosterResult },
+  components: { MoodDiaryPosterResult, MoodDiaryWaitingJournal },
   emits: ['done'],
   data() {
     const pref = getPosterTemplatePref()
@@ -168,7 +181,9 @@ export default {
       diaryCaptionLine: d.diaryCaption || d.quotaSentence || '',
       generating: false,
       saving: false,
-      stepLog: ''
+      stepLog: '',
+      lastWaitingQuote: null,
+      waitingQuoteEggDismissed: false
     }
   },
   computed: {
@@ -241,6 +256,11 @@ export default {
     },
     locale() {
       return this.$i18n?.locale === 'en' ? 'en' : 'zh'
+    },
+    waitingQuoteEgg() {
+      if (this.waitingQuoteEggDismissed || !this.lastWaitingQuote?.text) return null
+      if (quoteAlreadyInDraft(this.lastWaitingQuote.text, getDraft())) return null
+      return this.lastWaitingQuote
     }
   },
   mounted() {
@@ -307,6 +327,35 @@ export default {
     selectTemplate(id) {
       this.templateId = id
       this.syncDraftMeta()
+    },
+    onWaitingQuoteChange(quote) {
+      if (quote?.text) this.lastWaitingQuote = { ...quote }
+    },
+    dismissWaitingQuoteEgg() {
+      this.waitingQuoteEggDismissed = true
+    },
+    async applyWaitingQuoteToPoster(quote) {
+      const text = (quote?.text || this.lastWaitingQuote?.text || '').trim()
+      if (!text || this.generating) return
+      this.generating = true
+      try {
+        setDraft({ diaryCaption: text })
+        this.diaryCaptionLine = text
+        const posterUrl = await recomposePoster({
+          posterMode: this.posterMode,
+          templateId: this.templateId,
+          colorBlockPlacement: this.colorBlockPlacement,
+          imagePlacement: this.imagePlacement,
+          locale: this.locale
+        })
+        this.posterUrl = posterUrl
+        this.waitingQuoteEggDismissed = true
+        ElMessage.success(this.$t('moodDiary.waitingQuoteEggApplied'))
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('moodDiary.generateFailed'))
+      } finally {
+        this.generating = false
+      }
     },
     photoNeedsPrepare() {
       return isPhotoDescribeStale(getDraft())

@@ -10,6 +10,7 @@ const DEFAULT_CAPTION_PICK = '/caption/pick'
  * 兼容旧网关路径 /api/v1/caption/mood-recap（服务端会重写到 /caption/mood-recap）
  */
 const DEFAULT_CAPTION_MOOD_RECAP = '/caption/mood-recap'
+const DEFAULT_MOOD_WAITING_QUOTES = '/mood/waiting-quotes'
 
 export function getMoodApiConfig() {
   const imageDescribe =
@@ -23,6 +24,8 @@ export function getMoodApiConfig() {
   const recapCompletion =
     (process.env.VUE_APP_MOOD_RECAP_COMPLETION || '').trim() ||
     DEFAULT_CAPTION_MOOD_RECAP
+  const waitingQuotes =
+    (process.env.VUE_APP_MOOD_WAITING_QUOTES || '').trim() || DEFAULT_MOOD_WAITING_QUOTES
   return {
     /** POST /caption/image-describe（multipart 或 JSON）；有图时返回描述 + 日记 + illustration_prompt */
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
@@ -32,7 +35,9 @@ export function getMoodApiConfig() {
     emotionAlignEndpoint: emotionAlign.trim() || null,
     illSaveEndpoint: illSave.trim() || null,
     /** POST /caption/mood-recap（JSON）；与 image-describe 同套 code/data 包装 */
-    recapCompletionEndpoint: recapCompletion.trim() || null
+    recapCompletionEndpoint: recapCompletion.trim() || null,
+    /** GET 等待页句子；message 为数组 */
+    waitingQuotesEndpoint: waitingQuotes.trim() || null
   }
 }
 
