@@ -16,6 +16,7 @@ import {
   drawPosterFooter,
   drawPosterHeader,
   getBodyLineHeight,
+  measureBodyTextHeight,
   measurePosterBodyBlockHeight,
   isLightHex,
   prepareBodyText,
@@ -233,40 +234,58 @@ export function composeTitleAbove(ctx, img, opts) {
 
   const padX = 52
   const textW = POSTER_W - padX * 2
-  const imageTop = 320
-  const imageW = Math.min(480, POSTER_W - padX * 2)
-  const imageH = 420
-  const imageX = (POSTER_W - imageW) / 2
-  const imageY = imageTop
-  drawImageContain(ctx, img, imageX, imageY, imageW, imageH)
+  const headerBottom = 54 * SY
+  const gapTitleImage = 32 * SY
+  const gapImageExcerpt = 28 * SY
+  const footerReserve = 76 * SY
+  const minImageH = 200 * SY
+  const maxImageH = 400
 
-  const titleZoneTop = 56
-  const titleZoneBottom = imageY - 28
-  const titleZoneH = Math.max(100, titleZoneBottom - titleZoneTop)
-  drawPosterBodyBlockInZone(ctx, {
-    bodyText: body.text,
-    excerptText: '',
-    x: padX,
-    width: textW,
-    zoneTop: titleZoneTop,
-    zoneHeight: titleZoneH,
-    align: 'center',
-    theme,
-    excerptColor: theme.textColor,
-    excerptMaxLines: 0
-  })
-
+  const exColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
+  let excerptH = 0
   if (excerpt) {
-    const excerptTop = imageY + imageH + 32
-    const excerptBottom = POSTER_H - 80
     const exFont = Math.round(7 * SF)
     const exLh = Math.round(11 * SY)
     ctx.font = `400 ${exFont}px ${POSTER_FONT_STACK}`
-    const exLines = wrapTextByWidth(ctx, excerpt, textW, 3)
-    const exH = exLines.length * exLh
-    const exY = excerptTop + Math.max(0, (excerptBottom - excerptTop - exH) / 2)
-    const exColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
-    drawExcerpt(ctx, excerpt, padX, exY, textW, 'center', exColor, 3, false)
+    excerptH = wrapTextByWidth(ctx, excerpt, textW, 4).length * exLh + 8 * SY
+  }
+
+  const maxImageBottom = POSTER_H - footerReserve - gapImageExcerpt - excerptH
+  const maxTitleH = Math.max(80 * SY, maxImageBottom - minImageH - gapTitleImage - headerBottom)
+
+  let bodyMaxLines = 12
+  let titleH = body.text
+    ? measureBodyTextHeight(ctx, body.text, textW, bodyMaxLines)
+    : 0
+  while (titleH > maxTitleH && bodyMaxLines > 3) {
+    bodyMaxLines -= 1
+    titleH = measureBodyTextHeight(ctx, body.text, textW, bodyMaxLines)
+  }
+
+  const imageY = headerBottom + titleH + gapTitleImage
+  let imageH = Math.min(maxImageH, maxImageBottom - imageY)
+  imageH = Math.max(minImageH, imageH)
+
+  if (body.text) {
+    drawBodyText(ctx, body.text, padX, headerBottom, textW, 'center', theme, body.compact, bodyMaxLines)
+  }
+
+  const imageW = Math.min(480, textW)
+  const imageX = (POSTER_W - imageW) / 2
+  drawImageContain(ctx, img, imageX, imageY, imageW, imageH)
+
+  if (excerpt) {
+    drawExcerpt(
+      ctx,
+      excerpt,
+      padX,
+      imageY + imageH + gapImageExcerpt,
+      textW,
+      'center',
+      exColor,
+      4,
+      false
+    )
   }
   drawPosterFooter(ctx, theme, opts.footerName)
 }
@@ -308,11 +327,12 @@ export function composeMagazine(ctx, img, opts) {
   const colW = imgX - leftPad - 20
   const excerptColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
 
-  const introZoneTop = panelY + 48
-  const introZoneH = 40 * SY
+  const leftColTop = panelY + 52
+  const leftColBottom = panelY + panelH - 64 * SY
+  const leftColMid = (leftColTop + leftColBottom) / 2
   const accentW = 64
   const accentH = 4
-  const accentY = introZoneTop + (introZoneH - accentH) / 2
+  const accentY = leftColMid - accentH / 2
   ctx.fillStyle = panelTheme.textColor
   ctx.fillRect(leftPad, accentY, accentW, accentH)
 
@@ -323,7 +343,7 @@ export function composeMagazine(ctx, img, opts) {
   let aiText = prepareBodyText(aiRaw).text
   if (aiText && aiText === mainBody.text) aiText = ''
 
-  let textY = introZoneTop + introZoneH + 18 * SY
+  let textY = leftColMid + accentH / 2 + 20 * SY
   if (mainBody.text) {
     textY = drawPosterBodyBlock(ctx, {
       bodyText: mainBody.text,

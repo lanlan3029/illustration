@@ -149,7 +149,7 @@ export function wrapTextByWidth(ctx, text, maxWidth, maxLines = 12) {
   return lines.length ? lines : ['']
 }
 
-export function drawBodyText(ctx, text, x, y, width, align, colors, compact) {
+export function drawBodyText(ctx, text, x, y, width, align, colors, compact, maxLines = 12) {
   const body = prepareBodyText(text)
   const fontSize = compact ? POSTER_QUOTE_FONT_COMPACT : Math.round(10 * SF)
   const lineHeight = compact ? POSTER_QUOTE_LINE_COMPACT : Math.round(16 * SY)
@@ -157,12 +157,22 @@ export function drawBodyText(ctx, text, x, y, width, align, colors, compact) {
   ctx.fillStyle = colors.textColor || COLORS.primary
   ctx.textBaseline = 'top'
   ctx.textAlign = align
-  const lines = wrapTextByWidth(ctx, body.text, width)
+  const lines = wrapTextByWidth(ctx, body.text, width, maxLines)
   lines.forEach((ln, i) => {
     const ax = align === 'right' ? x + width : align === 'center' ? x + width / 2 : x
     ctx.fillText(ln, ax, y + i * lineHeight)
   })
   return y + lines.length * lineHeight
+}
+
+/** 估算正文高度（可限制行数，供标题模版动态排版） */
+export function measureBodyTextHeight(ctx, text, width, maxLines = 12) {
+  const body = prepareBodyText(text)
+  const fontSize = body.compact ? POSTER_QUOTE_FONT_COMPACT : Math.round(10 * SF)
+  const lineHeight = body.compact ? POSTER_QUOTE_LINE_COMPACT : Math.round(16 * SY)
+  ctx.font = `400 ${fontSize}px ${POSTER_FONT_STACK}`
+  const lines = wrapTextByWidth(ctx, body.text, width, maxLines)
+  return lines.length * lineHeight
 }
 
 export function getBodyLineHeight(compact) {
