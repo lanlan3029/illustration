@@ -109,8 +109,63 @@
       </div>
     </div>
 
-    <el-dialog v-model="previewOpen" width="min(520px, 92vw)" :title="$t('moodDiary.previewTitle')">
-      <img v-if="previewPoster" :src="previewPoster" class="dlg-img" alt="" />
+    <el-dialog
+      v-model="previewOpen"
+      width="min(420px, 92vw)"
+      class="preview-dialog"
+      :show-header="false"
+      align-center
+      destroy-on-close
+      @closed="onPreviewClosed"
+    >
+      <div v-if="previewRecord" class="preview-stage">
+        <button
+          v-if="previewRecords.length > 1"
+          type="button"
+          class="preview-nav preview-nav--prev"
+          :disabled="!previewHasPrev"
+          :aria-label="$t('moodDiary.bookPreviewPrev')"
+          @click="previewPrev"
+        >
+          ‹
+        </button>
+
+        <div class="preview-image-wrap">
+          <button
+            v-if="previewRecords.length > 1"
+            type="button"
+            class="preview-hit preview-hit--prev"
+            :disabled="!previewHasPrev"
+            :aria-label="$t('moodDiary.bookPreviewPrev')"
+            @click="previewPrev"
+          />
+          <img
+            :src="previewRecord.posterDataUrl"
+            class="preview-img"
+            alt=""
+            @click.stop
+          />
+          <button
+            v-if="previewRecords.length > 1"
+            type="button"
+            class="preview-hit preview-hit--next"
+            :disabled="!previewHasNext"
+            :aria-label="$t('moodDiary.bookPreviewNext')"
+            @click="previewNext"
+          />
+        </div>
+
+        <button
+          v-if="previewRecords.length > 1"
+          type="button"
+          class="preview-nav preview-nav--next"
+          :disabled="!previewHasNext"
+          :aria-label="$t('moodDiary.bookPreviewNext')"
+          @click="previewNext"
+        >
+          ›
+        </button>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -146,7 +201,8 @@ export default {
       selectedDay: now.getDate(),
       recordsByDay: new Map(),
       previewOpen: false,
-      previewPoster: '',
+      previewRecords: [],
+      previewIndex: 0,
       posterGenerating: false,
       posterGenTimer: null,
       activeMoodId: null
@@ -198,6 +254,15 @@ export default {
     },
     latestPosterRecord() {
       return getRecentPosters(1)[0] || null
+    },
+    previewRecord() {
+      return this.previewRecords[this.previewIndex] || null
+    },
+    previewHasPrev() {
+      return this.previewIndex > 0
+    },
+    previewHasNext() {
+      return this.previewIndex < this.previewRecords.length - 1
     }
   },
   mounted() {
@@ -215,10 +280,18 @@ export default {
   },
   beforeUnmount() {
     if (this.posterGenTimer) clearInterval(this.posterGenTimer)
+    window.removeEventListener('keydown', this.onPreviewKeydown)
   },
   watch: {
     '$route.fullPath'() {
       this.syncPosterFromDraft()
+    },
+    previewOpen(open) {
+      if (open) {
+        window.addEventListener('keydown', this.onPreviewKeydown)
+      } else {
+        window.removeEventListener('keydown', this.onPreviewKeydown)
+      }
     }
   },
   methods: {
@@ -245,6 +318,11 @@ export default {
     },
     dayRecords(day) {
       return this.recordsByDay.get(day) || []
+    },
+    dayPosterRecords(day) {
+      return this.dayRecords(day)
+        .filter((r) => r.posterDataUrl)
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
     },
     dayMoodEmojiId(day) {
       const recs = this.dayRecords(day)
@@ -324,6 +402,10 @@ export default {
     },
     selectDay(day) {
       this.selectedDay = day
+      const posters = this.dayPosterRecords(day)
+      if (posters.length) {
+        this.openPreviewSession(posters, 0)
+      }
     },
     formatShortDate(ts) {
       const d = new Date(ts || Date.now())
@@ -336,16 +418,56 @@ export default {
       if (t.length <= max) return t
       return t.slice(0, max) + '…'
     },
+    openPreviewSession(records, startIndex = 0) {
+      const list = (records || []).filter((r) => r?.posterDataUrl)
+      if (!list.length) return
+      this.previewRecords = list
+      this.previewIndex = Math.min(Math.max(startIndex, 0), list.length - 1)
+      this.previewOpen = true
+    },
     openPreview(url) {
-      this.previewPoster = url || ''
-      this.previewOpen = !!this.previewPoster
+      if (!url) return
+      this.openPreviewSession([{ posterDataUrl: url, id: url }], 0)
     },
     openRecord(r) {
-      if (r.posterDataUrl) {
-        this.openPreview(r.posterDataUrl)
+      if (!r?.posterDataUrl) {
+        this.$router.push('/mood-diary/book')
         return
       }
-      this.$router.push('/mood-diary/book')
+      if (this.calendarDayFilterActive) {
+        const posters = this.dayPosterRecords(this.selectedDay)
+        const idx = posters.findIndex(
+          (item) =>
+            (r.id && item.id === r.id) ||
+            (r.cloudId && item.cloudId === r.cloudId) ||
+            item.posterDataUrl === r.posterDataUrl
+        )
+        this.openPreviewSession(posters, idx >= 0 ? idx : 0)
+        return
+      }
+      this.openPreviewSession([r], 0)
+    },
+    onPreviewClosed() {
+      this.previewRecords = []
+      this.previewIndex = 0
+    },
+    previewPrev() {
+      if (!this.previewHasPrev) return
+      this.previewIndex -= 1
+    },
+    previewNext() {
+      if (!this.previewHasNext) return
+      this.previewIndex += 1
+    },
+    onPreviewKeydown(e) {
+      if (!this.previewOpen || this.previewRecords.length <= 1) return
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        this.previewPrev()
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        this.previewNext()
+      }
     },
     syncPosterFromDraft() {
       const d = getDraft()
@@ -864,10 +986,90 @@ export default {
   font-weight: 500;
 }
 
-.dlg-img {
+.preview-dialog :deep(.el-dialog__body) {
+  padding: 12px 8px 16px;
+}
+
+.preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 200px;
+}
+
+.preview-image-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: min(360px, 78vw);
+}
+
+.preview-img {
+  display: block;
   width: 100%;
   height: auto;
   border-radius: 8px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.preview-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.preview-hit:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.preview-hit--prev {
+  left: 0;
+}
+
+.preview-hit--next {
+  right: 0;
+}
+
+.preview-hit:not(:disabled):hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.preview-nav {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 2px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.preview-nav:hover:not(:disabled) {
+  background: rgba(32, 201, 151, 0.18);
+  color: #0d9488;
+}
+
+.preview-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 @media (max-width: 900px) {
