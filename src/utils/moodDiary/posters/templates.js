@@ -317,22 +317,22 @@ export function composeMagazine(ctx, img, opts) {
     pillRadius: 7
   })
 
-  const imgW = 332
-  const imgH = 498
-  const imgX = panelX + panelW - imgW - 8
-  const imgY = 300
+  const imgBreakout = 40
+  const imgW = 360
+  const imgH = 520
+  const imgX = panelX + panelW - imgW + imgBreakout
+  const imgY = 248
   drawImageContain(ctx, img, imgX, imgY, imgW, imgH)
 
   const leftPad = panelX + 36
-  const colW = imgX - leftPad - 20
+  const textZoneRight = panelX + Math.floor(panelW * 0.5)
+  const colW = Math.max(160, textZoneRight - leftPad)
   const excerptColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
 
-  const leftColTop = panelY + 52
-  const leftColBottom = panelY + panelH - 64 * SY
-  const leftColMid = (leftColTop + leftColBottom) / 2
-  const accentW = 64
+  const leftColTop = imgY + 12
+  const accentW = 56
   const accentH = 4
-  const accentY = leftColMid - accentH / 2
+  const accentY = leftColTop + 8
   ctx.fillStyle = panelTheme.textColor
   ctx.fillRect(leftPad, accentY, accentW, accentH)
 
@@ -343,26 +343,31 @@ export function composeMagazine(ctx, img, opts) {
   let aiText = prepareBodyText(aiRaw).text
   if (aiText && aiText === mainBody.text) aiText = ''
 
-  let textY = leftColMid + accentH / 2 + 20 * SY
+  const mainMaxLines = 10
+  const aiMaxLines = 7
+  let textY = accentY + accentH + 16
+
   if (mainBody.text) {
-    textY = drawPosterBodyBlock(ctx, {
-      bodyText: mainBody.text,
-      excerptText: '',
-      x: leftPad,
-      y: textY,
-      width: colW,
-      align: 'left',
-      theme: panelTheme,
-      excerptColor,
-      excerptMaxLines: 0
-    })
+    drawBodyText(
+      ctx,
+      mainBody.text,
+      leftPad,
+      textY,
+      colW,
+      'left',
+      panelTheme,
+      mainBody.compact,
+      mainMaxLines
+    )
+    const mainH = measureBodyTextHeight(ctx, mainBody.text, colW, mainMaxLines)
+    textY += mainH
     if (aiText) {
       textY += getBodyLineHeight(mainBody.compact)
     }
   }
 
   if (aiText) {
-    drawExcerpt(ctx, aiText, leftPad, textY, colW, 'left', excerptColor, 4, false)
+    drawExcerpt(ctx, aiText, leftPad, textY, colW, 'left', excerptColor, aiMaxLines, false)
   }
 
   drawPosterFooter(ctx, panelTheme, opts.footerName)
