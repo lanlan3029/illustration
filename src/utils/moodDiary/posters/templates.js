@@ -8,11 +8,15 @@ import {
   createPosterCanvas,
   drawBodyText,
   drawExcerpt,
+  wrapTextByWidth,
   drawImageContain,
   drawImageCover,
   drawPosterBodyBlock,
+  drawPosterBodyBlockInZone,
   drawPosterFooter,
   drawPosterHeader,
+  getBodyLineHeight,
+  measurePosterBodyBlockHeight,
   isLightHex,
   prepareBodyText,
   resolveTheme,
@@ -192,22 +196,31 @@ export function composeColorBlock(ctx, img, opts) {
   ctx.fillStyle = dominantHex
   ctx.fillRect(blockRect.x, blockRect.y, blockRect.w, blockRect.h)
 
+  drawPosterHeader(ctx, { theme, ...opts })
+
   const blockTheme = { ...theme, textColor: theme.textColor }
-  const padX = placement === 'left' || placement === 'right' ? 30 : 60
-  const padY = 80
-  drawPosterBodyBlock(ctx, {
+  const padX = placement === 'left' || placement === 'right' ? 36 : 52
+  const textW = blockRect.w - padX * 2
+  const textX = blockRect.x + padX
+  const isHorizontal = placement === 'top' || placement === 'bottom'
+  const headerClear = isHorizontal ? 56 * SY : 28 * SY
+  const footerClear = isHorizontal ? 48 * SY : 28 * SY
+  const zoneTop = blockRect.y + headerClear
+  const zoneHeight = blockRect.h - headerClear - footerClear
+
+  drawPosterBodyBlockInZone(ctx, {
     bodyText: body.text,
     excerptText: excerpt,
-    x: blockRect.x + padX,
-    y: blockRect.y + padY,
-    width: blockRect.w - padX * 2,
+    x: textX,
+    width: textW,
+    zoneTop,
+    zoneHeight,
     align: 'center',
     theme: blockTheme,
     excerptColor: blockTheme.textColor,
     excerptMaxLines: 3
   })
 
-  drawPosterHeader(ctx, { theme, ...opts })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 
@@ -218,19 +231,42 @@ export function composeTitleAbove(ctx, img, opts) {
   ctx.fillRect(0, 0, POSTER_W, POSTER_H)
   drawPosterHeader(ctx, { theme, ...opts })
 
-  const imageTop = 280
-  const imageW = Math.min(515, POSTER_W - 80)
-  const imageH = POSTER_H - 200 - imageTop
+  const padX = 52
+  const textW = POSTER_W - padX * 2
+  const imageTop = 320
+  const imageW = Math.min(480, POSTER_W - padX * 2)
+  const imageH = 420
   const imageX = (POSTER_W - imageW) / 2
-  drawImageContain(ctx, img, imageX, imageTop, imageW, imageH)
+  const imageY = imageTop
+  drawImageContain(ctx, img, imageX, imageY, imageW, imageH)
 
-  const titleBottom = imageTop - 24
-  const titleTop = Math.max(42 * SY, titleBottom - 120)
-  drawBodyText(ctx, body.text, 60, titleTop, POSTER_W - 120, 'center', theme, body.compact)
+  const titleZoneTop = 56
+  const titleZoneBottom = imageY - 28
+  const titleZoneH = Math.max(100, titleZoneBottom - titleZoneTop)
+  drawPosterBodyBlockInZone(ctx, {
+    bodyText: body.text,
+    excerptText: '',
+    x: padX,
+    width: textW,
+    zoneTop: titleZoneTop,
+    zoneHeight: titleZoneH,
+    align: 'center',
+    theme,
+    excerptColor: theme.textColor,
+    excerptMaxLines: 0
+  })
 
   if (excerpt) {
-    const y = Math.max(imageTop + imageH + 16, POSTER_H - 180)
-    drawExcerpt(ctx, excerpt, 60, y, POSTER_W - 120, 'center', theme.textColor, 3, false)
+    const excerptTop = imageY + imageH + 32
+    const excerptBottom = POSTER_H - 80
+    const exFont = Math.round(7 * SF)
+    const exLh = Math.round(11 * SY)
+    ctx.font = `400 ${exFont}px ${POSTER_FONT_STACK}`
+    const exLines = wrapTextByWidth(ctx, excerpt, textW, 3)
+    const exH = exLines.length * exLh
+    const exY = excerptTop + Math.max(0, (excerptBottom - excerptTop - exH) / 2)
+    const exColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
+    drawExcerpt(ctx, excerpt, padX, exY, textW, 'center', exColor, 3, false)
   }
   drawPosterFooter(ctx, theme, opts.footerName)
 }
@@ -262,57 +298,138 @@ export function composeMagazine(ctx, img, opts) {
     pillRadius: 7
   })
 
-  const imgW = 360
-  const imgH = 540
-  const imgX = panelX + panelW - imgW + 32
-  const imgY = 360
+  const imgW = 332
+  const imgH = 498
+  const imgX = panelX + panelW - imgW - 8
+  const imgY = 300
   drawImageContain(ctx, img, imgX, imgY, imgW, imgH)
 
-  const leftPad = panelX + 30
+  const leftPad = panelX + 36
+  const accentY = 92
+  const accentW = 64
   ctx.fillStyle = panelTheme.textColor
-  ctx.fillRect(leftPad, 478, 70, 3)
+  ctx.fillRect(leftPad, accentY, accentW, 4)
 
-  const colW = imgX - leftPad - 5
-  drawBodyText(ctx, body.text, leftPad, 520, colW, 'left', panelTheme, body.compact)
-  if (excerpt) {
-    drawExcerpt(ctx, excerpt, imgX, imgY + imgH + 12, imgW, 'center', panelTheme.textColor, 2, false)
+  const colW = imgX - leftPad - 20
+  const excerptColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
+
+  const mainRaw = String(opts.userNarrative || opts.narrativeText || '').trim()
+  let aiRaw = String(opts.aiCaptionText || opts.diaryCaption || '').trim()
+  if (!aiRaw && excerpt) aiRaw = String(excerpt).trim()
+  const mainBody = prepareBodyText(mainRaw)
+  let aiText = prepareBodyText(aiRaw).text
+  if (aiText && aiText === mainBody.text) aiText = ''
+
+  let textY = accentY + 36
+  if (mainBody.text) {
+    textY = drawPosterBodyBlock(ctx, {
+      bodyText: mainBody.text,
+      excerptText: '',
+      x: leftPad,
+      y: textY,
+      width: colW,
+      align: 'left',
+      theme: panelTheme,
+      excerptColor,
+      excerptMaxLines: 0
+    })
+    if (aiText) {
+      textY += getBodyLineHeight(mainBody.compact)
+    }
   }
+
+  if (aiText) {
+    drawExcerpt(ctx, aiText, leftPad, textY, colW, 'left', excerptColor, 4, false)
+  }
+
   drawPosterFooter(ctx, panelTheme, opts.footerName)
 }
 
 export function composeMultiGrid(ctx, img, opts) {
-  const { dominantHex, body, excerpt } = baseMeta(opts)
+  const { dominantHex } = baseMeta(opts)
   const theme = resolveTheme('paper', dominantHex)
-  const placement = opts.imagePlacement || 'below'
   ctx.fillStyle = COLORS.bgPage
   ctx.fillRect(0, 0, POSTER_W, POSTER_H)
   drawPosterHeader(ctx, { theme, ...opts })
 
-  const side = 40
-  const top = 50 * SY
-  const bottom = POSTER_H - 60 * SY
-  const textBlockH = 160
-  let gridY = placement === 'below' ? bottom - (bottom - top - textBlockH) : top + textBlockH + 20
-  let textY = placement === 'below' ? top + 20 : top + 20
-  if (placement === 'above') {
-    gridY = top + 20
-    textY = gridY + (bottom - top - textBlockH) + 20
+  const side = 44
+  const textW = POSTER_W - side * 2
+  const contentTop = 58 * SY
+  const contentBottom = POSTER_H - 68 * SY
+  const mainGap = 12 * SY
+  const aiGap = 16 * SY
+  const maxMainH = 200 * SY
+  const maxAiH = 150 * SY
+
+  const mainRaw = String(opts.userNarrative || opts.narrativeText || '').trim()
+  let aiRaw = String(opts.aiCaptionText || opts.diaryCaption || '').trim()
+  if (!aiRaw && opts.excerptText) {
+    aiRaw = String(opts.excerptText).trim()
+  }
+  const mainBody = prepareBodyText(mainRaw)
+  const aiBody = prepareBodyText(aiRaw)
+  if (aiBody.text && aiBody.text === mainBody.text) {
+    aiBody.text = ''
   }
 
-  const gridH = bottom - top - textBlockH - 20
-  drawImageCover(ctx, img, side, gridY, POSTER_W - side * 2, gridH, 8)
+  let mainH = 0
+  if (mainBody.text) {
+    mainH = Math.min(
+      maxMainH,
+      measurePosterBodyBlockHeight(ctx, {
+        bodyText: mainBody.text,
+        excerptText: '',
+        width: textW,
+        excerptMaxLines: 0
+      })
+    )
+  }
 
-  drawPosterBodyBlock(ctx, {
-    bodyText: body.text,
-    excerptText: excerpt,
-    x: side,
-    y: textY,
-    width: POSTER_W - side * 2,
-    align: 'left',
-    theme,
-    excerptColor: COLORS.textSecondary,
-    excerptMaxLines: 3
-  })
+  let aiH = 0
+  if (aiBody.text) {
+    aiH = Math.min(
+      maxAiH,
+      measurePosterBodyBlockHeight(ctx, {
+        bodyText: aiBody.text,
+        excerptText: '',
+        width: textW,
+        excerptMaxLines: 0
+      })
+    )
+  }
+
+  const gridY = contentTop + mainH + mainGap
+  const gridH = Math.max(280 * SY, contentBottom - gridY - aiGap - aiH)
+
+  drawImageCover(ctx, img, side, gridY, textW, gridH, 8)
+
+  if (mainBody.text) {
+    const mainZoneBottom = gridY - mainGap
+    const mainBlockH = measurePosterBodyBlockHeight(ctx, {
+      bodyText: mainBody.text,
+      excerptText: '',
+      width: textW,
+      excerptMaxLines: 0
+    })
+    const mainY = mainZoneBottom - mainBlockH
+    drawPosterBodyBlock(ctx, {
+      bodyText: mainBody.text,
+      excerptText: '',
+      x: side,
+      y: Math.max(contentTop, mainY),
+      width: textW,
+      align: 'left',
+      theme,
+      excerptColor: COLORS.textSecondary,
+      excerptMaxLines: 0
+    })
+  }
+
+  if (aiBody.text) {
+    const aiY = gridY + gridH + aiGap
+    drawExcerpt(ctx, aiBody.text, side, aiY, textW, 'left', COLORS.textSecondary, 4, false)
+  }
+
   drawPosterFooter(ctx, theme, opts.footerName)
 }
 

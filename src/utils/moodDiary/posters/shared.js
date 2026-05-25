@@ -187,6 +187,35 @@ export function drawExcerpt(ctx, text, x, y, width, align, color, maxLines = 2, 
   return y + lines.length * lineHeight
 }
 
+/** 估算主文块高度（用于垂直居中） */
+export function measurePosterBodyBlockHeight(ctx, opts) {
+  const { bodyText, excerptText, width, excerptMaxLines = 2 } = opts
+  const body = prepareBodyText(bodyText)
+  const fontSize = body.compact ? POSTER_QUOTE_FONT_COMPACT : Math.round(10 * SF)
+  const lineHeight = body.compact ? POSTER_QUOTE_LINE_COMPACT : Math.round(16 * SY)
+  ctx.font = `400 ${fontSize}px ${POSTER_FONT_STACK}`
+  const lines = wrapTextByWidth(ctx, body.text, width)
+  let h = lines.length * lineHeight
+  const excerpt = String(excerptText || '').trim()
+  const main = String(bodyText || '').trim()
+  if (excerpt && excerpt !== main) {
+    const exFont = Math.round(7 * SF)
+    const exLh = Math.round(11 * SY)
+    ctx.font = `400 ${exFont}px ${POSTER_FONT_STACK}`
+    const exLines = wrapTextByWidth(ctx, excerpt, width, excerptMaxLines)
+    h += lineHeight + exLines.length * exLh
+  }
+  return h
+}
+
+/** 在矩形区域内垂直居中绘制主文块 */
+export function drawPosterBodyBlockInZone(ctx, opts) {
+  const { zoneTop, zoneHeight, ...rest } = opts
+  const blockH = measurePosterBodyBlockHeight(ctx, rest)
+  const y = zoneTop + Math.max(0, (zoneHeight - blockH) / 2)
+  return drawPosterBodyBlock(ctx, { ...rest, y })
+}
+
 /** 主文 + 空一行 + 次要描述（用户输入为主，API 描述为次） */
 export function drawPosterBodyBlock(ctx, opts) {
   const {

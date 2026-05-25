@@ -100,6 +100,18 @@ export function resolvePosterBodyTexts(draft) {
   return { posterMain, posterSub, diaryCaptionLine }
 }
 
+/** 宫格模版：主文（用户日记）在上，AI 识图配文在下 */
+export function resolveMultiGridPosterTexts(draft) {
+  const { diaryCaptionLine } = resolvePosterBodyTexts(draft)
+  const userNarrative = (draft.narrative || '').trim()
+  let textBelow = diaryCaptionLine
+  if (textBelow && textBelow === userNarrative) textBelow = ''
+  return {
+    textAbove: userNarrative,
+    textBelow
+  }
+}
+
 /** 风格变更或未生成插画时需重跑 illustrate */
 export function isIllustrationStale(draft, styleOptions = {}) {
   const d = draft

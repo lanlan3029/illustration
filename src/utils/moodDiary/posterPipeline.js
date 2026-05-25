@@ -3,6 +3,7 @@ import { getDraft, setDraft } from './draft'
 import { ensurePosterDescribe } from './posterDescribe'
 import {
   generateIllustrationImage,
+  resolveMultiGridPosterTexts,
   resolvePosterBodyTexts
 } from './posterIllustrate'
 import { savePosterTemplatePref } from './posterTemplatePref'
@@ -24,10 +25,13 @@ export async function composePosterFromDraft(draft, options = {}) {
   if (!mainImage) throw new Error('no image for compose')
 
   const { posterMain, posterSub } = resolvePosterBodyTexts(draft)
+  const multiGridTexts = resolveMultiGridPosterTexts(draft)
   const dataUrl = await composePoster(mainImage, {
     templateId,
     bodyText: posterMain,
     excerptText: posterSub,
+    userNarrative: multiGridTexts.textAbove,
+    aiCaptionText: multiGridTexts.textBelow,
     moodLabel: draft.moodLabel,
     createdAt: Date.now(),
     footerName: options.footerName || '',
@@ -103,10 +107,13 @@ export async function runPosterPipeline(options) {
 
     options.onStep?.('compose')
     const { posterMain, posterSub, diaryCaptionLine } = resolvePosterBodyTexts(getDraft())
+    const multiGridTexts = resolveMultiGridPosterTexts(getDraft())
     const posterUrl = await composePoster(mainImageUrl, {
       templateId: options.templateId,
       bodyText: posterMain,
       excerptText: posterSub,
+      userNarrative: multiGridTexts.textAbove,
+      aiCaptionText: multiGridTexts.textBelow,
       moodLabel: draft.moodLabel,
       createdAt: Date.now(),
       footerName: options.footerName || '',
