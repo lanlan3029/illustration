@@ -54,7 +54,7 @@ export function composeCoverStory(ctx, img, opts) {
   drawPosterHeader(ctx, { theme, ...opts })
   const textW = POSTER_W - 100
   const textX = 50
-  const textY = POSTER_H * 0.62
+  const textY = POSTER_H * 0.68
   drawPosterBodyBlock(ctx, {
     bodyText: body.text,
     excerptText: excerpt,
@@ -64,7 +64,7 @@ export function composeCoverStory(ctx, img, opts) {
     align: 'center',
     theme,
     excerptColor: 'rgba(255,255,255,0.78)',
-    excerptMaxLines: 2
+    excerptMaxLines: 3
   })
   drawPosterFooter(ctx, theme, opts.footerName)
 }
@@ -101,7 +101,7 @@ export function composeCreamCard(ctx, img, opts) {
     align: 'center',
     theme,
     excerptColor: '#a39e96',
-    excerptMaxLines: 2
+    excerptMaxLines: 3
   })
   drawPosterFooter(ctx, theme, opts.footerName)
 }

@@ -145,7 +145,7 @@
             type="textarea"
             :rows="inDialog ? 6 : 5"
             :placeholder="entryPlaceholder"
-            maxlength="240"
+            :maxlength="narrativeMax"
             show-word-limit
             class="now-entry-input"
           />
@@ -177,6 +177,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
+import { MOOD_DIARY_NARRATIVE_MAX } from '@/utils/moodDiary/constants'
 import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
 import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
 import {
@@ -206,6 +207,9 @@ export default {
     }
   },
   computed: {
+    narrativeMax() {
+      return MOOD_DIARY_NARRATIVE_MAX
+    },
     isPhotoTab() {
       return this.diaryTab === 'photo'
     },

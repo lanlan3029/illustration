@@ -1,9 +1,11 @@
+import { MOOD_DIARY_NARRATIVE_MAX } from './constants'
+
 /**
  * Demo-tier client text check — not a business compliance API.
  * Blocks empty / too short / trivial dangerous patterns only.
  */
 const MIN_LEN = 2
-const MAX_LEN = 240
+const MAX_LEN = MOOD_DIARY_NARRATIVE_MAX
 
 export function checkTextSafe(text, t) {
   const s = typeof text === 'string' ? text.trim() : ''
