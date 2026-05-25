@@ -665,7 +665,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
+  min-height: 0;
 }
 
 .wizard-prepare {

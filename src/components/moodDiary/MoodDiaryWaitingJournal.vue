@@ -10,20 +10,23 @@
     </p>
 
     <div class="waiting-journal__desk">
-      <div class="waiting-journal__binder" aria-hidden="true" />
       <div class="waiting-journal__book">
-        <div
-          v-if="!loading && displayQuote"
-          class="waiting-journal__page"
-          :class="{ 'waiting-journal__page--flip': flipping }"
-          :style="pageTiltStyle"
-        >
+        <div v-if="!loading && displayQuote" class="waiting-journal__page">
           <div class="waiting-journal__paper">
             <span class="waiting-journal__date">{{ todayLabel }}</span>
-            <blockquote class="waiting-journal__quote">
-              <p :key="`${displayIndex}-${displayQuote.id}`">{{ displayQuote.text }}</p>
-            </blockquote>
-            <p v-if="displayQuote.author" class="waiting-journal__author">—— {{ displayQuote.author }}</p>
+            <Transition name="waiting-quote" mode="out-in">
+              <div
+                :key="`${displayIndex}-${displayQuote.id}`"
+                class="waiting-journal__content"
+              >
+                <blockquote class="waiting-journal__quote">
+                  <p>{{ displayQuote.text }}</p>
+                </blockquote>
+                <p v-if="displayQuote.author" class="waiting-journal__author">
+                  —— {{ displayQuote.author }}
+                </p>
+              </div>
+            </Transition>
           </div>
         </div>
 
@@ -32,10 +35,6 @@
             <span class="waiting-journal__date">{{ todayLabel }}</span>
             <p class="waiting-journal__loading-text">{{ $t('moodDiary.waitingQuotesLoading') }}</p>
           </div>
-        </div>
-
-        <div class="waiting-journal__page waiting-journal__page--under" aria-hidden="true">
-          <div class="waiting-journal__paper" />
         </div>
       </div>
     </div>
@@ -60,8 +59,7 @@ import {
 } from '@/utils/moodDiary/waitingQuotes'
 import { getDraft } from '@/utils/moodDiary/draft'
 
-const ROTATE_MS = 10000
-const FLIP_MS = 680
+const ROTATE_MS = 20000
 
 export default {
   name: 'MoodDiaryWaitingJournal',
@@ -76,13 +74,9 @@ export default {
     return {
       quotes: [],
       displayIndex: 0,
-      flipping: false,
       loading: false,
       rotateTimer: null,
-      flipEndTimer: null,
-      flipSwapTimer: null,
       reloadTimer: null,
-      pageTilt: -1.2,
       requestSeq: 0
     }
   },
@@ -99,9 +93,6 @@ export default {
     },
     atmosphereStyle() {
       return atmosphereCssVars(this.moodEmojiId)
-    },
-    pageTiltStyle() {
-      return { '--page-tilt': `${this.pageTilt}deg` }
     },
     quoteLocale() {
       return normalizeWaitingQuoteLocale(this.locale)
@@ -147,15 +138,6 @@ export default {
         this.reloadTimer = null
       }
       this.stopRotation()
-      if (this.flipEndTimer) {
-        clearTimeout(this.flipEndTimer)
-        this.flipEndTimer = null
-      }
-      if (this.flipSwapTimer) {
-        clearTimeout(this.flipSwapTimer)
-        this.flipSwapTimer = null
-      }
-      this.flipping = false
     },
     stopRotation() {
       if (this.rotateTimer) {
@@ -215,17 +197,8 @@ export default {
       this.rotateTimer = setInterval(() => this.nextQuote(), ROTATE_MS)
     },
     nextQuote() {
-      if (this.loading || this.quotes.length <= 1 || this.flipping) return
-      this.flipping = true
-      this.pageTilt = this.pageTilt > 0 ? -1.5 : 1.5
-
-      this.flipSwapTimer = setTimeout(() => {
-        this.displayIndex = (this.displayIndex + 1) % this.quotes.length
-      }, FLIP_MS * 0.45)
-
-      this.flipEndTimer = setTimeout(() => {
-        this.flipping = false
-      }, FLIP_MS)
+      if (this.loading || this.quotes.length <= 1) return
+      this.displayIndex = (this.displayIndex + 1) % this.quotes.length
     }
   }
 }
@@ -236,7 +209,7 @@ export default {
 
 .waiting-journal {
   width: 100%;
-  max-width: 380px;
+  max-width: 480px;
   margin: 0 auto;
   padding: 8px 4px 12px;
   box-sizing: border-box;
@@ -272,134 +245,73 @@ export default {
 
 .waiting-journal__desk {
   position: relative;
-  padding-left: 18px;
-}
-
-.waiting-journal__binder {
-  position: absolute;
-  left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 14px;
-  border-radius: 8px 0 0 8px;
-  background: linear-gradient(180deg, #e8dfd0 0%, #d8cbb8 100%);
-  box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.06);
-}
-
-.waiting-journal__binder::before,
-.waiting-journal__binder::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
-.waiting-journal__binder::before {
-  top: 18%;
-}
-
-.waiting-journal__binder::after {
-  bottom: 18%;
 }
 
 .waiting-journal__book {
   position: relative;
-  min-height: 220px;
-  perspective: 900px;
+  min-height: 60vh;
 }
 
 .waiting-journal__page {
   position: relative;
   z-index: 2;
-  transform: rotate(var(--page-tilt, -1.2deg));
-  transform-origin: left center;
-  transition: transform 0.55s ease;
-}
-
-.waiting-journal__page--flip {
-  animation: journal-page-turn 0.68s ease-in-out;
-}
-
-.waiting-journal__page--under {
-  position: absolute;
-  inset: 8px 0 0 6px;
-  z-index: 1;
-  transform: rotate(1deg);
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-.waiting-journal__page--under .waiting-journal__paper {
-  filter: brightness(0.96);
-  min-height: 200px;
-}
-
-@keyframes journal-page-turn {
-  0% {
-    transform: rotateY(0deg) rotate(var(--page-tilt, -1.2deg));
-  }
-  45% {
-    transform: rotateY(-88deg) rotate(calc(var(--page-tilt, -1.2deg) * 0.3));
-    opacity: 0.35;
-  }
-  55% {
-    transform: rotateY(-92deg) rotate(calc(var(--page-tilt, -1.2deg) * 0.3));
-    opacity: 0.2;
-  }
-  100% {
-    transform: rotateY(0deg) rotate(var(--page-tilt, -1.2deg));
-    opacity: 1;
-  }
 }
 
 .waiting-journal__paper {
   position: relative;
-  padding: 22px 20px 24px 24px;
-  border-radius: 4px 14px 14px 4px;
+  display: flex;
+  flex-direction: column;
+  height: 60vh;
+  min-height: 60vh;
+  padding: 28px 24px 32px;
+  border-radius: 16px;
   background-color: #faf3e8;
   background-image:
     linear-gradient(90deg, rgba(210, 180, 140, 0.12) 0, rgba(210, 180, 140, 0.12) 1px, transparent 1px),
     repeating-linear-gradient(
       transparent,
-      transparent 27px,
-      rgba(168, 152, 128, 0.14) 28px,
-      rgba(168, 152, 128, 0.14) 29px
+      transparent 23px,
+      rgba(168, 152, 128, 0.14) 24px,
+      rgba(168, 152, 128, 0.14) 25px
     ),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
   border: 1px solid rgba(196, 181, 150, 0.45);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 10px 28px rgba(196, 181, 224, 0.16),
-    0 2px 6px rgba(95, 89, 112, 0.08);
-  min-height: 200px;
+    0 12px 36px rgba(196, 181, 224, 0.18),
+    0 3px 8px rgba(95, 89, 112, 0.1);
   box-sizing: border-box;
 }
 
 .waiting-journal__paper--loading {
-  display: flex;
-  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .waiting-journal__loading-text {
-  margin: 24px 0 0;
+  margin: auto 0;
   font-family: 'Ma Shan Zheng', 'STXingkai', 'KaiTi', cursive;
-  font-size: 20px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 24px;
   color: rgba(95, 89, 112, 0.45);
   text-align: center;
 }
 
 .waiting-journal__date {
   display: block;
-  margin-bottom: 14px;
-  font-size: 12px;
+  flex-shrink: 0;
+  margin-bottom: 18px;
+  font-size: 13px;
   letter-spacing: 0.04em;
   color: rgba(95, 89, 112, 0.55);
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.waiting-journal__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
 }
 
 .waiting-journal__quote {
@@ -411,25 +323,38 @@ export default {
 .waiting-journal__quote p {
   margin: 0;
   font-family: 'Ma Shan Zheng', 'STXingkai', 'KaiTi', '华文行楷', cursive;
-  font-size: 24px;
-  line-height: 1.75;
+  font-size: clamp(17px, 2.6vw, 20px);
+  line-height: 24px;
   color: #5f5970;
   white-space: pre-wrap;
   word-break: break-word;
-  min-height: calc(24px * 1.75 * 3);
+  text-align: center;
 }
 
 .waiting-journal--en .waiting-journal__quote p {
   font-family: 'Caveat', 'Bradley Hand', 'Segoe Script', cursive;
-  font-size: 26px;
+  font-size: clamp(18px, 2.8vw, 22px);
+  line-height: 24px;
 }
 
 .waiting-journal__author {
+  flex-shrink: 0;
   margin: 16px 0 0;
   text-align: right;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 24px;
   color: rgba(95, 89, 112, 0.62);
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.waiting-quote-enter-active,
+.waiting-quote-leave-active {
+  transition: opacity 0.8s ease;
+}
+
+.waiting-quote-enter-from,
+.waiting-quote-leave-to {
+  opacity: 0;
 }
 
 .waiting-journal__dots {
