@@ -3,8 +3,12 @@
     <header class="book-toolbar">
       <h1 class="book-title">{{ $t('moodDiary.navBook') }}</h1>
       <div class="book-toolbar-actions">
+        <el-radio-group v-model="viewMode" size="small" class="book-view-toggle" @change="persistViewMode">
+          <el-radio-button label="grid">{{ $t('moodDiary.bookViewGrid') }}</el-radio-button>
+          <el-radio-button label="list">{{ $t('moodDiary.bookViewList') }}</el-radio-button>
+        </el-radio-group>
         <el-tooltip :content="$t('moodDiary.exportPdfHint')" placement="bottom">
-          <el-button :loading="exportingPdf" :disabled="!monthTimeline.length" @click="exportPdf">
+          <el-button :disabled="!monthTimeline.length" @click="openExportDialog">
             {{ $t('moodDiary.exportPdfLabel') }}
           </el-button>
         </el-tooltip>
@@ -33,7 +37,7 @@
             <span class="month-count">{{ group.records.length }}</span>
           </header>
 
-          <div class="month-grid">
+          <div v-if="viewMode === 'grid'" class="month-grid">
             <button
               v-for="r in group.records"
               :key="r.id"
@@ -55,6 +59,30 @@
               </span>
             </button>
           </div>
+
+          <ul v-else class="month-list">
+            <li v-for="r in group.records" :key="r.id">
+              <button type="button" class="list-row" @click="openPreview(r)">
+                <div class="list-thumb-wrap">
+                  <img
+                    v-if="r.posterDataUrl"
+                    :src="r.posterDataUrl"
+                    class="list-thumb"
+                    alt=""
+                    loading="lazy"
+                  />
+                  <span v-else class="list-thumb list-thumb--empty" />
+                </div>
+                <div class="list-info">
+                  <div class="list-meta">
+                    <time class="list-date">{{ formatDay(r.createdAt) }}</time>
+                    <span v-if="r.moodLabel" class="list-mood">{{ r.moodLabel }}</span>
+                  </div>
+                  <p class="list-text">{{ excerpt(r.caption || r.narrative, 56) }}</p>
+                </div>
+              </button>
+            </li>
+          </ul>
         </section>
       </div>
 
@@ -62,6 +90,83 @@
       <div v-else-if="hasMore" ref="loadSentinel" class="load-sentinel" aria-hidden="true" />
       <p v-else-if="visibleMonthGroups.length" class="book-end">{{ $t('moodDiary.timelineEnd') }}</p>
     </div>
+
+    <el-dialog
+      v-model="exportDialogOpen"
+      width="min(480px, 92vw)"
+      class="export-dialog"
+      :title="$t('moodDiary.exportPdfDialogTitle')"
+      @closed="onExportDialogClosed"
+    >
+      <el-radio-group v-model="exportScope" class="export-scope">
+        <el-radio label="all">{{ $t('moodDiary.exportPdfScopeAll') }}</el-radio>
+        <el-radio label="month">{{ $t('moodDiary.exportPdfScopeMonth') }}</el-radio>
+        <el-radio label="pick">{{ $t('moodDiary.exportPdfScopePick') }}</el-radio>
+      </el-radio-group>
+
+      <div v-if="exportScope === 'month'" class="export-panel">
+        <p class="export-panel-label">{{ $t('moodDiary.exportPdfSelectMonths') }}</p>
+        <el-checkbox-group v-model="exportMonthKeys" class="export-month-group">
+          <el-checkbox
+            v-for="g in monthTimeline"
+            :key="g.key"
+            :label="g.key"
+            class="export-month-item"
+          >
+            {{ g.label }}
+            <span class="export-item-count">({{ g.records.length }})</span>
+          </el-checkbox>
+        </el-checkbox-group>
+      </div>
+
+      <div v-else-if="exportScope === 'pick'" class="export-panel export-panel--pick">
+        <div class="export-pick-toolbar">
+          <span class="export-panel-label">{{ $t('moodDiary.exportPdfSelectEntries') }}</span>
+          <div class="export-pick-actions">
+            <el-button link type="primary" size="small" @click="selectAllForExport">
+              {{ $t('moodDiary.exportPdfSelectAll') }}
+            </el-button>
+            <el-button link size="small" @click="clearExportPick">
+              {{ $t('moodDiary.exportPdfClearSelection') }}
+            </el-button>
+          </div>
+        </div>
+        <el-checkbox-group v-model="exportPickIds" class="export-pick-group">
+          <section v-for="g in monthTimeline" :key="g.key" class="export-pick-month">
+            <h3 class="export-pick-month-label">{{ g.label }}</h3>
+            <el-checkbox
+              v-for="r in g.records"
+              :key="recordExportId(r)"
+              :label="recordExportId(r)"
+              class="export-pick-item"
+            >
+              <span class="export-pick-row">
+                <img
+                  v-if="r.posterDataUrl"
+                  :src="r.posterDataUrl"
+                  class="export-pick-thumb"
+                  alt=""
+                />
+                <span v-else class="export-pick-thumb export-pick-thumb--empty" />
+                <span class="export-pick-info">
+                  <span class="export-pick-date">{{ formatDay(r.createdAt) }}</span>
+                  <span class="export-pick-text">{{ excerpt(r.caption || r.narrative, 40) }}</span>
+                </span>
+              </span>
+            </el-checkbox>
+          </section>
+        </el-checkbox-group>
+      </div>
+
+      <p v-else class="export-panel-hint">{{ $t('moodDiary.exportPdfScopeAllHint') }}</p>
+
+      <template #footer>
+        <el-button @click="exportDialogOpen = false">{{ $t('moodDiary.exportPdfCancel') }}</el-button>
+        <el-button type="primary" :loading="exportingPdf" @click="confirmExportPdf">
+          {{ $t('moodDiary.exportPdfConfirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog
       v-model="previewOpen"
@@ -94,16 +199,31 @@ import { fetchUserMoodIllustrations, mapIllToBookRecord } from '@/utils/moodDiar
 import { exportMoodDiaryPdf } from '@/utils/moodDiary/exportMoodDiaryPdf'
 
 const MONTHS_PER_PAGE = 4
+const BOOK_VIEW_KEY = 'mood_diary_book_view_v1'
+
+function readBookViewMode() {
+  try {
+    const v = localStorage.getItem(BOOK_VIEW_KEY)
+    return v === 'list' ? 'list' : 'grid'
+  } catch (_) {
+    return 'grid'
+  }
+}
 
 export default {
   name: 'MoodDiaryBook',
   data() {
     return {
+      viewMode: readBookViewMode(),
       monthTimeline: [],
       visibleMonthCount: MONTHS_PER_PAGE,
       loadingMore: false,
       refreshing: false,
       exportingPdf: false,
+      exportDialogOpen: false,
+      exportScope: 'all',
+      exportMonthKeys: [],
+      exportPickIds: [],
       previewOpen: false,
       previewRecord: null,
       cloudMoodIlls: [],
@@ -126,6 +246,9 @@ export default {
     previewText() {
       const t = (this.previewRecord?.caption || this.previewRecord?.narrative || '').trim()
       return t || ''
+    },
+    allBookRecords() {
+      return this.monthTimeline.flatMap((g) => g.records)
     }
   },
   mounted() {
@@ -211,6 +334,18 @@ export default {
       }
       return d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
     },
+    excerpt(s, max = 100) {
+      const t = (s || '').trim()
+      if (t.length <= max) return t || '—'
+      return t.slice(0, max) + '…'
+    },
+    persistViewMode(mode) {
+      try {
+        localStorage.setItem(BOOK_VIEW_KEY, mode === 'list' ? 'list' : 'grid')
+      } catch (_) {
+        /* ignore */
+      }
+    },
     async loadCloudMoodIlls() {
       if (!this.tokenOk) return
       this.cloudLoading = true
@@ -225,14 +360,65 @@ export default {
       this.previewRecord = r
       this.previewOpen = true
     },
-    async exportPdf() {
+    recordExportId(r) {
+      return String(r.cloudId || r.id || r.posterDataUrl || '')
+    },
+    openExportDialog() {
+      if (!this.monthTimeline.length) return
+      this.exportScope = 'all'
+      this.exportMonthKeys = this.monthTimeline[0] ? [this.monthTimeline[0].key] : []
+      this.exportPickIds = []
+      this.exportDialogOpen = true
+    },
+    onExportDialogClosed() {
+      if (this.exportingPdf) return
+      this.exportScope = 'all'
+      this.exportMonthKeys = []
+      this.exportPickIds = []
+    },
+    selectAllForExport() {
+      this.exportPickIds = this.allBookRecords.map((r) => this.recordExportId(r)).filter(Boolean)
+    },
+    clearExportPick() {
+      this.exportPickIds = []
+    },
+    resolveExportRecords() {
+      if (this.exportScope === 'all') {
+        return { records: this.allBookRecords, filenameSuffix: '' }
+      }
+      if (this.exportScope === 'month') {
+        if (!this.exportMonthKeys.length) {
+          throw new Error(this.$t('moodDiary.exportPdfNoMonthSelected'))
+        }
+        const keySet = new Set(this.exportMonthKeys)
+        const records = this.monthTimeline
+          .filter((g) => keySet.has(g.key))
+          .flatMap((g) => g.records)
+        const suffix =
+          this.exportMonthKeys.length === 1 ? this.exportMonthKeys[0] : `${this.exportMonthKeys.length}-months`
+        return { records, filenameSuffix: suffix }
+      }
+      if (!this.exportPickIds.length) {
+        throw new Error(this.$t('moodDiary.exportPdfNoEntrySelected'))
+      }
+      const idSet = new Set(this.exportPickIds)
+      const records = this.allBookRecords.filter((r) => idSet.has(this.recordExportId(r)))
+      return { records, filenameSuffix: 'selected' }
+    },
+    async confirmExportPdf() {
       if (!this.monthTimeline.length || this.exportingPdf) return
       this.exportingPdf = true
       ElMessage.info(this.$t('moodDiary.exportPdfExporting'))
       const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
       try {
+        const { records, filenameSuffix } = this.resolveExportRecords()
+        if (!records.length) {
+          throw new Error(this.$t('moodDiary.exportPdfEmpty'))
+        }
         await exportMoodDiaryPdf({
           locale,
+          records,
+          filenameSuffix,
           title: this.$t('moodDiary.title'),
           exportedLabel: this.$t('moodDiary.exportPdfExportedOn', {
             date: this.formatExportDate(locale)
@@ -240,6 +426,7 @@ export default {
           emptyMessage: this.$t('moodDiary.exportPdfEmpty')
         })
         ElMessage.success(this.$t('moodDiary.exportPdfSuccess'))
+        this.exportDialogOpen = false
       } catch (e) {
         ElMessage.error(e.message || this.$t('moodDiary.exportPdfFailed'))
       } finally {
@@ -277,13 +464,19 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 20px 24px 12px;
+  padding: 20px 16px 12px;
 }
 
 .book-toolbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.book-view-toggle {
   flex-shrink: 0;
 }
 
@@ -299,7 +492,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px 12px;
+  padding: 0 16px 12px;
   font-size: 13px;
 }
 
@@ -324,14 +517,13 @@ export default {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 20px 28px;
+  padding: 4px 16px 28px;
   -webkit-overflow-scrolling: touch;
 }
 
 .book-album {
   width: 100%;
-  max-width: 920px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .month-block {
@@ -368,13 +560,14 @@ export default {
 
 .month-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, 100px);
+  justify-content: start;
   gap: 8px;
 }
 
 @media (min-width: 640px) {
   .month-grid {
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, 112px);
     gap: 10px;
   }
 }
@@ -449,6 +642,104 @@ export default {
   white-space: nowrap;
 }
 
+.month-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.month-list > li {
+  margin: 0;
+  padding: 0;
+}
+
+.list-row {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #e8ecf1;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.list-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.list-thumb-wrap {
+  flex-shrink: 0;
+  width: 52px;
+  height: 74px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.list-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.list-thumb--empty {
+  background: #e2e8f0;
+}
+
+.list-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.list-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.list-date {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.list-mood {
+  color: #0d9488;
+  background: rgba(32, 201, 151, 0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.list-text {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.45;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .preview-body {
   display: flex;
   flex-direction: column;
@@ -499,5 +790,137 @@ export default {
   width: 100%;
   height: auto;
   border-radius: 8px;
+}
+
+.export-scope {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.export-panel {
+  margin-top: 4px;
+}
+
+.export-panel--pick {
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+}
+
+.export-panel-label {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.export-panel-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.export-month-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.export-item-count {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.export-pick-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.export-pick-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.export-pick-month {
+  margin-bottom: 14px;
+}
+
+.export-pick-month-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.export-pick-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.export-pick-item {
+  display: flex;
+  width: 100%;
+  margin-right: 0;
+  margin-bottom: 8px;
+  height: auto;
+  align-items: flex-start;
+}
+
+.export-pick-item :deep(.el-checkbox__label) {
+  flex: 1;
+  min-width: 0;
+  padding-left: 8px;
+  line-height: 1.4;
+}
+
+.export-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.export-pick-thumb {
+  width: 40px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+
+.export-pick-thumb--empty {
+  display: inline-block;
+  background: #e2e8f0;
+}
+
+.export-pick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.export-pick-date {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.export-pick-text {
+  font-size: 13px;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

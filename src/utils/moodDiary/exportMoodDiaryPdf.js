@@ -1,6 +1,6 @@
 import html2canvas from 'html2canvas'
 import JsPDF from 'jspdf'
-import { groupRecordsByMonth } from './recordGroups'
+import { groupRecordsFromList } from './recordGroups'
 import { getRecordsSorted } from './records'
 
 const EXPORT_WIDTH_PX = 794
@@ -213,27 +213,37 @@ function canvasToPdf(canvas) {
   return pdf
 }
 
-function buildFilename(locale) {
+function buildFilename(locale, suffix) {
   const ts = new Date()
   const pad = (n) => String(n).padStart(2, '0')
   const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}`
+  const tag = suffix ? `-${String(suffix).replace(/[^\w-]/g, '')}` : ''
   return locale === 'zh' || locale?.startsWith?.('zh')
-    ? `心情日记-${stamp}.pdf`
-    : `mood-diary-${stamp}.pdf`
+    ? `心情日记-${stamp}${tag}.pdf`
+    : `mood-diary-${stamp}${tag}.pdf`
 }
 
 /**
- * Export all local mood diary records to a PDF file.
- * @param {{ locale?: string, title: string, exportedLabel: string, emptyMessage: string }} options
+ * Export mood diary records to a PDF file.
+ * @param {{
+ *   locale?: string,
+ *   title: string,
+ *   exportedLabel: string,
+ *   emptyMessage: string,
+ *   records?: object[],
+ *   filenameSuffix?: string
+ * }} options
  */
 export async function exportMoodDiaryPdf(options) {
   const locale = options.locale || 'zh'
-  const records = getRecordsSorted()
+  const records = Array.isArray(options.records) && options.records.length
+    ? options.records
+    : getRecordsSorted()
   if (!records.length) {
     throw new Error(options.emptyMessage || 'No diary entries')
   }
 
-  const groups = groupRecordsByMonth(locale)
+  const groups = groupRecordsFromList(records, locale)
   const container = buildExportDom(groups, {
     title: options.title,
     exportedLabel: options.exportedLabel,
@@ -256,7 +266,7 @@ export async function exportMoodDiaryPdf(options) {
     })
 
     const pdf = canvasToPdf(canvas)
-    pdf.save(buildFilename(locale))
+    pdf.save(buildFilename(locale, options.filenameSuffix))
   } finally {
     container.remove()
   }
