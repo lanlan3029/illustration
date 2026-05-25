@@ -113,8 +113,9 @@
       v-model="previewOpen"
       width="min(420px, 92vw)"
       class="preview-dialog"
-      :show-header="false"
+      :show-close="false"
       align-center
+      append-to-body
       destroy-on-close
       @closed="onPreviewClosed"
     >
@@ -181,10 +182,12 @@ import { requestOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
 import {
   buildCalendarCells,
   getRecentPosters,
-  getRecordsForCalendarMonth
+  getRecordsForCalendarMonth,
+  mergeBookRecords
 } from '@/utils/moodDiary/recordGroups'
 import { ElMessage } from 'element-plus'
 import { getRecordsSorted } from '@/utils/moodDiary/records'
+import { fetchUserMoodIllustrations, mapIllToBookRecord } from '@/utils/moodDiary/api'
 
 export default {
   name: 'MoodDiaryNarrative',
@@ -200,6 +203,7 @@ export default {
       calMonth: now.getMonth(),
       selectedDay: now.getDate(),
       recordsByDay: new Map(),
+      savedRecords: [],
       previewOpen: false,
       previewRecords: [],
       previewIndex: 0,
@@ -219,11 +223,16 @@ export default {
     calendarDayFilterActive() {
       return this.selectedDayRecords.length > 0
     },
+    tokenOk() {
+      const t = typeof localStorage !== 'undefined' ? localStorage.getItem('token') || '' : ''
+      return !!(t && t !== 'undefined')
+    },
     recentDashboardRecords() {
       if (this.calendarDayFilterActive) {
         return this.selectedDayRecords.slice(0, 3)
       }
-      return getRecordsSorted().slice(0, 3)
+      const source = this.savedRecords.length ? this.savedRecords : getRecordsSorted()
+      return source.filter((r) => r.posterDataUrl).slice(0, 3)
     },
     calendarCells() {
       return buildCalendarCells(this.calYear, this.calMonth)
@@ -295,9 +304,14 @@ export default {
     }
   },
   methods: {
-    refreshData() {
+    async refreshData() {
       this.refreshing = true
-      this.recordsByDay = getRecordsForCalendarMonth(this.calYear, this.calMonth)
+      await this.loadSavedRecords()
+      this.recordsByDay = getRecordsForCalendarMonth(
+        this.calYear,
+        this.calMonth,
+        this.savedRecords
+      )
       const today = new Date()
       if (this.calYear === today.getFullYear() && this.calMonth === today.getMonth()) {
         this.selectedDay = today.getDate()
@@ -308,6 +322,18 @@ export default {
       setTimeout(() => {
         this.refreshing = false
       }, 200)
+    },
+    async loadSavedRecords() {
+      let cloudRecords = []
+      if (this.tokenOk) {
+        try {
+          const list = await fetchUserMoodIllustrations(1)
+          cloudRecords = list.map(mapIllToBookRecord).filter(Boolean)
+        } catch (e) {
+          console.warn('[mood-diary] calendar saved records load failed', e)
+        }
+      }
+      this.savedRecords = mergeBookRecords(getRecordsSorted(), cloudRecords)
     },
     openWriteEntry() {
       requestOpenWriteDialog()
@@ -326,51 +352,30 @@ export default {
     },
     dayMoodEmojiId(day) {
       const recs = this.dayRecords(day)
-      if (recs.length) {
-        let latest = null
-        for (const r of recs) {
-          const id = r.moodEmojiId || r.mood
-          if (!id) continue
-          if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
-            latest = r
-          }
+      if (!recs.length) return null
+      let latest = null
+      for (const r of recs) {
+        const id = r.moodEmojiId || r.mood
+        if (!id) continue
+        if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
+          latest = r
         }
-        if (latest) return latest.moodEmojiId || latest.mood
       }
-      const today = new Date()
-      if (
-        this.calYear === today.getFullYear() &&
-        this.calMonth === today.getMonth() &&
-        day === today.getDate()
-      ) {
-        const d = getDraft()
-        return d.moodEmojiId || d.mood || null
-      }
-      return null
+      return latest ? latest.moodEmojiId || latest.mood : null
     },
     dayMoodLabel(day) {
       const recs = this.dayRecords(day)
-      if (recs.length) {
-        let latest = null
-        for (const r of recs) {
-          const id = r.moodEmojiId || r.mood
-          if (!id) continue
-          if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
-            latest = r
-          }
+      if (!recs.length) return ''
+      let latest = null
+      for (const r of recs) {
+        const id = r.moodEmojiId || r.mood
+        if (!id && !r.moodLabel) continue
+        if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
+          latest = r
         }
-        if (latest?.moodLabel) return latest.moodLabel
       }
-      const today = new Date()
-      if (
-        this.calYear === today.getFullYear() &&
-        this.calMonth === today.getMonth() &&
-        day === today.getDate()
-      ) {
-        const d = getDraft()
-        if (d.moodLabel) return d.moodLabel
-      }
-      const id = this.dayMoodEmojiId(day)
+      if (latest?.moodLabel) return latest.moodLabel
+      const id = latest?.moodEmojiId || latest?.mood
       if (!id) return ''
       const mood = findMoodById(id, this.$i18n?.locale === 'zh')
       return mood?.label || ''
@@ -397,7 +402,7 @@ export default {
       }
       this.calMonth = m
       this.calYear = y
-      this.recordsByDay = getRecordsForCalendarMonth(y, m)
+      this.recordsByDay = getRecordsForCalendarMonth(y, m, this.savedRecords)
       this.selectedDay = 1
     },
     selectDay(day) {
@@ -423,7 +428,9 @@ export default {
       if (!list.length) return
       this.previewRecords = list
       this.previewIndex = Math.min(Math.max(startIndex, 0), list.length - 1)
-      this.previewOpen = true
+      this.$nextTick(() => {
+        this.previewOpen = true
+      })
     },
     openPreview(url) {
       if (!url) return
@@ -448,7 +455,6 @@ export default {
       this.openPreviewSession([r], 0)
     },
     onPreviewClosed() {
-      this.previewRecords = []
       this.previewIndex = 0
     },
     previewPrev() {
@@ -984,6 +990,10 @@ export default {
 .dash-side-card .dash-empty-text {
   font-size: 14px;
   font-weight: 500;
+}
+
+.preview-dialog :deep(.el-dialog__header) {
+  display: none;
 }
 
 .preview-dialog :deep(.el-dialog__body) {

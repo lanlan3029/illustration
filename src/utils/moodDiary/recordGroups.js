@@ -58,10 +58,13 @@ function formatMonthLabel(key, locale) {
 }
 
 /** @returns {Map<number, object[]>} day (1-31) -> records */
-export function getRecordsForCalendarMonth(year, month) {
-  const sorted = getRecordsSorted()
+export function getRecordsForCalendarMonth(year, month, records) {
+  const sorted = records
+    ? [...records].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    : getRecordsSorted()
   const byDay = new Map()
   for (const r of sorted) {
+    if (!r?.posterDataUrl) continue
     const d = new Date(r.createdAt || Date.now())
     if (d.getFullYear() !== year || d.getMonth() !== month) continue
     const day = d.getDate()
