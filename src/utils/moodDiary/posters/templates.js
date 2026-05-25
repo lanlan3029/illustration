@@ -1,4 +1,4 @@
-import { COLORS } from './constants'
+import { COLORS, POSTER_FONT_STACK } from './constants'
 import {
   POSTER_H,
   POSTER_W,
