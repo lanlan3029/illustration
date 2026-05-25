@@ -528,6 +528,8 @@
     "bookViewList": "列表",
     "goRecap": "统计分析",
     "previewTitle": "预览",
+    "bookPreviewPrev": "上一张",
+    "bookPreviewNext": "下一张",
     "refreshed": "已刷新",
     "monthlyReportTitle": "情绪月报",
     "monthlyShareHint": "分享菜单标题可用「我的情绪月报」；网页端已将页面临时标题设为该文案。",

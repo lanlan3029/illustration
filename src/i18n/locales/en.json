@@ -513,6 +513,8 @@
     "bookViewList": "List",
     "goRecap": "Statistics",
     "previewTitle": "Preview",
+    "bookPreviewPrev": "Previous",
+    "bookPreviewNext": "Next",
     "refreshed": "Refreshed",
     "monthlyReportTitle": "Monthly insights",
     "monthlyShareHint": "The page title switches to your localized share title for screenshots and tab context.",

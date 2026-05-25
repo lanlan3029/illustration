@@ -305,13 +305,16 @@ export function composeMagazine(ctx, img, opts) {
   drawImageContain(ctx, img, imgX, imgY, imgW, imgH)
 
   const leftPad = panelX + 36
-  const accentY = 92
-  const accentW = 64
-  ctx.fillStyle = panelTheme.textColor
-  ctx.fillRect(leftPad, accentY, accentW, 4)
-
   const colW = imgX - leftPad - 20
   const excerptColor = isLightHex(dominantHex) ? 'rgba(26,26,26,0.62)' : 'rgba(255,255,255,0.72)'
+
+  const introZoneTop = panelY + 48
+  const introZoneH = 40 * SY
+  const accentW = 64
+  const accentH = 4
+  const accentY = introZoneTop + (introZoneH - accentH) / 2
+  ctx.fillStyle = panelTheme.textColor
+  ctx.fillRect(leftPad, accentY, accentW, accentH)
 
   const mainRaw = String(opts.userNarrative || opts.narrativeText || '').trim()
   let aiRaw = String(opts.aiCaptionText || opts.diaryCaption || '').trim()
@@ -320,7 +323,7 @@ export function composeMagazine(ctx, img, opts) {
   let aiText = prepareBodyText(aiRaw).text
   if (aiText && aiText === mainBody.text) aiText = ''
 
-  let textY = accentY + 36
+  let textY = introZoneTop + introZoneH + 18 * SY
   if (mainBody.text) {
     textY = drawPosterBodyBlock(ctx, {
       bodyText: mainBody.text,

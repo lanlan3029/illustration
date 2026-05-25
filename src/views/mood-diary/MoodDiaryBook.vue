@@ -172,20 +172,54 @@
       v-model="previewOpen"
       width="min(420px, 92vw)"
       class="preview-dialog"
-      :title="$t('moodDiary.previewTitle')"
+      :show-header="false"
+      align-center
+      destroy-on-close
+      @closed="onPreviewClosed"
     >
-      <div v-if="previewRecord" class="preview-body">
-        <img
-          v-if="previewRecord.posterDataUrl"
-          :src="previewRecord.posterDataUrl"
-          class="dlg-img"
-          alt=""
-        />
-        <div class="preview-meta">
-          <time class="preview-date">{{ formatDay(previewRecord.createdAt) }}</time>
-          <span v-if="previewRecord.moodLabel" class="preview-mood">{{ previewRecord.moodLabel }}</span>
+      <div v-if="previewRecord" class="preview-stage">
+        <button
+          type="button"
+          class="preview-nav preview-nav--prev"
+          :disabled="!previewHasPrev"
+          :aria-label="$t('moodDiary.bookPreviewPrev')"
+          @click="previewPrev"
+        >
+          ‹
+        </button>
+
+        <div class="preview-image-wrap">
+          <button
+            type="button"
+            class="preview-hit preview-hit--prev"
+            :disabled="!previewHasPrev"
+            :aria-label="$t('moodDiary.bookPreviewPrev')"
+            @click="previewPrev"
+          />
+          <img
+            :src="previewRecord.posterDataUrl"
+            class="preview-img"
+            alt=""
+            @click.stop
+          />
+          <button
+            type="button"
+            class="preview-hit preview-hit--next"
+            :disabled="!previewHasNext"
+            :aria-label="$t('moodDiary.bookPreviewNext')"
+            @click="previewNext"
+          />
         </div>
-        <p v-if="previewText" class="preview-text">{{ previewText }}</p>
+
+        <button
+          type="button"
+          class="preview-nav preview-nav--next"
+          :disabled="!previewHasNext"
+          :aria-label="$t('moodDiary.bookPreviewNext')"
+          @click="previewNext"
+        >
+          ›
+        </button>
       </div>
     </el-dialog>
   </div>
@@ -225,7 +259,7 @@ export default {
       exportMonthKeys: [],
       exportPickIds: [],
       previewOpen: false,
-      previewRecord: null,
+      previewIndex: 0,
       cloudMoodIlls: [],
       cloudLoading: false,
       cloudLoaded: false,
@@ -243,18 +277,36 @@ export default {
     hasMore() {
       return this.visibleMonthCount < this.monthTimeline.length
     },
-    previewText() {
-      const t = (this.previewRecord?.caption || this.previewRecord?.narrative || '').trim()
-      return t || ''
-    },
     allBookRecords() {
       return this.monthTimeline.flatMap((g) => g.records)
+    },
+    previewableRecords() {
+      return this.allBookRecords.filter((r) => r.posterDataUrl)
+    },
+    previewRecord() {
+      return this.previewableRecords[this.previewIndex] || null
+    },
+    previewHasPrev() {
+      return this.previewIndex > 0
+    },
+    previewHasNext() {
+      return this.previewIndex < this.previewableRecords.length - 1
+    }
+  },
+  watch: {
+    previewOpen(open) {
+      if (open) {
+        window.addEventListener('keydown', this.onPreviewKeydown)
+      } else {
+        window.removeEventListener('keydown', this.onPreviewKeydown)
+      }
     }
   },
   mounted() {
     this.load()
   },
   beforeUnmount() {
+    window.removeEventListener('keydown', this.onPreviewKeydown)
     this.observer?.disconnect()
     this.observer = null
   },
@@ -357,8 +409,31 @@ export default {
     },
     openPreview(r) {
       if (!r?.posterDataUrl) return
-      this.previewRecord = r
+      const id = this.recordExportId(r)
+      const idx = this.previewableRecords.findIndex((item) => this.recordExportId(item) === id)
+      this.previewIndex = idx >= 0 ? idx : 0
       this.previewOpen = true
+    },
+    onPreviewClosed() {
+      this.previewIndex = 0
+    },
+    previewPrev() {
+      if (!this.previewHasPrev) return
+      this.previewIndex -= 1
+    },
+    previewNext() {
+      if (!this.previewHasNext) return
+      this.previewIndex += 1
+    },
+    onPreviewKeydown(e) {
+      if (!this.previewOpen) return
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        this.previewPrev()
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        this.previewNext()
+      }
     },
     recordExportId(r) {
       return String(r.cloudId || r.id || r.posterDataUrl || '')
@@ -740,38 +815,90 @@ export default {
   overflow: hidden;
 }
 
-.preview-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.preview-dialog :deep(.el-dialog__body) {
+  padding: 12px 8px 16px;
 }
 
-.preview-meta {
+.preview-stage {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
+  justify-content: center;
+  gap: 4px;
+  min-height: 200px;
 }
 
-.preview-date {
-  color: #64748b;
+.preview-image-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: min(360px, 78vw);
 }
 
-.preview-mood {
-  color: #0d9488;
-  background: rgba(32, 201, 151, 0.12);
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
+.preview-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  user-select: none;
+  pointer-events: none;
 }
 
-.preview-text {
+.preview-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  border: none;
+  padding: 0;
   margin: 0;
-  font-size: 14px;
+  background: transparent;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.preview-hit:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.preview-hit--prev {
+  left: 0;
+}
+
+.preview-hit--next {
+  right: 0;
+}
+
+.preview-hit:not(:disabled):hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.preview-nav {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
   color: #334155;
-  line-height: 1.55;
-  word-break: break-word;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 2px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.preview-nav:hover:not(:disabled) {
+  background: rgba(32, 201, 151, 0.18);
+  color: #0d9488;
+}
+
+.preview-nav:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
 }
 
 .book-loading,
@@ -784,12 +911,6 @@ export default {
 
 .load-sentinel {
   height: 1px;
-}
-
-.dlg-img {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
 }
 
 .export-scope {
