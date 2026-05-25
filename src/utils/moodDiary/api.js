@@ -719,6 +719,22 @@ export function mapIllToBookRecord(item) {
   }
 }
 
+/** 从 waiting-quotes 响应里取出句子数组（兼容 message 为字符串、data.list 等形态） */
+function extractWaitingQuotesList(data) {
+  if (!data || typeof data !== 'object') return []
+  const topLevel = [data.message, data.data, data.list, data.items, data.result]
+  for (const candidate of topLevel) {
+    if (Array.isArray(candidate)) return candidate
+  }
+  for (const candidate of [data.data, data.message, data.result]) {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue
+    for (const key of ['list', 'items', 'records', 'rows', 'quotes']) {
+      if (Array.isArray(candidate[key])) return candidate[key]
+    }
+  }
+  return []
+}
+
 /**
  * GET /mood/waiting-quotes — 等待页句子
  * Query: locale, mood, mood_label, limit (1–10)
@@ -740,8 +756,7 @@ export async function fetchWaitingQuotesFromApi(options = {}) {
   const res = await axios.get(url, { timeout: 12000 })
   const data = unwrapData(res)
   const ok = data.code === 0 || data.code === '0' || data.desc === 'success'
-  const raw = data.message ?? data.data ?? data.list
-  const list = Array.isArray(raw) ? raw : []
+  const list = extractWaitingQuotesList(data)
 
   if (!ok && list.length === 0 && data.message && typeof data.message === 'string') {
     throw new Error(data.message)

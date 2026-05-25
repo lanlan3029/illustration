@@ -6,6 +6,22 @@ export const DEFAULT_QUOTE_LIMIT = 10
 export const MIN_QUOTE_LIMIT = 1
 export const MAX_QUOTE_LIMIT = 10
 
+const quoteCache = new Map()
+
+function buildQuoteCacheKey(options = {}) {
+  const locale = normalizeWaitingQuoteLocale(options.locale)
+  const limit = clampQuoteLimit(options.limit ?? DEFAULT_QUOTE_LIMIT)
+  const moodResolved = options.draft
+    ? resolveWaitingQuoteMood(options.draft, locale)
+    : {
+        moodEmojiId: options.moodEmojiId || '',
+        moodLabel: options.moodLabel || ''
+      }
+  const moodEmojiId = moodResolved.moodEmojiId || options.moodEmojiId || ''
+  const moodLabel = moodResolved.moodLabel || options.moodLabel || ''
+  return `${locale}|${moodEmojiId}|${moodLabel}|${limit}`
+}
+
 export function normalizeWaitingQuoteLocale(locale) {
   const l = String(locale || 'zh').toLowerCase()
   if (l.startsWith('en')) return 'en'
@@ -34,7 +50,7 @@ function normalizeQuote(row) {
   const text = String(row.hitokoto || row.text || row.content || row.sentence || row.quote || '').trim()
   if (!text) return null
   return {
-    id: String(row._id || row.uuid || row.id || text.slice(0, 24)),
+    id: String(row._id || row.uuid || `${row.id || 'quote'}-${text.slice(0, 24)}`),
     text,
     author: String(row.from || row.author || row.source || '').trim(),
     moodPrimary: String(row.mood_primary || '').trim(),
@@ -76,6 +92,15 @@ function pickFallbackQuotes({ locale = 'zh', limit = DEFAULT_QUOTE_LIMIT }) {
  * @returns {Promise<{ quotes: object[], fromApi: boolean }>}
  */
 export async function loadWaitingQuotes(options = {}) {
+  const cacheKey = buildQuoteCacheKey(options)
+  const cached = quoteCache.get(cacheKey)
+  if (cached) {
+    return {
+      quotes: cached.quotes.map((quote) => ({ ...quote })),
+      fromApi: cached.fromApi
+    }
+  }
+
   const locale = normalizeWaitingQuoteLocale(options.locale)
   const limit = clampQuoteLimit(options.limit ?? DEFAULT_QUOTE_LIMIT)
   const moodResolved = options.draft
@@ -102,24 +127,30 @@ export async function loadWaitingQuotes(options = {}) {
     console.warn('[mood-diary] waiting quotes api failed, use fallback', e?.message || e)
   }
 
-  if (!list.length) {
-    return {
-      quotes: pickFallbackQuotes({ locale, limit }).filter(Boolean),
-      fromApi: false
-    }
+  const result = !list.length
+    ? {
+        quotes: pickFallbackQuotes({ locale, limit }).filter(Boolean),
+        fromApi: false
+      }
+    : {
+        quotes: list.slice(0, limit).map(normalizeQuote).filter(Boolean),
+        fromApi
+      }
+
+  if (result.quotes.length) {
+    quoteCache.set(cacheKey, {
+      quotes: result.quotes.map((quote) => ({ ...quote })),
+      fromApi: result.fromApi
+    })
   }
 
   return {
-    quotes: list.slice(0, limit).map(normalizeQuote).filter(Boolean),
-    fromApi
+    quotes: result.quotes.map((quote) => ({ ...quote })),
+    fromApi: result.fromApi
   }
 }
 
-export function quoteAlreadyInDraft(quoteText, draft) {
-  const q = (quoteText || '').trim()
-  if (!q) return true
-  const fields = [draft?.diaryCaption, draft?.quotaSentence, draft?.narrative].map((s) =>
-    (s || '').trim()
-  )
-  return fields.some((f) => f && (f === q || f.includes(q)))
+/** 进入生成流程前预拉句子，减少等待页空白时间 */
+export function prefetchWaitingQuotes(options = {}) {
+  return loadWaitingQuotes(options).catch(() => ({ quotes: [], fromApi: false }))
 }

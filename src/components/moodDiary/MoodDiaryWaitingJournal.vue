@@ -21,7 +21,7 @@
           <div class="waiting-journal__paper">
             <span class="waiting-journal__date">{{ todayLabel }}</span>
             <blockquote class="waiting-journal__quote">
-              <p :key="displayQuote.id">{{ displayQuote.text }}</p>
+              <p :key="`${displayIndex}-${displayQuote.id}`">{{ displayQuote.text }}</p>
             </blockquote>
             <p v-if="displayQuote.author" class="waiting-journal__author">—— {{ displayQuote.author }}</p>
           </div>
@@ -72,7 +72,6 @@ export default {
     stageText: { type: String, default: '' },
     locale: { type: String, default: 'zh' }
   },
-  emits: ['quote-change'],
   data() {
     return {
       quotes: [],
@@ -82,6 +81,7 @@ export default {
       rotateTimer: null,
       flipEndTimer: null,
       flipSwapTimer: null,
+      reloadTimer: null,
       pageTilt: -1.2,
       requestSeq: 0
     }
@@ -111,30 +111,41 @@ export default {
     active: {
       immediate: true,
       handler(on) {
-        if (on) this.startSession()
+        if (on) this.scheduleSession()
         else this.stopSession()
       }
     },
     moodEmojiId() {
-      if (this.active) this.startSession()
+      if (this.active) this.scheduleSession()
     },
     moodLabel() {
-      if (this.active) this.startSession()
+      if (this.active) this.scheduleSession()
     },
     quoteLocale() {
-      if (this.active) this.startSession()
+      if (this.active) this.scheduleSession()
     }
   },
   beforeUnmount() {
     this.stopSession()
   },
   methods: {
+    scheduleSession() {
+      if (this.reloadTimer) clearTimeout(this.reloadTimer)
+      this.reloadTimer = setTimeout(() => {
+        this.reloadTimer = null
+        this.startSession()
+      }, 60)
+    },
     async startSession() {
       this.stopRotation()
       await this.reloadQuotes()
-      this.startRotation()
+      if (this.active) this.startRotation()
     },
     stopSession() {
+      if (this.reloadTimer) {
+        clearTimeout(this.reloadTimer)
+        this.reloadTimer = null
+      }
       this.stopRotation()
       if (this.flipEndTimer) {
         clearTimeout(this.flipEndTimer)
@@ -158,30 +169,45 @@ export default {
       this.quotes = []
       this.displayIndex = 0
 
-      const draft = getDraft()
-      const { quotes } = await loadWaitingQuotes({
-        locale: this.quoteLocale,
-        moodEmojiId: this.moodEmojiId || draft.moodEmojiId,
-        moodLabel: this.moodLabel || draft.moodLabel,
-        draft,
-        limit: DEFAULT_QUOTE_LIMIT
-      })
+      try {
+        const draft = getDraft()
+        const { quotes } = await loadWaitingQuotes({
+          locale: this.quoteLocale,
+          moodEmojiId: this.moodEmojiId || draft.moodEmojiId,
+          moodLabel: this.moodLabel || draft.moodLabel,
+          draft,
+          limit: DEFAULT_QUOTE_LIMIT
+        })
 
-      if (seq !== this.requestSeq) return
+        if (seq !== this.requestSeq) return
 
-      this.quotes =
-        quotes.length > 0
-          ? quotes
-          : [
-              {
-                id: 'fallback',
-                text: this.$t('moodDiary.windowSceneQuote').replace(/\n/g, ''),
-                author: ''
-              }
-            ]
-      this.loading = false
-      this.displayIndex = 0
-      this.emitCurrentQuote()
+        this.quotes =
+          quotes.length > 0
+            ? quotes
+            : [
+                {
+                  id: 'fallback',
+                  text: this.$t('moodDiary.windowSceneQuote').replace(/\n/g, ''),
+                  author: ''
+                }
+              ]
+        this.displayIndex = 0
+      } catch (e) {
+        if (seq !== this.requestSeq) return
+        console.warn('[mood-diary] reload waiting quotes failed', e?.message || e)
+        this.quotes = [
+          {
+            id: 'fallback',
+            text: this.$t('moodDiary.windowSceneQuote').replace(/\n/g, ''),
+            author: ''
+          }
+        ]
+        this.displayIndex = 0
+      } finally {
+        if (seq === this.requestSeq) {
+          this.loading = false
+        }
+      }
     },
     startRotation() {
       this.stopRotation()
@@ -195,17 +221,11 @@ export default {
 
       this.flipSwapTimer = setTimeout(() => {
         this.displayIndex = (this.displayIndex + 1) % this.quotes.length
-        this.emitCurrentQuote()
       }, FLIP_MS * 0.45)
 
       this.flipEndTimer = setTimeout(() => {
         this.flipping = false
       }, FLIP_MS)
-    },
-    emitCurrentQuote() {
-      if (this.displayQuote) {
-        this.$emit('quote-change', { ...this.displayQuote })
-      }
     }
   }
 }
