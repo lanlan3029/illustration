@@ -58,7 +58,7 @@
                 class="cal-day"
                 :class="{
                   'cal-day--muted': !cell.day,
-                  'cal-day--has': cell.day && dayRecords(cell.day).length,
+                  'cal-day--has': cell.day && dayMoodEmojiSrc(cell.day),
                   'cal-day--selected': cell.day && cell.day === selectedDay
                 }"
                 :disabled="!cell.day"
@@ -69,9 +69,9 @@
                     v-if="dayMoodEmojiSrc(cell.day)"
                     :src="dayMoodEmojiSrc(cell.day)"
                     class="cal-day-mood"
-                    alt=""
+                    :alt="dayMoodLabel(cell.day)"
                   />
-                  <span class="cal-day-date">{{ cell.day }}</span>
+                  <span v-else class="cal-day-date">{{ cell.day }}</span>
                 </span>
               </button>
             </div>
@@ -249,20 +249,53 @@ export default {
     dayMoodEmojiId(day) {
       const recs = this.dayRecords(day)
       if (recs.length) {
-        const id = recs[0].moodEmojiId || recs[0].mood
-        if (id) return id
+        let latest = null
+        for (const r of recs) {
+          const id = r.moodEmojiId || r.mood
+          if (!id) continue
+          if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
+            latest = r
+          }
+        }
+        if (latest) return latest.moodEmojiId || latest.mood
       }
       const today = new Date()
       if (
         this.calYear === today.getFullYear() &&
         this.calMonth === today.getMonth() &&
-        day === today.getDate() &&
-        this.pendingPosterUrl
+        day === today.getDate()
       ) {
         const d = getDraft()
         return d.moodEmojiId || d.mood || null
       }
       return null
+    },
+    dayMoodLabel(day) {
+      const recs = this.dayRecords(day)
+      if (recs.length) {
+        let latest = null
+        for (const r of recs) {
+          const id = r.moodEmojiId || r.mood
+          if (!id) continue
+          if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
+            latest = r
+          }
+        }
+        if (latest?.moodLabel) return latest.moodLabel
+      }
+      const today = new Date()
+      if (
+        this.calYear === today.getFullYear() &&
+        this.calMonth === today.getMonth() &&
+        day === today.getDate()
+      ) {
+        const d = getDraft()
+        if (d.moodLabel) return d.moodLabel
+      }
+      const id = this.dayMoodEmojiId(day)
+      if (!id) return ''
+      const mood = findMoodById(id, this.$i18n?.locale === 'zh')
+      return mood?.label || ''
     },
     dayMoodEmojiSrc(day) {
       const id = this.dayMoodEmojiId(day)
@@ -636,16 +669,16 @@ export default {
 
 .cal-day-num {
   min-width: 34px;
-  min-height: 38px;
+  min-height: 34px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 0;
   font-size: 12px;
   color: var(--md-muted);
-  padding: 2px 4px 3px;
+  padding: 2px 4px;
   box-sizing: border-box;
 }
 
@@ -690,15 +723,25 @@ export default {
 }
 
 .cal-day-mood {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .dash-side-card .cal-day-mood {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
+}
+
+.cal-day--has .cal-day-mood {
+  width: 26px;
+  height: 26px;
+}
+
+.dash-side-card .cal-day--has .cal-day-mood {
+  width: 28px;
+  height: 28px;
 }
 
 .anthology-list {
