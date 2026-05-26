@@ -3,7 +3,7 @@
  *
  * - description     用户正文
  * - mood_emoji_id   心情 id（如 big-grin）；展示文案由前端 moodAssets 反查
- * - tags            兜底：后端尚未支持 mood_emoji_id 时写入 ["mood:big-grin"]
+ * - tags            兜底：["mood:big-grin"]（FormData 逐条 append，勿 JSON.stringify 整数组）
  */
 
 const MOOD_TAG_PREFIX = 'mood:'
@@ -20,10 +20,45 @@ export function buildMoodIllPersistFields(draft) {
   }
 }
 
-function parseMoodIdFromTags(tags) {
-  if (!Array.isArray(tags)) return null
+/** 兼容 tags 被存成 ["mood:x"] 或 ["[\"mood:x\"]"] 等形态 */
+export function normalizeIllTags(tags) {
+  if (tags == null) return []
+  if (typeof tags === 'string') {
+    const trimmed = tags.trim()
+    if (!trimmed) return []
+    if (trimmed.startsWith('[')) {
+      try {
+        return normalizeIllTags(JSON.parse(trimmed))
+      } catch (_) {
+        return [trimmed]
+      }
+    }
+    return [trimmed]
+  }
+  if (!Array.isArray(tags)) return []
+
+  const out = []
   for (const raw of tags) {
-    const t = String(raw || '').trim()
+    const t = String(raw ?? '').trim()
+    if (!t) continue
+    if (t.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(t)
+        if (Array.isArray(parsed)) {
+          out.push(...normalizeIllTags(parsed))
+          continue
+        }
+      } catch (_) {
+        /* use raw string below */
+      }
+    }
+    out.push(t)
+  }
+  return out
+}
+
+export function parseMoodIdFromTags(tags) {
+  for (const t of normalizeIllTags(tags)) {
     if (t.startsWith(MOOD_TAG_PREFIX)) {
       const id = t.slice(MOOD_TAG_PREFIX.length).trim()
       if (id) return id

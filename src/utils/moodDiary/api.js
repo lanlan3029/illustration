@@ -678,8 +678,11 @@ export async function saveIllLegacyCreation(dataUrl, title, description, illType
 
   const moodFields = extra.moodFields || {}
   if (moodFields.mood_emoji_id) form.append('mood_emoji_id', moodFields.mood_emoji_id)
-  if (Array.isArray(moodFields.tags) && moodFields.tags.length) {
-    form.append('tags', JSON.stringify(moodFields.tags))
+  if (Array.isArray(moodFields.tags)) {
+    for (const tag of moodFields.tags) {
+      const t = String(tag || '').trim()
+      if (t) form.append('tags', t)
+    }
   }
 
   const res = await axios.post('/ill/', form, {
