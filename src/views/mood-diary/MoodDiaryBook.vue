@@ -45,18 +45,17 @@
               class="grid-cell"
               @click="openPreview(r)"
             >
-              <img
-                v-if="r.posterDataUrl"
-                :src="r.posterDataUrl"
-                class="grid-img"
-                alt=""
-                loading="lazy"
-              />
-              <span v-else class="grid-img grid-img--empty" />
-              <span class="grid-overlay">
-                <time class="grid-day">{{ formatGridDay(r.createdAt) }}</time>
-                <span v-if="r.moodLabel" class="grid-mood">{{ r.moodLabel }}</span>
-              </span>
+              <div class="grid-image-wrap">
+                <img
+                  v-if="r.posterDataUrl"
+                  :src="r.posterDataUrl"
+                  class="grid-img"
+                  alt=""
+                  loading="lazy"
+                />
+                <span v-else class="grid-img grid-img--empty" />
+              </div>
+              <time class="grid-day">{{ formatGridDay(r.createdAt) }}</time>
             </button>
           </div>
 
@@ -642,35 +641,46 @@ export default {
 
 @media (min-width: 640px) {
   .month-grid {
-    grid-template-columns: repeat(auto-fill, 112px);
+    grid-template-columns: repeat(auto-fill, 135px);
     gap: 10px;
   }
 }
 
 .grid-cell {
-  position: relative;
   margin: 0;
   padding: 0;
   border: none;
-  border-radius: 10px;
-  overflow: hidden;
-  aspect-ratio: 9 / 16;
-  background: #f1f5f9;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  text-align: left;
+  transition: transform 0.15s ease;
 }
 
 .grid-cell:hover {
   transform: scale(1.02);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
 .grid-cell:focus-visible {
   outline: 2px solid #20c997;
   outline-offset: 2px;
+}
+
+.grid-image-wrap {
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background: #f1f5f9;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.15s ease;
+}
+
+.grid-cell:hover .grid-image-wrap {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
 .grid-img {
@@ -684,37 +694,12 @@ export default {
   background: #e2e8f0;
 }
 
-.grid-overlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 6px 6px 5px;
-  background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.55));
-  pointer-events: none;
-}
-
 .grid-day {
   font-size: 11px;
   font-weight: 600;
-  color: #fff;
-  line-height: 1;
-}
-
-.grid-mood {
-  font-size: 10px;
-  color: #fff;
-  background: rgba(32, 201, 151, 0.85);
-  padding: 2px 5px;
-  border-radius: 4px;
-  max-width: 52%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #64748b;
+  line-height: 1.2;
+  padding-left: 2px;
 }
 
 .month-list {

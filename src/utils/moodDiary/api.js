@@ -2,6 +2,8 @@ import axios from 'axios'
 import { CAPTION_PICK_NARRATIVE_MAX, MOOD_DIARY_NARRATIVE_MAX, MOOD_ILLUSTRATION_TYPE } from './constants'
 import { getMoodApiConfig, resolveApiUrl } from './config'
 import { resolvePictureUploadBlob, compressDataUrlForUpload } from './posterUpload'
+import { parseMoodFromIllItem } from './moodIllPersist'
+import { findMoodById } from './moodAssets'
 
 function unwrapData(res) {
   const d = res && res.data !== undefined ? res.data : res
@@ -666,13 +668,19 @@ export async function saveIllMood(payload, endpoint) {
   return data
 }
 
-export async function saveIllLegacyCreation(dataUrl, title, description, illType = 'others') {
+export async function saveIllLegacyCreation(dataUrl, title, description, illType = 'others', extra = {}) {
   const blob = await resolvePictureUploadBlob(dataUrl)
   const form = new FormData()
   form.append('picture', blob, 'mood-poster.jpg')
   form.append('title', title || '')
   form.append('description', description || '')
   form.append('type', illType)
+
+  const moodFields = extra.moodFields || {}
+  if (moodFields.mood_emoji_id) form.append('mood_emoji_id', moodFields.mood_emoji_id)
+  if (Array.isArray(moodFields.tags) && moodFields.tags.length) {
+    form.append('tags', JSON.stringify(moodFields.tags))
+  }
 
   const res = await axios.post('/ill/', form, {
     headers: {
@@ -706,17 +714,22 @@ export function mapIllToBookRecord(item) {
     item.content || item.picture || item.image_url || item.image || ''
   )
   if (!posterDataUrl) return null
-  const text = String(item.description || item.title || '').trim()
+  const mood = parseMoodFromIllItem(item)
+  const legacyLabel = String(item.mood_label || item.moodLabel || '').trim()
+  const moodLabel =
+    legacyLabel ||
+    (mood.moodEmojiId ? findMoodById(mood.moodEmojiId, true)?.label || '' : '')
+  const text = String(mood.diaryCaption || mood.narrative || item.description || item.title || '').trim()
   return {
     id: String(item._id || item.id || createdAt),
     cloudId: String(item._id || item.id || ''),
     posterDataUrl,
     createdAt,
     caption: text,
-    narrative: text,
-    moodEmojiId: String(item.mood || item.moodEmojiId || item.mood_emoji_id || '').trim() || null,
-    mood: String(item.mood || item.moodEmojiId || item.mood_emoji_id || '').trim() || null,
-    moodLabel: String(item.mood_label || item.moodLabel || '').trim(),
+    narrative: mood.narrative || text,
+    moodEmojiId: mood.moodEmojiId,
+    mood: mood.moodEmojiId,
+    moodLabel,
     source: 'cloud'
   }
 }

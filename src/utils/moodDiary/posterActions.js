@@ -3,6 +3,7 @@ import { getDraft } from './draft'
 import { addRecord } from './records'
 import { MOOD_ILLUSTRATION_TYPE } from './constants'
 import { getActiveMoodEndpoints, saveIllLegacyCreation, saveIllMood } from './api'
+import { buildMoodIllPersistFields } from './moodIllPersist'
 
 /**
  * 保存海报到本地日记 + 云端「我的创作」
@@ -12,6 +13,7 @@ import { getActiveMoodEndpoints, saveIllLegacyCreation, saveIllMood } from './ap
  */
 export async function saveMoodPoster(posterUrl, diaryCaptionLine, t) {
   const d = getDraft()
+  const moodFields = buildMoodIllPersistFields(d)
   addRecord({
     moodEmojiId: d.moodEmojiId,
     moodLabel: d.moodLabel,
@@ -28,8 +30,9 @@ export async function saveMoodPoster(posterUrl, diaryCaptionLine, t) {
         prompt: d.generateIllustrationPrompt,
         caption: diaryCaptionLine || d.diaryCaption || d.captionPicked,
         image_url: posterUrl,
-        mood: d.moodEmojiId || d.mood || '',
-        mood_label: d.moodLabel || '',
+        description: moodFields.description,
+        mood_emoji_id: moodFields.mood_emoji_id,
+        tags: moodFields.tags,
         emotionFlow: d.emotionFlow
       },
       cfg.illSaveEndpoint
@@ -40,8 +43,9 @@ export async function saveMoodPoster(posterUrl, diaryCaptionLine, t) {
       await saveIllLegacyCreation(
         posterUrl,
         t('moodDiary.creationTitle'),
-        (d.narrative || '').trim(),
-        MOOD_ILLUSTRATION_TYPE
+        moodFields.description,
+        MOOD_ILLUSTRATION_TYPE,
+        { moodFields }
       )
     }
   }
