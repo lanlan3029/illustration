@@ -176,7 +176,7 @@ import MoodDiaryNowCard from '@/components/moodDiary/MoodDiaryNowCard.vue'
 import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.vue'
 import { getDraft, setDraft } from '@/utils/moodDiary/draft'
 import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
-import { findMoodById } from '@/utils/moodDiary/moodAssets'
+import { findMoodById, resolveRecordMoodId } from '@/utils/moodDiary/moodAssets'
 import { atmosphereCssVars } from '@/utils/moodDiary/moodTheme'
 import { requestOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
 import {
@@ -306,6 +306,12 @@ export default {
   methods: {
     async refreshData() {
       this.refreshing = true
+      this.savedRecords = mergeBookRecords(getRecordsSorted(), [])
+      this.recordsByDay = getRecordsForCalendarMonth(
+        this.calYear,
+        this.calMonth,
+        this.savedRecords
+      )
       await this.loadSavedRecords()
       this.recordsByDay = getRecordsForCalendarMonth(
         this.calYear,
@@ -353,32 +359,23 @@ export default {
     dayMoodEmojiId(day) {
       const recs = this.dayRecords(day)
       if (!recs.length) return null
-      let latest = null
-      for (const r of recs) {
-        const id = r.moodEmojiId || r.mood
-        if (!id) continue
-        if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
-          latest = r
-        }
-      }
-      return latest ? latest.moodEmojiId || latest.mood : null
+      const latest = recs.reduce(
+        (best, r) => (!best || (r.createdAt || 0) > (best.createdAt || 0) ? r : best),
+        null
+      )
+      return resolveRecordMoodId(latest, this.$i18n?.locale === 'zh')
     },
     dayMoodLabel(day) {
       const recs = this.dayRecords(day)
       if (!recs.length) return ''
-      let latest = null
-      for (const r of recs) {
-        const id = r.moodEmojiId || r.mood
-        if (!id && !r.moodLabel) continue
-        if (!latest || (r.createdAt || 0) > (latest.createdAt || 0)) {
-          latest = r
-        }
-      }
+      const latest = recs.reduce(
+        (best, r) => (!best || (r.createdAt || 0) > (best.createdAt || 0) ? r : best),
+        null
+      )
       if (latest?.moodLabel) return latest.moodLabel
-      const id = latest?.moodEmojiId || latest?.mood
+      const id = resolveRecordMoodId(latest, this.$i18n?.locale === 'zh')
       if (!id) return ''
-      const mood = findMoodById(id, this.$i18n?.locale === 'zh')
-      return mood?.label || ''
+      return findMoodById(id, this.$i18n?.locale === 'zh')?.label || ''
     },
     dayMoodEmojiSrc(day) {
       const id = this.dayMoodEmojiId(day)

@@ -10,20 +10,35 @@ export function getRecentPosters(limit = 3) {
     }))
 }
 
-/** 合并本地与云端记录，云端优先保留 */
+/** 合并本地与云端记录，按 poster 去重并保留心情字段 */
 export function mergeBookRecords(localRecords, cloudRecords) {
-  const seen = new Set()
-  const merged = []
-  const push = (r) => {
+  const byPoster = new Map()
+
+  const absorb = (r) => {
     if (!r?.posterDataUrl) return
-    const key = r.cloudId || r.id || r.posterDataUrl
-    if (seen.has(key)) return
-    seen.add(key)
-    merged.push(r)
+    const key = r.posterDataUrl
+    const prev = byPoster.get(key)
+    if (!prev) {
+      byPoster.set(key, { ...r })
+      return
+    }
+    byPoster.set(key, {
+      ...prev,
+      ...r,
+      cloudId: r.cloudId || prev.cloudId,
+      id: r.id || prev.id,
+      moodEmojiId: prev.moodEmojiId || prev.mood || r.moodEmojiId || r.mood || null,
+      mood: prev.mood || prev.moodEmojiId || r.mood || r.moodEmojiId || null,
+      moodLabel: prev.moodLabel || r.moodLabel || '',
+      caption: prev.caption || r.caption || '',
+      narrative: prev.narrative || r.narrative || '',
+      createdAt: Math.max(prev.createdAt || 0, r.createdAt || 0)
+    })
   }
-  for (const r of cloudRecords) push(r)
-  for (const r of localRecords) push(r)
-  return merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+
+  for (const r of cloudRecords) absorb(r)
+  for (const r of localRecords) absorb(r)
+  return [...byPoster.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
 }
 
 /** @returns {{ key: string, label: string, records: object[] }[]} */

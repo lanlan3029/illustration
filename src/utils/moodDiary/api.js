@@ -714,6 +714,8 @@ export function mapIllToBookRecord(item) {
     createdAt,
     caption: text,
     narrative: text,
+    moodEmojiId: String(item.mood || item.moodEmojiId || item.mood_emoji_id || '').trim() || null,
+    mood: String(item.mood || item.moodEmojiId || item.mood_emoji_id || '').trim() || null,
     moodLabel: String(item.mood_label || item.moodLabel || '').trim(),
     source: 'cloud'
   }

@@ -28,6 +28,8 @@ export async function saveMoodPoster(posterUrl, diaryCaptionLine, t) {
         prompt: d.generateIllustrationPrompt,
         caption: diaryCaptionLine || d.diaryCaption || d.captionPicked,
         image_url: posterUrl,
+        mood: d.moodEmojiId || d.mood || '',
+        mood_label: d.moodLabel || '',
         emotionFlow: d.emotionFlow
       },
       cfg.illSaveEndpoint

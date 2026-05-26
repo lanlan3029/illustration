@@ -47,4 +47,18 @@ export function findMoodById(id, isZh) {
   return resolveMoodList(isZh).find((m) => m.id === id) || null
 }
 
+export function findMoodByLabel(label, isZh) {
+  const text = String(label || '').trim()
+  if (!text) return null
+  return resolveMoodList(isZh).find((m) => m.label === text) || null
+}
+
+/** 从已保存记录解析心情 emoji id（id 优先，其次 moodLabel） */
+export function resolveRecordMoodId(record, isZh) {
+  if (!record) return null
+  const id = record.moodEmojiId || record.mood
+  if (id) return id
+  return findMoodByLabel(record.moodLabel, isZh)?.id || null
+}
+
 export { ILLUSTRATION_STYLE_CONFIGS as popularStyleConfigs } from '@/data/illustrationStyleConfigs'
