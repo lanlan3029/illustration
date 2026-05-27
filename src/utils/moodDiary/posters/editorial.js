@@ -1,6 +1,7 @@
 import { COLORS, POSTER_FONT_STACK } from './constants'
 import { MOOD_POSTER_DISPLAY_FONT } from '../fonts'
 import {
+  POSTER_H,
   POSTER_W,
   SF,
   drawImageCover,
