@@ -289,7 +289,7 @@ export default {
 
 .waiting-journal__loading-text {
   margin: auto 0;
-  font-family: 'Ma Shan Zheng', 'STXingkai', 'KaiTi', cursive;
+  font-family: var(--md-font-kai);
   font-size: 18px;
   line-height: 24px;
   color: rgba(95, 89, 112, 0.45);
@@ -303,7 +303,7 @@ export default {
   font-size: 13px;
   letter-spacing: 0.04em;
   color: rgba(95, 89, 112, 0.55);
-  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--md-font-kai);
 }
 
 .waiting-journal__content {
@@ -322,7 +322,7 @@ export default {
 
 .waiting-journal__quote p {
   margin: 0;
-  font-family: 'Ma Shan Zheng', 'STXingkai', 'KaiTi', '华文行楷', cursive;
+  font-family: var(--md-font-display);
   font-size: clamp(17px, 2.6vw, 20px);
   line-height: 24px;
   color: #5f5970;
@@ -344,7 +344,7 @@ export default {
   font-size: 12px;
   line-height: 24px;
   color: rgba(95, 89, 112, 0.62);
-  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--md-font-kai);
 }
 
 .waiting-quote-enter-active,

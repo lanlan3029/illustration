@@ -42,8 +42,10 @@
 <script>
 import MoodDiaryWriteDialog from '@/components/moodDiary/MoodDiaryWriteDialog.vue'
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
+import { preloadMoodDiaryFonts } from '@/utils/moodDiary/fonts'
 import { onOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
 import { ElMessage } from 'element-plus'
+import '@/styles/moodDiaryFonts.css'
 
 export default {
   name: 'MoodDiaryShell',
@@ -71,6 +73,7 @@ export default {
     }
   },
   mounted() {
+    preloadMoodDiaryFonts()
     this.unregisterWriteDialog = onOpenWriteDialog(() => this.openWriteEntry())
     if (this.$route.query.write === '1') {
       this.openWriteEntry()
@@ -127,8 +130,11 @@ export default {
   --md-lemon: #f7efb8;
   --md-shadow: rgba(196, 181, 224, 0.14);
   --md-radius: 14px;
+  --md-font-body: var(--md-font-kai);
+  --md-font-display: var(--md-font-serif);
   --md-bg-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
+  font-family: var(--md-font-body);
   position: relative;
   isolation: isolate;
   display: flex;
@@ -193,6 +199,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-family: var(--md-font-display);
   font-weight: 600;
   font-size: 18px;
   color: var(--md-text);

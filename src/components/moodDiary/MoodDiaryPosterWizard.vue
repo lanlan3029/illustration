@@ -76,27 +76,30 @@
 
       <!-- Step 3: 模版 -->
       <div v-else-if="step === 'template'" class="wizard-body wizard-body--template">
-        <div v-loading="templatePreviewsBusy" class="template-grid">
-          <button
-            v-for="tpl in templateList"
-            :key="tpl.id"
-            type="button"
-            class="template-card"
-            :class="{ 'template-card--active': templateId === tpl.id }"
-            @click="selectTemplate(tpl.id)"
-          >
-            <div class="template-card__preview">
-              <img
-                v-if="templatePreviews[tpl.id]"
-                :src="templatePreviews[tpl.id]"
-                :alt="$t(tpl.nameKey)"
-                class="template-card__img"
-              />
-              <div v-else class="template-card__placeholder" aria-hidden="true" />
-            </div>
-            <span class="template-card__name">{{ $t(tpl.nameKey) }}</span>
-          </button>
-        </div>
+        <section v-for="group in templateGroups" :key="group.id" class="template-section">
+          <h2 class="template-section__title">{{ $t(group.nameKey) }}</h2>
+          <div v-loading="templatePreviewsBusy" class="template-grid">
+            <button
+              v-for="tpl in group.templates"
+              :key="tpl.id"
+              type="button"
+              class="template-card"
+              :class="{ 'template-card--active': templateId === tpl.id }"
+              @click="selectTemplate(tpl.id)"
+            >
+              <div class="template-card__preview">
+                <img
+                  v-if="templatePreviews[tpl.id]"
+                  :src="templatePreviews[tpl.id]"
+                  :alt="$t(tpl.nameKey)"
+                  class="template-card__img"
+                />
+                <div v-else class="template-card__placeholder" aria-hidden="true" />
+              </div>
+              <span class="template-card__name">{{ $t(tpl.nameKey) }}</span>
+            </button>
+          </div>
+        </section>
 
         <div v-if="templateId === 'colorBlock'" class="placement-row">
           <span class="placement-label">{{ $t('moodDiary.posterColorBlockPlacement') }}</span>
@@ -135,9 +138,9 @@ import {
   isDescribeStale,
   isPhotoDescribeStale
 } from '@/utils/moodDiary/posterDescribe'
-import { POSTER_TEMPLATE_META } from '@/utils/moodDiary/posters'
+import { POSTER_TEMPLATE_GROUPS, POSTER_TEMPLATE_META } from '@/utils/moodDiary/posters'
 import { getPosterTemplatePref, savePosterTemplatePref } from '@/utils/moodDiary/posterTemplatePref'
-import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
+import { clearPendingGeneratedPoster, downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
 import { DEFAULT_QUOTE_LIMIT, prefetchWaitingQuotes } from '@/utils/moodDiary/waitingQuotes'
 
 export default {
@@ -192,6 +195,12 @@ export default {
     },
     templateList() {
       return POSTER_TEMPLATE_META
+    },
+    templateGroups() {
+      return POSTER_TEMPLATE_GROUPS.map((group) => ({
+        ...group,
+        templates: POSTER_TEMPLATE_META.filter((tpl) => (tpl.group || 'classic') === group.id)
+      })).filter((group) => group.templates.length)
     },
     stepTitle() {
       if (this.step === 'mode') return this.$t('moodDiary.wizardStepMode')
@@ -592,8 +601,15 @@ export default {
       if (!this.posterUrl) return
       this.saving = true
       try {
-        await saveMoodPoster(this.posterUrl, this.diaryCaptionLine, (k) => this.$t(k))
-        ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
+        const result = await saveMoodPoster(this.posterUrl, this.diaryCaptionLine, (k) => this.$t(k))
+        if (result.cloudOk) {
+          clearPendingGeneratedPoster({ keepLocalRecord: true })
+        }
+        if (result.cloudOk) {
+          ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
+        } else {
+          ElMessage.success(this.$t('moodDiary.saveLocalOnlySuccess'))
+        }
         this.$emit('done')
         this.$router.replace('/mood-diary/narrative')
       } catch (e) {
@@ -735,6 +751,20 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.template-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.template-section__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--md-muted);
 }
 
 .template-grid {

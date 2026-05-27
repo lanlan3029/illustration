@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas'
 import JsPDF from 'jspdf'
+import { MOOD_FONT_KAI, MOOD_FONT_SERIF, ensureMoodDiaryFontsLoaded } from './fonts'
 import { groupRecordsFromList } from './recordGroups'
 import { getRecordsSorted } from './records'
 
@@ -53,7 +54,7 @@ function buildExportStyles() {
       padding: 40px 44px 48px;
       background: #fffcfe;
       color: #5f5970;
-      font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      font-family: ${MOOD_FONT_KAI};
       -webkit-font-smoothing: antialiased;
     }
     .md-pdf-header {
@@ -65,6 +66,7 @@ function buildExportStyles() {
       margin: 0 0 8px;
       font-size: 28px;
       font-weight: 700;
+      font-family: ${MOOD_FONT_SERIF};
       color: #5f5970;
       letter-spacing: 0.02em;
     }
@@ -252,6 +254,7 @@ export async function exportMoodDiaryPdf(options) {
 
   document.body.appendChild(container)
   try {
+    await ensureMoodDiaryFontsLoaded()
     await preloadImages(container)
     await new Promise((resolve) => requestAnimationFrame(() => resolve()))
 

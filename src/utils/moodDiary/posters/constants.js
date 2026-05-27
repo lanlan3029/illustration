@@ -1,3 +1,5 @@
+import { MOOD_POSTER_BODY_FONT } from '../fonts'
+
 /** Web 端逻辑画布：小程序 675×1200 的 1.2 倍，比例仍为 9:16 */
 export const POSTER_W = 810
 export const POSTER_H = 1440
@@ -14,8 +16,8 @@ export const POSTER_USER_BODY_COMPACT_MAX_CHARS = 240
 export const POSTER_QUOTE_FONT_COMPACT = 16
 export const POSTER_QUOTE_LINE_COMPACT = 28
 
-export const POSTER_FONT_STACK =
-  '"PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'
+/** 海报正文：霞鹜文楷；回退系统楷/宋 */
+export const POSTER_FONT_STACK = MOOD_POSTER_BODY_FONT
 
 export const COLORS = {
   bgPage: '#F7FBFE',
@@ -36,7 +38,15 @@ export const POSTER_TEMPLATE_IDS = [
   'colorBlock',
   'titleAbove',
   'magazine',
-  'multiGrid'
+  'multiGrid',
+  'quietEditorial',
+  'fullBleedMood',
+  'minimalReading',
+  'imageWindow',
+  'filmMood',
+  'softPaper',
+  'museumLayout',
+  'poetryLayout'
 ]
 
 export const DEFAULT_POSTER_TEMPLATE_ID = 'creamCard'

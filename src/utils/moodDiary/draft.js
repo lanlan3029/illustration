@@ -4,10 +4,12 @@ const GLOBAL_DRAFT_KEY = 'mood_diary_global_draft_v2'
 const OLD_DRAFT_KEY = 'mood_diary_draft_v1'
 const REF_IMAGE_SESSION_KEY = 'mood_diary_ref_image_v1'
 const ILLUSTRATION_SESSION_KEY = 'mood_diary_raw_illustration_v1'
+const COMPOSED_POSTER_SESSION_KEY = 'mood_diary_composed_poster_v1'
 
 /** 同页内存缓存，避免 localStorage 配额导致大图丢失 */
 let refImageMemory = null
 let illustrationMemory = null
+let composedPosterMemory = null
 
 function loadRefImageFromSession() {
   if (refImageMemory) return refImageMemory
@@ -49,6 +51,26 @@ function saveIllustrationToSession(url) {
   }
 }
 
+function loadComposedPosterFromSession() {
+  if (composedPosterMemory) return composedPosterMemory
+  try {
+    composedPosterMemory = sessionStorage.getItem(COMPOSED_POSTER_SESSION_KEY)
+  } catch (_) {
+    /* ignore */
+  }
+  return composedPosterMemory || null
+}
+
+function saveComposedPosterToSession(dataUrl) {
+  composedPosterMemory = dataUrl || null
+  try {
+    if (dataUrl) sessionStorage.setItem(COMPOSED_POSTER_SESSION_KEY, dataUrl)
+    else sessionStorage.removeItem(COMPOSED_POSTER_SESSION_KEY)
+  } catch (_) {
+    /* ignore */
+  }
+}
+
 function attachRefImage(draft) {
   const d = { ...draft }
   if (!d.inputImageDataUrl && d.hasInputImage) {
@@ -65,8 +87,16 @@ function attachIllustrationUrl(draft) {
   return d
 }
 
+function attachComposedPoster(draft) {
+  const d = { ...draft }
+  if (!d.composedPosterDataUrl && d.hasComposedPoster) {
+    d.composedPosterDataUrl = loadComposedPosterFromSession()
+  }
+  return d
+}
+
 function attachDraftAssets(draft) {
-  return attachIllustrationUrl(attachRefImage(draft))
+  return attachComposedPoster(attachIllustrationUrl(attachRefImage(draft)))
 }
 
 function slimDraftForStorage(draft) {
@@ -84,6 +114,14 @@ function slimDraftForStorage(draft) {
     slim.hasRawIllustration = true
   } else {
     slim.hasRawIllustration = false
+  }
+  if (slim.composedPosterDataUrl?.startsWith?.('data:') || slim.composedPosterDataUrl?.startsWith?.('blob:')) {
+    slim.composedPosterDataUrl = null
+    slim.hasComposedPoster = true
+  } else if (!slim.composedPosterDataUrl) {
+    slim.hasComposedPoster = false
+  } else {
+    slim.hasComposedPoster = true
   }
   return slim
 }
@@ -125,7 +163,10 @@ function defaultDraft() {
     artStyleElementDetails: '',
     /** Dashboard poster slot loading while pipeline runs */
     posterGenerating: false,
-    posterGeneratingSlot: 0
+    posterGeneratingSlot: 0,
+    /** 生成后暂存的本机日记条目 id（未点「保存到我的创作」前） */
+    pendingLocalRecordId: null,
+    hasComposedPoster: false
   }
 }
 
@@ -185,6 +226,9 @@ export function setDraft(partial) {
   if ('rawIllustrationUrl' in partial) {
     saveIllustrationToSession(partial.rawIllustrationUrl || null)
   }
+  if ('composedPosterDataUrl' in partial) {
+    saveComposedPosterToSession(partial.composedPosterDataUrl || null)
+  }
   const merged = attachDraftAssets({
     ...prev,
     ...partial,
@@ -195,6 +239,9 @@ export function setDraft(partial) {
   }
   if (merged.rawIllustrationUrl) {
     saveIllustrationToSession(merged.rawIllustrationUrl)
+  }
+  if (merged.composedPosterDataUrl) {
+    saveComposedPosterToSession(merged.composedPosterDataUrl)
   }
   try {
     localStorage.setItem(GLOBAL_DRAFT_KEY, JSON.stringify(slimDraftForStorage(merged)))

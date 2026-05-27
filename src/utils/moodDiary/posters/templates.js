@@ -23,6 +23,7 @@ import {
   resolveTheme,
   roundRectPath
 } from './shared'
+import { EDITORIAL_RENDERERS } from './editorialTemplates'
 
 function baseMeta(opts) {
   const dominantHex = opts.dominantHex || COLORS.accent
@@ -469,7 +470,8 @@ const RENDERERS = {
   colorBlock: composeColorBlock,
   titleAbove: composeTitleAbove,
   magazine: composeMagazine,
-  multiGrid: composeMultiGrid
+  multiGrid: composeMultiGrid,
+  ...EDITORIAL_RENDERERS
 }
 
 export function renderPosterTemplate(ctx, templateId, img, opts) {

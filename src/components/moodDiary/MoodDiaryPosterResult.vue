@@ -12,6 +12,7 @@
     </div>
 
     <div class="poster-result__actions">
+      <p v-if="hint" class="poster-result__hint">{{ hint }}</p>
       <el-button
         type="primary"
         class="poster-result__btn"
@@ -38,7 +39,8 @@ export default {
     posterUrl: { type: String, required: true },
     saving: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
-    showBackToWrite: { type: Boolean, default: true }
+    showBackToWrite: { type: Boolean, default: true },
+    hint: { type: String, default: '' }
   },
   emits: ['save', 'download', 'regenerate', 'back-to-write']
 }
@@ -150,6 +152,14 @@ export default {
   gap: 8px;
   margin-top: 12px;
   padding-top: 4px;
+}
+
+.poster-result__hint {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--md-muted);
+  text-align: center;
 }
 
 .poster-result__btn {

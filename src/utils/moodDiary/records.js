@@ -12,6 +12,15 @@ export function getRecords() {
   }
 }
 
+function writeRecords(list) {
+  try {
+    localStorage.setItem(RECORDS_KEY, JSON.stringify(list.slice(0, MAX)))
+    return true
+  } catch (_) {
+    return false
+  }
+}
+
 /** @param {object} record */
 export function addRecord(record) {
   const list = getRecords()
@@ -21,12 +30,26 @@ export function addRecord(record) {
     ...record
   }
   list.unshift(row)
-  try {
-    localStorage.setItem(RECORDS_KEY, JSON.stringify(list.slice(0, MAX)))
-  } catch (_) {
-    /* ignore */
-  }
+  writeRecords(list)
   return row
+}
+
+/** @param {string} id @param {object} partial */
+export function updateRecord(id, partial) {
+  if (!id) return null
+  const list = getRecords()
+  const idx = list.findIndex((r) => r.id === id)
+  if (idx < 0) return null
+  list[idx] = { ...list[idx], ...partial }
+  writeRecords(list)
+  return list[idx]
+}
+
+/** @param {string} id */
+export function removeRecord(id) {
+  if (!id) return false
+  const list = getRecords().filter((r) => r.id !== id)
+  return writeRecords(list)
 }
 
 export function getRecordsSorted() {

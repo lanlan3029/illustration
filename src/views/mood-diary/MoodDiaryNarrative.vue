@@ -7,6 +7,7 @@
           v-if="pendingPosterUrl"
           :poster-url="pendingPosterUrl"
           :saving="posterSaving"
+          :hint="posterPendingHint"
           @save="savePendingPoster"
           @download="downloadPendingPoster"
           @regenerate="goRegeneratePoster"
@@ -175,7 +176,7 @@
 import MoodDiaryNowCard from '@/components/moodDiary/MoodDiaryNowCard.vue'
 import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.vue'
 import { getDraft, setDraft } from '@/utils/moodDiary/draft'
-import { downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
+import { clearPendingGeneratedPoster, downloadMoodPosterDataUrl, saveMoodPoster } from '@/utils/moodDiary/posterActions'
 import { findMoodById, resolveRecordMoodId } from '@/utils/moodDiary/moodAssets'
 import { atmosphereCssVars } from '@/utils/moodDiary/moodTheme'
 import { requestOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
@@ -272,6 +273,9 @@ export default {
     },
     previewHasNext() {
       return this.previewIndex < this.previewRecords.length - 1
+    },
+    posterPendingHint() {
+      return this.$t('moodDiary.posterPendingLocalHint')
     }
   },
   mounted() {
@@ -280,6 +284,7 @@ export default {
     this.syncPosterGenerating()
     this.syncActiveMood()
     this.posterGenTimer = setInterval(() => this.syncPosterGenerating(), 600)
+    window.addEventListener('beforeunload', this.onBeforeUnload)
   },
   activated() {
     this.syncPosterFromDraft()
@@ -290,6 +295,7 @@ export default {
   beforeUnmount() {
     if (this.posterGenTimer) clearInterval(this.posterGenTimer)
     window.removeEventListener('keydown', this.onPreviewKeydown)
+    window.removeEventListener('beforeunload', this.onBeforeUnload)
   },
   watch: {
     '$route.fullPath'() {
@@ -481,7 +487,7 @@ export default {
       }
     },
     dismissPosterPreview() {
-      setDraft({ composedPosterDataUrl: null })
+      clearPendingGeneratedPoster({ keepLocalRecord: true })
       this.pendingPosterUrl = null
       this.pendingDiaryCaption = ''
       this.openWriteEntry()
@@ -494,16 +500,27 @@ export default {
       if (!this.pendingPosterUrl) return
       this.posterSaving = true
       try {
-        await saveMoodPoster(this.pendingPosterUrl, this.pendingDiaryCaption, (k) => this.$t(k))
-        setDraft({ composedPosterDataUrl: null })
-        this.pendingPosterUrl = null
+        const result = await saveMoodPoster(this.pendingPosterUrl, this.pendingDiaryCaption, (k) => this.$t(k))
+        if (result.cloudOk) {
+          clearPendingGeneratedPoster({ keepLocalRecord: true })
+          this.pendingPosterUrl = null
+          this.pendingDiaryCaption = ''
+          ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
+        } else {
+          ElMessage.success(this.$t('moodDiary.saveLocalOnlySuccess'))
+        }
         this.refreshData()
-        ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
       } catch (e) {
         ElMessage.error(e.message || this.$t('moodDiary.saveCreationFailed'))
+        this.refreshData()
       } finally {
         this.posterSaving = false
       }
+    },
+    onBeforeUnload(e) {
+      if (!this.pendingPosterUrl) return
+      e.preventDefault()
+      e.returnValue = ''
     },
     goRegeneratePoster() {
       this.$router.push('/mood-diary/generate')

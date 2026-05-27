@@ -1,6 +1,7 @@
 import { composePoster } from './posters'
 import { getDraft, setDraft } from './draft'
 import { ensurePosterDescribe } from './posterDescribe'
+import { persistGeneratedPosterLocally } from './posterActions'
 import {
   generateIllustrationImage,
   resolveMultiGridPosterTexts,
@@ -129,6 +130,7 @@ export async function runPosterPipeline(options) {
       rawIllustrationUrl: posterMode === 'illustration' ? mainImageUrl : draft.rawIllustrationUrl,
       posterGenerating: false
     })
+    persistGeneratedPosterLocally(posterUrl, diaryCaptionLine)
 
     savePosterTemplatePref({
       templateId: options.templateId,
@@ -148,6 +150,7 @@ export async function recomposePoster(options) {
   const draft = getDraft()
   const posterUrl = await composePosterFromDraft(draft, options)
   setDraft({ composedPosterDataUrl: posterUrl, posterTemplateId: options.templateId })
+  persistGeneratedPosterLocally(posterUrl, draft.diaryCaption || draft.quotaSentence || '')
   savePosterTemplatePref({
     templateId: options.templateId,
     colorBlockPlacement: options.colorBlockPlacement,

@@ -2,6 +2,12 @@
  * Long share poster — macaron mood diary style.
  * @param {{ title?: string, bodyLines?: string[], siteLine?: string }} payload
  */
+import {
+  MOOD_FONT_KAI,
+  MOOD_FONT_SERIF,
+  ensureMoodDiaryFontsLoaded
+} from '@/utils/moodDiary/fonts'
+
 export function hasSharePosterContent(payload) {
   if (!payload || typeof payload !== 'object') return false
   const lines = payload.bodyLines
@@ -19,6 +25,8 @@ export async function drawSharePoster(payload = {}) {
     throw new Error('share poster empty')
   }
 
+  await ensureMoodDiaryFontsLoaded()
+
   const canvas = document.createElement('canvas')
   const w = 750
   const outerPad = 36
@@ -28,7 +36,7 @@ export async function drawSharePoster(payload = {}) {
   const titleBlockH = title ? 52 + 28 : 0
 
   const ctx = canvas.getContext('2d')
-  ctx.font = '26px PingFang SC, Microsoft YaHei, sans-serif'
+  ctx.font = `24px ${MOOD_FONT_KAI}`
 
   const wrappedBody = []
   for (const block of bodyLines) {
@@ -58,7 +66,7 @@ export async function drawSharePoster(payload = {}) {
 
   if (title) {
     ctx.fillStyle = '#5f5970'
-    ctx.font = 'bold 32px PingFang SC, Microsoft YaHei, sans-serif'
+    ctx.font = `700 32px ${MOOD_FONT_SERIF}`
     ctx.fillText(title, contentX, y + 34)
     y += 52
 
@@ -72,7 +80,7 @@ export async function drawSharePoster(payload = {}) {
     y += 28
   }
 
-  ctx.font = '24px PingFang SC, Microsoft YaHei, sans-serif'
+  ctx.font = `24px ${MOOD_FONT_KAI}`
   ctx.fillStyle = '#5f5970'
   for (const line of wrappedBody) {
     if (!line) {

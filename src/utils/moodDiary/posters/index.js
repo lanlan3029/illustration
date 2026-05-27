@@ -1,4 +1,5 @@
 import { DEFAULT_POSTER_TEMPLATE_ID } from './constants'
+import { ensureMoodDiaryFontsLoaded } from '../fonts'
 import {
   canvasToDataUrl,
   extractDominantHex,
@@ -7,16 +8,38 @@ import {
 import { composePosterTemplate } from './templates'
 
 export { POSTER_TEMPLATE_IDS, DEFAULT_POSTER_TEMPLATE_ID } from './constants'
+export { suggestEditorialTemplate } from './editorialTemplates'
+export {
+  MOOD_FONT_KAI,
+  MOOD_FONT_SERIF,
+  MOOD_POSTER_BODY_FONT,
+  MOOD_POSTER_DISPLAY_FONT,
+  ensureMoodDiaryFontsLoaded,
+  preloadMoodDiaryFonts
+} from '../fonts'
 
 export const POSTER_TEMPLATE_META = [
-  { id: 'coverStory', nameKey: 'moodDiary.posterTplCoverStory' },
-  { id: 'creamCard', nameKey: 'moodDiary.posterTplCreamCard' },
-  { id: 'gazette', nameKey: 'moodDiary.posterTplGazette' },
-  { id: 'framedPhoto', nameKey: 'moodDiary.posterTplFramedPhoto' },
-  { id: 'colorBlock', nameKey: 'moodDiary.posterTplColorBlock' },
-  { id: 'titleAbove', nameKey: 'moodDiary.posterTplTitleAbove' },
-  { id: 'magazine', nameKey: 'moodDiary.posterTplMagazine' },
-  { id: 'multiGrid', nameKey: 'moodDiary.posterTplMultiGrid' }
+  { id: 'coverStory', nameKey: 'moodDiary.posterTplCoverStory', group: 'classic' },
+  { id: 'creamCard', nameKey: 'moodDiary.posterTplCreamCard', group: 'classic' },
+  { id: 'gazette', nameKey: 'moodDiary.posterTplGazette', group: 'classic' },
+  { id: 'framedPhoto', nameKey: 'moodDiary.posterTplFramedPhoto', group: 'classic' },
+  { id: 'colorBlock', nameKey: 'moodDiary.posterTplColorBlock', group: 'classic' },
+  { id: 'titleAbove', nameKey: 'moodDiary.posterTplTitleAbove', group: 'classic' },
+  { id: 'magazine', nameKey: 'moodDiary.posterTplMagazine', group: 'classic' },
+  { id: 'multiGrid', nameKey: 'moodDiary.posterTplMultiGrid', group: 'classic' },
+  { id: 'quietEditorial', nameKey: 'moodDiary.posterTplQuietEditorial', group: 'editorial' },
+  { id: 'fullBleedMood', nameKey: 'moodDiary.posterTplFullBleedMood', group: 'editorial' },
+  { id: 'minimalReading', nameKey: 'moodDiary.posterTplMinimalReading', group: 'editorial' },
+  { id: 'imageWindow', nameKey: 'moodDiary.posterTplImageWindow', group: 'editorial' },
+  { id: 'filmMood', nameKey: 'moodDiary.posterTplFilmMood', group: 'editorial' },
+  { id: 'softPaper', nameKey: 'moodDiary.posterTplSoftPaper', group: 'editorial' },
+  { id: 'museumLayout', nameKey: 'moodDiary.posterTplMuseumLayout', group: 'editorial' },
+  { id: 'poetryLayout', nameKey: 'moodDiary.posterTplPoetryLayout', group: 'editorial' }
+]
+
+export const POSTER_TEMPLATE_GROUPS = [
+  { id: 'classic', nameKey: 'moodDiary.posterTplGroupClassic' },
+  { id: 'editorial', nameKey: 'moodDiary.posterTplGroupEditorial' }
 ]
 
 /**
@@ -36,6 +59,7 @@ export const POSTER_TEMPLATE_META = [
  */
 export async function composePoster(imageUrl, opts = {}) {
   if (!imageUrl) throw new Error('poster image missing')
+  await ensureMoodDiaryFontsLoaded()
   const img = await loadPosterImage(imageUrl)
   const dominantHex = opts.dominantHex || extractDominantHex(img)
   const templateId = opts.templateId || DEFAULT_POSTER_TEMPLATE_ID

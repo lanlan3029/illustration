@@ -1,0 +1,50 @@
+/**
+ * 心情日记 Web Fonts
+ * - 思源宋体 Noto Serif SC（标题 / Editorial 展示）
+ * - 霞鹜文楷 LXGW WenKai（正文 / 阅读）
+ */
+
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
+
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-chinese-simplified-400-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-chinese-simplified-500-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-chinese-simplified-600-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-chinese-simplified-700-normal.woff2')
+    format('woff2');
+}
+
+:root {
+  --md-font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, serif;
+  --md-font-kai: 'LXGW WenKai', 'LXGW WenKai SC', 'Kaiti SC', STKaiti, KaiTi, serif;
+  --md-font-body: var(--md-font-kai);
+  --md-font-display: var(--md-font-serif);
+}
