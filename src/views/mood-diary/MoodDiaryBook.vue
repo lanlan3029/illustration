@@ -169,7 +169,7 @@
 
     <el-dialog
       v-model="previewOpen"
-      width="min(420px, 92vw)"
+      width="min(640px, 96vw)"
       class="preview-dialog"
       :show-header="false"
       align-center
@@ -801,29 +801,37 @@ export default {
 }
 
 .preview-dialog :deep(.el-dialog__body) {
-  padding: 12px 8px 16px;
+  padding: 16px 12px 20px;
 }
 
 .preview-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 200px;
+  gap: 8px;
+  min-height: min(72vh, 680px);
 }
 
 .preview-image-wrap {
   position: relative;
   flex: 1;
   min-width: 0;
-  max-width: min(360px, 78vw);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(520px, 88vw);
+  max-height: min(90vh, 960px);
 }
 
 .preview-img {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: auto;
-  border-radius: 8px;
+  max-height: min(90vh, 960px);
+  object-fit: contain;
+  border-radius: 10px;
+  margin: 0 auto;
   user-select: none;
   pointer-events: none;
 }

@@ -38,15 +38,7 @@ export const POSTER_TEMPLATE_IDS = [
   'colorBlock',
   'titleAbove',
   'magazine',
-  'multiGrid',
-  'quietEditorial',
-  'fullBleedMood',
-  'minimalReading',
-  'imageWindow',
-  'filmMood',
-  'softPaper',
-  'museumLayout',
-  'poetryLayout'
+  'multiGrid'
 ]
 
 export const DEFAULT_POSTER_TEMPLATE_ID = 'creamCard'

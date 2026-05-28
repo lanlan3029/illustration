@@ -23,7 +23,6 @@ import {
   resolveTheme,
   roundRectPath
 } from './shared'
-import { EDITORIAL_RENDERERS } from './editorialTemplates'
 
 function baseMeta(opts) {
   const dominantHex = opts.dominantHex || COLORS.accent
@@ -146,7 +145,12 @@ export function composeFramedPhoto(ctx, img, opts) {
   const boxH = 225 * SY
   const boxX = (POSTER_W - boxW) / 2
   const boxY = 83.33 * SY
-  drawImageContain(ctx, img, boxX, boxY, boxW, boxH)
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(boxX, boxY, boxW, boxH)
+  ctx.clip()
+  drawImageCover(ctx, img, boxX, boxY, boxW, boxH, 0)
+  ctx.restore()
   ctx.strokeStyle = theme.textColor
   ctx.lineWidth = 4
   ctx.strokeRect(boxX, boxY, boxW, boxH)
@@ -236,7 +240,6 @@ export function composeTitleAbove(ctx, img, opts) {
   const padX = 52
   const textW = POSTER_W - padX * 2
   const headerBottom = 54 * SY
-  const gapTitleImage = 32 * SY
   const gapImageExcerpt = 28 * SY
   const footerReserve = 76 * SY
   const minImageH = 200 * SY
@@ -252,23 +255,35 @@ export function composeTitleAbove(ctx, img, opts) {
   }
 
   const maxImageBottom = POSTER_H - footerReserve - gapImageExcerpt - excerptH
-  const maxTitleH = Math.max(80 * SY, maxImageBottom - minImageH - gapTitleImage - headerBottom)
+  const gapTitleImage = body.text ? getBodyLineHeight(body.compact) : 16 * SY
 
   let bodyMaxLines = 12
-  let titleH = body.text
+  let titleBlockH = body.text
     ? measureBodyTextHeight(ctx, body.text, textW, bodyMaxLines)
     : 0
-  while (titleH > maxTitleH && bodyMaxLines > 3) {
+  const maxTitleZone = Math.max(
+    80 * SY,
+    maxImageBottom - minImageH - gapTitleImage - headerBottom
+  )
+  while (titleBlockH > maxTitleZone && bodyMaxLines > 3) {
     bodyMaxLines -= 1
-    titleH = measureBodyTextHeight(ctx, body.text, textW, bodyMaxLines)
+    titleBlockH = measureBodyTextHeight(ctx, body.text, textW, bodyMaxLines)
   }
 
-  const imageY = headerBottom + titleH + gapTitleImage
-  let imageH = Math.min(maxImageH, maxImageBottom - imageY)
+  let imageH = Math.min(maxImageH, maxImageBottom - headerBottom - titleBlockH - gapTitleImage)
   imageH = Math.max(minImageH, imageH)
 
+  let imageY = maxImageBottom - imageH
+  let textY = imageY - gapTitleImage - titleBlockH
+  if (textY < headerBottom) {
+    textY = headerBottom
+    imageY = textY + titleBlockH + gapTitleImage
+    imageH = Math.min(imageH, maxImageBottom - imageY)
+    imageH = Math.max(minImageH, imageH)
+  }
+
   if (body.text) {
-    drawBodyText(ctx, body.text, padX, headerBottom, textW, 'center', theme, body.compact, bodyMaxLines)
+    drawBodyText(ctx, body.text, padX, textY, textW, 'center', theme, body.compact, bodyMaxLines)
   }
 
   const imageW = Math.min(480, textW)
@@ -447,7 +462,7 @@ export function composeMultiGrid(ctx, img, opts) {
       x: side,
       y: Math.max(contentTop, mainY),
       width: textW,
-      align: 'left',
+      align: 'right',
       theme,
       excerptColor: COLORS.textSecondary,
       excerptMaxLines: 0
@@ -456,7 +471,7 @@ export function composeMultiGrid(ctx, img, opts) {
 
   if (aiBody.text) {
     const aiY = gridY + gridH + aiGap
-    drawExcerpt(ctx, aiBody.text, side, aiY, textW, 'left', COLORS.textSecondary, 4, false)
+    drawExcerpt(ctx, aiBody.text, side, aiY, textW, 'right', COLORS.textSecondary, 4, false)
   }
 
   drawPosterFooter(ctx, theme, opts.footerName)
@@ -470,8 +485,7 @@ const RENDERERS = {
   colorBlock: composeColorBlock,
   titleAbove: composeTitleAbove,
   magazine: composeMagazine,
-  multiGrid: composeMultiGrid,
-  ...EDITORIAL_RENDERERS
+  multiGrid: composeMultiGrid
 }
 
 export function renderPosterTemplate(ctx, templateId, img, opts) {
