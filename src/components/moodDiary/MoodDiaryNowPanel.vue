@@ -14,12 +14,13 @@
       <button
         type="button"
         role="tab"
-        class="now-diary-tab"
+        class="now-diary-tab now-diary-tab--ai"
         :class="{ 'now-diary-tab--active': diaryTab === 'illustration' }"
         :aria-selected="diaryTab === 'illustration' ? 'true' : 'false'"
         @click="selectDiaryTab('illustration')"
       >
         {{ $t('moodDiary.tabIllustrationDiary') }}
+        <span class="now-diary-tab-badge" aria-hidden="true">AI</span>
       </button>
     </nav>
 
@@ -485,6 +486,29 @@ export default {
     box-shadow 0.25s ease;
 }
 
+.now-diary-tab--ai {
+  position: relative;
+  padding-right: 34px;
+}
+
+.now-diary-tab-badge {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  min-width: 20px;
+  height: 14px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7ecbb8 0%, #66b5e6 100%);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(102, 181, 230, 0.35);
+}
+
 .now-diary-tab:hover:not(.now-diary-tab--active) {
   color: var(--md-text);
   background: rgba(255, 255, 255, 0.55);
@@ -684,6 +708,18 @@ export default {
   font-size: 12px;
   padding: 10px 8px;
   line-height: 1.35;
+}
+
+.now-panel--dialog .now-diary-tab--ai {
+  padding-right: 30px;
+}
+
+.now-panel--dialog .now-diary-tab-badge {
+  right: 6px;
+  min-width: 18px;
+  height: 13px;
+  line-height: 13px;
+  font-size: 8px;
 }
 
 .now-panel--dialog .now-compose-main {

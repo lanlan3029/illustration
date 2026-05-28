@@ -558,7 +558,8 @@
     "savePosterAlbum": "Download image",
     "backRecap": "Back to statistics",
     "sharePosterFail": "Could not render poster",
-    "sharePosterEmpty": "No content yet"
+    "sharePosterEmpty": "No content yet",
+    "recapChooseRangeFirst": "Choose a period to start AI analysis."
   },
   "home": {
     "welcomeTitle": "Welcome to Illustration Creation Platform",

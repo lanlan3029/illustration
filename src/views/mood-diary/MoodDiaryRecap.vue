@@ -61,12 +61,21 @@
     <p v-if="rangeMode === 'custom' && rangeValidationMessage" class="recap-banner recap-banner--warn">
       {{ rangeValidationMessage }}
     </p>
-    <p v-if="recapLoading" class="recap-banner recap-banner--info">{{ $t('moodDiary.recapAiLoading') }}</p>
+    <p v-if="!hasChosenRange" class="recap-banner recap-banner--info">
+      {{ $t('moodDiary.recapChooseRangeFirst') }}
+    </p>
+    <p v-else-if="recapLoading" class="recap-banner recap-banner--info">
+      {{ $t('moodDiary.recapAiLoading') }}
+    </p>
     <p v-else-if="recapAiError" class="recap-banner recap-banner--warn">{{ recapAiError }}</p>
     <p v-else-if="showLocalFallbackBadge" class="recap-banner">{{ $t('moodDiary.recapLocalSummaryBadge') }}</p>
 
     <div class="recap-scroll">
-      <div v-if="recapLoading" class="recap-loading" aria-busy="true">
+      <div v-if="!hasChosenRange" class="recap-guide-wrap">
+        <p class="recap-empty">{{ $t('moodDiary.recapChooseRangeFirst') }}</p>
+      </div>
+
+      <div v-else-if="recapLoading" class="recap-loading" aria-busy="true">
         <div v-for="i in 4" :key="i" class="recap-loading__row" />
       </div>
 
@@ -142,7 +151,13 @@ import {
 } from '@/utils/moodDiary/recapEngine'
 import { getRecordsSorted } from '@/utils/moodDiary/records'
 import { findMoodById } from '@/utils/moodDiary/moodAssets'
-import { fetchCaptionMoodRecap, getActiveMoodEndpoints } from '@/utils/moodDiary/api'
+import {
+  fetchCaptionMoodRecap,
+  fetchUserMoodIllustrations,
+  getActiveMoodEndpoints,
+  mapIllToBookRecord
+} from '@/utils/moodDiary/api'
+import { mergeBookRecords } from '@/utils/moodDiary/recordGroups'
 import { requestOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
 
 const POSTER_KEY = 'mood_diary_share_poster_payload'
@@ -156,9 +171,11 @@ export default {
     return {
       rangeMode: 'week',
       customRange: [formatIsoDate(start), formatIsoDate(end)],
+      savedRecords: getRecordsSorted(),
       aiRecapResult: null,
       recapLoading: false,
-      recapAiError: ''
+      recapAiError: '',
+      hasChosenRange: false
     }
   },
   computed: {
@@ -194,7 +211,7 @@ export default {
       return !normalized.invalid && !normalized.tooLong
     },
     localRecap() {
-      return buildRecap(this.recapRange, getRecordsSorted())
+      return buildRecap(this.recapRange, this.savedRecords)
     },
     periodLabel() {
       const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
@@ -243,22 +260,33 @@ export default {
       return !!this.displayRecap.trim()
     }
   },
-  watch: {
-    rangeMode() {
-      this.scheduleRecapFetch()
-    }
-  },
   mounted() {
-    this.scheduleRecapFetch()
+    this.loadSavedRecords()
   },
   methods: {
+    async loadSavedRecords() {
+      let cloudRecords = []
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') || '' : ''
+      const canCloud = !!(token && token !== 'undefined')
+      if (canCloud) {
+        try {
+          const list = await fetchUserMoodIllustrations(1)
+          cloudRecords = list.map(mapIllToBookRecord).filter(Boolean)
+        } catch (e) {
+          console.warn('[mood-diary] recap load cloud records failed', e)
+        }
+      }
+      this.savedRecords = mergeBookRecords(getRecordsSorted(), cloudRecords)
+    },
     onRangeModeChange(mode) {
-      if (mode !== 'custom') return
-      if (!this.customRange || this.customRange.length !== 2) {
+      if (mode === 'custom' && (!this.customRange || this.customRange.length !== 2)) {
         this.customRange = defaultCustomRange(6)
       }
+      this.hasChosenRange = true
+      this.scheduleRecapFetch()
     },
     onCustomRangeChange() {
+      this.hasChosenRange = true
       this.scheduleRecapFetch()
     },
     disableFutureDate(time) {
@@ -268,6 +296,11 @@ export default {
       this.$nextTick(() => this.fetchAiRecap())
     },
     async fetchAiRecap() {
+      if (!this.hasChosenRange) {
+        this.aiRecapResult = null
+        this.recapAiError = ''
+        return
+      }
       if (!this.rangeReady) {
         this.aiRecapResult = null
         this.recapAiError = ''
@@ -290,7 +323,7 @@ export default {
       this.recapAiError = ''
       this.aiRecapResult = null
       try {
-        const records = getRecordsSorted()
+        const records = this.savedRecords
         const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
         const payload = buildRecapCompletionPayload(
           this.recapRange,
@@ -616,6 +649,14 @@ function defaultCustomRange(daysBack) {
   font-size: 14px;
   line-height: 1.7;
   color: var(--md-muted);
+}
+
+.recap-guide-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 0 12px;
 }
 
 .recap-empty-btn {

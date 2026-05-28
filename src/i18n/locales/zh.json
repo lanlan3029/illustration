@@ -573,7 +573,8 @@
     "savePosterAlbum": "保存图片",
     "backRecap": "返回统计分析",
     "sharePosterFail": "生成分享图失败",
-    "sharePosterEmpty": "当前没有内容"
+    "sharePosterEmpty": "当前没有内容",
+    "recapChooseRangeFirst": "请选择统计时段后开始 AI 分析"
   },
   "home": {
     "welcomeTitle": "您的专属插画工作台",
