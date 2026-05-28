@@ -60,25 +60,37 @@ export function isLightHex(hex) {
   return (r * 299 + g * 587 + b * 114) / 1000 > 160
 }
 
+function hexToRgba(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '')
+  if (!m) return `rgba(0,0,0,${alpha})`
+  const n = parseInt(m[1], 16)
+  const r = (n >> 16) & 255
+  const g = (n >> 8) & 255
+  const b = n & 255
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
 export function resolveTheme(kind, dominantHex = COLORS.accent) {
   const hex = dominantHex || COLORS.accent
   const light = isLightHex(hex)
   if (kind === 'cream') {
+    const dateColor = COLORS.textSecondary
     return {
-      pillBg: hex,
-      pillTextColor: light ? COLORS.accentStrong : '#fff',
-      dateColor: COLORS.textSecondary,
-      brandColor: COLORS.textSecondary,
-      textColor: COLORS.primary
+      pillBg: hexToRgba(hex, 0.28),
+      pillTextColor: dateColor,
+      dateColor,
+      brandColor: dateColor,
+      textColor: dateColor
     }
   }
   if (kind === 'paper') {
+    const dateColor = COLORS.textSecondary
     return {
-      pillBg: hex,
-      pillTextColor: light ? COLORS.primary : '#fff',
-      dateColor: COLORS.textSecondary,
-      brandColor: COLORS.textSecondary,
-      textColor: COLORS.primary
+      pillBg: hexToRgba(hex, 0.24),
+      pillTextColor: dateColor,
+      dateColor,
+      brandColor: dateColor,
+      textColor: dateColor
     }
   }
   return {

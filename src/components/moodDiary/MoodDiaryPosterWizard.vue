@@ -666,6 +666,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 0 1 auto;
+  overflow-y: auto;
 }
 
 .wizard-body--prepare {
@@ -855,7 +857,12 @@ export default {
 
 .wizard-foot {
   flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.poster-wizard:has(.wizard-body--template) .wizard-foot {
   padding-top: 12px;
+  margin-top: 0;
 }
 
 .wizard-foot :deep(.el-button) {
