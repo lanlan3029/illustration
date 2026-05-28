@@ -2,6 +2,7 @@
  * 心情日记 ↔ 云端 /ill/ 字段约定（type === 'mood'）
  *
  * - description     用户正文
+ * - diary_caption   AI 情绪概括（非 scene_description）
  * - mood_emoji_id   心情 id（如 big-grin）；展示文案由前端 moodAssets 反查
  * - tags            兜底：["mood:big-grin"]（FormData 逐条 append，勿 JSON.stringify 整数组）
  */
@@ -12,10 +13,12 @@ const MOOD_TAG_PREFIX = 'mood:'
 export function buildMoodIllPersistFields(draft) {
   const moodEmojiId = String(draft?.moodEmojiId || draft?.mood || '').trim()
   const description = String(draft?.narrative || '').trim()
+  const diaryCaption = String(draft?.diaryCaption || draft?.quotaSentence || '').trim()
 
   return {
     mood_emoji_id: moodEmojiId,
     description,
+    diary_caption: diaryCaption,
     tags: moodEmojiId ? [`${MOOD_TAG_PREFIX}${moodEmojiId}`] : []
   }
 }

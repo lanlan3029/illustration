@@ -83,6 +83,7 @@ export async function saveMoodPoster(posterUrl, diaryCaptionLine, t) {
         {
           prompt: d.generateIllustrationPrompt,
           caption: diaryCaptionLine || d.diaryCaption || d.captionPicked,
+          diary_caption: moodFields.diary_caption || diaryCaptionLine || d.diaryCaption || '',
           image_url: posterUrl,
           description: moodFields.description,
           mood_emoji_id: moodFields.mood_emoji_id,
@@ -97,7 +98,7 @@ export async function saveMoodPoster(posterUrl, diaryCaptionLine, t) {
         t('moodDiary.creationTitle'),
         moodFields.description,
         MOOD_ILLUSTRATION_TYPE,
-        { moodFields }
+        { moodFields, diaryCaption: moodFields.diary_caption || diaryCaptionLine || d.diaryCaption || '' }
       )
     }
     updateRecord(localRow.id, { pendingUnsaved: false, savedToCloud: true })

@@ -147,8 +147,10 @@ function defaultDraft() {
     captionPicked: null,
     generateIllustrationPrompt: '',
     quotaSentence: '',
-    /** 海报底部日记体配文（由画面描述生成，约 90 字） */
+    /** AI 情绪概括（后端 diary_caption，Editorial 标题 / 海报副文案） */
     diaryCaption: '',
+    /** 后端 input_mode，如 diary_first */
+    inputMode: '',
     matching: null,
     rawIllustrationUrl: null,
     hasRawIllustration: false,

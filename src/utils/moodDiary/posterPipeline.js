@@ -29,10 +29,12 @@ export async function composePosterFromDraft(draft, options = {}) {
   const multiGridTexts = resolveMultiGridPosterTexts(draft)
   const dataUrl = await composePoster(mainImage, {
     templateId,
-    bodyText: posterMain,
+    bodyText: draft.narrative || posterMain,
     excerptText: posterSub,
-    userNarrative: multiGridTexts.textAbove,
-    aiCaptionText: multiGridTexts.textBelow,
+    userNarrative: draft.narrative || multiGridTexts.textAbove,
+    narrativeText: draft.narrative || '',
+    aiCaptionText: draft.diaryCaption || multiGridTexts.textBelow || posterSub || '',
+    diaryCaption: draft.diaryCaption || posterSub || '',
     moodLabel: draft.moodLabel,
     createdAt: Date.now(),
     footerName: options.footerName || '',
@@ -107,14 +109,17 @@ export async function runPosterPipeline(options) {
     }
 
     options.onStep?.('compose')
-    const { posterMain, posterSub, diaryCaptionLine } = resolvePosterBodyTexts(getDraft())
-    const multiGridTexts = resolveMultiGridPosterTexts(getDraft())
+    const composeDraft = getDraft()
+    const { posterMain, posterSub, diaryCaptionLine } = resolvePosterBodyTexts(composeDraft)
+    const multiGridTexts = resolveMultiGridPosterTexts(composeDraft)
     const posterUrl = await composePoster(mainImageUrl, {
       templateId: options.templateId,
-      bodyText: posterMain,
+      bodyText: composeDraft.narrative || posterMain,
       excerptText: posterSub,
-      userNarrative: multiGridTexts.textAbove,
-      aiCaptionText: multiGridTexts.textBelow,
+      userNarrative: composeDraft.narrative || multiGridTexts.textAbove,
+      narrativeText: composeDraft.narrative || '',
+      aiCaptionText: composeDraft.diaryCaption || multiGridTexts.textBelow || posterSub || '',
+      diaryCaption: composeDraft.diaryCaption || posterSub || '',
       moodLabel: draft.moodLabel,
       createdAt: Date.now(),
       footerName: options.footerName || '',

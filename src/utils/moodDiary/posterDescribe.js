@@ -9,7 +9,7 @@ import {
 import { getDraft, setDraft } from './draft'
 import { MOOD_DIARY_NARRATIVE_MAX } from './constants'
 import { buildLocalIllustrationPrompt } from './posterIllustrate'
-import { normalizeDiaryCaptionLength } from './diaryCaption'
+import { normalizeDiaryCaptionFromApi, normalizeDiaryCaptionLength } from './diaryCaption'
 
 function simpleHash(str) {
   let h = 0
@@ -59,7 +59,7 @@ function buildDescribeRequestOptions(draft, options = {}) {
     narrative: (draft.narrative || '').trim(),
     moodLabel: draft.moodLabel || '',
     illustrationStyle: options.illustrationStyle || draft.artStyle || '',
-    targetLength: 90,
+    targetLength: 40,
     generateDiaryCaption: true,
     filename: draft.inputImageName || 'reference.jpg',
     instruction: narrativeHint,
@@ -70,14 +70,15 @@ function buildDescribeRequestOptions(draft, options = {}) {
 function pickResultToDescribeResult(pickResult, draft) {
   const narrative = (draft.narrative || '').trim()
   const diaryCaption =
-    (pickResult.diaryCaption || '').trim() ||
+    normalizeDiaryCaptionFromApi(pickResult.diaryCaption || '') ||
     normalizeDiaryCaptionLength(narrative)
   return {
-    description: '',
-    sceneDescription: '',
+    description: pickResult.description || '',
+    sceneDescription: pickResult.sceneDescription || '',
     diaryCaption,
     illustrationPrompt: pickResult.illustrationPrompt || '',
-    illustrationStyle: pickResult.illustrationStyle || ''
+    illustrationStyle: pickResult.illustrationStyle || '',
+    inputMode: pickResult.inputMode || ''
   }
 }
 
@@ -100,13 +101,14 @@ async function buildTextOnlyDescribeFallback(draft, options = {}) {
       options.t
     )
   }
-  const diaryCaption = normalizeDiaryCaptionLength((draft.narrative || '').trim())
+  const diaryCaption = normalizeDiaryCaptionFromApi((draft.narrative || '').trim())
   return {
     description: '',
     sceneDescription: '',
     diaryCaption,
     illustrationPrompt,
-    illustrationStyle: options.illustrationStyle || draft.artStyle || ''
+    illustrationStyle: options.illustrationStyle || draft.artStyle || '',
+    inputMode: 'diary_first'
   }
 }
 

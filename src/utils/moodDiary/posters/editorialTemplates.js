@@ -1,5 +1,7 @@
 import { POSTER_H, POSTER_W } from './constants'
+import { DIARY_CAPTION_API_MAX } from '../diaryCaption'
 import {
+  applyBottomScrim,
   applyDarkOverlay,
   applyFilmGrain,
   applyVignette,
@@ -26,20 +28,23 @@ export function composeQuietEditorial(ctx, img, opts) {
     fillEditorialBackground(c, theme)
     drawEditorialMeta(c, o, theme)
 
-    const imgX = g(52)
+    const imgX = g(48)
     const imgY = g(22)
-    const imgW = g(37)
-    const imgH = g(107)
+    const imgW = g(38)
+    const imgH = g(100)
     drawEditorialImage(c, image, { x: imgX, y: imgY, w: imgW, h: imgH })
 
     const leftX = g(10)
-    const colW = g(30)
-    let textY = g(28)
+    const colW = Math.min(g(34), imgX - leftX - g(4))
+    let textY = imgY + g(2)
     drawAccentLine(c, leftX, textY, theme)
     textY += g(3)
 
     if (content.title) {
-      textY = drawEditorialTitle(c, content.title, leftX, textY, colW, theme, { maxLines: 2 })
+      textY = drawEditorialTitle(c, content.title, leftX, textY, colW, theme, {
+        size: 'quote',
+        maxLines: 3
+      })
       textY += g(4)
     }
     if (content.body) {
@@ -57,6 +62,7 @@ export function composeFullBleedMood(ctx, img, opts) {
     const theme = resolveEditorialTheme({ ...o, editorialTheme: 'anxiety' })
     drawEditorialImage(c, image, { x: 0, y: 0, w: POSTER_W, h: POSTER_H })
     applyDarkOverlay(c, 0.35)
+    applyBottomScrim(c)
 
     const textTheme = { ...theme, text: '#FFFFFF', muted: 'rgba(255,255,255,0.82)' }
     drawEditorialMeta(c, o, textTheme, g(6))
@@ -71,7 +77,8 @@ export function composeFullBleedMood(ctx, img, opts) {
 
     if (content.title) {
       textY = drawEditorialTitle(c, content.title, padX, textY, textW, textTheme, {
-        maxLines: 2,
+        size: 'quote',
+        maxLines: 3,
         align: 'left'
       })
       textY += g(4)
@@ -93,19 +100,20 @@ export function composeMinimalReading(ctx, img, opts) {
     fillEditorialBackground(c, theme)
     drawEditorialMeta(c, o, theme)
 
-    const colW = g(28)
+    const colW = g(30)
     const colX = (POSTER_W - colW) / 2
-    let textY = g(18)
+    let textY = g(16)
 
     if (content.title) {
       textY = drawEditorialTitle(c, content.title, colX, textY, colW, theme, {
         align: 'center',
-        maxLines: 2
+        size: 'quote',
+        maxLines: 3
       })
-      textY += g(6)
+      textY += g(5)
     }
 
-    const imgH = g(36)
+    const imgH = g(40)
     const imgY = textY
     drawEditorialImage(c, image, {
       x: colX,
@@ -153,7 +161,8 @@ export function composeImageWindow(ctx, img, opts) {
     if (content.title) {
       textY = drawEditorialTitle(c, content.title, textX, textY, textW, theme, {
         align: 'center',
-        maxLines: 2
+        size: 'quote',
+        maxLines: 3
       })
       textY += g(4)
     }
@@ -174,6 +183,7 @@ export function composeFilmMood(ctx, img, opts) {
     drawEditorialImage(c, image, { x: 0, y: 0, w: POSTER_W, h: POSTER_H })
     applyDarkOverlay(c, 0.32)
     applyVignette(c, 0.55)
+    applyBottomScrim(c, g(58), 0.78)
     applyFilmGrain(c, 0.07)
 
     const textTheme = { ...theme, text: '#FFFFFF', muted: 'rgba(255,255,255,0.78)' }
@@ -188,7 +198,10 @@ export function composeFilmMood(ctx, img, opts) {
     let textY = POSTER_H - g(16) - blockH
 
     if (content.title) {
-      textY = drawEditorialTitle(c, content.title, padX, textY, textW, textTheme, { maxLines: 2 })
+      textY = drawEditorialTitle(c, content.title, padX, textY, textW, textTheme, {
+        size: 'quote',
+        maxLines: 3
+      })
       textY += g(4)
     }
     if (content.body) {
@@ -227,7 +240,10 @@ export function composeSoftPaper(ctx, img, opts) {
 
     const content = extractEditorialContent(o)
     if (content.title) {
-      textY = drawEditorialTitle(c, content.title, textX, textY, textW, theme, { maxLines: 2 })
+      textY = drawEditorialTitle(c, content.title, textX, textY, textW, theme, {
+        size: 'quote',
+        maxLines: 3
+      })
       textY += g(4)
     }
     if (content.body) {
@@ -248,12 +264,15 @@ export function composeMuseumLayout(ctx, img, opts) {
     const textW = POSTER_W - padX * 2
     let textY = g(16)
 
-    const titleText = content.title || content.body.slice(0, 28)
-    textY = drawEditorialTitle(c, titleText, padX, textY, textW, theme, {
-      large: true,
-      maxLines: 3
-    })
-    textY += g(8)
+    const titleText = content.title || (content.body ? content.body.slice(0, DIARY_CAPTION_API_MAX) : '')
+    if (titleText) {
+      textY = drawEditorialTitle(c, titleText, padX, textY, textW, theme, {
+        large: true,
+        size: 'display',
+        maxLines: 3
+      })
+      textY += g(8)
+    }
 
     const thumbW = g(28)
     const thumbH = g(34)
@@ -266,9 +285,8 @@ export function composeMuseumLayout(ctx, img, opts) {
 
     const bodyX = padX + thumbW + g(4)
     const bodyW = POSTER_W - bodyX - padX
-    const bodyText =
-      content.title && content.body ? content.body : content.body || ''
-    if (bodyText && bodyText !== titleText) {
+    const bodyText = content.body
+    if (bodyText && content.title && bodyText !== titleText) {
       drawEditorialBody(c, bodyText, bodyX, textY + g(2), bodyW, theme, {
         maxLines: 8,
         maxChars: 90
@@ -300,12 +318,22 @@ export function composePoetryLayout(ctx, img, opts) {
     let textY = g(14) + imgH + g(10)
 
     const poetrySource = content.title || content.body
+    let bodyY = textY
     if (poetrySource) {
-      drawPoetryLines(c, poetrySource, textX, textY, textW, theme, { maxChars: 80 })
+      bodyY = drawPoetryLines(c, poetrySource, textX, textY, textW, theme, {
+        maxChars: DIARY_CAPTION_API_MAX
+      })
     }
 
     if (content.title && content.body && content.body !== content.title) {
-      const subY = POSTER_H - g(22)
+      const bodyH = measureEditorialBodyHeight(c, content.body, textW, {
+        maxLines: 4,
+        maxChars: 60
+      })
+      const subY = Math.min(
+        POSTER_H - g(18) - bodyH,
+        Math.max(bodyY + g(8), POSTER_H - g(28) - bodyH)
+      )
       drawEditorialBody(c, content.body, textX, subY, textW, theme, {
         align: 'center',
         maxLines: 4,

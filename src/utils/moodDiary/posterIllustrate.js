@@ -5,8 +5,7 @@ import {
 } from './api'
 import { setDraft } from './draft'
 import {
-  buildLocalDiaryCaptionFromVision,
-  normalizeDiaryCaptionLength
+  normalizeDiaryCaptionFromApi
 } from './diaryCaption'
 
 function mergeVision(base, vision) {
@@ -79,17 +78,11 @@ export async function generateIllustrationImage(draft, options = {}) {
 }
 
 export function resolvePosterBodyTexts(draft) {
-  let diaryCaptionLine = normalizeDiaryCaptionLength(draft.diaryCaption || draft.quotaSentence || '')
-  if (!diaryCaptionLine) {
-    const sceneDescription = (draft.sceneDescription || draft.imageVisionCache || '').trim()
-    if (sceneDescription) {
-      diaryCaptionLine = buildLocalDiaryCaptionFromVision(sceneDescription, {
-        moodLabel: draft.moodLabel,
-        narrative: draft.narrative
-      })
-    } else if (draft.captionPicked) {
-      diaryCaptionLine = normalizeDiaryCaptionLength(draft.captionPicked)
-    }
+  let diaryCaptionLine = normalizeDiaryCaptionFromApi(
+    draft.diaryCaption || draft.quotaSentence || ''
+  )
+  if (!diaryCaptionLine && draft.captionPicked) {
+    diaryCaptionLine = normalizeDiaryCaptionFromApi(draft.captionPicked)
   }
   const userNarrative = (draft.narrative || '').trim()
   const posterMain = userNarrative || diaryCaptionLine

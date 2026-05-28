@@ -19,24 +19,24 @@ function pickFirstStr(obj, keys) {
   return ''
 }
 
-/** 解析 image-describe 的 data 载荷（含 vision 返回的单行 JSON 字符串） */
+/**
+ * 解析 caption/image-describe 的 data 载荷
+ * @see { description, scene_description, illustration_prompt, illustration_style, diary_caption, input_mode }
+ */
 function parseVisionDescribeFields(raw) {
   let description = ''
   let sceneDescription = ''
   let diaryCaption = ''
   let illustrationPrompt = ''
   let illustrationStyle = ''
+  let inputMode = ''
 
   const absorbObject = (obj) => {
     if (!obj || typeof obj !== 'object') return
-    diaryCaption =
-      diaryCaption ||
-      pickFirstStr(obj, ['diary_caption', 'diaryCaption', 'diary', 'caption_diary'])
+    diaryCaption = diaryCaption || pickFirstStr(obj, ['diary_caption', 'diaryCaption'])
     sceneDescription =
-      sceneDescription ||
-      pickFirstStr(obj, ['scene_description', 'sceneDescription', 'description', 'vision'])
-    description =
-      description || pickFirstStr(obj, ['description', 'scene_description', 'text'])
+      sceneDescription || pickFirstStr(obj, ['scene_description', 'sceneDescription', 'vision'])
+    description = description || pickFirstStr(obj, ['description', 'text'])
     illustrationPrompt =
       illustrationPrompt ||
       pickFirstStr(obj, [
@@ -48,6 +48,7 @@ function parseVisionDescribeFields(raw) {
       ])
     illustrationStyle =
       illustrationStyle || pickFirstStr(obj, ['illustration_style', 'illustrationStyle'])
+    inputMode = inputMode || pickFirstStr(obj, ['input_mode', 'inputMode'])
   }
 
   if (typeof raw === 'string') {
@@ -57,24 +58,23 @@ function parseVisionDescribeFields(raw) {
         absorbObject(JSON.parse(s))
       } catch (_) {
         description = s
-        sceneDescription = s
       }
     } else {
       description = s
-      sceneDescription = s
     }
   } else if (raw && typeof raw === 'object') {
     absorbObject(raw)
   }
 
-  if (!sceneDescription) sceneDescription = description
-  if (!description) description = sceneDescription
+  if (!sceneDescription && description) sceneDescription = description
+  if (!description && sceneDescription) description = sceneDescription
   return {
     description,
     sceneDescription,
     diaryCaption,
     illustrationPrompt,
-    illustrationStyle
+    illustrationStyle,
+    inputMode
   }
 }
 
@@ -353,7 +353,7 @@ function appendDescribeFormFields(fd, options) {
   }
   const style = String(options.illustrationStyle || '').trim()
   if (style) fd.append('illustration_style', style)
-  fd.append('target_length', String(options.targetLength ?? 90))
+  fd.append('target_length', String(options.targetLength ?? 40))
   fd.append(
     'generate_diary_caption',
     options.generateDiaryCaption !== false ? 'true' : 'false'
@@ -362,7 +362,7 @@ function appendDescribeFormFields(fd, options) {
 
 function buildDescribeJsonBody(imageInput, options) {
   const body = {
-    target_length: options.targetLength ?? 90,
+    target_length: options.targetLength ?? 40,
     generate_diary_caption: options.generateDiaryCaption !== false
   }
   const imageUrl = options.imageUrl || ''
@@ -443,20 +443,12 @@ export async function fetchCaptionPickIllustrationPrompt(options = {}, endpoint)
   const data = unwrapData(res)
   assertCaptionApiResponse(data, res?.status, 'caption pick failed')
   const payload = data?.data ?? data?.message ?? data
-  const illustrationPrompt = pickFirstStr(payload, [
-    'illustration_prompt',
-    'illustrationPrompt',
-    'prompt',
-    'image_prompt'
-  ])
-  const illustrationStyle = pickFirstStr(payload, ['illustration_style', 'illustrationStyle'])
-  const diaryCaption = pickFirstStr(payload, ['diary_caption', 'diaryCaption', 'caption'])
-  console.log('[mood-diary] POST /caption/pick 解析结果', {
-    illustrationPrompt,
-    illustrationStyle,
-    diaryCaption
-  })
-  return { illustrationPrompt, illustrationStyle, diaryCaption }
+  const parsed = parseVisionDescribeFields(payload)
+  if (!parsed.diaryCaption) {
+    parsed.diaryCaption = pickFirstStr(data, ['diary_caption', 'diaryCaption'])
+  }
+  console.log('[mood-diary] POST /caption/pick 解析结果', parsed)
+  return parsed
 }
 
 /**
@@ -541,13 +533,15 @@ export async function fetchCaptionImageDescribe(imageInput, options = {}, endpoi
   return parsed
 }
 
-/** 写入草稿：画面描述、日记配文、文生图 prompt */
+/** 写入草稿：scene_description → 插画；diary_caption → AI 概括标题 */
 export function imageDescribeResultToDraftPatch(result) {
-  const scene = (result.sceneDescription || result.description || '').trim()
+  const scene = (result.sceneDescription || '').trim()
+  const desc = (result.description || '').trim()
+  const vision = scene || desc
   const diary = (result.diaryCaption || '').trim()
   const patch = {
-    imageVisionCache: scene,
-    sceneDescription: scene
+    imageVisionCache: vision,
+    sceneDescription: vision
   }
   if (diary) {
     patch.diaryCaption = diary
@@ -560,6 +554,10 @@ export function imageDescribeResultToDraftPatch(result) {
   const illStyle = (result.illustrationStyle || '').trim()
   if (illStyle) {
     patch.artStyle = illStyle
+  }
+  const inputMode = (result.inputMode || '').trim()
+  if (inputMode) {
+    patch.inputMode = inputMode
   }
   return patch
 }
@@ -678,6 +676,8 @@ export async function saveIllLegacyCreation(dataUrl, title, description, illType
 
   const moodFields = extra.moodFields || {}
   if (moodFields.mood_emoji_id) form.append('mood_emoji_id', moodFields.mood_emoji_id)
+  const diaryCaption = String(moodFields.diary_caption || extra.diaryCaption || '').trim()
+  if (diaryCaption) form.append('diary_caption', diaryCaption)
   if (Array.isArray(moodFields.tags)) {
     for (const tag of moodFields.tags) {
       const t = String(tag || '').trim()
@@ -722,14 +722,15 @@ export function mapIllToBookRecord(item) {
   const moodLabel =
     legacyLabel ||
     (mood.moodEmojiId ? findMoodById(mood.moodEmojiId, true)?.label || '' : '')
-  const text = String(mood.diaryCaption || mood.narrative || item.description || item.title || '').trim()
+  const narrative = mood.narrative || String(item.description || '').trim()
+  const caption = mood.diaryCaption || String(item.caption || '').trim()
   return {
     id: String(item._id || item.id || createdAt),
     cloudId: String(item._id || item.id || ''),
     posterDataUrl,
     createdAt,
-    caption: text,
-    narrative: mood.narrative || text,
+    caption,
+    narrative,
     moodEmojiId: mood.moodEmojiId,
     mood: mood.moodEmojiId,
     moodLabel,

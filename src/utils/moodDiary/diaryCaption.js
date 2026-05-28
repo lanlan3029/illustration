@@ -1,4 +1,7 @@
-/** 海报底部日记体配文目标字数（约 90 字） */
+/** 后端 diary_caption：情绪概括 / Editorial 标题（约 12–40 字） */
+export const DIARY_CAPTION_API_MAX = 40
+
+/** 海报底部日记体配文目标字数（约 90 字，仅本地兜底） */
 export const DIARY_CAPTION_TARGET_LEN = 90
 
 /**
@@ -26,11 +29,18 @@ export function buildLocalDiaryCaptionFromVision(sceneDescription, opts = {}) {
 }
 
 /**
- * 规范化接口或本地结果，保证长度约 90 字内。
+ * 规范化后端 diary_caption（AI 情绪概括，非画面描述）。
  */
-export function normalizeDiaryCaptionLength(text, maxLen = DIARY_CAPTION_TARGET_LEN) {
+export function normalizeDiaryCaptionFromApi(text, maxLen = DIARY_CAPTION_API_MAX) {
   const s = String(text || '').replace(/\s+/g, ' ').trim()
   if (!s) return ''
   if (s.length <= maxLen) return s
   return s.slice(0, maxLen - 1) + '…'
+}
+
+/**
+ * 规范化接口或本地结果，保证长度约 90 字内。
+ */
+export function normalizeDiaryCaptionLength(text, maxLen = DIARY_CAPTION_TARGET_LEN) {
+  return normalizeDiaryCaptionFromApi(text, maxLen)
 }

@@ -1,4 +1,5 @@
 import { COLORS, POSTER_FONT_STACK } from './constants'
+import { DIARY_CAPTION_API_MAX } from '../diaryCaption'
 import { MOOD_POSTER_DISPLAY_FONT } from '../fonts'
 import {
   POSTER_H,
@@ -78,7 +79,7 @@ export function normalizeDiary(text, max = 120) {
     .slice(0, max)
 }
 
-export function normalizeEditorialTitle(text, max = 28) {
+export function normalizeEditorialTitle(text, max = DIARY_CAPTION_API_MAX) {
   const raw = String(text || '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -118,25 +119,39 @@ export function resolveEditorialTheme(opts = {}) {
   }
 }
 
-/** 提取 Editorial 层级：title = AI 理解句，body = 用户日记 */
+/** 提取 Editorial 层级：title = diary_caption，body = 用户日记 narrative */
 export function extractEditorialContent(opts = {}) {
-  const bodyRaw = normalizeDiary(
-    opts.userNarrative || opts.narrativeText || opts.bodyText || '',
+  const userNarrative = normalizeDiary(
+    opts.userNarrative || opts.narrativeText || '',
     120
   )
-  let titleRaw = String(
-    opts.editorialTitle ||
+  const titleRaw = String(
+    opts.diaryCaption ||
+      opts.editorialTitle ||
       opts.aiCaptionText ||
-      opts.diaryCaption ||
       opts.excerptText ||
       ''
   ).trim()
-  if (!titleRaw && bodyRaw) {
-    titleRaw = bodyRaw.slice(0, 28)
+
+  let body = userNarrative
+  if (!body) {
+    const fallbackBody = normalizeDiary(opts.bodyText || '', 120)
+    if (fallbackBody && fallbackBody !== titleRaw) {
+      body = fallbackBody
+    }
   }
-  if (titleRaw && titleRaw === bodyRaw) titleRaw = ''
-  const title = normalizeEditorialTitle(titleRaw)
-  const body = bodyRaw
+
+  let title = normalizeEditorialTitle(titleRaw)
+  if (!title && body) {
+    if (body.length <= DIARY_CAPTION_API_MAX) {
+      title = normalizeEditorialTitle(body)
+      body = ''
+    }
+  }
+  if (title && body && title === body) {
+    body = ''
+  }
+
   return {
     title,
     body,
@@ -171,7 +186,15 @@ export function drawAccentLine(ctx, x, y, theme, width = g(7)) {
 export function drawEditorialTitle(ctx, text, x, y, width, theme, opts = {}) {
   const t = String(text || '').trim()
   if (!t) return y
-  const fontSize = opts.large ? TYPE_SCALE.titleLg : TYPE_SCALE.title
+  const sizeMode = opts.size || (opts.large ? 'display' : 'compact')
+  const fontSize =
+    sizeMode === 'display'
+      ? opts.large
+        ? TYPE_SCALE.titleLg
+        : TYPE_SCALE.title
+      : sizeMode === 'quote'
+        ? TYPE_SCALE.quote
+        : TYPE_SCALE.mood
   const lineHeight = resolveLineHeight(fontSize)
   const maxLines = opts.maxLines || 3
   ctx.font = `600 ${fontSize}px ${EDITORIAL_FONT_SERIF}`
@@ -190,7 +213,15 @@ export function drawEditorialTitle(ctx, text, x, y, width, theme, opts = {}) {
 export function measureEditorialTitleHeight(ctx, text, width, opts = {}) {
   const t = String(text || '').trim()
   if (!t) return 0
-  const fontSize = opts.large ? TYPE_SCALE.titleLg : TYPE_SCALE.title
+  const sizeMode = opts.size || (opts.large ? 'display' : 'compact')
+  const fontSize =
+    sizeMode === 'display'
+      ? opts.large
+        ? TYPE_SCALE.titleLg
+        : TYPE_SCALE.title
+      : sizeMode === 'quote'
+        ? TYPE_SCALE.quote
+        : TYPE_SCALE.mood
   const lineHeight = resolveLineHeight(fontSize)
   const maxLines = opts.maxLines || 3
   ctx.font = `600 ${fontSize}px ${EDITORIAL_FONT_SERIF}`
@@ -281,6 +312,15 @@ export function drawEditorialImage(ctx, img, rect, opts = {}) {
 export function applyDarkOverlay(ctx, alpha = 0.35) {
   ctx.fillStyle = `rgba(0,0,0,${alpha})`
   ctx.fillRect(0, 0, POSTER_W, POSTER_H)
+}
+
+/** 底部渐变，提升全幅模版文字可读性 */
+export function applyBottomScrim(ctx, height = g(55), peakAlpha = 0.72) {
+  const grad = ctx.createLinearGradient(0, POSTER_H - height, 0, POSTER_H)
+  grad.addColorStop(0, 'rgba(0,0,0,0)')
+  grad.addColorStop(1, `rgba(0,0,0,${peakAlpha})`)
+  ctx.fillStyle = grad
+  ctx.fillRect(0, POSTER_H - height, POSTER_W, height)
 }
 
 export function applyVignette(ctx, strength = 0.45) {
