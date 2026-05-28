@@ -116,7 +116,7 @@ export function composeGazette(ctx, img, opts) {
   const boxW = 238 * SX
   const boxH = 225 * SY
   const boxX = (POSTER_W - boxW) / 2
-  const boxY = 62.5 * SY
+  const boxY = 54 * SY
   drawImageContain(ctx, img, boxX, boxY, boxW, boxH)
 
   drawPosterBodyBlock(ctx, {
@@ -286,7 +286,7 @@ export function composeTitleAbove(ctx, img, opts) {
     drawBodyText(ctx, body.text, padX, textY, textW, 'center', theme, body.compact, bodyMaxLines)
   }
 
-  const imageW = Math.min(480, textW)
+  const imageW = Math.min(520, textW)
   const imageX = (POSTER_W - imageW) / 2
   drawImageContain(ctx, img, imageX, imageY, imageW, imageH)
 
@@ -334,7 +334,7 @@ export function composeMagazine(ctx, img, opts) {
   })
 
   const imgBreakout = 40
-  const imgW = 360
+  const imgW = 400
   const imgH = 520
   const imgX = panelX + panelW - imgW + imgBreakout
   const imgY = 248

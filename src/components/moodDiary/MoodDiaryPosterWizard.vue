@@ -756,29 +756,25 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 6px;
-  border-radius: 12px;
-  border: 1.5px solid var(--md-border);
-  background: var(--md-card);
+  padding: 0;
+  border: none;
+  background: transparent;
   cursor: pointer;
   text-align: center;
   font-family: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.template-card--active {
-  border-color: var(--md-accent-deep);
-  box-shadow: 0 0 0 2px rgba(168, 224, 210, 0.35);
+  transition: transform 0.15s ease;
 }
 
 .template-card__preview {
   position: relative;
   width: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  background: var(--md-surface);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .template-card__img {
@@ -798,12 +794,22 @@ export default {
   font-size: 11px;
   line-height: 1.35;
   color: var(--md-text);
-  padding: 0 2px 2px;
+  padding: 0 2px 4px;
+}
+
+.template-card:hover .template-card__preview {
+  transform: translateY(-1px);
+  border-color: rgba(125, 211, 252, 0.7);
 }
 
 .template-card--active .template-card__name {
   color: var(--md-accent-deep);
   font-weight: 600;
+}
+
+.template-card--active .template-card__preview {
+  border-color: var(--md-accent-deep);
+  box-shadow: 0 0 0 2px rgba(168, 224, 210, 0.38);
 }
 
 .style-chip {
