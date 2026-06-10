@@ -364,9 +364,14 @@
 
             <!-- 生成进度 / 结果 -->
             <div v-if="generating || generatedImageUrl" class="result-section">
-                <div v-if="generating" class="result-loading">
-                    <span class="result-spinner"></span>
-                    <p>{{ $t('aiPicture.generating') || '正在生成插画…' }}</p>
+                <div v-if="generating" class="result-card">
+                    <div class="result-skeleton">
+                        <div class="result-skeleton-shimmer"></div>
+                        <div class="result-loading">
+                            <span class="result-spinner"></span>
+                            <p>{{ $t('aiPicture.generating') || '正在生成插画…' }}</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div v-else class="result-card">
@@ -2204,20 +2209,57 @@ export default {
     gap: 16px;
 }
 
+.result-skeleton {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    aspect-ratio: 3 / 4;
+    max-height: 60vh;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f3f4f8 0%, #eceef4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.result-skeleton-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0) 30%,
+        rgba(255, 255, 255, 0.55) 50%,
+        rgba(255, 255, 255, 0) 70%
+    );
+    background-size: 200% 100%;
+    animation: ai-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes ai-shimmer {
+    0% {
+        background-position: 150% 0;
+    }
+    100% {
+        background-position: -150% 0;
+    }
+}
+
 .result-loading {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding: 40px 0;
     color: #6b7280;
 }
 
 .result-spinner {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 3px solid #e6e8ec;
+    border: 3px solid rgba(91, 91, 214, 0.18);
     border-top-color: #5b5bd6;
     animation: ai-spin 0.8s linear infinite;
 }
@@ -2332,9 +2374,24 @@ export default {
         max-height: 52vh;
     }
 
+    /* 风格图改为一行横向滑动展示全部 */
     .style-list {
-        max-height: 38vh;
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-wrap: nowrap;
+        grid-template-columns: none;
+        gap: 8px;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 4px 0 10px;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .style-list-item {
+        flex: 0 0 88px;
+        width: 88px;
+        scroll-snap-align: start;
     }
 
     .result-image {

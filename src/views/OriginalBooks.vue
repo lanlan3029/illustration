@@ -432,7 +432,7 @@ export default {
    2026 Book List — soft-light / glass-chip / ambient-shadow
    ========================================================= */
 .content {
-  width: 100vw;
+  width: 100%;
   background:
     radial-gradient(1200px 600px at 10% -10%, rgba(129, 103, 169, 0.12), transparent 60%),
     radial-gradient(1000px 500px at 100% 0%, rgba(255, 180, 170, 0.12), transparent 55%),
@@ -695,12 +695,12 @@ export default {
 
 /* ---------- Filters / top bar ---------- */
 .el-select {
-  margin-top: 2vh;
+  margin-top: 16px;
   width: 100%;
   display: flex;
   justify-content: space-between;
   height: 30px;
-  padding: 0 1vw;
+  padding: 0 12px;
 }
 
 .box {
@@ -738,7 +738,7 @@ export default {
 }
 
 @media (max-width: 640px) {
-  .content-left { width: 100vw; padding: 0 10px 24px; }
+  .content-left { width: 100%; padding: 0 10px 24px; box-sizing: border-box; }
   .items {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px 12px;

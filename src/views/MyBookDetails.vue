@@ -22,7 +22,7 @@
             class="item">
             <el-image 
               :src="getImageUrl(item)" 
-              style="width:984.3px;height:699px" 
+              class="page-image"
               fit="cover"
               @error="handleImageError(index)">
             </el-image>
@@ -189,28 +189,32 @@ export default {
 </script>
 <style scoped>
 .content {
-  width: 100vw; 
-  height: 88vh;
-  display: flex;
-  flex-wrap: wrap;
-  background-color: #f5f6fa;
-  overflow: scroll;
+  width: 100%;
+  min-height: 88vh;
+  background-color: var(--kid-bg, #f5f6fa);
+  padding: 16px 12px;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 
 .book{
-  width: 984.3px;
+  width: 100%;
+  max-width: 984.3px;
   min-height: 200px;
   background-color: #fff;
-  margin:auto;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
   font-size:20px;
   font-weight: 600;
 }
 .book .desc{
   width:100%;
+  box-sizing: border-box;
   min-height:116px;
   padding:48px;
-  font-size: 20;
+  font-size: 20px;
   letter-spacing: 2px;
   background-color: #fff;
   color:#1c345e;
@@ -220,15 +224,40 @@ export default {
 
 
 .item{
-  width: 984.3px;
-  height: 699px;
+  width: 100%;
+}
+
+/* 绘本页图片：按原比例流式自适应 */
+.page-image{
+  display: block;
+  width: 100%;
+  aspect-ratio: 984.3 / 699;
+}
+
+.page-image :deep(.el-image__inner){
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .btn{
   position: fixed;
-  right:5vw;
-  bottom: 5vw;
+  right:24px;
+  bottom: 24px;
   z-index: 10;
+}
+
+/* 手机端：悬浮编辑按钮抬高，避免被底部 Tab 遮挡；描述区内边距收窄 */
+@media (max-width: 768px) {
+  .btn{
+    right: 16px;
+    bottom: calc(var(--kid-tabbar-h, 58px) + env(safe-area-inset-bottom, 0px) + 12px);
+  }
+
+  .book .desc{
+    padding: 24px;
+  }
 }
 
 .loading-state,

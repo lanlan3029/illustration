@@ -63,22 +63,22 @@ export default {
 </script>
 
 <style scoped>
+/* 卡片由 vw 固定尺寸改为自适应网格 */
 .box{
-    width:100vw;
-    padding:6vw;  
-    display: flex;
-    flex-wrap: wrap; 
+    width:100%;
+    padding:24px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
 }
 .item{
-    width:22vw;
-    height:15.488vw;
-    padding:1vw;
-    
+    width:100%;
 }
 .image {
   cursor: pointer;
-  width: 18vw;
-  height: 12.672vw;
+  width: 100%;
+  aspect-ratio: 18 / 12.672;
   border-radius: 4px;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
 

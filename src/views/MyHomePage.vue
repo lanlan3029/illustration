@@ -1,7 +1,39 @@
 <template>
   <div class="container">
     <div class="left">
-     
+
+      <!-- 手机端个人头部卡（对齐设计稿「我的」） -->
+      <div class="mobile-profile only-mobile">
+        <div class="mp-card">
+          <img class="mp-avatar" :src="(userInfo && userInfo.avatar) ? userInfo.avatar : defaultAvatar" alt="avatar" />
+          <div class="mp-meta">
+            <div class="mp-name">
+              <span class="mp-name-text">{{ (userInfo && userInfo.name) || $t('myHomePage.unknown') }}</span>
+              <span class="mp-vip">VIP</span>
+            </div>
+            <div class="mp-points">
+              <img src="@/assets/logo/count.png" alt="积分" class="mp-points-icon" />
+              <span>{{ (userInfo && (userInfo.points || userInfo.credits)) || 0 }}</span>
+            </div>
+          </div>
+          <button type="button" class="mp-action" @click="goProfile">{{ $t('nav.accountSettings') || '设置' }}</button>
+        </div>
+        <div class="mp-quick">
+          <button type="button" class="mp-quick-item" @click="goRecharge">
+            <span class="mp-quick-ico mp-quick-ico--vip">★</span>
+            <span>{{ $t('nav.subscription') || '会员' }}</span>
+          </button>
+          <button type="button" class="mp-quick-item" @click="goHome">
+            <span class="mp-quick-ico mp-quick-ico--home">⌂</span>
+            <span>{{ $t('nav.home') || '首页' }}</span>
+          </button>
+          <button type="button" class="mp-quick-item" @click="goProfile">
+            <span class="mp-quick-ico mp-quick-ico--set">⚙</span>
+            <span>{{ $t('nav.accountSettings') || '设置' }}</span>
+          </button>
+        </div>
+      </div>
+
       <el-menu
         :default-active="activeIndex"
         class="el-menu-demo"
@@ -255,6 +287,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
   data() {
     return {
       id:localStorage.getItem("id"),
+      defaultAvatar: require('@/assets/images/magic 2.svg'),
       activeIndex: "2", // 默认显示"我的角色"标签
       illArr:[],
       toolArr:[],
@@ -283,9 +316,16 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
     };
   },
   computed:mapState([
-        "myBooks"
+        "myBooks",
+        "userInfo"
     ]),
   methods: {
+    goProfile() {
+      this.$router.push("/user/profile");
+    },
+    goRecharge() {
+      this.$router.push("/member/recharge");
+    },
     handleSelect(key) {
       this.activeIndex = key;
       // 根据选中的标签加载对应的数据
@@ -1089,212 +1129,25 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
 
 <style scoped>
 .container {
-  width: 100vw;
+  width: 100%;
   background-color: #f5f6fa;
   color: #333;
   margin: 0;
   min-height: 90vh;
   display: flex;
-
+  box-sizing: border-box;
 }
+/* 内容区改为「居中 + 最大宽度」，不再用 80vw/10vw 的视口比例布局 */
 .container .left {
-  width: 80vw;
+  width: 100%;
+  max-width: 1200px;
   height: 90vh;
-  margin-left: 10vw;
-  
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 .el-menu.el-menu--horizontal {
   border: none;
   border-radius: 4px;
-}
-.container .left .illustration,
-.books {
-  width:100%;
-  padding:2vw;
-  min-height: 38vh;
-  background-color: #fff;
-  margin-top: 8px;
-  font-size: 18px;
-  border-radius: 4px;
-}
-.container .left .illustration .title {
-  margin-bottom: 4vh;
-  display: flex;
-  justify-content: space-between;
-}
-.container .left .books .title {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4vh;
-}
-.container .left .illustration ul {
-  list-style: none;
-  display: flex;
-  justify-content: space-between;
-}
-.container .left .illustration ul li {
-  width: 14vw;
-  height: 9.85vw;
-  background-color: #f5f6fa;
-  cursor: pointer;
- border-radius: 4px;
-}
-.container .left .books ul {
-  list-style: none;
-  
-  display: flex;
-  justify-content: space-between;
-}
-.container .left .books ul li {
-  width: 14vw;
-  height: 9.85vw;
-  background-color: #f5f6fa;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.container .right {
-  width: 20vw;
-  min-height: 90vh;
-}
-.container .right .message {
-  width: 20vw;
-  height: 12vw;
-  margin-bottom: 8px;
-  background-color: #fff;
-  border-radius: 4px;
-}
-.container .right .message li {
-  height: 3vw;
-  line-height: 3vw;
-  padding-left: 2vw;
-  font-size: 14px;
-  display: flex;
-justify-content: flex-start;
-align-items: center;
-
-}
-.container .right .message li span{
-  height:18px;
-  font-size:12px;
-  background-color: #f56c6c;
-  color:#fff;
-  display: block;
-  min-width:24px;
-  line-height:18px;
-  margin-left: 8px;
-  padding:0 8px;
-  border-radius: 18px;
-  text-align: center;
-}
-.container .right .create {
-  width: 20vw;
-  background-color: #fff;
-  list-style: none;
-  display: flex;
- 
-  padding: 2vw 2vw 0 2vw;
-  flex-wrap: wrap;
-  border-radius: 4px;
-}
-.container .right .create li {
-  width: 240px;
-  height: 80px;
-  font-size: 18px;
-  line-height: 80px;
-  padding: 0 16px;
-  cursor: pointer;
-  border-radius: 8px;
-  margin-bottom: 2vw;
-  font-weight: 500;
-}
-.container .right .create li:first-child {
-  background-color: #b8E2b1;
-}
-.container .right .create li span {
-  margin-left: 8px;
-}
-.container .right .create li:hover {
-  background-color: #f5f6fa;
-}
-/* 我的插画页面样式 */
-.index2 {
-  width: calc(72vw - 8px);;
-  height: calc(100vh - 140px);
-  background-color: #fff;
-  margin-top: 8px;
-  padding: 2vw;
-  margin-bottom: 8px;
-  font-size: 18px;
-  border-radius: 4px;
-  overflow-y: scroll;
-  overflow-x: hidden;
-}
-.index2 .index2-items {
-  list-style: none;
-  width: 68vw;
-}
-.index2 .index2-items .index2-item {
-  height: 208px;
-  padding:16px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-sizing: border-box;
-   
-    border-bottom: 1px solid rgb(238, 238, 238);
-}
-.index2 .index2-items .index2-item .index2-avatar {
-  width: 250px;
-  height: 176px;
-  margin-right: 16px;
-}
-.index2 .index2-items .index2-item .index2-center {
-  width: 500px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 144px;
-}
-.index2 .index2-items .index2-item .index2-center .index2-name p:nth-child(2) {
-  font-size: 14px;
-}
-
-.index2 .index2-items .index2-item .index2-center.index2-icon {
-  display: flex;
-  height:18px;
-  justify-content: space-between;
-  font-size: 14px;
-  width:500px;
-}
-.index2 .index2-items .index2-item .index2-center.index2-icon div {
-  display: inline-block;
-  width: 60px;
-}
-/* 我的关注页面样式 */
-
-.index5 {
-  width: 72vw;
-  height: 90vh;
-  background-color: #fff;
-  margin-top: 8px;
-  padding: 2vw;
-  font-size: 18px;
-  border-radius: 4px;
-  overflow-y: scroll; 
-}
-.index5-focus{
-    display: flex;
-    height:152px;
-    padding:16px 0 ;
-    justify-content: space-between;
-    box-sizing: border-box;
-   
-    border-bottom: 1px solid rgb(238, 238, 238);
-   
-}
-.index5-info{
-    width:55vw;
-     
 }
 .el-descriptions-item__label {
 display: -webkit-box!important;
@@ -1305,15 +1158,16 @@ overflow: hidden;
 }
 /* 卡片容器样式 */
 .card-container {
-  width: 80vw;
+  width: 100%;
   height: calc(100vh - 140px);
   background-color: #fff;
   margin-top: 8px;
-  padding: 2vw;
+  padding: 20px;
   margin-bottom: 8px;
   border-radius: 4px;
   overflow-y: auto;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* 卡片网格布局 - 一行三个 */
@@ -1569,22 +1423,183 @@ overflow: hidden;
   font-size: 16px;
 }
 
-/* 响应式设计 - 小屏幕时改为两列 */
-@media (max-width: 1200px) {
+/* 响应式设计 - 平板改为两列（断点统一 1024） */
+@media (max-width: 1024px) {
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* 响应式设计 - 移动端改为单列 */
+/* 手机端个人头部卡片（默认隐藏，only-mobile 控制显隐） */
+.mobile-profile {
+  margin-bottom: 12px;
+}
+
+.mp-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--kid-radius-lg, 22px);
+  background: var(--kid-grad-hero, linear-gradient(135deg, #6a5af9 0%, #b79cf2 100%));
+  box-shadow: var(--kid-shadow-card, 0 6px 20px -8px rgba(49, 35, 82, 0.18));
+}
+
+.mp-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.mp-meta {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  color: #fff;
+}
+
+.mp-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.mp-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.mp-vip {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6a4f00;
+  background: linear-gradient(135deg, #ffe08a, #ffc83d);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.mp-points {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.mp-points-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.mp-action {
+  flex-shrink: 0;
+  border: none;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.mp-action:active {
+  transform: scale(0.96);
+}
+
+.mp-quick {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.mp-quick-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+  border: none;
+  border-radius: var(--kid-radius, 16px);
+  background: var(--kid-card, #fff);
+  box-shadow: var(--kid-shadow-soft, 0 2px 10px rgba(24, 24, 40, 0.06));
+  color: var(--kid-text, #2b2b40);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mp-quick-ico {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.mp-quick-ico--vip { background: #fff4d6; color: #e8a300; }
+.mp-quick-ico--home { background: var(--kid-primary-soft, #efeaff); color: var(--kid-primary, #6c5ce7); }
+.mp-quick-ico--set { background: #e7f6f1; color: #2bb894; }
+
+/* 响应式设计 - 移动端改为单列（断点统一 768） */
 @media (max-width: 768px) {
+  .container {
+    background: var(--kid-bg, #f5f6fb);
+  }
+
   .card-grid {
     grid-template-columns: 1fr;
   }
-  
+
+  .container .left {
+    height: auto;
+    min-height: 90vh;
+    padding: 12px;
+  }
+
+  /* Tab 改为可横向滚动的胶囊条 */
+  .el-menu.el-menu--horizontal {
+    background: transparent;
+    border-radius: var(--kid-radius, 16px);
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .el-menu.el-menu--horizontal :deep(.el-menu-item) {
+    flex-shrink: 0;
+  }
+
   .card-container {
-    width: calc(100vw - 16px);
-    padding: 16px;
+    width: 100%;
+    padding: 14px;
+    height: auto;
+    border-radius: var(--kid-radius, 16px);
+    box-shadow: var(--kid-shadow-soft, 0 2px 10px rgba(24, 24, 40, 0.06));
+  }
+
+  .content-card {
+    border-radius: var(--kid-radius, 16px);
+    overflow: hidden;
+  }
+
+  .card-image {
+    height: 180px;
+    border-radius: var(--kid-radius, 16px) var(--kid-radius, 16px) 0 0;
   }
 }
 

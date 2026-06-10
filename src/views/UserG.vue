@@ -14,7 +14,7 @@
             <div class="username">{{ userDetails.name || '用户' }}</div>
               <el-descriptions :column="1">
           
-              <el-descriptions-item  :contentStyle="{'width': '30vw'}" label="介绍">{{ userDetails.description || '暂无介绍' }}</el-descriptions-item>
+              <el-descriptions-item  :contentStyle="{'width': '100%'}" label="介绍">{{ userDetails.description || '暂无介绍' }}</el-descriptions-item>
               </el-descriptions>
           <el-descriptions :column="2">
             <el-descriptions-item label="关注">{{ userDetails.followingCount !== undefined ? userDetails.followingCount : (userDetails.attention_num || 0) }}</el-descriptions-item>
@@ -48,7 +48,7 @@
             >
               <el-image
                 :src="getBookCover(item)"
-                style="width: 16vw; height: 11.26vw"
+                style="width: 100%; height: 100%"
                 fit="cover"
               >
                 <template #error>
@@ -407,81 +407,66 @@ export default {
 </script>
 
 <style scoped>
+/* 布局尺寸由 vw 改为 100%/px/grid + 居中最大宽度，避免手机端等比压缩崩坏 */
 .container {
-  width: 100vw;
+  width: 100%;
   background-color: #f5f6fa;
   color: #333;
   margin: 0;
   height: 90vh;
-  overflow: scroll;
+  overflow: auto;
   display: flex;
+  box-sizing: border-box;
 }
 .container .left {
-  width: 80vw;
+  width: 100%;
+  max-width: 1200px;
   min-height: 90vh;
-  margin-right: 8px;
-  margin-left: 8vw;
+  margin: 0 auto;
+  padding: 0 12px;
+  box-sizing: border-box;
 }
 .container .left .info{
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 16px;
     background-color: #fff;
     padding:20px;
     justify-content: space-between;
 }
 
 .container .left .info .info-center{
-    width:50vw;
+    flex: 1;
+    min-width: 0;
 }
 .container .left .info .info-center .username{
   text-align: left;
     font-size: 28px;
     font-weight:500;
 }
-.container .left .illustration,
-.books {
-  height: 38vh;
+.container .left .books {
   background-color: #fff;
   margin-top: 8px;
-  padding: 2vw;
+  padding: 20px;
   font-size: 18px;
-}
-.container .left .illustration .title {
-  display: flex;
-  justify-content: space-between;
 }
 .container .left .books .title {
   display: flex;
   justify-content: space-between;
 }
-.container .left .illustration ul {
-  list-style: none;
-  margin-top: 4vh;
-  display: flex;
-  
-}
-.container .left .illustration ul li {
-  width: 16vw;
-  height: 11.26vw;
-  background-color: #f5f6fa;
-  cursor: pointer;
-  margin-right: 3vw;
-}
-.container .left .illustration ul li:last-child{
-  margin-right: 0;
-}
 .container .left .books ul {
   list-style: none;
-  margin-top: 4vh;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 2vw;
+  margin: 16px 0 0;
+  padding: 0;
+  /* 自适应网格替代 vw 固定宽度 */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 .container .left .books ul li {
-  width: calc((100% - 3 * 2vw) / 4);
-  height: 11.26vw;
+  width: 100%;
+  aspect-ratio: 16 / 11.26;
   background-color: #f5f6fa;
   cursor: pointer;
   border-radius: 4px;
@@ -513,66 +498,47 @@ export default {
   color: #909399;
   font-size: 30px;
 }
-.container .right {
-  width: 20vw;
-  min-height: 90vh;
-}
-.container .right .message {
-  width: 20vw;
-  height: 12vw;
-  margin-bottom: 8px;
-  background-color: #fff;
-  border-radius: 4px;
-}
-.container .right .message li {
-  height: 3vw;
-  line-height: 3vw;
-  padding-left: 2vw;
-  font-size: 14px;
-}
-
-.container .right .create {
-  width: 20vw;
-  background-color: #fff;
-  list-style: none;
-  display: flex;
-  padding: 1vw;
-  padding: 2vw 2vw 0 2vw;
-  flex-wrap: wrap;
-}
-.container .right .create li {
-  width: 240px;
-  height: 80px;
-  font-size: 18px;
-  line-height: 80px;
-  padding: 0 16px;
-  cursor: pointer;
-  border-radius: 8px;
-  margin-bottom: 2vw;
-  font-weight: 500;
-}
-.container .right .create li:first-child {
-  background-color: #e5defe;
-}
-.container .right .create li span {
-  margin-left: 8px;
-}
-.container .right .create li:hover {
-  background-color: #f5f6fa;
-}
 
 .index2 {
-  height: 90vh;
+  min-height: 60vh;
   background-color: #fff;
   margin-top: 8px;
-  padding: 4vh;
+  padding: 24px;
   font-size: 18px;
 }
 .index2 .index2-items {
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .index2 .index2-items .index2-item {
-  height: 176px;
-  margin: 2vh 8vw;
+  min-height: 176px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+}
+
+/* 平板：绘本网格降为三列（断点统一 1024） */
+@media (max-width: 1024px) {
+  .container .left .books ul {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 手机端：信息区与列表竖排，绘本两列（断点统一 768） */
+@media (max-width: 768px) {
+  .container .left .info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .container .left .books ul {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .index2 .index2-items .index2-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

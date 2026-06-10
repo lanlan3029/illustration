@@ -1,11 +1,12 @@
 <template>
-<div id="app">
+<div id="app" :class="{ 'has-tabbar': isMobile }">
   <top-bar/>
   <login-register v-if="isMask" />
   <main class="app-main">
     <router-view />
   </main>
-  <the-footer :class="{ 'fixed-footer': route.path==='/' }"/>
+  <the-footer v-if="!isMobile" :class="{ 'fixed-footer': route.path==='/' }"/>
+  <mobile-tab-bar v-if="isMobile" />
   </div>
 </template>
 <script>
@@ -15,6 +16,8 @@ import { useRoute } from 'vue-router'
 import TopBar from './components/TopBar.vue'
 import LoginRegister from "./components/LoginRegister.vue"
 import TheFooter from './components/TheFooter.vue'
+import MobileTabBar from './components/MobileTabBar.vue'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 
 document.oncontextmenu = function () {
         return false;
@@ -24,17 +27,20 @@ export default {
   components: {
     TopBar,
     LoginRegister,
-    TheFooter
+    TheFooter,
+    MobileTabBar
   },
   setup() {
     const store = useStore()
     const route = useRoute()
+    const { isMobile } = useBreakpoint()
     
     const isMask = computed(() => store.state.isMask)
     
     return {
       isMask,
-      route
+      route,
+      isMobile
     }
   }
 }
@@ -86,5 +92,12 @@ html, body{
 
 .el-message {
   top: 72px !important;
+}
+
+/* 手机端：为底部 Tab 导航预留安全留白，避免内容被遮挡 */
+@media (max-width: 768px) {
+  #app.has-tabbar .app-main {
+    padding-bottom: calc(var(--kid-tabbar-h, 58px) + env(safe-area-inset-bottom, 0px) + 8px);
+  }
 }
 </style>

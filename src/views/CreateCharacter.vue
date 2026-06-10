@@ -2523,19 +2523,46 @@ export default {
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
+    /* 单列布局下放开固定高度，让内容自然流动 */
+    .container {
+        height: auto;
+        min-height: 0;
+    }
+
     .main-layout {
         flex-direction: column;
+        height: auto;
+        padding-right: 0;
     }
     
     .left-panel,
     .right-panel {
         flex: 1;
         width: 100%;
+        height: auto;
     }
     
-    .panel-box {
+    .panel-box,
+    .left-panel .panel-box:first-child,
+    .left-panel .panel-box:last-child {
         width: 100%;
+        height: auto;
         margin-bottom: 16px;
+    }
+
+    .panel-card,
+    .left-panel .panel-card {
+        height: auto;
+    }
+
+    .right-panel .panel-card {
+        overflow: visible;
+    }
+
+    .result-card,
+    .result-card :deep(.el-card__body) {
+        height: auto;
+        min-height: 0;
     }
     
     .style-preset-item-inline {
@@ -2564,6 +2591,89 @@ export default {
     
     .style-header-inner .subtitle-inner {
         font-size: 10px;
+    }
+
+    /* ===== 手机端：固定宽度元素改为流式，避免溢出 ===== */
+    .container {
+        padding: 14px;
+        background: var(--kid-bg, #f7f8fa);
+    }
+
+    .right-panel {
+        padding: 14px;
+        border-radius: var(--kid-radius, 16px);
+    }
+
+    .panel-content {
+        padding: 14px;
+    }
+
+    /* 上传拖拽区 */
+    .upload-wrapper {
+        min-height: 0;
+    }
+
+    .upload-demo :deep(.el-upload),
+    .upload-demo :deep(.el-upload-dragger) {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 200px !important;
+        min-height: 200px !important;
+        max-height: 200px !important;
+    }
+
+    /* 照片预览 */
+    .photo-preview {
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+        aspect-ratio: 5 / 3;
+    }
+
+    .photo-image,
+    .segmented-image,
+    .photo-image :deep(.el-image),
+    .segmented-image :deep(.el-image),
+    .photo-image :deep(.el-image__inner),
+    .segmented-image :deep(.el-image__inner),
+    .photo-image :deep(img),
+    .segmented-image :deep(img) {
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+    }
+
+    /* 角色信息 / 风格选择区改为满宽卡片 */
+    .character-info-section,
+    .style-selection-section {
+        width: 100%;
+        max-width: 100%;
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    /* 生成结果操作按钮纵向铺满 */
+    .result-actions {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .result-actions .el-button {
+        flex: 1 1 calc(50% - 6px);
+        margin: 0;
+    }
+
+    .generate-actions {
+        flex-wrap: wrap;
+    }
+
+    .result-image {
+        height: auto;
+        max-height: 60vh;
     }
 }
 </style>

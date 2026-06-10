@@ -17,7 +17,7 @@
  <div class="book">
           <div class="desc">{{illusDetails.description}}</div>
           <div class="image">
-          <el-image style="width: 984.3px; height: 692.9px" :src="`https://api.kidstory.cc/`+illusDetails.content" fit="contain" /></div>
+          <el-image style="width: 100%; max-width: 984.3px; aspect-ratio: 984.3 / 692.9" :src="`https://api.kidstory.cc/`+illusDetails.content" fit="contain" /></div>
       </div>
          </div>
 
@@ -192,7 +192,7 @@ export default {
 </script>
 <style scoped>
 .content {
-  width:100vw;
+  width:100%;
   background-color: #f5f6fa;
    color:#333;
     margin:0;
@@ -200,21 +200,24 @@ export default {
     overflow-y: scroll;
 }
 .top{
-  width:100vw;
+  width:100%;
   min-height:90vh;
   margin:0;
   display: flex;
   justify-content: center;
 }
 .content-left {
-  width: 1200px;
-  max-width: 90vw;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 1024px;
   min-height: 90vh;
   display: flex;
   flex-direction: column;
   margin: 0 auto;
 }
 .content-right{
+  flex: 0 0 40px;
   width:40px;
  height:70vh;
  margin-left:40px;
@@ -242,7 +245,9 @@ export default {
 .content-left .info {
   display: flex;
   flex-wrap: nowrap;
-   width:984.3px;
+   width:100%;
+   max-width:984.3px;
+   box-sizing:border-box;
   padding:16px;
   color:#606266;
   margin:0 auto;
@@ -250,7 +255,9 @@ export default {
 
 }
 .content-left .book{
-  width: 984.3px;
+  width: 100%;
+  max-width: 984.3px;
+  box-sizing: border-box;
   min-height: 200px;
   background-color: #fff;
   margin:auto;
@@ -259,7 +266,8 @@ export default {
   font-weight: 600;
 }
 .content-left .book .desc{
-  width:888.3px;
+  width:100%;
+  box-sizing:border-box;
   min-height:116px;
   padding:48px;
   font-size: 20;
@@ -301,5 +309,27 @@ export default {
 .el-descriptions-item__cell{
   padding:16px;
   font-size:18px;
+}
+
+/* 详情图按容器比例自适应填充 */
+.content-left .image :deep(.el-image__inner){
+  width:100%;
+  height:100%;
+  object-fit: contain;
+}
+
+/* 手机端：缩小内边距、收紧右侧操作栏间距 */
+@media (max-width: 768px) {
+  .top {
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+  .content-left .book .desc {
+    padding: 24px;
+  }
+  .content-right {
+    margin-left: 12px;
+    margin-top: 12vh;
+  }
 }
 </style>

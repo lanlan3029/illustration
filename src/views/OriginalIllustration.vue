@@ -5,7 +5,7 @@
         <div class="el-select">
           <el-select
             v-model="model"
-            style="width: 12vw; margin: 0"
+            style="width: 160px; margin: 0"
             placeholder="排序方式"
             size="mini"
           >
@@ -202,7 +202,7 @@ export default {
   text-align: left;
 }
 .data .icon {
-  width: 4vw;
+  width: 44px;
   font-size: 14px;
  display: inline-flex;
  justify-content: flex-end;
@@ -211,12 +211,19 @@ export default {
 }
 
 .el-select {
-  margin-top: 2vh;
+  margin-top: 16px;
   width: 100%;
   display: flex;
   justify-content: space-around;
   height: 30px;
-  padding: 0 1vw;
+  padding: 0 12px;
+}
+
+/* 手机端：三列改两列，避免列过窄 */
+@media (max-width: 768px) {
+  .item {
+    flex: 0 0 calc((100% - 24px) / 2);
+  }
 }
 </style>
 

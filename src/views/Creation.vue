@@ -1,10 +1,22 @@
 <template>
   <div class="creation-container">
-     
-   
-  
+
+       <!-- 手机端面板切换按钮（仅小屏显示） -->
+       <button type="button" class="panel-toggle panel-toggle-left only-mobile" @click="toggleLeftPanel">
+         {{ $t('creation.materials') || '素材' }}
+       </button>
+       <button type="button" class="panel-toggle panel-toggle-right only-mobile" @click="toggleRightPanel">
+         {{ $t('creation.attributes') || '属性' }}
+       </button>
+       <!-- 手机端抽屉打开时的遮罩 -->
+       <div
+         v-if="showLeftPanel || showRightPanel"
+         class="panel-backdrop only-mobile"
+         @click="closePanels"
+       ></div>
+
        <!-- 左侧组件列表 -->
-       <section class="left">
+       <section class="left" :class="{ open: showLeftPanel }">
          <left-menu />
          
        </section>
@@ -50,7 +62,7 @@
           
        </section>
        <!-- 右侧属性列表 -->
-       <section class="right">
+       <section class="right" :class="{ open: showRightPanel }">
          <el-tabs v-model="activeName">
             <el-tab-pane :label="$t('creation.attributes')" name="attr">
                 <AttrList v-if="curComponent" />
@@ -91,7 +103,9 @@ export default {
       draftArr:[],
       draftid:'',
       downloading: false, // 下载状态
-      selectedAspectRatio: '4:3' // 默认宽高比
+      selectedAspectRatio: '4:3', // 默认宽高比
+      showLeftPanel: false, // 手机端：左侧素材抽屉是否展开
+      showRightPanel: false // 手机端：右侧属性抽屉是否展开
     }
   },
   components: {
@@ -146,6 +160,19 @@ export default {
     window.removeEventListener('keydown', this.handleKeyPress);
   },
   methods:{
+    // 手机端面板抽屉控制（互斥展开，避免同时遮挡画布）
+    toggleLeftPanel(){
+      this.showLeftPanel = !this.showLeftPanel
+      if (this.showLeftPanel) this.showRightPanel = false
+    },
+    toggleRightPanel(){
+      this.showRightPanel = !this.showRightPanel
+      if (this.showRightPanel) this.showLeftPanel = false
+    },
+    closePanels(){
+      this.showLeftPanel = false
+      this.showRightPanel = false
+    },
     //获取草稿
     async getCollectIll(){
       try{
@@ -654,29 +681,63 @@ export default {
     position: relative;
     overflow: hidden;
   }
+  /* 三栏宽度由 vw 改为固定 px + flex，避免在不同视口下等比缩放导致错位 */
   .left{
     height: 100%;
-    width: 19.5vw;
+    width: 260px;
     position: relative;
     flex-shrink: 0;
     overflow: visible;
   }
   .right{
     height: 100%;
-    width: 14vw;
-    right: 0;
-    top: 0;
+    width: 260px;
+    flex-shrink: 0;
+    overflow: auto;
   }
   .center{
-    background-color: #f5f5f5; 
-    width:66.5vw;
-    height: 100%;  
+    background-color: #f5f5f5;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
     margin:0 auto;
     border-radius: 4px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     position: relative;
+  }
+
+  /* 手机端面板切换按钮与遮罩：默认隐藏，仅在 ≤768 显示（.only-mobile 来自 breakpoints.css） */
+  .panel-toggle{
+    position: absolute;
+    top: 50%;
+    z-index: 300;
+    transform: translateY(-50%);
+    padding: 8px 6px;
+    font-size: 13px;
+    line-height: 1.2;
+    writing-mode: vertical-rl;
+    letter-spacing: 2px;
+    color: #fff;
+    background: rgba(129, 103, 169, 0.92);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  .panel-toggle-left{
+    left: 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .panel-toggle-right{
+    right: 0;
+    border-radius: 8px 0 0 8px;
+  }
+  .panel-backdrop{
+    position: absolute;
+    inset: 0;
+    z-index: 250;
+    background: rgba(0, 0, 0, 0.35);
   }
   .aspect-ratio-selector-top{
     position: absolute;
@@ -720,5 +781,46 @@ export default {
     text-align: center;
     color: #333;
     font-size: 14px;
+  }
+
+  /* 平板：适当收窄两侧面板（断点统一 1024） */
+  @media (max-width: 1024px) {
+    .left{ width: 220px; }
+    .right{ width: 220px; }
+  }
+
+  /* 手机端：两侧面板改为滑出抽屉，画布占满整宽（断点统一 768） */
+  @media (max-width: 768px) {
+    .left,
+    .right{
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      width: min(82%, 320px);
+      z-index: 280;
+      background: #fff;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
+      transition: transform 0.25s ease;
+    }
+    .left{
+      left: 0;
+      transform: translateX(-100%);
+    }
+    .right{
+      right: 0;
+      transform: translateX(100%);
+    }
+    .left.open,
+    .right.open{
+      transform: translateX(0);
+    }
+    .center{
+      width: 100%;
+    }
+    /* 手机端画布内容自适应整宽，避免被 56vw 限制得过窄 */
+    .content{
+      width: 92vw;
+    }
   }
 </style>

@@ -1589,23 +1589,33 @@ export default {
         flex-direction: column;
     }
 
+    /* 单列堆叠后放开固定高度，避免预览区被压成小滚动框 */
     .prompt-container,
     .generated-book {
         width: 100%;
+        min-height: auto;
+        max-height: none;
+        overflow: visible;
     }
 }
 
 @media (max-width: 768px) {
+    .inspiration-book {
+        background: var(--kid-bg, #f5f7fa);
+    }
+
+    /* 故事页两列卡片，更紧凑、信息密度更高 */
     .story-pages {
-        grid-template-columns: 1fr !important;
-        gap: 16px;
-        padding: 16px 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px;
+        padding: 14px 0;
     }
 
     .inspiration-main {
-        padding: 16px;
+        padding: 12px;
         width: 100%;
         max-width: 100%;
+        gap: 12px;
     }
 
     .prompt-container,
@@ -1613,7 +1623,28 @@ export default {
         width: 100%;
         min-height: auto;
         max-height: none;
+        overflow: visible;
         padding: 16px;
+        border-radius: var(--kid-radius, 16px);
+        box-shadow: var(--kid-shadow-soft, 0 2px 10px rgba(24, 24, 40, 0.06));
+    }
+
+    .story-page-card {
+        border-radius: var(--kid-radius, 16px);
+    }
+
+    /* 书名与下载按钮在窄屏纵向排列 */
+    .book-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+    }
+
+    .download-btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .section-title {
@@ -1627,6 +1658,17 @@ export default {
     .book-summary,
     .scene-text {
         font-size: 13px;
+    }
+
+    .card-title {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 420px) {
+    /* 超小屏回退单列，保证卡片信息可读 */
+    .story-pages {
+        grid-template-columns: 1fr !important;
     }
 }
 

@@ -8,16 +8,6 @@
                 </div>
 
                 <div class="features-grid">
-            <!-- AI插画 -->
-                    <el-card
-                class="feature-card icon-card-brush" 
-                shadow="hover"
-                @click="goToAIPicture">
-               
-                <h3 class="card-title">{{ $t('nav.aiIllustration') }}</h3>
-                <p class="card-description">{{ $t('home.aiIllustrationDesc') || '使用AI技术快速生成精美插画' }}</p>
-                    </el-card>
-               
             <!-- AI绘本 -->
             <el-card 
                 class="feature-card icon-card-book" 
@@ -28,6 +18,16 @@
                 <p class="card-description">{{ $t('home.aiBooksDesc') || 'AI智能生成绘本故事' }}</p>
             </el-card>
 
+            <!-- AI插画 -->
+                    <el-card
+                class="feature-card icon-card-brush" 
+                shadow="hover"
+                @click="goToAIPicture">
+               
+                <h3 class="card-title">{{ $t('nav.aiIllustration') }}</h3>
+                <p class="card-description">{{ $t('home.aiIllustrationDesc') || '使用AI技术快速生成精美插画' }}</p>
+                    </el-card>
+
             <!-- 创作角色 -->
             <el-card 
                 class="feature-card icon-card-user" 
@@ -37,45 +37,15 @@
                 <h3 class="card-title">{{ $t('nav.createCharacter') }}</h3>
                 <p class="card-description">{{ $t('home.createCharacterDesc') || '创作专属角色形象' }}</p>
             </el-card>
-                            
-            <!-- 创作组图 -->
-            <el-card 
-                class="feature-card icon-card-images" 
-                shadow="hover"
-                @click="goToCreateGroupImages">
-               
-                <h3 class="card-title">{{ $t('nav.createGroupImages') }}</h3>
-                <p class="card-description">{{ $t('home.createGroupImagesDesc') || '为角色生成多张组图' }}</p>
-            </el-card>
 
-            <!-- 创作插画 -->
+            <!-- 心情日记 -->
             <el-card 
-                class="feature-card icon-card-edit" 
+                class="feature-card icon-card-mood" 
                 shadow="hover"
-                @click="goToCreation">
+                @click="goToMoodDiary">
                
-                <h3 class="card-title">{{ $t('nav.createIllustration') }}</h3>
-                <p class="card-description">{{ $t('home.createIllustrationDesc') || '自由创作插画作品' }}</p>
-            </el-card>
-
-            <!-- 布局创作插画 -->
-            <el-card 
-                class="feature-card icon-card-layout" 
-                shadow="hover"
-                @click="goToCreateLayoutIllustration">
-                
-                <h3 class="card-title">{{ $t('nav.createLayoutIllustration') }}</h3>
-                <p class="card-description">{{ $t('home.createLayoutIllustrationDesc') || '使用布局编辑器创作多角色插画' }}</p>
-            </el-card>
-
-            <!-- 合成绘本 -->
-            <el-card 
-                class="feature-card icon-card-compose" 
-                shadow="hover"
-                @click="goToComposeBook">
-               
-                <h3 class="card-title">{{ $t('nav.composeBook') }}</h3>
-                <p class="card-description">{{ $t('home.composeBookDesc') || '将插画合成为绘本' }}</p>
+                <h3 class="card-title">{{ $t('nav.moodDiary') || '心情日记' }}</h3>
+                <p class="card-description">{{ $t('home.moodDiaryDesc') || '记录心情，生成专属绘本' }}</p>
             </el-card>
                 </div>
                             </div>
@@ -155,18 +125,9 @@ export default {
         goToCreateCharacter() {
             this.$router.push('/create-character');
         },
-        goToCreateGroupImages() {
-            this.$router.push('/create-group-images');
-        },
-        goToCreation() {
-            this.$router.push('/editorpro');
-        },
-        goToCreateLayoutIllustration() {
-            this.$router.push('/create-layout-illustration');
-        },
-        goToComposeBook() {
-            this.$router.push('/user/upload/compose-illustration');
-            }
+        goToMoodDiary() {
+            this.$router.push('/mood-diary');
+        }
     }
 }
 </script>
@@ -340,24 +301,9 @@ export default {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23409eff' d='M512 512a192 192 0 1 0 0-384 192 192 0 0 0 0 384zm0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512zm320 320v-96a96 96 0 0 0-96-96H288a96 96 0 0 0-96 96v96a32 32 0 1 1-64 0v-96a160 160 0 0 1 160-160h448a160 160 0 0 1 160 160v96a32 32 0 1 1-64 0z'/%3E%3C/svg%3E");
 }
 
-/* 创作组图 - 图片组图标 */
-.feature-card.icon-card-images :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M10 13H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1m-1 6H5v-4h4ZM20 3h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1m-1 6h-4V5h4Zm1 7h-2v-2a1 1 0 0 0-2 0v2h-2a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2a1 1 0 0 0 0-2M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1M9 9H5V5h4Z'/%3E%3C/svg%3E");
-}
-
-/* 创作插画 - 画板图标 */
-.feature-card.icon-card-edit :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M7.42 15.54a1 1 0 0 0 0 1.41a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.41a1 1 0 0 0-1.42 0m0-8.49a1 1 0 0 0 0 1.41a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.41a1 1 0 0 0-1.42 0m4.95 10a1 1 0 1 0 1 1a1 1 0 0 0-1-1.05Zm-6-6a1 1 0 1 0 1 1a1 1 0 0 0-1-1.05Zm6-6a1 1 0 1 0 1 1a1 1 0 0 0-1-1.05Zm3.54 2.05a1 1 0 1 0 1.41 0a1 1 0 0 0-1.41-.05Zm6.3 0a11 11 0 1 0-7.85 15.74a3.87 3.87 0 0 0 2.5-1.65a4.2 4.2 0 0 0 .61-3.19a5.7 5.7 0 0 1-.1-1a5 5 0 0 1 3-4.56a3.84 3.84 0 0 0 2.06-2.25a4 4 0 0 0-.22-3.11Zm-1.7 2.44a1.9 1.9 0 0 1-1 1.09A7 7 0 0 0 15.37 17a7.3 7.3 0 0 0 .14 1.4a2.16 2.16 0 0 1-.31 1.65a1.8 1.8 0 0 1-1.21.8a8.7 8.7 0 0 1-1.62.15a9 9 0 0 1-9-9.28A9.05 9.05 0 0 1 11.85 3h.51a9 9 0 0 1 8.06 5a2 2 0 0 1 .09 1.52ZM12.37 11a1 1 0 1 0 1 1a1 1 0 0 0-1-1'/%3E%3C/svg%3E");
-    }
-
-/* 布局创作插画 - 网格布局图标 */
-.feature-card.icon-card-layout :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23409eff' d='M149.333 149.333h213.334v213.334H149.333V149.333zM405.333 149.333h469.334v213.334H405.333V149.333zM149.333 405.333h213.334v469.334H149.333V405.333zM405.333 405.333h469.334v213.334H405.333V405.333zM405.333 661.333h469.334v213.334H405.333V661.333z'/%3E%3C/svg%3E");
-}
-
-/* 合成绘本 - 组合/合成图标 */
-.feature-card.icon-card-compose :deep(.el-card__body)::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M13 9h-2V7a1 1 0 0 0-2 0v2H7a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2a1 1 0 0 0 0-2m5 6V5a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3M4 15V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1m17-9a1 1 0 0 0-1 1v10a3 3 0 0 1-3 3H7a1 1 0 0 0 0 2h10a5 5 0 0 0 5-5V7a1 1 0 0 0-1-1'/%3E%3C/svg%3E");
+/* 心情日记 - 笑脸图标 */
+.feature-card.icon-card-mood :deep(.el-card__body)::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23409eff' d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m0 18a8 8 0 1 1 8-8a8 8 0 0 1-8 8M8.5 11a1.5 1.5 0 1 0-1.5-1.5A1.5 1.5 0 0 0 8.5 11m7 0a1.5 1.5 0 1 0-1.5-1.5a1.5 1.5 0 0 0 1.5 1.5m.34 3a4 4 0 0 1-7.68 0a1 1 0 0 0-1.92.54a6 6 0 0 0 11.52 0a1 1 0 1 0-1.92-.54'/%3E%3C/svg%3E");
 }
 
 
@@ -392,39 +338,86 @@ export default {
 
 @media (max-width: 768px) {
     .home-container {
-        padding: 40px 20px;
+        padding: 16px 14px;
+        background: var(--kid-bg, #f5f6fb);
         overflow: auto;
     }
 
+    .home-content-wrapper {
+        gap: 20px;
+    }
+
+    /* Hero 渐变卡片 */
     .home-header {
-        margin-bottom: 32px;
+        margin-bottom: 18px;
+        padding: 22px 18px 24px;
+        border-radius: var(--kid-radius-lg, 22px);
+        background: var(--kid-grad-hero, linear-gradient(135deg, #6a5af9 0%, #b79cf2 100%));
+        text-align: left;
+        box-shadow: var(--kid-shadow-card, 0 6px 20px -8px rgba(49, 35, 82, 0.18));
     }
 
     .main-title {
         font-size: 24px;
+        line-height: 1.3;
+        margin-bottom: 8px;
+        color: #fff;
+        background: none;
+        -webkit-text-fill-color: #fff;
     }
 
     .subtitle {
-        font-size: 14px;
-}
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.92);
+    }
 
+    /* 卡片两列网格 */
     .features-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-}
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
 
-    .card-icon {
-        font-size: 48px;
-        padding: 20px 0 15px;
-}
+    .feature-card {
+        border-radius: var(--kid-radius, 16px);
+        border: none;
+        background: var(--kid-card, #fff);
+        box-shadow: var(--kid-shadow-soft, 0 2px 10px rgba(24, 24, 40, 0.06));
+    }
+
+    .feature-card:hover {
+        transform: none;
+        border-color: transparent;
+        box-shadow: var(--kid-shadow-card, 0 6px 20px -8px rgba(49, 35, 82, 0.18));
+    }
+
+    .feature-card :deep(.el-card__body) {
+        padding: 16px 14px 18px;
+    }
 
     .card-title {
-        font-size: 16px;
+        font-size: 15px;
+        text-align: left;
+        padding: 0;
+        margin-bottom: 6px;
     }
 
     .card-description {
-        font-size: 13px;
-        margin-bottom: 20px;
+        font-size: 12px;
+        text-align: left;
+        padding: 0;
+        margin: 0;
+        line-height: 1.5;
+        color: var(--kid-text-sub, #8a8aa3);
+    }
+
+    /* 卡片角标图标更清晰、摆正 */
+    .feature-card[class*="icon-card-"] :deep(.el-card__body)::after {
+        width: 56px;
+        height: 56px;
+        bottom: 8px;
+        right: 8px;
+        opacity: 0.16;
+        transform: rotate(0deg);
     }
 }
 </style>

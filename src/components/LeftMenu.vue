@@ -16,7 +16,7 @@
           <li class="element" v-for="(item,index) in searchArr" :key="`search-${item._id || index}-${index}`" @click="handleImageChange(getImageContent(item))">
               <el-image
                 fit="contain"
-                style="width:6vw; height:8vh; display: block; margin: 0 auto;"
+                style="width:100%; height:100%; display: block; margin: 0 auto;"
                 :src="getImageSrc(item)"
                 :lazy="true"
                 loading="lazy"
@@ -61,7 +61,7 @@
         <li class="element" v-for="(item,index) in pictureArr" :key="`${selectType}-${selectIndex}-${item._id || item.content || index}-${index}`" @click="handleImageChange(getImageContent(item))">
             <el-image
               fit="contain"
-              style="width:6vw; height:8vh; display: block; margin: 0 auto;"
+              style="width:100%; height:100%; display: block; margin: 0 auto;"
               :src="getImageSrc(item)"
               :key="`img-${selectType}-${selectIndex}-${item._id || item.content || index}-${index}`"
               :lazy="true"
@@ -83,8 +83,6 @@
         <div v-else-if="!hasMore && pictureArr.length > 0" class="load-more-tip">没有更多了</div>
     </div>
 </div>
-    
-    <class-chart />
     </div> 
 
 </template>
@@ -92,7 +90,6 @@
 <script>
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
-import ClassChart from './ClassChart.vue'
 // 导入generateID
 import generateID from "@/utils/generateID"
 // 导入自定义样式的包
@@ -100,10 +97,6 @@ import {commonStyle,commonAttr} from "@/custom-component/component-list"
 
 
 export default {
-    components:{
-        ClassChart
-    },
-    
     data(){
         return{
           icons:[
@@ -426,41 +419,46 @@ export default {
 </script>
 
 <style scoped>
+/* 宽度统一改为 100%/px/grid，不再依赖 vw，避免手机端等比压缩导致布局崩坏。
+   宽度由父容器（Creation.vue 的 .left）决定，本组件内部自适应填充。 */
 .container{
-    width:19.5vw;
+    width:100%;
     height:calc(100vh - 90px);
-    
+    box-sizing: border-box;
 }
 .search{
-    width:17.5vw;
-    height:5vh;
-    margin:1vh 0.5vw;
+    padding: 10px 12px;
+}
+.search :deep(.el-input){
+    width: 100%;
 }
 .classify{
     margin:0;
     padding:0;
-    width:19.5vw;
-    height:83vh;  
+    width:100%;
+    /* 减去搜索栏高度（输入框约 40px + 上下内边距 20px） */
+    height: calc(100% - 60px);
     display: flex;
-    justify-content: space-between; 
     overflow-y: hidden; /* 避免与内层滚动容器竞争滚动 */
     position: relative;
 }
 .container .classify .menu{
-    width:4vw;
-    height:80vh;
+    width: 52px;
+    flex-shrink: 0;
+    height:100%;
     list-style: none;
-    display: block;
-    position: fixed;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
 }
 
 .container .classify .menu li{
-    height:7vh;
-    line-height:7vh;
+    height:56px;
+    line-height:56px;
     cursor: pointer;
-    font-size:24px; 
+    font-size:22px;
    text-align: center;
-   border-radius: 0 4vh 4vh 0;
+   border-radius: 0 28px 28px 0;
 }
 .menu-item .iconfont{
     font-size: 22px;
@@ -473,44 +471,42 @@ export default {
     background-color: #f5f6fa;
 }
 .menu-right{
-    height:80vh;
+    flex: 1;
+    min-width: 0;
+    height:100%;
     overflow-y: auto;
-    width:16vw;
-    position: relative;
-    left:4vw;
+    padding: 4px 6px;
     /* 保证滚动条可见区域 */
     overscroll-behavior: contain;
     /* 始终显示滚动条槽，确保布局稳定 */
-    scrollbar-gutter: stable both-edges;
+    scrollbar-gutter: stable;
     -webkit-overflow-scrolling: touch;
-    /* 确保在所有浏览器中表现一致 */
-    min-height: 1px; /* 确保即使没有内容也能应用滚动条样式 */
+    /* 确保即使没有内容也能应用滚动条样式 */
+    min-height: 1px;
     box-sizing: border-box;
 }
 .elements{
-    width:15.5vw;
-    display: flex;
+    width:100%;
+    margin: 0;
+    padding: 0;
     background-color: #fff;
     list-style: none;
-    flex-wrap: wrap;
-    align-content:flex-start;
-    justify-content: flex-start;
-    /* 让内容自然撑开，由父容器 menu-right 负责滚动 */
+    /* 自适应网格：每列最小 72px，自动填充列数，天然适配窄屏 */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+    align-content: start;
 }
 
 .element{
-    width:6.5vw;
-    height:8vh;
+    width:100%;
     background-color: #f5f6fa;
-    border-radius: 4px;
-    margin-right:0.5vw;
-    margin-bottom: 1vh;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* 防止布局偏移 */
-    min-height: 8vh;
+    /* 用比例锁定缩略图尺寸，避免布局偏移 */
     aspect-ratio: 6.5 / 8;
     position: relative;
     overflow: hidden;
@@ -521,7 +517,6 @@ export default {
 .img-ph{
     width:100%;
     height:100%;
-    min-height: 8vh;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -560,7 +555,7 @@ export default {
     background-color: #fafafa;
 }
 .emptyResult{
-    width:19.5vw;
+    width:100%;
     display: flex;  
     justify-content: center;
     align-content: center;
@@ -571,5 +566,21 @@ export default {
     text-align: center;
     font-size: 12px;
     color: #909399;
+}
+
+/* 手机端适配：断点统一 768（与 breakpoints.css / useBreakpoint 一致） */
+@media (max-width: 768px) {
+    .container .classify .menu{
+        width: 44px;
+    }
+    .container .classify .menu li{
+        height: 48px;
+        line-height: 48px;
+        font-size: 20px;
+    }
+    .elements{
+        grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+        gap: 6px;
+    }
 }
 </style>

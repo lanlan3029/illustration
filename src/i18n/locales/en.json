@@ -269,7 +269,8 @@
     "connection": "Connection",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
-    "maze": "Maze"
+    "maze": "Maze",
+    "my": "Mine"
   },
   "maze": {
     "title": "Maze",
@@ -570,7 +571,8 @@
     "createGroupImagesDesc": "Generate multiple images for characters",
     "createIllustrationDesc": "Freely create illustration works",
     "createLayoutIllustrationDesc": "Create multi-character illustrations with layout editor",
-    "composeBookDesc": "Compose illustrations into storybooks"
+    "composeBookDesc": "Compose illustrations into storybooks",
+    "moodDiaryDesc": "Record your mood and turn it into a storybook"
   },
   "aibooks": {
     "title": "Create Picture Book",
@@ -989,6 +991,7 @@
   },
   "creation": {
     "canvasRatio": "Canvas Ratio:",
+    "materials": "Materials",
     "attributes": "Attributes",
     "selectElement": "Please select an element",
     "downloading": "Downloading, please do not click repeatedly",

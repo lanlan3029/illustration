@@ -897,9 +897,17 @@ export default {
 }
 
 /* 响应式设计 */
+@media (max-width: 1024px) {
+  /* 平板：放宽内容宽度，避免 60% 过窄 */
+  .main-content {
+    width: 92%;
+  }
+}
+
 @media (max-width: 768px) {
   .member-recharge-container {
-    padding: 20px 10px;
+    padding: 16px 12px;
+    background: var(--kid-bg, #f5f6fb);
   }
 
   .page-title {
@@ -911,12 +919,16 @@ export default {
     text-align: center;
   }
 
+  /* 手机：内容铺满（原 60% 宽度会导致内容过窄） */
   .main-content {
     flex-direction: column;
+    width: 100%;
   }
 
+  .main-content .left-section,
+  .main-content .recharge-card,
   .main-content .info-card {
-    flex: 1;
+    flex: none;
     width: 100%;
   }
 
@@ -926,6 +938,13 @@ export default {
 
   .package-item {
     min-width: 100%;
+  }
+
+  /* 卡片圆角统一 */
+  .points-card,
+  .recharge-card,
+  .info-card {
+    border-radius: var(--kid-radius, 16px);
   }
 }
 </style>

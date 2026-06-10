@@ -72,20 +72,25 @@ export default {
 </script>
 <style scoped>
 
+/* 两栏布局由 vw 改为 flex 比例 + 居中最大宽度，手机端竖排 */
 .content{
-  margin-top:2vh;
+  margin: 16px auto 0;
   height:calc(100vh - 90px);
   display: flex;
-  width:100vw;
+  gap: 12px;
+  width:100%;
+  max-width: 1200px;
+  padding: 0 12px;
+  box-sizing: border-box;
   justify-content: space-between;
 }
 .left{
-  width:62vw;
+  flex: 1 1 62%;
     height:90vh;
     background-color:#f5f6fa;
     border-radius: 8px;
-    padding:8vw 2vw;
-    
+    padding:48px 24px;
+    box-sizing: border-box;
 }
 .left .code{
    width:300px;
@@ -99,12 +104,13 @@ export default {
   margin-bottom: 48px;
 }
 .right{
-  width:36vw;
+  flex: 1 1 36%;
   height:90vh;
   background-color:#f5f6fa;
+  border-radius: 8px;
 }
 .right h2{
-  margin-top:10vh;
+  margin-top:48px;
   text-align: center;
   color:#374957;
 }
@@ -120,5 +126,25 @@ export default {
   margin:auto;
   font-size: 12px;
   margin-top:24px;
+}
+
+/* 手机端：两栏竖排，去掉固定高度 */
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+    height: auto;
+  }
+  .left,
+  .right {
+    flex: none;
+    width: 100%;
+    height: auto;
+  }
+  .left {
+    padding: 24px 16px;
+  }
+  .right h2 {
+    margin-top: 24px;
+  }
 }
 </style>

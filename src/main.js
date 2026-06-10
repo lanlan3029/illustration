@@ -5,6 +5,8 @@ import customComponents from '@/custom-component' // 注册自定义组件
 import store from './store'
 // 基础重置样式应最先加载，避免覆盖第三方组件样式
 import '@/styles/reset.css'
+// 响应式断点 token 与公共工具类（需在业务样式之前引入）
+import '@/styles/breakpoints.css'
 // Element Plus - 保持全量导入以确保兼容性
 // 如需按需导入，建议使用 unplugin-vue-components（需要额外配置）
 import ElementPlus from 'element-plus'

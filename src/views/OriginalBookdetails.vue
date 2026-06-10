@@ -1760,10 +1760,14 @@ async loadCollectIdMap() {
 @media (max-width: 1200px) {
   .book-layout {
     flex-direction: column;
+    max-width: 100%;
   }
   
+  /* 单列后信息栏不再做内部滚动，随页面自然展开 */
   .book-info {
     width: 100%;
+    max-height: none;
+    overflow: visible;
   }
   
   .book-viewer-wrapper {

@@ -11,9 +11,9 @@
 
         <!-- 桌面导航 -->
         <ul class="navbar-nav desktop-nav">
-          <!-- 菜单项 -->
-          <li class="nav-item" :class="{ 'active': route.path === '/' }">
-            <router-link to="/" class="nav-link" @click="closeSubmenu">{{ $t('nav.home') || '首页' }}</router-link>
+          <!-- 首页（导航数据见 setup 中的 navItems） -->
+          <li class="nav-item" :class="{ 'active': isNavActive(homeNavItem) }">
+            <router-link :to="homeNavItem.to" class="nav-link" @click="closeSubmenu">{{ $t(homeNavItem.label) }}</router-link>
           </li>
 
           <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation', 'active': isCreationNavActive }">
@@ -21,36 +21,20 @@
               {{ $t('nav.creation') }}
             </a>
             <ul class="dropdown-menu">
-              <li><router-link to="/ai-picture" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.aiIllustration') }}</router-link></li>
-              <li><router-link to="/AIbooks" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.aiBooks') }}</router-link></li>
-              <li><router-link to="/create-character" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createCharacter') }}</router-link></li>
-              <li><router-link to="/create-group-images" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createGroupImages') }}</router-link></li>
-              <li><router-link to="/create-layout-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createLayoutIllustration') }}</router-link></li>
-              <li><router-link to="/editorpro" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.createIllustration') }}</router-link></li>
-              <li><router-link to="/user/upload/compose-illustration" class="dropdown-item" @click="closeSubmenu">{{ $t('nav.composeBook') }}</router-link></li>
+              <li v-for="item in creationItems" :key="item.to">
+                <router-link :to="item.to" class="dropdown-item" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
+              </li>
             </ul>
           </li>
 
-          <li class="nav-item" :class="{ 'active': route.path === '/user/upload' }">
-            <router-link to="/user/upload" class="nav-link" @click="closeSubmenu">{{ $t('common.upload') }}</router-link>
-          </li>
-
-          <li class="nav-item" :class="{ 'active': route.path === '/books' }">
-            <router-link to="/books" class="nav-link" @click="closeSubmenu">{{ $t('common.books') }}</router-link>
-          </li>
-
-          <!--
-          <li class="nav-item" :class="{ 'active': route.path === '/utility-tools' }">
-            <router-link to="/utility-tools" class="nav-link" @click="closeSubmenu">{{ $t('common.tools') }}</router-link>
-          </li>
-          -->
-
-          <li class="nav-item" :class="{ 'active': isMoodDiaryRoute }">
-            <router-link to="/mood-diary" class="nav-link nav-link-mood-diary" @click="closeSubmenu">{{ $t('nav.moodDiary') }}</router-link>
-          </li>
-
-          <li class="nav-item" :class="{ 'active': route.path === '/maze' }">
-            <router-link to="/maze" class="nav-link nav-link-maze" @click="closeSubmenu">{{ $t('nav.maze') }}</router-link>
+          <!-- 其余简单导航项（与手机端共用 navItems 配置） -->
+          <li
+            v-for="item in desktopRestItems"
+            :key="item.key"
+            class="nav-item"
+            :class="{ 'active': isNavActive(item) }"
+          >
+            <router-link :to="item.to" class="nav-link" :class="item.linkClass" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
           </li>
 
         
@@ -140,22 +124,17 @@
 
     
 
-        <!-- 手机端全屏菜单：仅在小屏下渲染，电脑端不显示 -->
-        <ul v-if="isMobileView" class="mobile-menu-list">
-          <li :class="{ active: route.path === '/' }">
-            <router-link to="/" @click="closeMobileMenu">首页</router-link>
-          </li>
-          <li :class="{ active: route.path === '/books' }">
-            <router-link to="/books" @click="closeMobileMenu">绘本</router-link>
-          </li>
-        <li :class="{ active: isMoodDiaryRoute }">
-          <router-link to="/mood-diary" @click="closeMobileMenu">{{ $t('nav.moodDiary') }}</router-link>
-          </li>
-          <li :class="{ active: route.path === '/maze' }">
-            <router-link to="/maze" @click="closeMobileMenu">{{ $t('nav.maze') }}</router-link>
+        <!-- 手机端全屏菜单：仅在小屏下渲染，电脑端不显示（数据与桌面共用 navItems） -->
+        <ul v-if="isMobile" class="mobile-menu-list">
+          <li
+            v-for="item in mobileItems"
+            :key="item.key"
+            :class="{ active: isNavActive(item) }"
+          >
+            <router-link :to="item.to" @click="closeMobileMenu">{{ $t(item.label) }}</router-link>
           </li>
           <li>
-            <a href="#" @click.prevent="handleMobileMy">我的</a>
+            <a href="#" @click.prevent="handleMobileMy">{{ $t('nav.my') || '我的' }}</a>
           </li>
         </ul>
       </div>
@@ -170,6 +149,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 
 export default {
     name: 'TopBar',
@@ -189,10 +169,43 @@ export default {
         const activeSubmenu = ref(null) // 当前激活的子菜单
         const isScrolled = ref(false) // 是否已滚动
         const mobileMenuVisible = ref(false) // 手机端菜单是否可见
-        const isMobileView = ref(false) // 是否为手机端视口（用于控制是否渲染手机菜单 DOM）
-        
+
+        // 视口判断统一走 useBreakpoint（isMobile = width <= 768，与 breakpoints.css 一致）
+        const { isMobile } = useBreakpoint()
+
         const $http = proxy?.$http || axios
         const $message = proxy?.$message || ElMessage
+
+        /**
+         * 顶部导航的唯一数据源：桌面端简单项与手机端菜单共用，改一处两端同步。
+         * - label 为 i18n key，模板里用 $t(item.label) 渲染。
+         * - mobile: 是否在手机端菜单展示。
+         * - key === 'moodDiary' 时高亮逻辑走 isMoodDiaryRoute。
+         */
+        const navItems = [
+            { key: 'home', to: '/', label: 'nav.home', mobile: true },
+            { key: 'upload', to: '/user/upload', label: 'common.upload', mobile: false },
+            { key: 'books', to: '/books', label: 'common.books', mobile: true },
+            { key: 'moodDiary', to: '/mood-diary', label: 'nav.moodDiary', linkClass: 'nav-link-mood-diary', mobile: true },
+            { key: 'maze', to: '/maze', label: 'nav.maze', linkClass: 'nav-link-maze', mobile: true },
+        ]
+
+        // 「创作」下拉项配置（同样集中管理）
+        const creationItems = [
+            { to: '/ai-picture', label: 'nav.aiIllustration' },
+            { to: '/AIbooks', label: 'nav.aiBooks' },
+            { to: '/create-character', label: 'nav.createCharacter' },
+            { to: '/create-group-images', label: 'nav.createGroupImages' },
+            { to: '/create-layout-illustration', label: 'nav.createLayoutIllustration' },
+            { to: '/editorpro', label: 'nav.createIllustration' },
+            { to: '/user/upload/compose-illustration', label: 'nav.composeBook' },
+        ]
+
+        const homeNavItem = navItems[0]
+        // 桌面端：首页单独渲染、创作下拉居中，其余简单项在此列表
+        const desktopRestItems = navItems.filter((i) => i.key !== 'home')
+        // 手机端：仅展示标记 mobile 的项
+        const mobileItems = navItems.filter((i) => i.mobile)
 
         /** 创作入口下任一子路由（含 AI 插画 / AI 绘本）时高亮「创作」 */
         const isCreationNavActive = computed(() => {
@@ -209,6 +222,13 @@ export default {
         })
 
         const isMoodDiaryRoute = computed(() => route.path.startsWith('/mood-diary'))
+
+        // 统一的「当前项是否激活」判断，桌面与手机共用
+        const isNavActive = (item) => {
+            if (!item) return false
+            if (item.key === 'moodDiary') return isMoodDiaryRoute.value
+            return route.path === item.to
+        }
         
         // 当前语言（使用 ref 以便双向绑定）
         const currentLanguage = ref(locale.value)
@@ -296,8 +316,14 @@ export default {
             mobileMenuVisible.value = false
         }
 
-        const updateMobileView = () => {
-            isMobileView.value = window.innerWidth <= 767
+        // 手机端「我的」：已登录进个人中心，未登录弹登录框
+        const handleMobileMy = () => {
+            closeMobileMenu()
+            if (isLogin.value) {
+                router.push('/user/')
+            } else {
+                store.commit('showMask')
+            }
         }
         
         const goHomeFromMobile = () => {
@@ -445,10 +471,8 @@ export default {
                 handleScroll()
             })
 
-            // 手机端菜单仅在小屏渲染，与 CSS 断点 767px 一致
-            updateMobileView()
-            window.addEventListener('resize', updateMobileView)
-            
+            // 视口判断已由 useBreakpoint 统一处理（含 resize 监听），此处无需再绑定
+
             // 监听路由变化，关闭下拉菜单并重置滚动状态
             watch(() => route.path, (to) => {
                 closeSubmenu()
@@ -465,7 +489,6 @@ export default {
         onBeforeUnmount(() => {
             document.removeEventListener('click', handleClickOutside)
             window.removeEventListener('scroll', handleScroll)
-            window.removeEventListener('resize', updateMobileView)
         })
         
         return {
@@ -474,8 +497,15 @@ export default {
             userid,
             searchValue,
             userPoints,
-            isMobileView,
+            isMobile,
             mobileMenuVisible,
+            navItems,
+            creationItems,
+            homeNavItem,
+            desktopRestItems,
+            mobileItems,
+            isNavActive,
+            handleMobileMy,
             toggleMobileMenu,
             closeMobileMenu,
             goHomeFromMobile,
@@ -661,8 +691,8 @@ export default {
 	color: #8167a9;
 }
 
-/* 桌面端隐藏手机菜单列表，避免两个系统菜单同时显示 */
-@media (min-width: 768px) {
+/* 桌面端隐藏手机菜单列表，避免两个系统菜单同时显示（断点统一 768/769） */
+@media (min-width: 769px) {
 	.mobile-menu-list {
 		display: none;
 	}
@@ -993,10 +1023,15 @@ export default {
 	cursor: pointer;
 }
 
-/* 响应式设计 */
-@media (max-width: 767px) {
+/* 响应式设计（手机断点统一 768px，与 breakpoints.css / useBreakpoint 一致） */
+@media (max-width: 768px) {
 	/* 小屏幕下隐藏桌面菜单，显示汉堡按钮 */
 	.desktop-nav {
+		display: none;
+	}
+
+	/* 导航改由底部 Tab 承担，顶部仅保留 Logo，隐藏顶部横向菜单 */
+	.mobile-menu-list {
 		display: none;
 	}
 

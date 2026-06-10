@@ -284,7 +284,8 @@
     "connection": "联系我们",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
-    "maze": "迷宫"
+    "maze": "迷宫",
+    "my": "我的"
   },
   "maze": {
     "title": "迷宫",
@@ -585,7 +586,8 @@
     "createGroupImagesDesc": "一张图变多张图",
     "createIllustrationDesc": "元素组合、文字添加",
     "createLayoutIllustrationDesc": "使用布局编辑器把控创作",
-    "composeBookDesc": "将插画合成为绘本"
+    "composeBookDesc": "将插画合成为绘本",
+    "moodDiaryDesc": "记录心情，生成专属绘本"
   },
   "aibooks": {
     "title": "创作绘本",
@@ -1004,6 +1006,7 @@
   },
   "creation": {
     "canvasRatio": "画布比例：",
+    "materials": "素材",
     "attributes": "属性",
     "selectElement": "请选择一个元素",
     "downloading": "正在下载,请勿重复点击",
