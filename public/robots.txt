@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# 不希望被收录的功能/私有页面
+Disallow: /wechat/callback
+Disallow: /user
+Disallow: /member
+Disallow: /create-character
+Disallow: /create-group-images
+Disallow: /create-layout-illustration
+Disallow: /character-group-images
+Disallow: /forgot-password
+
+Sitemap: https://www.kidstory.cc/sitemap.xml
