@@ -105,6 +105,7 @@
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import submitImage from '@/assets/images/submit.webp'
+import { postCreateCharacter } from '@/utils/createCharacterTask'
 
 export default {
   name: 'NewYear',
@@ -224,18 +225,11 @@ export default {
           size: '1024x1024'
         }
 
-        const apiUrl = this.apiBaseUrl 
-          ? `${this.apiBaseUrl}/create-character`
-          : '/create-character'
-
-        const response = await this.$http.post(apiUrl, requestData, {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 180000
-        })
-
-        const responseData = response.data
+        const responseData = await postCreateCharacter(
+          this.$http,
+          requestData,
+          { apiBaseUrl: this.apiBaseUrl }
+        )
         
         if (responseData.allowed === false) {
           const errorMessage = responseData.type === 'create-character' 

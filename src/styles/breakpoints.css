@@ -43,6 +43,15 @@
   .hide-mobile {
     display: none !important;
   }
+
+  /*
+   * 手机端滚动收敛到 .app-main（见 App.vue）。
+   * 页面根节点勿再用 100vh + overflow:hidden 锁死高度，否则下方内容无法露出。
+   */
+  .app-main {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (min-width: 769px) {

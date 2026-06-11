@@ -362,6 +362,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
+import { postCreateCharacter } from '@/utils/createCharacterTask'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
@@ -912,19 +913,11 @@ export default {
                     requestData.image = refs
                 }
 
-                const apiUrl = this.apiBaseUrl
-                    ? `${this.apiBaseUrl}/create-character`
-                    : '/create-character'
-
-                const response = await this.$http.post(apiUrl, requestData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    },
-                    timeout: 180000
-                })
-
-                const responseData = response.data
+                const responseData = await postCreateCharacter(
+                    this.$http,
+                    requestData,
+                    { apiBaseUrl: this.apiBaseUrl }
+                )
                 const isWrappedFail = (responseData.code !== undefined || responseData.desc !== undefined || responseData.statuscode !== undefined)
                     && !(responseData.code === 0 || responseData.code === '0'
                         || responseData.desc === 'success'
@@ -2072,10 +2065,17 @@ export default {
     background: rgba(192, 57, 74, 0.08);
 }
 
-/* 移动端适配 */
-@media (max-width: 640px) {
+/* 移动端适配（断点与全站手机端 768 对齐） */
+@media (max-width: 768px) {
     .ai-picture-page {
+        min-height: 0;
+        height: auto;
         padding: 12px 12px 60px;
+    }
+
+    .page-main {
+        flex: none;
+        height: auto;
     }
 
     .prompt-card {
@@ -2108,7 +2108,8 @@ export default {
         flex: 0 0 auto;
         width: 100%;
         max-width: 100%;
-        max-height: 52vh;
+        max-height: none;
+        overflow: visible;
     }
 
     /* 风格图改为一行横向滑动展示全部 */

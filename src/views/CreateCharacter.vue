@@ -172,6 +172,7 @@
 <script>
 import PromptFill from '@/components/PromptFill.vue';
 import { ElMessage } from 'element-plus';
+import { postCreateCharacter } from '@/utils/createCharacterTask';
 
 export default {
     name: 'CreateCharacter',
@@ -594,21 +595,12 @@ export default {
                 // 可选：图片尺寸
                 requestData.size = '960x1280';
                 
-                // 调用创建角色API
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/create-character`
-                    : '/create-character';
-                
-                const response = await this.$http.post(apiUrl, requestData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    },
-                    timeout: 180000 // 3分钟超时
-                });
-                
-                // 处理响应
-                const responseData = response.data;
+                // 默认异步：提交 60s + 轮询 180～240s；sync: true 仅作同步兜底
+                const responseData = await postCreateCharacter(
+                    this.$http,
+                    requestData,
+                    { apiBaseUrl: this.apiBaseUrl }
+                );
                 
                 // 检查成功响应：code === 0 或 desc === 'success' 或 statuscode === 'success'
                 const isSuccess = (responseData.code === 0 || responseData.code === '0') 

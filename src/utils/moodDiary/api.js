@@ -4,6 +4,7 @@ import { getMoodApiConfig, resolveApiUrl } from './config'
 import { resolvePictureUploadBlob, compressDataUrlForUpload } from './posterUpload'
 import { parseMoodFromIllItem } from './moodIllPersist'
 import { findMoodById } from './moodAssets'
+import { postCreateCharacter } from '@/utils/createCharacterTask'
 
 function unwrapData(res) {
   const d = res && res.data !== undefined ? res.data : res
@@ -607,15 +608,9 @@ export async function fetchEmotionAlign(matching, endpoint) {
 
 export async function createCharacterIllustration(payload) {
   const apiRoot = process.env.VUE_APP_API_BASE_URL || ''
-  const apiUrl = apiRoot ? `${apiRoot.replace(/\/$/, '')}/create-character` : '/create-character'
-  const res = await axios.post(apiUrl, payload, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + (localStorage.getItem('token') || '')
-    },
-    timeout: 180000
+  const data = await postCreateCharacter(axios, payload, {
+    apiBaseUrl: apiRoot ? apiRoot.replace(/\/$/, '') : undefined
   })
-  const data = unwrapData(res)
   const ok = data.code === 0 || data.code === '0' || data.desc === 'success' || data.statuscode === 'success'
   if (!ok || !data.message) throw new Error(data.message || 'create-character failed')
 

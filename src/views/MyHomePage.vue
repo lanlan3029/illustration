@@ -1588,8 +1588,16 @@ overflow: hidden;
     width: 100%;
     padding: 14px;
     height: auto;
+    max-height: none;
+    overflow: visible;
     border-radius: var(--kid-radius, 16px);
     box-shadow: var(--kid-shadow-soft, 0 2px 10px rgba(24, 24, 40, 0.06));
+  }
+
+  .active-scrollbar {
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .content-card {

@@ -79,6 +79,7 @@ import { ElMessage } from 'element-plus'
 
 import toast from '@/utils/toast'
 import html2Canvas from "html2canvas"
+import { postCreateCharacter } from '@/utils/createCharacterTask'
 
 import ComponentList from '@/components/ComponentList' // 左侧列表组件
 // 导入generateID
@@ -244,23 +245,14 @@ export default {
             };
             
             // 调用火山引擎生图接口（通过后端）
-            const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/create-character`
-                    : '/create-character';
-            
-            const response = await this.$http.post(apiUrl, requestData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                },
-                timeout: 180000 // 3分钟超时
-            });
+            const responseData = await postCreateCharacter(
+                this.$http,
+                requestData,
+                { apiBaseUrl: this.apiBaseUrl }
+            );
             
             // 关闭加载提示
             loading.close();
-            
-            // 处理响应
-            const responseData = response.data;
             
             // 检查成功响应：code === 0 或 desc === 'success' 或 statuscode === 'success'
             const isSuccess = (responseData.code === 0 || responseData.code === '0') 

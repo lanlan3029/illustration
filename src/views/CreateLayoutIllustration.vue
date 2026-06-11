@@ -409,6 +409,7 @@
 
 <script>
 import { ElMessage } from 'element-plus';
+import { postCreateCharacter } from '@/utils/createCharacterTask';
 
 export default {
     name: 'CreateLayoutIllustration',
@@ -1249,21 +1250,11 @@ export default {
                     requestData.image = referenceImagesBase64.slice(0, 10);
                 }
                 
-                // 调用创建角色API（支持多张参考图）
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/create-character`
-                    : '/create-character';
-                
-                const response = await this.$http.post(apiUrl, requestData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    },
-                    timeout: 300000 // 5分钟超时
-                });
-                
-                // 处理响应（兼容 /create-character 接口的响应格式）
-                const responseData = response.data;
+                const responseData = await postCreateCharacter(
+                    this.$http,
+                    requestData,
+                    { apiBaseUrl: this.apiBaseUrl }
+                );
                 
                 // 检查成功响应：code === 0 或 desc === 'success' 或 statuscode === 'success'
                 const isSuccess = (responseData.code === 0 || responseData.code === '0') 

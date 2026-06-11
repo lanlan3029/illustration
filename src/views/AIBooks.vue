@@ -187,6 +187,7 @@ import { getCurrentInstance, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { Download, Edit, DocumentCopy, Reading } from '@element-plus/icons-vue'
+import { postCreateCharacter } from '@/utils/createCharacterTask'
 
 
 export default {
@@ -634,21 +635,11 @@ export default {
                         }
                     }
                     
-                    // 调用创建角色API（与 CreateCharacter.vue 使用相同的API）
-                    const apiUrl = this.apiBaseUrl 
-                        ? `${this.apiBaseUrl}/create-character`
-                        : '/create-character'
-                    
-                    const response = await this.$http.post(apiUrl, requestData, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                        },
-                        timeout: 180000 // 3分钟超时
-                    })
-                    
-                    // 处理响应，参照 CreateCharacter.vue 的响应处理
-                    const responseData = response.data
+                    const responseData = await postCreateCharacter(
+                        this.$http,
+                        requestData,
+                        { apiBaseUrl: this.apiBaseUrl }
+                    )
                     
                     // 判断响应状态
                     if (!responseData) {

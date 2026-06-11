@@ -341,12 +341,12 @@ export default {
   opacity: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .mood-shell {
     flex-direction: column;
     padding: 12px;
     height: auto;
-    min-height: calc(100vh - 100px);
+    min-height: 0;
     overflow: visible;
   }
 
