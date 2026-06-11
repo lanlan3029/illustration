@@ -626,7 +626,6 @@ export default {
                     const requestData = {
                         prompt: promptList[i].trim(),
                         size: '1280x960',
-                        response_format: 'b64_json',
                         watermark: false
                     }
                     

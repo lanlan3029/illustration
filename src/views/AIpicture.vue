@@ -845,7 +845,6 @@ export default {
             return {
                 prompt,
                 size,
-                response_format: 'b64_json',
                 watermark: false
             }
         },

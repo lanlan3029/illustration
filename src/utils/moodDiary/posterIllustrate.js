@@ -62,7 +62,6 @@ export async function generateIllustrationImage(draft, options = {}) {
     character_type: 'illustration',
     size: '1024x1024',
     quality: 'standard',
-    response_format: 'b64_json',
     watermark: false
   }
   if (draft.inputImageDataUrl) {

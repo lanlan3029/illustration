@@ -576,9 +576,7 @@ export default {
             try {
                 // 构建请求参数（JSON格式）
                 const requestData = {
-                    prompt: trimmedFinalPrompt,
-                    response_format: 'b64_json',
-
+                    prompt: trimmedFinalPrompt
                 };
                 
                 // 如果有照片，处理图片上传

@@ -1237,8 +1237,7 @@ export default {
                 // 构建请求数据（使用 /create-character 接口格式）
                 const requestData = {
                     prompt: mergedPrompt, // 使用单个合并的 prompt（字符串）
-                    size: `${currentSize.width}x${currentSize.height}`, // 使用重新计算的尺寸
-                    response_format: 'b64_json' // 可选：指定返回格式
+                    size: `${currentSize.width}x${currentSize.height}` // 使用重新计算的尺寸
                 };
                 
                 // 设置 image 字段：支持单个Base64字符串或Base64字符串数组（最多10张）
