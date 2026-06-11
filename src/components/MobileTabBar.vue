@@ -50,7 +50,6 @@ export default {
     const createPaths = [
       '/ai-picture',
       '/AIbooks',
-      '/creation',
       '/create-character',
       '/create-group-images',
       '/create-layout-illustration',

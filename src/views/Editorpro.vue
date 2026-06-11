@@ -22,7 +22,8 @@
 </template>
 
 <script name="Home" setup>
-import { reactive, onMounted, onUnmounted, provide } from 'vue';
+import { reactive, onMounted, onUnmounted, provide, nextTick } from 'vue';
+import { takeEditorproPendingImage } from '@/utils/editorproPendingImage';
 import Top from '@/components/editorPro/top/index.vue';
 import Left from '@/components/editorPro/left/index.vue';
 import Right from '@/components/editorPro/right/index.vue';
@@ -138,7 +139,31 @@ onMounted(() => {
   }
 
   state.show = true;
+
+  // 「我的插画」编辑入口：带入图片到画布
+  nextTick(() => {
+    loadPendingIllustrationImage();
+  });
 });
+
+async function loadPendingIllustrationImage() {
+  const { url } = takeEditorproPendingImage();
+  if (!url || !canvasEditor?.createImgByElement) return;
+
+  const imgEl = document.createElement('img');
+  imgEl.crossOrigin = 'anonymous';
+  try {
+    await new Promise((resolve, reject) => {
+      imgEl.onload = resolve;
+      imgEl.onerror = reject;
+      imgEl.src = url;
+    });
+    const imgItem = await canvasEditor.createImgByElement(imgEl);
+    canvasEditor.addBaseType(imgItem, { scale: true });
+  } catch (e) {
+    console.error('[editorpro] 载入待编辑插画失败:', e);
+  }
+}
 
 onUnmounted(() => {
   if (canvas) {

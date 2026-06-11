@@ -177,6 +177,7 @@ import {
     isCreateCharacterResponseOk,
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask';
+import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 
 export default {
     name: 'CreateCharacter',
@@ -1099,14 +1100,11 @@ export default {
                 
                 const segmentedImageUrl = await this.segmentImage(this.resultImageUrl, characterParams);
                 
-                // 保存分割后的图片到localStorage
-                localStorage.setItem('characterImage', segmentedImageUrl);
-                
                 // 提示角色已保存
                 ElMessage.success(this.$t('createCharacter.characterSaved'));
                 
-                // 跳转到创作插画页面
-                this.$router.push('/creation');
+                setEditorproPendingImage(segmentedImageUrl);
+                this.$router.push('/editorpro');
             } catch (error) {
                 ElMessage.error(this.$t('createCharacter.processFailed', { message: error.response?.data?.message || error.message || this.$t('common.error') }));
             }

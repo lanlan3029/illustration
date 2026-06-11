@@ -278,8 +278,7 @@ import MyCollectionIll from '../components/MyCollectionIll.vue'
 import MyCollectionBook from '../components/MyCollectionBook.vue'
 import MyAttention from '../components/MyAttention.vue'
 import MyFans from '../components/MyFans.vue'
-import generateID from '@/utils/generateID'
-import { commonStyle, commonAttr } from '@/custom-component/component-list'
+import { setEditorproPendingImage } from '@/utils/editorproPendingImage'
 export default {
   components:{
 MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
@@ -350,7 +349,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
       this.$router.push("/user/upload/compose-illustration/");
     },
     goCreation() {
-      this.$router.push("/creation");
+      this.$router.push("/editorpro");
     },
    goLocalIllus(){
        this.$router.push("/user/upload/upload-local-book");
@@ -458,63 +457,12 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
                 ElMessage.error(this.$t('myHomePage.cannotGetIllustrationImage'));
                 return;
             }
-            
-            // 将插画图片转换为组件数据
-            // 创建图片组件
-            const img = new Image();
-            img.crossOrigin = 'anonymous'; // 允许跨域
-            
-            img.onload = () => {
-                // 获取画布尺寸（从store获取，单位是vw，需要转换为px）
-                // 假设屏幕宽度为1920px，1vw = 19.2px
-                const vwToPx = window.innerWidth / 100;
-                const canvasWidth = 56 * vwToPx; // 56vw 转换为 px
-                const canvasHeight = 42 * vwToPx; // 42vw 转换为 px（从store获取）
-                
-                // 计算图片尺寸，确保不超过画布大小，同时保持宽高比
-                let displayWidth = img.width;
-                let displayHeight = img.height;
-                
-                // 如果图片超过画布，按比例缩放
-                if (displayWidth > canvasWidth || displayHeight > canvasHeight) {
-                    const scale = Math.min(canvasWidth / displayWidth, canvasHeight / displayHeight);
-                    displayWidth = Math.floor(displayWidth * scale);
-                    displayHeight = Math.floor(displayHeight * scale);
-                }
-                
-                // 居中显示
-                const top = Math.max(0, (canvasHeight - displayHeight) / 2);
-                const left = Math.max(0, (canvasWidth - displayWidth) / 2);
-                
-                // 创建组件数据
-                const componentData = {
-                    ...commonAttr,
-                    id: generateID(),
-                    component: 'Picture',
-                    label: '图片',
-                    icon: '',
-                    propValue: imageUrl,
-                    style: {
-                        ...commonStyle,
-                        top: top,
-                        left: left,
-                        width: displayWidth,
-                        height: displayHeight,
-                    }
-                };
-                
-                // 将组件数据设置到 store
-                this.$store.commit('setComponentData', [componentData]);
-                
-                // 跳转到创作页面
-                this.$router.push('/creation');
-            };
-            
-            img.onerror = () => {
-                ElMessage.error(this.$t('myHomePage.imageLoadFailedCheckUrl'));
-            };
-            
-            img.src = imageUrl;
+
+            setEditorproPendingImage(imageUrl, {
+                illId: item._id,
+                title: item.title || ''
+            });
+            this.$router.push('/editorpro');
         } catch (error) {
             console.error('编辑插画失败:', error);
             ElMessage.error(this.$t('myHomePage.editIllustrationFailed'));

@@ -378,7 +378,7 @@ export default {
       this.$router.push("/user/upload/compose-illustration/");
     },
     goCreation() {
-      this.$router.push("/creation");
+      this.$router.push("/editorpro");
     },
     goMyIllu() {
       this.activeIndex = 2;
