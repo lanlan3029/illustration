@@ -620,7 +620,6 @@ export async function createCharacterIllustration(payload) {
   }
 
   const msg = data.message
-  const apiRoot = process.env.VUE_APP_API_BASE_URL || ''
   let imageUrl = resolveGenerationImageUrl(msg, apiRoot ? apiRoot.replace(/\/$/, '') : undefined)
   if (!imageUrl) imageUrl = msg.character_image_url || msg.image || msg.url || ''
   if (!imageUrl && msg.image_base64) {
