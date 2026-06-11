@@ -362,7 +362,11 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
-import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
+import {
+    postCreateCharacter,
+    isCreateCharacterResponseOk,
+    resolveGenerationImageUrl
+} from '@/utils/createCharacterTask'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
@@ -867,8 +871,14 @@ export default {
             const result = responseData.message || responseData
             if (!result || typeof result !== 'object') return ''
 
-            if (result.image_url) return result.image_url
-            if (result.character_image_url) return result.character_image_url
+            const fromTask = resolveGenerationImageUrl(result, this.apiBaseUrl, mime)
+            if (fromTask) return fromTask
+
+            if (result.character_image_url) {
+                const u = String(result.character_image_url).trim()
+                if (u.startsWith('http://') || u.startsWith('https://')) return u
+                return resolveGenerationImageUrl({ image_url: u }, this.apiBaseUrl, mime)
+            }
             if (result.image_base64) return tryBase64(result.image_base64, mime)
             if (result.character_image_base64) return tryBase64(result.character_image_base64, mime)
             if (result.image) return result.image

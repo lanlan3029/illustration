@@ -1,8 +1,8 @@
 // 统一处理 /create-character 的异步任务模式。
 //
 // 成功判定：只读 res.data.message（不用外层 statuscode / desc 判断任务是否完成）
-//   - message.status ∈ succeeded | completed | done | success
-//   - 或 message 中已有 image_base64 / image_url
+//   const done = msg.status === 'succeeded' || msg.image_url || msg.image_base64
+// 大图轮询通常只有 image_url（无 image_base64），需拼完整 API 地址展示。
 //
 // 生产建议：默认异步（短 POST + 轮询），同步仅作 sync: true 兼容兜底。
 
@@ -24,8 +24,8 @@ export const SYNC_POST_TIMEOUT_WITH_REFS_MS = 140000
 /** 同步兜底：纯文 POST 超时 */
 export const SYNC_POST_TIMEOUT_TEXT_ONLY_MS = 330000
 
-/** 异步任务 message.status 成功枚举 */
-export const POLL_TASK_SUCCESS_STATUSES = ['succeeded', 'completed', 'done', 'success']
+/** 无 env 时的 API 根地址（拼接相对 image_url） */
+export const DEFAULT_API_ORIGIN = 'https://api.kidstory.cc'
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -75,27 +75,47 @@ export function extractTaskMessage(responseData) {
   return msg && typeof msg === 'object' ? msg : null
 }
 
-/** message 中是否已有可展示图片（主信号：image_base64 / image_url） */
-export function pollMessageHasImage(message) {
-  if (!message || typeof message !== 'object') return false
-  if (message.image_base64 || message.image_url) return true
-  // 兼容历史/角色接口字段
-  if (message.character_image_base64 || message.character_image_url) return true
-  const first = message.full_response && message.full_response.data && message.full_response.data[0]
-  if (first && (first.b64_json || first.url)) return true
-  return false
+/** API 根地址，用于拼接相对路径 image_url */
+export function resolveApiOrigin(apiBaseUrl) {
+  const raw = apiBaseUrl || process.env.VUE_APP_API_BASE_URL || DEFAULT_API_ORIGIN
+  return String(raw).replace(/\/$/, '')
 }
 
 /**
- * 异步任务是否已完成（仅基于 message，不看外层 statuscode）。
+ * 异步任务是否已完成（仅基于 res.data.message，不看外层 statuscode）。
+ * 与后端约定：succeeded | image_url | image_base64 任一即停轮询。
  */
 export function isPollTaskComplete(message) {
-  if (!message) return false
-  const status = String(message.status || '').toLowerCase()
-  if (POLL_TASK_SUCCESS_STATUSES.includes(status)) {
-    return true
+  if (!message || typeof message !== 'object') return false
+  return (
+    message.status === 'succeeded' ||
+    Boolean(message.image_url) ||
+    Boolean(message.image_base64)
+  )
+}
+
+/**
+ * 从 message 解析可展示图片地址（轮询大图优先 image_url）。
+ * 相对路径拼到 API 根，例如 upload/generation-tasks/{taskId}/result.png
+ */
+export function resolveGenerationImageUrl(message, apiBaseUrl, mime = 'image/png') {
+  if (!message || typeof message !== 'object') return ''
+
+  if (message.image_base64) {
+    const trimmed = String(message.image_base64).trim()
+    if (!trimmed) return ''
+    if (trimmed.startsWith('data:')) return trimmed
+    return `data:${mime};base64,${trimmed.replace(/\s/g, '')}`
   }
-  return pollMessageHasImage(message)
+
+  if (message.image_url) {
+    const u = String(message.image_url).trim()
+    if (!u) return ''
+    if (u.startsWith('http://') || u.startsWith('https://')) return u
+    return `${resolveApiOrigin(apiBaseUrl)}/${u.replace(/^\//, '')}`
+  }
+
+  return ''
 }
 
 export function isPollTaskFailed(message) {
@@ -225,6 +245,11 @@ export async function resolveCreateCharacterResult(http, responseData, opts = {}
   }
   if (isPollTaskComplete(message)) {
     return { code: 0, desc: 'success', message }
+  }
+  if (isPollTaskFailed(message)) {
+    const err = message.error || responseData.desc || '生成失败，请重试'
+    const suffix = message.points_refunded ? '（积分已退还）' : ''
+    throw new Error(`${err}${suffix}`)
   }
   return pollCreateCharacterTask(http, message.task_id, {
     pollIntervalMs: message.poll_interval_ms,

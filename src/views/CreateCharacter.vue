@@ -172,7 +172,11 @@
 <script>
 import PromptFill from '@/components/PromptFill.vue';
 import { ElMessage } from 'element-plus';
-import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask';
+import {
+    postCreateCharacter,
+    isCreateCharacterResponseOk,
+    resolveGenerationImageUrl
+} from '@/utils/createCharacterTask';
 
 export default {
     name: 'CreateCharacter',
@@ -632,9 +636,9 @@ export default {
                     // 显示成功消息
                     ElMessage.success(this.$t('createCharacter.characterCreateSuccess'));
                     
-                    // 优先使用 image_url，其次使用 character_image_url，最后使用 base64
-                    if (result.image_url) {
-                        this.resultImageUrl = result.image_url;
+                    const taskImage = resolveGenerationImageUrl(result, this.apiBaseUrl);
+                    if (taskImage) {
+                        this.resultImageUrl = taskImage;
                     } else if (result.character_image_url) {
                         this.resultImageUrl = result.character_image_url;
                     } else if (result.image_base64) {

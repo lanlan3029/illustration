@@ -187,7 +187,11 @@ import { getCurrentInstance, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { Download, Edit, DocumentCopy, Reading } from '@element-plus/icons-vue'
-import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
+import {
+    postCreateCharacter,
+    isCreateCharacterResponseOk,
+    resolveGenerationImageUrl
+} from '@/utils/createCharacterTask'
 
 
 export default {
@@ -667,20 +671,19 @@ export default {
                             })
                         }
                         
-                        // 提取图片URL，优先使用 image_url，其次使用 character_image_url，最后使用 base64
-                        let imageUrl = null
-                        if (result.image_url) {
-                            imageUrl = result.image_url
-                        } else if (result.character_image_url) {
+                        let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
+                        if (!imageUrl && result.character_image_url) {
                             imageUrl = result.character_image_url
-                        } else if (result.image_base64) {
+                        }
+                        if (!imageUrl && result.image_base64) {
                             let base64Str = result.image_base64.trim()
                             if (!base64Str.startsWith('data:')) {
                                 base64Str = base64Str.replace(/\s/g, '')
                                 base64Str = `data:image/jpeg;base64,${base64Str}`
                             }
                             imageUrl = base64Str
-                        } else if (result.character_image_base64) {
+                        }
+                        if (!imageUrl && result.character_image_base64) {
                             let base64Str = result.character_image_base64.trim()
                             if (!base64Str.startsWith('data:')) {
                                 base64Str = base64Str.replace(/\s/g, '')

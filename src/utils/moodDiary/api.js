@@ -4,7 +4,11 @@ import { getMoodApiConfig, resolveApiUrl } from './config'
 import { resolvePictureUploadBlob, compressDataUrlForUpload } from './posterUpload'
 import { parseMoodFromIllItem } from './moodIllPersist'
 import { findMoodById } from './moodAssets'
-import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
+import {
+  postCreateCharacter,
+  isCreateCharacterResponseOk,
+  resolveGenerationImageUrl
+} from '@/utils/createCharacterTask'
 
 function unwrapData(res) {
   const d = res && res.data !== undefined ? res.data : res
@@ -616,7 +620,9 @@ export async function createCharacterIllustration(payload) {
   }
 
   const msg = data.message
-  let imageUrl = msg.image_url || msg.character_image_url || msg.image || msg.url || ''
+  const apiRoot = process.env.VUE_APP_API_BASE_URL || ''
+  let imageUrl = resolveGenerationImageUrl(msg, apiRoot ? apiRoot.replace(/\/$/, '') : undefined)
+  if (!imageUrl) imageUrl = msg.character_image_url || msg.image || msg.url || ''
   if (!imageUrl && msg.image_base64) {
     imageUrl = msg.image_base64.startsWith('data:')
       ? msg.image_base64
