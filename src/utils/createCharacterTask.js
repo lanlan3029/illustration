@@ -67,12 +67,42 @@ function resolveApiUrl(apiBaseUrl) {
   return apiBaseUrl ? `${apiBaseUrl}/create-character` : '/create-character'
 }
 
+/** 轮询响应里是否已带可展示的图片结果 */
+export function pollMessageHasImage(message) {
+  if (!message || typeof message !== 'object') return false
+  if (message.image_base64 || message.character_image_base64) return true
+  if (message.image_url || message.character_image_url || message.image || message.url) return true
+  const first = message.full_response && message.full_response.data && message.full_response.data[0]
+  if (first && (first.b64_json || first.url)) return true
+  return false
+}
+
+/**
+ * 任务是否应视为已完成。
+ * 后端可能用 succeeded / completed / done，或在 status 仍为 running/pending 时已写入图片字段。
+ */
+export function isPollTaskComplete(message) {
+  if (!message) return false
+  const status = String(message.status || '').toLowerCase()
+  if (['succeeded', 'completed', 'done', 'success', 'finished'].includes(status)) {
+    return true
+  }
+  return pollMessageHasImage(message)
+}
+
+/** 任务是否已失败 */
+export function isPollTaskFailed(message) {
+  if (!message) return false
+  const status = String(message.status || '').toLowerCase()
+  return status === 'failed' || status === 'error' || status === 'cancelled' || status === 'canceled'
+}
+
 /**
  * 轮询异步生图任务，直到成功/失败。
  * 成功时归一化为与同步一致的响应结构 { code, desc, message }。
  */
 export async function pollCreateCharacterTask(http, taskId, opts = {}) {
-  const baseInterval = opts.pollIntervalMs || 2000
+  const baseInterval = opts.pollIntervalMs || 5000
   const apiBaseUrl = opts.apiBaseUrl
   const maxWaitMs = opts.maxWaitMs || POLL_MAX_WAIT_MS
   const taskUrl = apiBaseUrl
@@ -108,10 +138,10 @@ export async function pollCreateCharacterTask(http, taskId, opts = {}) {
       await sleep(baseInterval)
       continue
     }
-    if (m.status === 'succeeded') {
+    if (isPollTaskComplete(m)) {
       return { code: 0, desc: 'success', message: m }
     }
-    if (m.status === 'failed') {
+    if (isPollTaskFailed(m)) {
       throw new Error(m.error || '生成失败，请重试')
     }
     await sleep(m.retry_after_ms || baseInterval)
@@ -125,6 +155,10 @@ export async function resolveCreateCharacterResult(http, responseData, opts = {}
   const envelope = responseData && responseData.message
   if (!(envelope && envelope.async && envelope.task_id)) {
     return responseData
+  }
+  // 提交响应里已带图（快速完成或同步字段混入异步信封），无需再轮询
+  if (isPollTaskComplete(envelope)) {
+    return { code: 0, desc: 'success', message: envelope }
   }
   return pollCreateCharacterTask(http, envelope.task_id, {
     pollIntervalMs: envelope.poll_interval_ms,
