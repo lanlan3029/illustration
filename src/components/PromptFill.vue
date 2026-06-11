@@ -41,38 +41,83 @@
          
             </div>
             <div class="var-control">
-              <!-- 输入框（始终显示，与选中值绑定） -->
-              <el-input
-                v-model="varValues[varItem.key]"
-                :placeholder="$t('promptFill.enterOrSelect', { label: getVarLabel(varItem.name) })"
-                size="small"
-                class="var-input"
-                @input="onInputChange(varItem, $event)"
-                @blur="onInputBlur(varItem)">
-                <template #append>
-                  <el-button 
-                    v-if="varValues[varItem.key]"
-                    @click="clearVarValue(varItem)"
-                    size="small">
-                    <i class="el-icon-close"></i>
+              <!-- 风格：缩略图选择，选中后只显示选中项，可重新选择 -->
+              <template v-if="varItem.name === 'art_style'">
+                <div class="style-thumb-grid">
+                  <template v-if="varValues[varItem.key]">
+                    <div class="style-thumb-card is-selected">
+                      <div class="style-thumb-imgwrap">
+                        <img
+                          v-if="getStyleImage(varValues[varItem.key])"
+                          :src="getStyleImage(varValues[varItem.key])"
+                          :alt="varValues[varItem.key]"
+                          class="style-thumb-img" />
+                        <div v-else class="style-thumb-fallback"></div>
+                      </div>
+                      <span class="style-thumb-name">{{ getTranslatedOption('art_style', varValues[varItem.key]) }}</span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div
+                      v-for="option in getVarOptions('art_style')"
+                      :key="option"
+                      class="style-thumb-card"
+                      @click="selectOption(varItem, option)">
+                      <div class="style-thumb-imgwrap">
+                        <img
+                          v-if="getStyleImage(option)"
+                          :src="getStyleImage(option)"
+                          :alt="option"
+                          class="style-thumb-img"
+                          loading="lazy" />
+                        <div v-else class="style-thumb-fallback"></div>
+                      </div>
+                      <span class="style-thumb-name">{{ getTranslatedOption('art_style', option) }}</span>
+                    </div>
+                  </template>
+                </div>
+                <div v-if="varValues[varItem.key]" class="style-reselect-row">
+                  <el-button type="primary" text size="small" @click="clearVarValue(varItem)">
+                    <i class="el-icon-refresh-left"></i> {{ $t('promptFill.reselectStyle') }}
                   </el-button>
-                </template>
-              </el-input>
-              
-              <!-- 选项标签列表 -->
-              <div class="options-tags">
-                <el-tag
-                  v-for="option in getVarOptions(varItem.name)"
-                  :key="option"
-                  :type="getTagType(varItem.name)"
+                </div>
+              </template>
+
+              <!-- 其它变量：输入框 + 选项标签 -->
+              <template v-else>
+                <!-- 输入框（始终显示，与选中值绑定） -->
+                <el-input
+                  v-model="varValues[varItem.key]"
+                  :placeholder="$t('promptFill.enterOrSelect', { label: getVarLabel(varItem.name) })"
                   size="small"
-                  class="option-tag"
-                  :class="{ 'tag-selected': varValues[varItem.key] === option }"
-                  @click="selectOption(varItem, option)"
-                  effect="plain">
-                  {{ getTranslatedOption(varItem.name, option) }}
-                </el-tag>
-              </div>
+                  class="var-input"
+                  @input="onInputChange(varItem, $event)"
+                  @blur="onInputBlur(varItem)">
+                  <template #append>
+                    <el-button 
+                      v-if="varValues[varItem.key]"
+                      @click="clearVarValue(varItem)"
+                      size="small">
+                      <i class="el-icon-close"></i>
+                    </el-button>
+                  </template>
+                </el-input>
+                
+                <!-- 选项标签列表 -->
+                <div class="options-tags">
+                  <el-tag
+                    v-for="option in getVarOptions(varItem.name)"
+                    :key="option"
+                    :type="getTagType(varItem.name)"
+                    size="small"
+                    class="option-tag"
+                    :class="{ 'tag-selected': varValues[varItem.key] === option }"
+                    @click="selectOption(varItem, option)"
+                    effect="plain">
+                    {{ getTranslatedOption(varItem.name, option) }}
+                  </el-tag>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -92,19 +137,52 @@
       </div>
       <!-- 风格选择（简单描述模式下只显示风格） -->
       <div class="style-select-section">
-        <div class="style-label">{{ $t('promptFill.styleSelection') }}</div>
-        <div class="style-tags">
-          <el-tag
+        <div class="style-select-head">
+          <div class="style-label">{{ $t('promptFill.styleSelection') }}</div>
+          <el-button
+            v-if="selectedArtStyle"
+            type="primary"
+            text
+            size="small"
+            class="style-reselect-btn"
+            @click="clearStyleOption">
+            <i class="el-icon-refresh-left"></i> {{ $t('promptFill.reselectStyle') }}
+          </el-button>
+        </div>
+
+        <!-- 已选中：只显示选中的风格 -->
+        <div v-if="selectedArtStyle" class="style-thumb-grid">
+          <div class="style-thumb-card is-selected">
+            <div class="style-thumb-imgwrap">
+              <img
+                v-if="getStyleImage(selectedArtStyle)"
+                :src="getStyleImage(selectedArtStyle)"
+                :alt="selectedArtStyle"
+                class="style-thumb-img" />
+              <div v-else class="style-thumb-fallback"></div>
+            </div>
+            <span class="style-thumb-name">{{ getTranslatedOption('art_style', selectedArtStyle) }}</span>
+          </div>
+        </div>
+
+        <!-- 未选中：显示带缩略图的风格网格 -->
+        <div v-else class="style-thumb-grid">
+          <div
             v-for="option in getVarOptions('art_style')"
             :key="option"
-            type="success"
-            size="small"
-            class="option-tag"
-            :class="{ 'tag-selected': varValues['art_style-0'] === option }"
-            @click="selectStyleOption(option)"
-            effect="plain">
-            {{ getTranslatedOption('art_style', option) }}
-          </el-tag>
+            class="style-thumb-card"
+            @click="selectStyleOption(option)">
+            <div class="style-thumb-imgwrap">
+              <img
+                v-if="getStyleImage(option)"
+                :src="getStyleImage(option)"
+                :alt="option"
+                class="style-thumb-img"
+                loading="lazy" />
+              <div v-else class="style-thumb-fallback"></div>
+            </div>
+            <span class="style-thumb-name">{{ getTranslatedOption('art_style', option) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -139,6 +217,52 @@
 import { parseTemplate, renderTemplate } from '@/prompt-core/parseTemplate';
 import { mapState, mapGetters, mapActions } from 'vuex';
 import { ElMessage } from 'element-plus';
+
+// 风格中文名 -> 风格 key（与 Home.vue / AIpicture.vue 一致）
+const STYLE_NAME_TO_KEY = {
+  '治愈系水彩': 'healingWatercolor',
+  '钢笔线稿插画': 'penLineArt',
+  '极简波普风': 'minimalPopArt',
+  '梦幻童话风格': 'colorfulOutlineRomanticism',
+  '蜡笔噪点手绘': 'crayonNoiseHandDrawn',
+  '复古绘本草图': 'vintageSketch',
+  '皮克斯风格动画': 'pixarStyle',
+  '凹版印刷线条': 'engravingLines',
+  '铅笔素描3D图': 'pencilSketch3D',
+  '薄片毛毡拼贴画': 'feltCollage',
+  '拼贴风格插画': 'collageIllustration',
+  '绘本涂鸦/灵魂画手': 'doodleSoul',
+  '抽象平面设计': 'abstractFlatDesign',
+  '简洁卡通插画': 'simpleCartoon',
+  '油画风格': 'oilPainting',
+  '黑白涂鸦风': 'blackWhiteDoodle',
+  '质朴手绘风格': 'rusticHandDrawn',
+  '极繁铜版印刷': 'maximalistCopperplate',
+  'Keith Haring 涂鸦': 'keithHaringDoodle'
+};
+
+// 风格 key -> 缩略图编号（@/assets/prompt/{n}.webp）
+const STYLE_KEY_TO_NUM = {
+  penLineArt: 1,
+  blackWhiteDoodle: 2,
+  minimalPopArt: 3,
+  collageIllustration: 4,
+  pixarStyle: 5,
+  colorfulOutlineRomanticism: 6,
+  engravingLines: 7,
+  rusticHandDrawn: 8,
+  maximalistCopperplate: 9,
+  doodleSoul: 10,
+  keithHaringDoodle: 11,
+  abstractFlatDesign: 12,
+  simpleCartoon: 13,
+  healingWatercolor: 14,
+  crayonNoiseHandDrawn: 15,
+  pencilSketch3D: 16,
+  vintageSketch: 17,
+  feltCollage: 18,
+  oilPainting: 19
+};
 
 export default {
   name: 'PromptFill',
@@ -300,6 +424,11 @@ export default {
       }
     },
     
+    // 当前已选中的风格（中文名）
+    selectedArtStyle() {
+      return this.varValues['art_style-0'] || this.$store.getters['prompt/selection']('art_style') || '';
+    },
+
     // 仅系统模板（从 constants.js 导入的）
     systemTemplatesOnly() {
       // 从 INITIAL_TEMPLATES_CONFIG 获取系统模板 ID
@@ -759,6 +888,30 @@ export default {
       this.$emit('input', this.finalPrompt);
       this.$emit('update:modelValue', this.finalPrompt);
     },
+
+    // 清空已选风格，重新选择
+    clearStyleOption() {
+      this.varValues['art_style-0'] = '';
+      this.$store.commit('prompt/setSelection', { key: 'art_style', value: '' });
+      this.$nextTick(() => {
+        this.$emit('input', this.finalPrompt);
+        this.$emit('update:modelValue', this.finalPrompt);
+      });
+    },
+
+    // 根据风格中文名获取缩略图
+    getStyleImage(name) {
+      if (!name) return '';
+      const key = STYLE_NAME_TO_KEY[name.trim()];
+      if (!key) return '';
+      const num = STYLE_KEY_TO_NUM[key];
+      if (!num) return '';
+      try {
+        return require(`@/assets/prompt/${num}.webp`);
+      } catch (e) {
+        return '';
+      }
+    },
     
     handleTemplateAction(command) {
       if (command === 'clear') {
@@ -1087,5 +1240,90 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* 风格缩略图选择器 */
+.style-select-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.style-select-head .style-label {
+  margin-bottom: 0;
+}
+
+.style-reselect-btn {
+  padding: 0 4px;
+}
+
+.style-reselect-row {
+  margin-top: 10px;
+}
+
+.style-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.style-thumb-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border: 1px solid #e4e7ed;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.style-thumb-card:hover {
+  border-color: #8167a9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px -8px rgba(129, 103, 169, 0.5);
+}
+
+.style-thumb-card.is-selected {
+  cursor: default;
+  border-color: #8167a9;
+  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.25);
+  max-width: 150px;
+}
+
+.style-thumb-card.is-selected:hover {
+  transform: none;
+}
+
+.style-thumb-imgwrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f0f1f6;
+}
+
+.style-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.style-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #eef0f5, #e2e5ee);
+}
+
+.style-thumb-name {
+  display: block;
+  padding: 6px;
+  font-size: 12px;
+  color: #303133;
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

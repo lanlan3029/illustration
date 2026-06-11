@@ -587,7 +587,10 @@
     "createIllustrationDesc": "元素组合、文字添加",
     "createLayoutIllustrationDesc": "使用布局编辑器把控创作",
     "composeBookDesc": "将插画合成为绘本",
-    "moodDiaryDesc": "记录心情，生成专属绘本"
+    "moodDiaryDesc": "记录心情，生成专属绘本",
+    "startCreating": "开始创作",
+    "stylesTitle": "丰富的插画风格",
+    "stylesSubtitle": "一键切换多种艺术风格，让每个故事都独一无二"
   },
   "aibooks": {
     "title": "创作绘本",
@@ -749,18 +752,7 @@
     "styleTabSketch": "线稿手绘",
     "styleTabPaint": "色彩综合",
     "styleTabToon": "卡通 / 3D",
-    "styleSourceIllustration": "插画风格",
-    "styleSourcePromptPack": "提示词合集",
-    "inspirationType": "灵感类型",
-    "illustrationSubTabs": "插画子分类",
-    "promptCategoryTabs": "提示词场景",
-    "currentPack": "当前提示词",
-    "clearPack": "仅清除",
-    "packAttribution": "提示词与预览图整理自 GitHub 开源项目 awesome-gptimage2，版权归原作者。",
-    "styleSourceOai": "创意模板",
-    "currentOaiTemplate": "创意模板",
-    "clearOai": "仅清除",
-    "oaiTemplateHint": "多数模板需先上传参考图（工具栏「+」）；纯文生图可用「超写实壁纸」等条目。"
+    "illustrationSubTabs": "插画子分类"
   },
   "upload": {
     "title": "上传内容",
@@ -1188,6 +1180,7 @@
     "enterOrSelect": "请输入或选择{label}",
     "enterCharacterDescription": "请输入角色描述（如：穿背带裤的小男孩，开心地笑着）",
     "styleSelection": "风格选择：",
+    "reselectStyle": "重新选择",
     "finalPromptPreview": "最终提示词预览：",
     "copy": "复制",
     "pleaseComplete": "请完成上方各项填写",

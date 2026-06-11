@@ -572,7 +572,10 @@
     "createIllustrationDesc": "Freely create illustration works",
     "createLayoutIllustrationDesc": "Create multi-character illustrations with layout editor",
     "composeBookDesc": "Compose illustrations into storybooks",
-    "moodDiaryDesc": "Record your mood and turn it into a storybook"
+    "moodDiaryDesc": "Record your mood and turn it into a storybook",
+    "startCreating": "Start Creating",
+    "stylesTitle": "Rich Illustration Styles",
+    "stylesSubtitle": "Switch between art styles in one click — make every story unique"
   },
   "aibooks": {
     "title": "Create Picture Book",
@@ -734,18 +737,7 @@
     "styleTabSketch": "Sketch & line art",
     "styleTabPaint": "Paint & color",
     "styleTabToon": "Cartoon / 3D",
-    "styleSourceIllustration": "Illustration styles",
-    "styleSourcePromptPack": "Prompt pack",
-    "inspirationType": "Inspiration type",
-    "illustrationSubTabs": "Illustration categories",
-    "promptCategoryTabs": "Prompt topics",
-    "currentPack": "Current prompt",
-    "clearPack": "Clear",
-    "packAttribution": "Prompts and previews are from the open-source project awesome-gptimage2 (GitHub). Thanks to the original authors.",
-    "styleSourceOai": "Creative templates",
-    "currentOaiTemplate": "Template",
-    "clearOai": "Clear",
-    "oaiTemplateHint": "Most presets expect a reference photo (use + in the toolbar). A few are prompt-only (e.g. hyper-real macro)."
+    "illustrationSubTabs": "Illustration categories"
   },
   "upload": {
     "title": "Upload Content",
@@ -1173,6 +1165,7 @@
     "enterOrSelect": "Please enter or select {label}",
     "enterCharacterDescription": "Please enter character description (e.g., a little boy in overalls, smiling happily)",
     "styleSelection": "Style Selection:",
+    "reselectStyle": "Reselect",
     "finalPromptPreview": "Final Prompt Preview:",
     "copy": "Copy",
     "pleaseComplete": "Please complete the fields above",

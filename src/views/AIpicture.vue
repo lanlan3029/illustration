@@ -14,23 +14,7 @@
                             </div>
                         </div>
 
-                        <div class="style-source-row" role="tablist" :aria-label="$t('aiPicture.inspirationType') || '灵感类型'">
-                            <button
-                                v-for="tab in sourceTabItems"
-                                :key="tab.id"
-                                type="button"
-                                class="style-source-tab"
-                                :class="{ active: inspirationSource === tab.id }"
-                                role="tab"
-                                :aria-selected="inspirationSource === tab.id"
-                                @click="setInspirationSource(tab.id)"
-                            >
-                                {{ tab.label }}
-                            </button>
-                        </div>
-
                         <div
-                            v-show="inspirationSource === 'illustration'"
                             class="style-tab-row"
                             role="tablist"
                             :aria-label="$t('aiPicture.illustrationSubTabs') || '插画分类'">
@@ -48,94 +32,36 @@
                             </button>
                         </div>
 
-                        <div
-                            v-show="inspirationSource === 'promptPack'"
-                            class="style-tab-row style-tab-row--pack"
-                            role="tablist"
-                            :aria-label="$t('aiPicture.promptCategoryTabs') || '提示词分类'">
-                            <button
-                                v-for="tab in promptCategoryTabItems"
-                                :key="tab.id"
-                                type="button"
-                                class="style-tab"
-                                :class="{ active: activePromptCategory === tab.id }"
-                                role="tab"
-                                :aria-selected="activePromptCategory === tab.id"
-                                @click="setPromptCategory(tab.id)"
-                            >
-                                {{ tab.label }}
-                            </button>
-                        </div>
-
-                        <p v-if="inspirationSource === 'promptPack'" class="pack-attrib">
-                            {{ $t('aiPicture.packAttribution') }}
-                        </p>
-                        <p v-if="inspirationSource === 'oaiTemplate'" class="pack-attrib oai-hint">
-                            {{ $t('aiPicture.oaiTemplateHint') }}
-                        </p>
-
                         <div class="style-list" ref="styleListRef">
-                            <template v-if="inspirationSource === 'illustration'">
-                                <button
-                                    v-for="style in displayedStyles"
-                                    :key="style.id"
-                                    type="button"
-                                    class="style-list-item"
-                                    :class="{ selected: selectedStyleId === style.id }"
-                                    @click="selectStyle(style.id)"
+                            <button
+                                v-for="style in displayedStyles"
+                                :key="'style-' + style.id"
+                                type="button"
+                                class="style-list-item"
+                                :class="{ selected: selectedStyleId === style.id }"
+                                @click="selectStyle(style.id)"
+                            >
+                                <div
+                                    class="style-list-item-thumb"
+                                    @mouseenter="enterStylePreview($event, style.image, style.artStyle)"
+                                    @mouseleave="beginLeaveStylePreview"
                                 >
-                                    <div
-                                        class="style-list-item-thumb"
-                                        @mouseenter="enterStylePreview($event, style.image, style.artStyle)"
-                                        @mouseleave="beginLeaveStylePreview"
-                                    >
-                                        <img
-                                            :src="style.image"
-                                            :alt="style.artStyle"
-                                            class="style-list-item-img"
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <span class="style-list-item-text">{{ style.artStyle }}</span>
-                                </button>
-                            </template>
-                            <template v-else-if="inspirationSource === 'promptPack'">
-                                <button
-                                    v-for="item in displayedPackItems"
-                                    :key="item.id"
-                                    type="button"
-                                    class="style-list-item style-list-item--pack"
-                                    :class="{ selected: selectedPackItemId === item.id }"
-                                    @click="selectPackItem(item)"
-                                >
-                                    <div
-                                        v-if="item.image"
-                                        class="style-list-item-thumb"
-                                        @mouseenter="enterStylePreview($event, item.image, packItemDisplayTitle(item))"
-                                        @mouseleave="beginLeaveStylePreview"
-                                    >
-                                        <img
-                                            :src="item.image"
-                                            :alt="packItemDisplayTitle(item)"
-                                            class="style-list-item-img"
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <div
-                                        v-else
-                                        class="style-list-item-thumb"
-                                    >
-                                        <div class="style-list-item-img style-list-item-fallback" aria-hidden="true" />
-                                    </div>
-                                    <span class="style-list-item-text">{{ packItemDisplayTitle(item) }}</span>
-                                </button>
-                            </template>
-                            <template v-else>
+                                    <img
+                                        :src="style.image"
+                                        :alt="style.artStyle"
+                                        class="style-list-item-img"
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <span class="style-list-item-text">{{ style.artStyle }}</span>
+                            </button>
+
+                            <template v-if="activeIllustrationTab === 'all'">
                                 <button
                                     v-for="item in displayedOaiItems"
-                                    :key="item.id"
+                                    :key="'oai-' + item.id"
                                     type="button"
-                                    class="style-list-item style-list-item--oai"
+                                    class="style-list-item"
                                     :class="{ selected: selectedOaiTemplateId === item.id }"
                                     :title="item.description || item.title"
                                     @click="selectOaiTemplate(item)"
@@ -153,16 +79,10 @@
                                             loading="lazy"
                                         />
                                     </div>
-                                    <div
-                                        v-else
-                                        class="style-list-item-thumb"
-                                    >
+                                    <div v-else class="style-list-item-thumb">
                                         <div class="style-list-item-img style-list-item-fallback" aria-hidden="true" />
                                     </div>
-                                    <div class="style-list-item-body">
-                                        <span class="style-list-item-text">{{ item.title }}</span>
-                                        <span v-if="item.description" class="style-list-item-desc">{{ item.description }}</span>
-                                    </div>
+                                    <span class="style-list-item-text">{{ item.title }}</span>
                                 </button>
                             </template>
                         </div>
@@ -442,7 +362,6 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
-import gptimage2Data from '@/data/gptimage2Prompts.json'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
@@ -479,12 +398,6 @@ export default {
         return {
             selectedStyleId: null,
             activeIllustrationTab: 'all',
-            inspirationSource: 'illustration',
-            activePromptCategory: 'ecommerce',
-            selectedPackItemId: null,
-            displayOrderPack: [],
-            packCategories: gptimage2Data.categories,
-            packItems: gptimage2Data.items,
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
             displayOrderOai: [],
@@ -538,13 +451,6 @@ export default {
             if (this.selectedStyleId == null) return null
             return this.styles.find(s => s.id === this.selectedStyleId) || null
         },
-        sourceTabItems() {
-            return [
-                { id: 'illustration', label: this.$t('aiPicture.styleSourceIllustration') || '插画风格' },
-                { id: 'promptPack', label: this.$t('aiPicture.styleSourcePromptPack') || '提示词合集' },
-                { id: 'oaiTemplate', label: this.$t('aiPicture.styleSourceOai') || '创意模板' }
-            ]
-        },
         selectedOaiItem() {
             if (!this.selectedOaiTemplateId) return null
             return this.oaiItems.find((x) => x.id === this.selectedOaiTemplateId) || null
@@ -570,29 +476,9 @@ export default {
                 { id: 'toon', label: this.$t('aiPicture.styleTabToon') || '卡通 / 3D' }
             ]
         },
-        promptCategoryTabItems() {
-            return this.packCategories.map(c => ({ id: c.id, label: c.name }))
-        },
-        selectedPackItem() {
-            if (!this.selectedPackItemId) return null
-            return this.packItems.find(p => p.id === this.selectedPackItemId) || null
-        },
         visibleStyles() {
             if (this.activeIllustrationTab === 'all') return this.styles
             return this.styles.filter(s => s.category === this.activeIllustrationTab)
-        },
-        visiblePackItems() {
-            return this.packItems.filter(p => p.categoryId === this.activePromptCategory)
-        },
-        displayedPackItems() {
-            const vis = this.visiblePackItems
-            const inTab = new Set(vis.map(p => p.id))
-            if (!this.displayOrderPack || !this.displayOrderPack.length) {
-                return vis
-            }
-            return this.displayOrderPack
-                .map(id => this.packItems.find(p => p.id === id))
-                .filter(p => p && inTab.has(p.id))
         },
         canGenerate() {
             return !!(this.subjectScene && this.subjectScene.trim())
@@ -708,27 +594,6 @@ export default {
         this.stylePreview.show = false
     },
     methods: {
-        setInspirationSource(src) {
-            if (this.inspirationSource === src) return
-            this.inspirationSource = src
-            this.displayOrder = []
-            this.displayOrderPack = []
-            this.displayOrderOai = []
-            if (src === 'illustration') {
-                this.selectedPackItemId = null
-                this.selectedOaiTemplateId = null
-            } else if (src === 'promptPack') {
-                this.selectedStyleId = null
-                this.selectedOaiTemplateId = null
-            } else {
-                this.selectedStyleId = null
-                this.selectedPackItemId = null
-            }
-            this.$nextTick(() => {
-                const list = this.$refs.styleListRef
-                if (list) list.scrollTo({ top: 0, behavior: 'auto' })
-            })
-        },
         setIllustrationTab(tabId) {
             if (this.activeIllustrationTab === tabId) return
             this.activeIllustrationTab = tabId
@@ -738,16 +603,6 @@ export default {
                 if (list) list.scrollTo({ top: 0, behavior: 'auto' })
             })
         },
-        setPromptCategory(catId) {
-            if (this.activePromptCategory === catId) return
-            this.activePromptCategory = catId
-            this.displayOrderPack = []
-            this.$nextTick(() => {
-                const list = this.$refs.styleListRef
-                if (list) list.scrollTo({ top: 0, behavior: 'auto' })
-            })
-        },
-
         applyStylePromptToInput(style) {
             if (!style) return
             const parts = [style.artStyle, style.elementDetails].filter(p => p && String(p).trim())
@@ -757,18 +612,13 @@ export default {
         clearSelectedStyle() {
             this.selectedStyleId = null
         },
-        clearSelectedPack() {
-            this.selectedPackItemId = null
-        },
         clearSelectedOai() {
             this.selectedOaiTemplateId = null
         },
 
         selectStyle(styleId) {
             this.selectedStyleId = styleId
-            this.selectedPackItemId = null
             this.selectedOaiTemplateId = null
-            this.inspirationSource = 'illustration'
             const style = this.styles.find(s => s.id === styleId)
             if (style) {
                 this.editableArtStyle = style.artStyle
@@ -776,25 +626,11 @@ export default {
                 this.applyStylePromptToInput(style)
             }
         },
-        selectPackItem(item) {
-            if (!item) return
-            this.selectedPackItemId = item.id
-            this.selectedStyleId = null
-            this.selectedOaiTemplateId = null
-            this.inspirationSource = 'promptPack'
-            this.subjectScene = (item.prompt || '').trim()
-        },
         selectOaiTemplate(item) {
             if (!item) return
             this.selectedOaiTemplateId = item.id
             this.selectedStyleId = null
-            this.selectedPackItemId = null
-            this.inspirationSource = 'oaiTemplate'
             this.subjectScene = (item.prompt || '').trim()
-        },
-        packItemDisplayTitle(item) {
-            if (!item || !item.title) return ''
-            return String(item.title).replace(/^\d+\.\d+\s*/, '')
         },
 
         toggleSizeMenu() {
@@ -977,27 +813,16 @@ export default {
         },
 
         shuffleStyles() {
-            if (this.inspirationSource === 'illustration') {
-                const arr = this.visibleStyles.map(s => s.id)
+            const shuffle = (arr) => {
                 for (let i = arr.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1))
                     ;[arr[i], arr[j]] = [arr[j], arr[i]]
                 }
-                this.displayOrder = arr
-            } else if (this.inspirationSource === 'promptPack') {
-                const arr = this.visiblePackItems.map(p => p.id)
-                for (let i = arr.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1))
-                    ;[arr[i], arr[j]] = [arr[j], arr[i]]
-                }
-                this.displayOrderPack = arr
-            } else {
-                const arr = this.visibleOaiItems.map(x => x.id)
-                for (let i = arr.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1))
-                    ;[arr[i], arr[j]] = [arr[j], arr[i]]
-                }
-                this.displayOrderOai = arr
+                return arr
+            }
+            this.displayOrder = shuffle(this.visibleStyles.map(s => s.id))
+            if (this.activeIllustrationTab === 'all') {
+                this.displayOrderOai = shuffle(this.visibleOaiItems.map(x => x.id))
             }
             this.$nextTick(() => {
                 const list = this.$refs.styleListRef
@@ -1333,7 +1158,6 @@ export default {
                     url: imageUrl,
                     prompt: this.lastGeneratedPromptSnapshot || this.generatedPrompt || '',
                     artStyle: this.selectedStyle?.artStyle
-                        || (this.selectedPackItem ? this.packItemDisplayTitle(this.selectedPackItem) : '')
                         || (this.selectedOaiItem ? this.selectedOaiItem.title : '')
                         || '',
                     timestamp: Date.now()
@@ -1347,7 +1171,6 @@ export default {
                         url: imageUrl,
                         prompt: this.lastGeneratedPromptSnapshot || this.generatedPrompt || '',
                         artStyle: this.selectedStyle?.artStyle
-                            || (this.selectedPackItem ? this.packItemDisplayTitle(this.selectedPackItem) : '')
                             || (this.selectedOaiItem ? this.selectedOaiItem.title : '')
                             || '',
                         timestamp: Date.now()
@@ -1908,60 +1731,6 @@ export default {
     font-weight: 500;
 }
 
-.style-source-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 4px;
-}
-
-.style-source-tab {
-    border: 1px solid #d8dbe0;
-    background: #fafbfc;
-    color: #3c4043;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 18px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.style-source-tab:hover {
-    border-color: #b8b3e8;
-    background: #f3f0ff;
-}
-
-.style-source-tab.active {
-    background: #8167a9;
-    border-color: #8167a9;
-    color: #fff;
-}
-
-.style-tab-row--pack {
-    max-height: none;
-}
-
-.style-tab-row--pack .style-tab {
-    font-size: 12px;
-    padding: 5px 10px;
-}
-
-.pack-attrib {
-    margin: 0 0 4px;
-    font-size: 11px;
-    color: #9aa0a6;
-    line-height: 1.4;
-}
-
-.style-list-item--pack .style-list-item-text {
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
 .style-item-fallback,
 .selected-style-thumb--empty {
     background: linear-gradient(145deg, #eceef2 0%, #e0e3ea 100%);
@@ -2132,20 +1901,6 @@ export default {
     display: block;
 }
 
-.style-list-item-body {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-    width: 100%;
-    align-items: center;
-    text-align: center;
-}
-
-.style-list-item--oai .style-list-item-desc {
-    display: none;
-}
-
 .style-list-item-text {
     font-size: 11px;
     line-height: 1.4;
@@ -2154,24 +1909,6 @@ export default {
     min-width: 0;
     width: 100%;
     text-align: center;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.style-list-item--oai .style-list-item-text {
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.style-list-item-desc {
-    font-size: 11px;
-    line-height: 1.3;
-    color: #6b7280;
-    text-align: center;
-    width: 100%;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
