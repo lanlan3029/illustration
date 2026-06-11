@@ -187,7 +187,7 @@ import { getCurrentInstance, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { Download, Edit, DocumentCopy, Reading } from '@element-plus/icons-vue'
-import { postCreateCharacter } from '@/utils/createCharacterTask'
+import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 
 
 export default {
@@ -652,22 +652,12 @@ export default {
                         throw new Error(`生成图片失败: ${errorMsg}`)
                     }
                     
-                    // 判断成功状态：code === 0 或 desc === 'success'
-                    const isSuccess = (responseData.code === 0 || responseData.code === '0') 
-                        || responseData.desc === 'success' 
-                        || responseData.statuscode === 'success'
-                    
-                    if (!isSuccess) {
-                        const errorMsg = responseData.desc || responseData.message || `code: ${responseData.code}`
+                    if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
+                        const errorMsg = responseData.desc || responseData.message?.error || `code: ${responseData.code}`
                         throw new Error(`生成图片失败: ${errorMsg}`)
                     }
-                    
-                    if (!responseData.message) {
-                        throw new Error('API响应中未找到message字段')
-                    }
-                    
-                    if (isSuccess && responseData.message) {
-                        const result = responseData.message
+
+                    const result = responseData.message
                         
                         // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
                         if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
@@ -735,9 +725,6 @@ export default {
                             console.error(errorMsg, result)
                             throw new Error(errorMsg)
                         }
-                    } else {
-                        throw new Error(responseData.message || responseData.desc || '图片生成失败')
-                    }
                 } catch (error) {
                     console.error(`生成第 ${i + 1} 张图片失败:`, error)
                     let errorMessage = '图片生成失败'

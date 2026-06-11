@@ -1,9 +1,10 @@
 // 统一处理 /create-character 的异步任务模式。
 //
+// 成功判定：只读 res.data.message（不用外层 statuscode / desc 判断任务是否完成）
+//   - message.status ∈ succeeded | completed | done | success
+//   - 或 message 中已有 image_base64 / image_url
+//
 // 生产建议：默认异步（短 POST + 轮询），同步仅作 sync: true 兼容兜底。
-//   异步：提交 60s、单次轮询 15s、总等待 180～240s（轮询计数，非长连接）
-//   上游生图 ~120s 体现在 estimated_wait_sec 与轮询总时长，而非 POST 超时
-//   同步兜底：带参考图 POST 130～150s；纯文 320s+
 
 /** 异步提交：只等任务受理（202），不等上游生图完成 */
 export const ASYNC_SUBMIT_TIMEOUT_MS = 60000
@@ -11,23 +12,25 @@ export const ASYNC_SUBMIT_TIMEOUT_MS = 60000
 /** 单次轮询请求超时 */
 export const POLL_REQUEST_TIMEOUT_MS = 15000
 
-/** 轮询总等待下限（上游 ~120s + 缓冲） */
+/** 轮询总等待下限 */
 export const POLL_MIN_WAIT_MS = 180000
 
 /** 轮询总等待上限 */
 export const POLL_MAX_WAIT_MS = 240000
 
-/** 同步兜底：带参考图 POST 超时（130～150s 取中值） */
+/** 同步兜底：带参考图 POST 超时 */
 export const SYNC_POST_TIMEOUT_WITH_REFS_MS = 140000
 
-/** 同步兜底：纯文 POST 超时（320s+） */
+/** 同步兜底：纯文 POST 超时 */
 export const SYNC_POST_TIMEOUT_TEXT_ONLY_MS = 330000
+
+/** 异步任务 message.status 成功枚举 */
+export const POLL_TASK_SUCCESS_STATUSES = ['succeeded', 'completed', 'done', 'success']
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** 请求体是否携带参考图（单张或多张） */
 export function hasReferenceImages(requestData) {
   const img = requestData && requestData.image
   if (!img) return false
@@ -35,14 +38,9 @@ export function hasReferenceImages(requestData) {
   return Boolean(img)
 }
 
-/**
- * 根据后端 estimated_wait_sec 计算轮询总等待时长，钳制在 180～240s。
- * 上游生图耗时由轮询窗口承载，而非拉长 POST。
- */
 export function computePollMaxWaitMs(envelope) {
   const sec = envelope && envelope.estimated_wait_sec
   if (typeof sec === 'number' && sec > 0) {
-    // 预估耗时 + 60s 缓冲，再钳制到生产窗口
     const ms = sec * 1000 + 60000
     return Math.min(POLL_MAX_WAIT_MS, Math.max(POLL_MIN_WAIT_MS, ms))
   }
@@ -67,30 +65,39 @@ function resolveApiUrl(apiBaseUrl) {
   return apiBaseUrl ? `${apiBaseUrl}/create-character` : '/create-character'
 }
 
-/** 轮询响应里是否已带可展示的图片结果 */
+/**
+ * 从 axios 响应体取出 message 对象。
+ * 任务状态只认 res.data.message，不用外层 statuscode。
+ */
+export function extractTaskMessage(responseData) {
+  if (!responseData || typeof responseData !== 'object') return null
+  const msg = responseData.message
+  return msg && typeof msg === 'object' ? msg : null
+}
+
+/** message 中是否已有可展示图片（主信号：image_base64 / image_url） */
 export function pollMessageHasImage(message) {
   if (!message || typeof message !== 'object') return false
-  if (message.image_base64 || message.character_image_base64) return true
-  if (message.image_url || message.character_image_url || message.image || message.url) return true
+  if (message.image_base64 || message.image_url) return true
+  // 兼容历史/角色接口字段
+  if (message.character_image_base64 || message.character_image_url) return true
   const first = message.full_response && message.full_response.data && message.full_response.data[0]
   if (first && (first.b64_json || first.url)) return true
   return false
 }
 
 /**
- * 任务是否应视为已完成。
- * 后端可能用 succeeded / completed / done，或在 status 仍为 running/pending 时已写入图片字段。
+ * 异步任务是否已完成（仅基于 message，不看外层 statuscode）。
  */
 export function isPollTaskComplete(message) {
   if (!message) return false
   const status = String(message.status || '').toLowerCase()
-  if (['succeeded', 'completed', 'done', 'success', 'finished'].includes(status)) {
+  if (POLL_TASK_SUCCESS_STATUSES.includes(status)) {
     return true
   }
   return pollMessageHasImage(message)
 }
 
-/** 任务是否已失败 */
 export function isPollTaskFailed(message) {
   if (!message) return false
   const status = String(message.status || '').toLowerCase()
@@ -98,16 +105,68 @@ export function isPollTaskFailed(message) {
 }
 
 /**
- * 轮询异步生图任务，直到成功/失败。
- * 成功时归一化为与同步一致的响应结构 { code, desc, message }。
+ * POST/轮询结束后的响应是否可继续取图。
+ * 有 message 时优先看 message.status / 图片字段，不用外层 statuscode 判断任务成败。
+ */
+export function isCreateCharacterResponseOk(responseData) {
+  const message = extractTaskMessage(responseData)
+  if (message) {
+    if (isPollTaskFailed(message)) return false
+    if (isPollTaskComplete(message)) return true
+  }
+  if (responseData && (responseData.code === 0 || responseData.code === '0')) return true
+  if (responseData && responseData.desc === 'success') return true
+  if (responseData && responseData.statuscode === 'success') return true
+  if (
+    responseData &&
+    (responseData.code !== undefined || responseData.desc !== undefined || responseData.statuscode !== undefined)
+  ) {
+    return false
+  }
+  return Boolean(message)
+}
+
+function shouldAppendPollDebug(opts = {}) {
+  if (opts.debug === true) return true
+  try {
+    return process.env.VUE_APP_CREATE_CHARACTER_DEBUG === '1'
+  } catch (e) {
+    return false
+  }
+}
+
+function resolveTaskPollUrl(taskId, opts = {}) {
+  const apiBaseUrl = opts.apiBaseUrl
+  let url = opts.pollUrl
+  if (url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      // absolute poll_url
+    } else if (apiBaseUrl) {
+      const base = apiBaseUrl.replace(/\/$/, '')
+      const path = url.startsWith('/') ? url : `/${url}`
+      url = `${base}${path}`
+    } else {
+      url = url.startsWith('/') ? url : `/${url}`
+    }
+  } else {
+    url = apiBaseUrl
+      ? `${apiBaseUrl}/create-character/task/${taskId}`
+      : `/create-character/task/${taskId}`
+  }
+  if (shouldAppendPollDebug(opts)) {
+    const sep = url.includes('?') ? '&' : '?'
+    url = `${url}${sep}_debug=1`
+  }
+  return url
+}
+
+/**
+ * 轮询 GET /create-character/task/:taskId，直到 message 满足完成条件。
  */
 export async function pollCreateCharacterTask(http, taskId, opts = {}) {
   const baseInterval = opts.pollIntervalMs || 5000
-  const apiBaseUrl = opts.apiBaseUrl
   const maxWaitMs = opts.maxWaitMs || POLL_MAX_WAIT_MS
-  const taskUrl = apiBaseUrl
-    ? `${apiBaseUrl}/create-character/task/${taskId}`
-    : `/create-character/task/${taskId}`
+  const taskUrl = resolveTaskPollUrl(taskId, opts)
   const deadline = Date.now() + maxWaitMs
   let consecutiveErrors = 0
 
@@ -133,48 +192,53 @@ export async function pollCreateCharacterTask(http, taskId, opts = {}) {
       continue
     }
 
-    const m = poll.data && poll.data.message
-    if (!m) {
+    // 成功判定：res.data.message.status 或 message 内图片字段
+    const message = extractTaskMessage(poll.data)
+    if (!message) {
       await sleep(baseInterval)
       continue
     }
-    if (isPollTaskComplete(m)) {
-      return { code: 0, desc: 'success', message: m }
+
+    if (process.env.NODE_ENV !== 'production' && shouldAppendPollDebug(opts)) {
+      // eslint-disable-next-line no-console
+      console.debug('[create-character/task]', taskId, message.status, message)
     }
-    if (isPollTaskFailed(m)) {
-      throw new Error(m.error || '生成失败，请重试')
+
+    if (isPollTaskComplete(message)) {
+      return { code: 0, desc: 'success', message }
     }
-    await sleep(m.retry_after_ms || baseInterval)
+    if (isPollTaskFailed(message)) {
+      throw new Error(message.error || '生成失败，请重试')
+    }
+
+    await sleep(message.retry_after_ms || message.poll_interval_ms || baseInterval)
   }
 }
 
 /**
- * 若响应为异步任务则轮询；否则原样返回（同步兜底路径）。
+ * POST 响应若为异步任务则轮询；否则原样返回（同步兜底）。
  */
 export async function resolveCreateCharacterResult(http, responseData, opts = {}) {
-  const envelope = responseData && responseData.message
-  if (!(envelope && envelope.async && envelope.task_id)) {
+  const message = extractTaskMessage(responseData)
+  if (!(message && message.async && message.task_id)) {
     return responseData
   }
-  // 提交响应里已带图（快速完成或同步字段混入异步信封），无需再轮询
-  if (isPollTaskComplete(envelope)) {
-    return { code: 0, desc: 'success', message: envelope }
+  if (isPollTaskComplete(message)) {
+    return { code: 0, desc: 'success', message }
   }
-  return pollCreateCharacterTask(http, envelope.task_id, {
-    pollIntervalMs: envelope.poll_interval_ms,
+  return pollCreateCharacterTask(http, message.task_id, {
+    pollIntervalMs: message.poll_interval_ms,
+    pollUrl: message.poll_url,
     apiBaseUrl: opts.apiBaseUrl,
-    maxWaitMs: computePollMaxWaitMs(envelope),
-    headers: opts.headers
+    maxWaitMs: computePollMaxWaitMs(message),
+    headers: opts.headers,
+    debug: opts.debug
   })
 }
 
 /**
  * POST /create-character 并解析结果。
- *
- * 默认异步（不传 sync: true）：提交超时 60s，收到 task_id 后按 estimated_wait_sec 轮询 180～240s。
- * 仅当 opts.sync === true 时走同步兜底：带参考图 140s、纯文 330s，并附带 sync: true。
- *
- * @returns {Promise<Object>} 归一化后的 { code, desc, message }
+ * 默认异步；opts.sync === true 时走同步兜底。
  */
 export async function postCreateCharacter(http, requestData, opts = {}) {
   const sync = opts.sync === true
@@ -194,6 +258,7 @@ export async function postCreateCharacter(http, requestData, opts = {}) {
 
   return resolveCreateCharacterResult(http, response.data, {
     apiBaseUrl: opts.apiBaseUrl,
-    headers: opts.headers
+    headers: opts.headers,
+    debug: opts.debug
   })
 }

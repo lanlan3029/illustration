@@ -172,7 +172,7 @@
 <script>
 import PromptFill from '@/components/PromptFill.vue';
 import { ElMessage } from 'element-plus';
-import { postCreateCharacter } from '@/utils/createCharacterTask';
+import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask';
 
 export default {
     name: 'CreateCharacter',
@@ -602,15 +602,14 @@ export default {
                     { apiBaseUrl: this.apiBaseUrl }
                 );
                 
-                // 检查成功响应：code === 0 或 desc === 'success' 或 statuscode === 'success'
-                const isSuccess = (responseData.code === 0 || responseData.code === '0') 
-                    || responseData.desc === 'success' 
-                    || responseData.statuscode === 'success';
-                
-                if (isSuccess && responseData.message) {
-                    // 成功响应
-                    const result = responseData.message;
-                    
+                if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
+                    const errorMsg = responseData?.desc || responseData?.message?.error || `code: ${responseData?.code}`
+                    throw new Error(errorMsg || this.$t('createCharacter.creationFailed'));
+                }
+
+                // 成功：以 message.status / image 字段为准（见 createCharacterTask.js）
+                const result = responseData.message;
+
                     // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
                     if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
                         this.$store.commit('setUserInfo', {
@@ -694,15 +693,6 @@ export default {
                     
                     // 保存角色信息到 localStorage，以便页面切换后恢复
                     this.saveCharacterToLocalStorage();
-                } else if (responseData.statuscode === 'lackOfParameters' || responseData.code !== 0) {
-                    // 参数缺失错误或其他错误
-                    const errorMsg = responseData.message || responseData.desc || this.$t('createCharacter.creationFailed');
-                    throw new Error(errorMsg);
-                } else {
-                    // 其他错误响应
-                    const errorMsg = responseData.message || responseData.desc || this.$t('createCharacter.createFailed');
-                    throw new Error(errorMsg);
-                }
             } catch (error) {
                 // 处理特定错误
                 let errorMessage = this.$t('createCharacter.createCharacterFailed');

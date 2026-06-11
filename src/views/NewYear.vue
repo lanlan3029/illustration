@@ -105,7 +105,7 @@
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import submitImage from '@/assets/images/submit.webp'
-import { postCreateCharacter } from '@/utils/createCharacterTask'
+import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 
 export default {
   name: 'NewYear',
@@ -239,13 +239,14 @@ export default {
           return
         }
         
-        const isSuccess = (responseData.code === 0 || responseData.code === '0') 
-          || responseData.desc === 'success' 
-          || responseData.statuscode === 'success'
+        if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
+          const errorMsg = responseData.message?.error || responseData.desc || responseData.error
+          ElMessage({ message: errorMsg || '出错啦，请稍后再试', type: 'error', offset: 200 })
+          return
+        }
 
-        if (isSuccess && responseData.message) {
-          const result = responseData.message
-          
+        const result = responseData.message
+
           if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
             this.$store.commit('setUserInfo', {
               ...(this.$store.state.userInfo || {}),
@@ -263,10 +264,6 @@ export default {
           } else {
             throw new Error('响应中未找到图片URL')
           }
-        } else {
-          const errorMsg = responseData.message || responseData.desc || responseData.error
-          ElMessage({ message: errorMsg || '出错啦，请稍后再试', type: 'error', offset: 200 })
-        }
       } catch (error) {
         const errorData = error.response?.data
         const errorMessage = errorData?.allowed === false

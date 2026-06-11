@@ -4,7 +4,7 @@ import { getMoodApiConfig, resolveApiUrl } from './config'
 import { resolvePictureUploadBlob, compressDataUrlForUpload } from './posterUpload'
 import { parseMoodFromIllItem } from './moodIllPersist'
 import { findMoodById } from './moodAssets'
-import { postCreateCharacter } from '@/utils/createCharacterTask'
+import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 
 function unwrapData(res) {
   const d = res && res.data !== undefined ? res.data : res
@@ -611,8 +611,9 @@ export async function createCharacterIllustration(payload) {
   const data = await postCreateCharacter(axios, payload, {
     apiBaseUrl: apiRoot ? apiRoot.replace(/\/$/, '') : undefined
   })
-  const ok = data.code === 0 || data.code === '0' || data.desc === 'success' || data.statuscode === 'success'
-  if (!ok || !data.message) throw new Error(data.message || 'create-character failed')
+  if (!isCreateCharacterResponseOk(data) || !data.message) {
+    throw new Error(data.message?.error || data.desc || 'create-character failed')
+  }
 
   const msg = data.message
   let imageUrl = msg.image_url || msg.character_image_url || msg.image || msg.url || ''

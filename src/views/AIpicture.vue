@@ -362,7 +362,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
-import { postCreateCharacter } from '@/utils/createCharacterTask'
+import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
@@ -918,12 +918,7 @@ export default {
                     requestData,
                     { apiBaseUrl: this.apiBaseUrl }
                 )
-                const isWrappedFail = (responseData.code !== undefined || responseData.desc !== undefined || responseData.statuscode !== undefined)
-                    && !(responseData.code === 0 || responseData.code === '0'
-                        || responseData.desc === 'success'
-                        || responseData.statuscode === 'success')
-
-                if (isWrappedFail) {
+                if (!isCreateCharacterResponseOk(responseData)) {
                     const errorMsg = this.normalizeApiErrorToString(
                         responseData.error?.message ?? responseData.error ?? responseData.message ?? responseData.desc
                     ) || '生成失败，请重试'

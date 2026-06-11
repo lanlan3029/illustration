@@ -79,7 +79,7 @@ import { ElMessage } from 'element-plus'
 
 import toast from '@/utils/toast'
 import html2Canvas from "html2canvas"
-import { postCreateCharacter } from '@/utils/createCharacterTask'
+import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 
 import ComponentList from '@/components/ComponentList' // 左侧列表组件
 // 导入generateID
@@ -254,13 +254,10 @@ export default {
             // 关闭加载提示
             loading.close();
             
-            // 检查成功响应：code === 0 或 desc === 'success' 或 statuscode === 'success'
-            const isSuccess = (responseData.code === 0 || responseData.code === '0') 
-                || responseData.desc === 'success' 
-                || responseData.statuscode === 'success';
-            
-            if (isSuccess) {
-                // 提取图片URL或base64
+            if (!isCreateCharacterResponseOk(responseData)) {
+                throw new Error(responseData?.desc || responseData?.message?.error || '生成失败');
+            }
+
                 const result = responseData.message || responseData.data || responseData;
                 
                 // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
@@ -293,10 +290,6 @@ export default {
                 } else {
                     throw new Error('响应中未找到图片数据');
                 }
-            } else {
-                const errorMsg = responseData.message || responseData.desc || responseData.error || 'AI智能合成失败，请重试';
-                throw new Error(errorMsg);
-            }
         } catch (error) {
             console.error('AI智能合成失败:', error);
             const errorMessage = error.response?.data?.message || error.response?.data?.desc || error.message || this.$t('toolbar.aiComposeFailed');
