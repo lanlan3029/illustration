@@ -69,6 +69,14 @@
             shadow="hover"
           >
             <div class="card-image" @click="goCharacterGroupImages(item.id || item._id)">
+              <button
+                type="button"
+                class="card-delete-btn"
+                :title="$t('myHomePage.delete')"
+                @click.stop="handleDeleteCharacter(item)"
+              >
+                <el-icon><Delete /></el-icon>
+              </button>
               <el-image
                 :src="getImageUrl(item.image_url)"
                 fit="contain"
@@ -85,10 +93,9 @@
               <h3 class="card-title">{{item.character_name || $t('myHomePage.unnamedCharacter')}}</h3>
               <p class="card-meta">{{ $t('myHomePage.createTime') }}{{item.created_at || item.createdAt || $t('myHomePage.unknown')}}</p>
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goEditCharacter(item)">{{ $t('myHomePage.edit') }}</el-button>
-                <el-button size="small" @click="goCreateGroupImages(item.id || item._id)">{{ $t('myHomePage.createGroupImages') }}</el-button>
-                <el-button size="small" color="#626aef" @click="goCharacterGroupImages(item.id || item._id)">{{ $t('myHomePage.viewGroupImages') }}</el-button>
-                <el-button size="small" type="danger" @click="handleDeleteCharacter(item)">{{ $t('myHomePage.delete') }}</el-button>
+                <el-button size="small" type="primary" @click.stop="goEditCharacter(item)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button size="small" @click.stop="goCreateGroupImages(item.id || item._id)">{{ $t('myHomePage.createGroupImages') }}</el-button>
+                <el-button size="small" color="#626aef" @click.stop="goCharacterGroupImages(item.id || item._id)">{{ $t('myHomePage.viewGroupImages') }}</el-button>
               </div>
             </div>
           </el-card>
@@ -122,6 +129,14 @@
             shadow="hover"
           >
             <div class="card-image" @click="showImagePreview(`https://static.kidstory.cc/${item.content}`)">
+              <button
+                type="button"
+                class="card-delete-btn"
+                :title="$t('myHomePage.delete')"
+                @click.stop="handleDeleteIll(item)"
+              >
+                <el-icon><Delete /></el-icon>
+              </button>
               <el-image
                 :src="`https://static.kidstory.cc/${item.content}`"
                 fit="cover"
@@ -139,13 +154,12 @@
              
 
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goEdition(item)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button size="small" type="primary" @click.stop="goEdition(item)">{{ $t('myHomePage.edit') }}</el-button>
                 <el-button
                   size="small"
                   :loading="downloadingIllId === item._id"
-                  @click="downloadIll(item)"
+                  @click.stop="downloadIll(item)"
                 >{{ $t('myHomePage.download') }}</el-button>
-                <el-button size="small" type="danger" @click="handleDeleteIll(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
             </div>
           </el-card>
@@ -279,7 +293,7 @@
 <script>
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
-import { CloseBold } from '@element-plus/icons-vue'
+import { CloseBold, Delete } from '@element-plus/icons-vue'
 import MyCollectionIll from '../components/MyCollectionIll.vue'
 import MyCollectionBook from '../components/MyCollectionBook.vue'
 import MyAttention from '../components/MyAttention.vue'
@@ -287,7 +301,7 @@ import MyFans from '../components/MyFans.vue'
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage'
 export default {
   components:{
-MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
+MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
   },
   data() {
     return {
@@ -1258,12 +1272,42 @@ overflow: hidden;
 
 /* 卡片图片区域 */
 .card-image {
+  position: relative;
   width: 100%;
   height: 200px;
   overflow: hidden;
   border-radius: 4px 4px 0 0;
   background-color: #f5f6fa;
   cursor: pointer;
+}
+
+.card-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #f56c6c;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.card-delete-btn:hover {
+  background: #fff;
+  transform: scale(1.08);
+}
+
+.card-delete-btn .el-icon {
+  font-size: 15px;
 }
 
 .cover-image {
@@ -1421,17 +1465,25 @@ overflow: hidden;
 
 .card-actions {
   margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .card-actions :deep(.el-button) {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  padding: 8px 12px;
+  width: 100%;
+  margin: 0;
+  height: auto;
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.card-actions :deep(.el-button:nth-child(3):last-child) {
+  grid-column: 1 / -1;
 }
 
 /* 空状态 */
