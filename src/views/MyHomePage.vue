@@ -85,7 +85,8 @@
               <h3 class="card-title">{{item.character_name || $t('myHomePage.unnamedCharacter')}}</h3>
               <p class="card-meta">{{ $t('myHomePage.createTime') }}{{item.created_at || item.createdAt || $t('myHomePage.unknown')}}</p>
               <div class="card-actions">
-                <el-button size="small" type="primary" @click="goCreateGroupImages(item.id || item._id)">{{ $t('myHomePage.createGroupImages') }}</el-button>
+                <el-button size="small" type="primary" @click="goEditCharacter(item)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button size="small" @click="goCreateGroupImages(item.id || item._id)">{{ $t('myHomePage.createGroupImages') }}</el-button>
                 <el-button size="small" color="#626aef" @click="goCharacterGroupImages(item.id || item._id)">{{ $t('myHomePage.viewGroupImages') }}</el-button>
                 <el-button size="small" type="danger" @click="handleDeleteCharacter(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
@@ -139,6 +140,11 @@
 
               <div class="card-actions">
                 <el-button size="small" type="primary" @click="goEdition(item)">{{ $t('myHomePage.edit') }}</el-button>
+                <el-button
+                  size="small"
+                  :loading="downloadingIllId === item._id"
+                  @click="downloadIll(item)"
+                >{{ $t('myHomePage.download') }}</el-button>
                 <el-button size="small" type="danger" @click="handleDeleteIll(item)">{{ $t('myHomePage.delete') }}</el-button>
               </div>
             </div>
@@ -297,6 +303,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
       loadingBookCovers: false, // 绘本封面加载状态
       deletingCharacterId: null, // 正在删除的角色ID
       deletingIllId: null, // 正在删除的插画ID
+      downloadingIllId: null, // 正在下载的插画ID
       deletingBookId: null, // 正在删除的绘本ID
       showImagePreviewModal: false, // 是否显示图片预览遮罩
       previewImageUrl: '', // 预览的图片URL
@@ -468,6 +475,60 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
             ElMessage.error(this.$t('myHomePage.editIllustrationFailed'));
         }
     },
+    async downloadIll(item) {
+      const illId = item._id;
+      if (this.downloadingIllId === illId) return;
+
+      const imageUrl = this.getImageUrl(item.content);
+      if (!imageUrl) {
+        ElMessage.error(this.$t('myHomePage.cannotGetIllustrationImage'));
+        return;
+      }
+
+      this.downloadingIllId = illId;
+      try {
+        const ext = this.getIllDownloadExt(imageUrl, item.content);
+        const baseName = (item.title || this.$t('myHomePage.unnamedIllustration'))
+          .replace(/[\\/:*?"<>|]/g, '_');
+        const filename = `${baseName}.${ext}`;
+
+        const response = await fetch(imageUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        ElMessage.success(this.$t('myHomePage.downloadSuccess'));
+      } catch (error) {
+        console.error('下载插画失败:', error);
+        try {
+          const link = document.createElement('a');
+          link.href = imageUrl;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          ElMessage.info(this.$t('myHomePage.downloadFallback'));
+        } catch {
+          ElMessage.error(this.$t('myHomePage.downloadFailed'));
+        }
+      } finally {
+        this.downloadingIllId = null;
+      }
+    },
+    getIllDownloadExt(url, content) {
+      const src = (content || url || '').split('?')[0];
+      const match = src.match(/\.(jpe?g|png|webp|gif)$/i);
+      if (!match) return 'png';
+      const ext = match[1].toLowerCase();
+      return ext === 'jpeg' ? 'jpg' : ext;
+    },
     // 处理删除插画（显示确认弹窗）
     handleDeleteIll(item) {
       const illustrationId = item._id;
@@ -614,6 +675,18 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold
       this.activeIndex=4
     },
     // 跳转到创作组图页面
+    goEditCharacter(character) {
+      const imageUrl = this.getImageUrl(character.image_url || character.character_image_url);
+      if (!imageUrl) {
+        ElMessage.error(this.$t('myHomePage.cannotGetIllustrationImage'));
+        return;
+      }
+      setEditorproPendingImage(imageUrl, {
+        characterId: character.id || character._id,
+        title: character.character_name || ''
+      });
+      this.$router.push('/editorpro');
+    },
     goCreateGroupImages(characterId) {
       // 找到对应的角色对象
       const character = this.characterArr.find(item => (item.id || item._id) === characterId);

@@ -79,7 +79,7 @@
                                     <div class="card-content">
                                         <h3 class="card-title">第 {{ imgIndex + 1 }} 张</h3>
                                         <div class="card-actions">
-                                            <el-button size="small" type="primary" @click="goEdition(image)">编辑</el-button>
+                                            <el-button size="small" type="primary" @click="goEdition(image, group, imgIndex)">编辑</el-button>
                                             <el-button 
                                                 type="danger" 
                                                 size="small" 
@@ -256,35 +256,47 @@ export default {
             }
         },
 
-        async goEdition(item){
+        async goEdition(image, group = null, imgIndex = null) {
             try {
                 let imageUrl = '';
-                if (item.content) {
-                    if (item.content.startsWith('http://') || item.content.startsWith('https://')) {
-                        imageUrl = item.content;
-                    } else {
-                        imageUrl = `https://static.kidstory.cc/${item.content}`;
+                let illId = '';
+                let title = '';
+
+                if (typeof image === 'string') {
+                    imageUrl = this.getImageUrl(image);
+                    if (group != null && imgIndex != null) {
+                        illId = group.image_ids?.[imgIndex] || group.illustration_ids?.[imgIndex] || '';
+                        title = group.title ? `${group.title} - 第 ${imgIndex + 1} 张` : `第 ${imgIndex + 1} 张`;
                     }
-                } else {
+                } else if (image?.content) {
+                    const content = image.content;
+                    if (content.startsWith('http://') || content.startsWith('https://')) {
+                        imageUrl = content;
+                    } else {
+                        imageUrl = `https://static.kidstory.cc/${content}`;
+                    }
+                    illId = image._id || '';
+                    title = image.title || '';
+                } else if (image?._id) {
                     try {
-                        const res = await this.$http.get(`/ill/${item._id}`, {
+                        const res = await this.$http.get(`/ill/${image._id}`, {
                             headers: {
-                                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                                Authorization: `Bearer ${localStorage.getItem('token')}`
                             }
                         });
-                        if (res.data && res.data.message && res.data.message.content) {
+                        if (res.data?.message?.content) {
                             const content = res.data.message.content;
-                            if (content.startsWith('http://') || content.startsWith('https://')) {
-                                imageUrl = content;
-                            } else {
-                                imageUrl = `https://static.kidstory.cc/${content}`;
-                            }
+                            imageUrl = content.startsWith('http') ? content : `https://static.kidstory.cc/${content}`;
+                            illId = image._id;
+                            title = res.data.message.title || image.title || '';
                         }
                     } catch (err) {
                         console.error('获取插画详情失败:', err);
                         ElMessage.error('获取插画信息失败，请重试');
                         return;
                     }
+                } else {
+                    imageUrl = this.pickImageUrl(image);
                 }
 
                 if (!imageUrl) {
@@ -292,10 +304,7 @@ export default {
                     return;
                 }
 
-                setEditorproPendingImage(imageUrl, {
-                    illId: item._id,
-                    title: item.title || ''
-                });
+                setEditorproPendingImage(imageUrl, { illId, title });
                 this.$router.push('/editorpro');
             } catch (error) {
                 console.error('编辑插画失败:', error);
