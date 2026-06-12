@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="header">
-            <p v-if="!isCharacterMode">上传 PNG 图元，用于创作页面左侧元素库。请确保画布透明，大小不超过 1MB。可一次上传多个图元，并逐个编辑信息。</p>
+            <p v-if="!isCharacterMode">上传 PNG 图元，用于创作页面左侧元素库。请确保画布透明；单文件不超过 1MB，超过将自动压缩（保留 PNG 透明）。可一次上传多个图元，并逐个编辑信息。</p>
             <p v-else>确认角色信息并保存到"我的角色"。您可以修改名称、分类和描述等信息。</p>
         </div>
 
@@ -26,7 +26,7 @@
                         <div class="upload-hint">
                             <div class="badges">
                                 <span class="badge">PNG</span>
-                                <span class="badge">≤ 1MB</span>
+                                <span class="badge">≤1MB·可压缩</span>
                                 <span class="badge">透明背景</span>
                             </div>
                             <p>可一次选择多个文件，选择后将在下方表格中显示，请为每个图元编辑信息后单独上传。</p>
@@ -176,6 +176,7 @@
     <script>
     import { ElMessage } from 'element-plus'
     import { Check } from '@element-plus/icons-vue'
+    import imageCompression from 'browser-image-compression'
     
     export default {
       components: {
@@ -205,6 +206,7 @@
           ],
         },
             elements: [], // 存储多个图元的数据 [{ file, url, name, category, desc, is_public, uid }]
+            compressingUids: new Set(),
           };
         },
         mounted() {
@@ -250,39 +252,75 @@
             this.dialogVisible = true;
           },
   
-          fileChange(file, fileList) {
-            // 检查文件大小
-            const isLt1M = file.size / 1024 / 1024 < 1;
-            if (!isLt1M) {
-                ElMessage.error(`文件 "${file.name}" 大小不能超过 1MB!`);
-                // 从文件列表中移除
-                const index = fileList.findIndex(f => f.uid === file.uid);
-                if (index !== -1) {
-                  fileList.splice(index, 1);
-                }
-                return false;
+          async compressElementPng(file) {
+            const MAX_BYTES = Math.floor(1024 * 1024 * 0.98);
+            let blob = file;
+            let maxDim = 2048;
+
+            for (let attempt = 0; attempt < 6 && blob.size > MAX_BYTES; attempt += 1) {
+              blob = await imageCompression(blob, {
+                maxSizeMB: 0.98,
+                maxWidthOrHeight: maxDim,
+                fileType: 'image/png',
+                useWebWorker: typeof Worker !== 'undefined',
+              });
+              maxDim = Math.max(480, Math.floor(maxDim * 0.8));
             }
 
-            // 检查是否已存在（避免重复添加）
-            const exists = this.elements.some(el => el.uid === file.uid);
-            if (!exists && file.raw) {
-              // 创建预览 URL
-              const previewUrl = file.url || URL.createObjectURL(file.raw);
-              
-              // 添加到 elements 数组
+            const baseName = (file.name || 'element').replace(/\.png$/i, '');
+            return new File([blob], `${baseName}.png`, {
+              type: 'image/png',
+              lastModified: Date.now(),
+            });
+          },
+
+          async fileChange(file, fileList) {
+            if (!file?.raw) return;
+
+            if (this.compressingUids.has(file.uid)) return;
+            if (this.elements.some((el) => el.uid === file.uid)) return;
+
+            this.compressingUids.add(file.uid);
+            try {
+              let processed = file.raw;
+              const needCompress = processed.size / 1024 / 1024 >= 1;
+
+              if (needCompress) {
+                ElMessage.info(`正在压缩「${file.name}」…`);
+                processed = await this.compressElementPng(file.raw);
+                if (processed.size / 1024 / 1024 >= 1) {
+                  ElMessage.error(`「${file.name}」压缩后仍超过 1MB，请缩小图片后重试`);
+                  const index = fileList.findIndex((f) => f.uid === file.uid);
+                  if (index !== -1) fileList.splice(index, 1);
+                  return;
+                }
+                ElMessage.success(
+                  `「${file.name}」已压缩至 ${(processed.size / 1024).toFixed(0)}KB`
+                );
+              }
+
+              file.raw = processed;
+              file.size = processed.size;
+
+              const previewUrl = URL.createObjectURL(processed);
               this.elements.push({
-                file: file.raw,
+                file: processed,
                 url: previewUrl,
                 uid: file.uid,
-                name: file.name.replace(/\.png$/i, '') || '', // 默认使用文件名（去掉扩展名）
+                name: file.name.replace(/\.png$/i, '') || '',
                 category: '',
                 desc: '',
                 is_public: 1,
-                uploadStatus: 'pending' // 上传状态：pending, uploading, success, error
+                uploadStatus: 'pending',
               });
+            } catch (error) {
+              console.error('图元压缩失败:', error);
+              ElMessage.error(`「${file.name}」压缩失败，请换一张图重试`);
+              const index = fileList.findIndex((f) => f.uid === file.uid);
+              if (index !== -1) fileList.splice(index, 1);
+            } finally {
+              this.compressingUids.delete(file.uid);
             }
-            
-            return true;
           },
           
           // 移除单个图元
