@@ -48,8 +48,71 @@ export function displayPointsToImagePoints(displayPoints, displaySize, naturalWi
   }));
 }
 
-/** 按闭合路径裁剪，输出透明 PNG canvas */
-export function cropImageByLasso(image, imagePoints) {
+export const STICKER_STYLE_DEFAULTS = {
+  borderColor: '#ffffff',
+  shadowColor: 'rgba(0, 0, 0, 0.22)',
+  shadowBlur: 8,
+  shadowOffsetX: 0,
+  shadowOffsetY: 3,
+  extraPad: 6,
+};
+
+/** 根据裁剪尺寸计算白边宽度 */
+export function getStickerBorderWidth(width, height) {
+  return Math.max(4, Math.min(10, Math.round(Math.min(width, height) * 0.018)));
+}
+
+/** 白描边 + 轻阴影，形成贴纸风格 */
+export function applyStickerStyle(sourceCanvas, options = {}) {
+  const opts = { ...STICKER_STYLE_DEFAULTS, ...options };
+  const sw = sourceCanvas.width;
+  const sh = sourceCanvas.height;
+  const borderWidth = opts.borderWidth ?? getStickerBorderWidth(sw, sh);
+  const { borderColor, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, extraPad } = opts;
+
+  const bordered = document.createElement('canvas');
+  bordered.width = sw + borderWidth * 2;
+  bordered.height = sh + borderWidth * 2;
+  const bctx = bordered.getContext('2d');
+  if (!bctx) throw new Error('Canvas 不可用');
+
+  const r = borderWidth;
+  for (let dx = -r; dx <= r; dx += 1) {
+    for (let dy = -r; dy <= r; dy += 1) {
+      if (dx * dx + dy * dy <= r * r) {
+        bctx.drawImage(sourceCanvas, borderWidth + dx, borderWidth + dy);
+      }
+    }
+  }
+  bctx.globalCompositeOperation = 'source-in';
+  bctx.fillStyle = borderColor;
+  bctx.fillRect(0, 0, bordered.width, bordered.height);
+  bctx.globalCompositeOperation = 'source-over';
+  bctx.drawImage(sourceCanvas, borderWidth, borderWidth);
+
+  const bleed = extraPad + shadowBlur + Math.max(Math.abs(shadowOffsetX), Math.abs(shadowOffsetY));
+  const out = document.createElement('canvas');
+  out.width = bordered.width + bleed * 2;
+  out.height = bordered.height + bleed * 2;
+  const ctx = out.getContext('2d');
+  if (!ctx) throw new Error('Canvas 不可用');
+
+  const ox = bleed;
+  const oy = bleed;
+  ctx.save();
+  ctx.shadowColor = shadowColor;
+  ctx.shadowBlur = shadowBlur;
+  ctx.shadowOffsetX = shadowOffsetX;
+  ctx.shadowOffsetY = shadowOffsetY;
+  ctx.drawImage(bordered, ox, oy);
+  ctx.restore();
+  ctx.drawImage(bordered, ox, oy);
+
+  return out;
+}
+
+/** 按闭合路径裁剪，输出带贴纸风格的透明 PNG canvas */
+export function cropImageByLasso(image, imagePoints, options = {}) {
   const bounds = getPointsBounds(imagePoints);
   const canvas = document.createElement('canvas');
   canvas.width = bounds.width;
@@ -67,7 +130,10 @@ export function cropImageByLasso(image, imagePoints) {
   ctx.closePath();
   ctx.clip();
   ctx.drawImage(image, -bounds.minX, -bounds.minY);
-  return canvas;
+
+  if (options.sticker === false) return canvas;
+  const stickerOpts = typeof options.sticker === 'object' ? options.sticker : {};
+  return applyStickerStyle(canvas, stickerOpts);
 }
 
 export function canvasToDataUrl(canvas) {
