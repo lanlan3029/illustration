@@ -54,6 +54,7 @@ export default {
       '/create-group-images',
       '/create-layout-illustration',
       '/editorpro',
+      '/lasso-crop',
       '/user/upload/compose-illustration'
     ]
 

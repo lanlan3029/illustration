@@ -26,6 +26,7 @@ import attributeColor from '@/components/editorPro/editor-components/attributeCo
 import attributeBarcode from '@/components/editorPro/editor-components/attributeBarcode.vue';
 import attributeQrCode from '@/components/editorPro/editor-components/attributeQrCode.vue';
 import cropperImg from '@/components/editorPro/editor-components/cropperImg.vue';
+import lassoCropImg from '@/components/editorPro/editor-components/lassoCropImg.vue';
 import clipImage from '@/components/editorPro/editor-components/clipImage.vue';
 import edit from '@/components/editorPro/editor-components/edit.vue';
 import useSelect from '@/components/editorPro/hooks/select.js';
@@ -83,6 +84,7 @@ const switchAttrBar = () => {
         <replaceImg></replaceImg>
         <!-- 裁剪 -->
         <cropperImg></cropperImg>
+        <lasso-crop-img></lasso-crop-img>
         <!-- 图片裁切 -->
         <clip-image></clip-image>
         <!-- 翻转 -->

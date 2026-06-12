@@ -270,6 +270,15 @@ const routes = [{
         }
     },
     {
+        path: '/lasso-crop',
+        name: 'lasso-crop',
+        component: () =>
+            import ( /* webpackChunkName: "lasso-crop" */ '../views/LassoCropPage.vue'),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
         path: '/newyear',
         name: 'newyear',
         component: () =>
