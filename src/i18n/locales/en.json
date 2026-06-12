@@ -151,7 +151,25 @@
     }
   },
   "material": {
-    "cartoon": "Material"
+    "cartoon": "Material Library"
+  },
+  "editorProLeft": {
+    "canvas": "Canvas",
+    "draw": "Draw",
+    "materialLibrary": "Library",
+    "myWorks": "My Works",
+    "canvasSizes": "Canvas Sizes",
+    "searchMaterial": "Search materials",
+    "myIllustrations": "Illustrations",
+    "myCharacters": "Characters",
+    "myImages": "Images",
+    "myTemplates": "My Templates",
+    "noIllustrations": "No illustrations yet",
+    "noCharacters": "No characters yet",
+    "unnamedIllustration": "Untitled illustration",
+    "unnamedCharacter": "Untitled character",
+    "noMore": "No more items",
+    "loginRequired": "Please log in first"
   },
   "filters": {
     "simple": "Simple Filters",

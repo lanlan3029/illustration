@@ -1,7 +1,7 @@
 
 <template>
   <div class="tmpl-root">
-    <Divider plain orientation="left">推荐模板</Divider>
+    <Divider plain orientation="left">{{ $t('editorProLeft.canvasSizes') }}</Divider>
    
 
     <div class="grid">

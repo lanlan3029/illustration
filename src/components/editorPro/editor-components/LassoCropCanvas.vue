@@ -103,9 +103,8 @@ function redrawOverlay() {
   if (points.value.length < 2) return;
 
   ctx.save();
-  ctx.strokeStyle = '#f5c518';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 6]);
+  const lineWidth = 4;
+  const dash = [12, 10];
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.beginPath();
@@ -114,14 +113,30 @@ function redrawOverlay() {
     else ctx.lineTo(p.x, p.y);
   });
   if (closed.value) ctx.closePath();
+
+  // 黑白相间虚线：先白后黑，错开相位
+  ctx.setLineDash(dash);
+  ctx.lineWidth = lineWidth + 2;
+  ctx.strokeStyle = '#ffffff';
+  ctx.stroke();
+
+  ctx.setLineDash(dash);
+  ctx.lineDashOffset = dash[0];
+  ctx.lineWidth = lineWidth + 2;
+  ctx.strokeStyle = '#000000';
   ctx.stroke();
 
   if (points.value.length > 0) {
     const start = points.value[0];
-    ctx.fillStyle = '#f5c518';
+    const r = 7;
+    ctx.setLineDash([]);
+    ctx.lineWidth = 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#000000';
     ctx.beginPath();
-    ctx.arc(start.x, start.y, 5, 0, Math.PI * 2);
+    ctx.arc(start.x, start.y, r, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
   }
   ctx.restore();
 }

@@ -151,7 +151,25 @@
     }
   },
   "material": {
-    "cartoon": "素材"
+    "cartoon": "素材库"
+  },
+  "editorProLeft": {
+    "canvas": "画布",
+    "draw": "绘制",
+    "materialLibrary": "素材库",
+    "myWorks": "我的作品",
+    "canvasSizes": "画布尺寸",
+    "searchMaterial": "搜索素材",
+    "myIllustrations": "插画",
+    "myCharacters": "角色",
+    "myImages": "图片",
+    "myTemplates": "我的模板",
+    "noIllustrations": "暂无插画",
+    "noCharacters": "暂无角色",
+    "unnamedIllustration": "未命名插画",
+    "unnamedCharacter": "未命名角色",
+    "noMore": "没有更多了",
+    "loginRequired": "请先登录"
   },
   "filters": {
     "simple": "简单滤镜",

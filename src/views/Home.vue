@@ -3,8 +3,6 @@
         <div class="home-inner">
             <!-- Hero -->
             <header class="home-hero">
-                <span class="hero-deco hero-deco--1">✦</span>
-                <span class="hero-deco hero-deco--2">✦</span>
                 <h1 class="hero-title">
                     {{ $t('home.welcomeTitle') || '让想象变成美丽的故事' }}
                 </h1>
@@ -103,16 +101,15 @@ export default {
 
 <style scoped>
 .home-container {
-    /* app-main 顶部留出 50px 给 TopBar，这里填满剩余视口高度并作为自身滚动容器，
-       底部留白避开固定页脚（40px） */
     height: calc(100vh - 50px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 40px 32px 72px;
+    padding: 36px 32px 72px;
     background:
-        radial-gradient(900px 420px at 12% -8%, rgba(124, 108, 240, 0.12), transparent 60%),
-        radial-gradient(800px 420px at 100% 0%, rgba(255, 180, 170, 0.12), transparent 55%),
-        var(--kid-bg, #f5f6fb);
+        radial-gradient(ellipse 70% 50% at 8% 0%, rgba(139, 124, 240, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 45% at 92% 4%, rgba(88, 166, 240, 0.1), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(244, 169, 172, 0.08), transparent 55%),
+        #eef0f8;
 }
 
 .home-inner {
@@ -120,62 +117,56 @@ export default {
     margin: 0 auto;
 }
 
-/* ===== Hero ===== */
+/* ===== Hero（与功能卡片同系的柔和渐变氛围） ===== */
 .home-hero {
-    position: relative;
     text-align: center;
-    padding: 24px 0 40px;
+    padding: 20px 0 36px;
 }
 
 .hero-title {
-    font-size: 46px;
-    line-height: 1.25;
-    font-weight: 800;
-    color: var(--kid-text, #2b2b40);
-    margin: 0 0 16px;
-    letter-spacing: 0.5px;
+    font-size: 40px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #3d3d56;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
 }
 
 .hero-subtitle {
-    font-size: 17px;
-    color: var(--kid-text-sub, #8a8aa3);
-    margin: 0 0 24px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #7a7a94;
+    margin: 0 0 22px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hero-cta {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     border: none;
     cursor: pointer;
-    padding: 12px 26px;
+    padding: 11px 24px;
     border-radius: 999px;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
     color: #fff;
-    background: var(--kid-grad-primary, linear-gradient(135deg, #7b6cf0, #9a7bf5));
-    box-shadow: 0 10px 24px -8px rgba(108, 92, 231, 0.5);
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    background: linear-gradient(135deg, #8b7cf0, #a99bf5);
+    box-shadow: 0 12px 28px -14px rgba(124, 108, 240, 0.65);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .hero-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 16px 30px -10px rgba(108, 92, 231, 0.55);
+    box-shadow: 0 16px 32px -12px rgba(124, 108, 240, 0.7);
 }
 
 .hero-cta-arrow {
-    font-weight: 700;
+    font-size: 14px;
+    opacity: 0.95;
 }
-
-.hero-deco {
-    position: absolute;
-    color: rgba(124, 108, 240, 0.35);
-    font-size: 26px;
-    pointer-events: none;
-}
-
-.hero-deco--1 { top: 18px; left: 16%; }
-.hero-deco--2 { top: 56px; right: 18%; font-size: 18px; }
 
 /* ===== 四个功能卡片 ===== */
 .feature-cards {
@@ -300,53 +291,57 @@ export default {
     box-shadow: 0 16px 32px -16px rgba(90, 190, 120, 0.6);
 }
 
-/* ===== 风格展示区 ===== */
+/* ===== 风格展示区（轻量玻璃质感，与卡片圆角/阴影体系一致） ===== */
 .styles-section {
-    background: var(--kid-card, #fff);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: 28px;
-    padding: 32px 28px 36px;
-    box-shadow: 0 10px 30px -18px rgba(49, 35, 82, 0.22);
+    padding: 28px 24px 32px;
+    box-shadow: 0 16px 40px -24px rgba(100, 90, 160, 0.35);
 }
 
 .styles-head {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 22px;
 }
 
 .styles-title {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--kid-text, #2b2b40);
-    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #3d3d56;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
 }
 
 .styles-subtitle {
     font-size: 14px;
-    color: var(--kid-text-sub, #8a8aa3);
+    color: #7a7a94;
     margin: 0;
 }
 
 .styles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 16px;
+    gap: 14px;
 }
 
 .style-tile {
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.85);
     cursor: pointer;
     padding: 0;
-    border-radius: 18px;
+    border-radius: 20px;
     overflow: hidden;
     aspect-ratio: 1;
-    background: #f0f1f6;
-    box-shadow: 0 6px 16px -10px rgba(49, 35, 82, 0.4);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 20px -14px rgba(80, 70, 120, 0.35);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .style-tile:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 14px 26px -12px rgba(49, 35, 82, 0.45);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -12px rgba(100, 90, 160, 0.4);
 }
 
 .style-tile-img {
@@ -358,7 +353,7 @@ export default {
 /* ===== 平板 ===== */
 @media (max-width: 1024px) {
     .hero-title {
-        font-size: 38px;
+        font-size: 34px;
     }
 
     .feature-cards {
@@ -388,9 +383,6 @@ export default {
         font-size: 14px;
         margin-bottom: 18px;
     }
-
-    .hero-deco--1 { left: 6%; }
-    .hero-deco--2 { right: 8%; }
 
     .feature-cards {
         grid-template-columns: repeat(2, 1fr);

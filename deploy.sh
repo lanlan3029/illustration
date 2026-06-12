@@ -25,9 +25,16 @@ fi
 echo "正在安装依赖..."
 npm install
 
-# 4. 构建生产版本
+# 4. 构建生产版本（清空 dist，避免旧 chunk 残留导致 hash 不一致）
 echo "正在构建生产版本..."
+rm -rf dist
 npm run build
+
+if [ ! -f dist/index.html ] || [ ! -d dist/js ]; then
+    echo "错误: 构建产物不完整"
+    exit 1
+fi
+echo "构建产物: $(ls dist/js/*.js 2>/dev/null | wc -l) 个 JS 文件"
 
 echo "部署完成！"
 EOF

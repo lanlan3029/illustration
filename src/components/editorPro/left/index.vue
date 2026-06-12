@@ -30,33 +30,28 @@ const leftBarComponent = {
 // https://github.com/intlify/vue-i18n/issues/1396#issuecomment-1716123143
 const leftBar = reactive([
   {
-    //模板
     key: 'importTmpl',
-    name: computed(() => t('templates')),
+    name: computed(() => t('editorProLeft.canvas')),
     icon: 'md-square-outline',
   },
   {
-    //基础元素
     key: 'tools',
-    name: computed(() => t('elements')),
+    name: computed(() => t('editorProLeft.draw')),
     icon: 'md-add-circle',
   },
   {
-    // 图片元素
     key: 'material',
-    name: computed(() => t('material.cartoon')),
+    name: computed(() => t('editorProLeft.materialLibrary')),
     icon: 'md-flower',
   },
   {
-    // 图层
     key: 'layer',
     name: computed(() => t('layers')),
     icon: 'md-reorder',
   },
   {
-    // 用户素材
     key: 'myMaterial',
-    name: computed(() => t('mine')),
+    name: computed(() => t('editorProLeft.myWorks')),
     icon: 'ios-contact-outline',
   },
 ]);

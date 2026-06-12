@@ -21,7 +21,7 @@
         <Input
           v-model="searchInput"
           clearable
-          placeholder="搜索素材"
+          :placeholder="$t('editorProLeft.searchMaterial')"
           @on-change="(e) => loadSearch(e?.target?.value ?? searchInput)"
         />
       </div>
@@ -71,22 +71,21 @@ const { isOutsideCanvas } = useCalculate();
 const { t } = useI18n();
 
 const icons = [
-  { type: 'charcter', icon: 'iconfont icon-ren1', id: 0 },
-  { type: 'scene', icon: 'iconfont icon-tupian', id: 1 },
-  { type: 'people', icon: 'iconfont icon-renti', id: 2 },
-  { type: 'animal', icon: 'iconfont icon--panda', id: 3 },
-  { type: 'plant', icon: 'iconfont icon-shu3', id: 4 },
-  { type: 'food', icon: 'iconfont icon-shiwu-2', id: 5 },
-  { type: 'toy', icon: 'iconfont icon-jimu2', id: 6 },
-  { type: 'vehicle', icon: 'iconfont icon-qichepiao', id: 7 },
-  { type: 'decoration', icon: 'iconfont icon-zhuangshipin', id: 8 },
-  { type: 'furniture', icon: 'iconfont icon-shafa1', id: 9 },
-  { type: 'others', icon: 'iconfont icon-other', id: 10 },
+  { type: 'scene', icon: 'iconfont icon-tupian', id: 0 },
+  { type: 'people', icon: 'iconfont icon-renti', id: 1 },
+  { type: 'animal', icon: 'iconfont icon--panda', id: 2 },
+  { type: 'plant', icon: 'iconfont icon-shu3', id: 3 },
+  { type: 'food', icon: 'iconfont icon-shiwu-2', id: 4 },
+  { type: 'toy', icon: 'iconfont icon-jimu2', id: 5 },
+  { type: 'vehicle', icon: 'iconfont icon-qichepiao', id: 6 },
+  { type: 'decoration', icon: 'iconfont icon-zhuangshipin', id: 7 },
+  { type: 'furniture', icon: 'iconfont icon-shafa1', id: 8 },
+  { type: 'others', icon: 'iconfont icon-other', id: 9 },
 ];
 
 // 默认选择：装饰 decoration
 const selectType = ref('decoration');
-const selectIndex = ref(8);
+const selectIndex = ref(7);
 
 const pictureArr = ref([]);
 const searchArr = ref([]);
@@ -138,31 +137,6 @@ async function fetchPage(p) {
   if (loading.value || !hasMore.value) return;
   loading.value = true;
   try {
-    // “我的角色”
-    if (selectType.value === 'charcter') {
-      const userId = localStorage.getItem('id');
-      if (!userId) {
-        pictureArr.value = [];
-        hasMore.value = false;
-        return;
-      }
-      const apiUrl = process.env.VUE_APP_API_BASE_URL
-        ? `${process.env.VUE_APP_API_BASE_URL}/character`
-        : '/character';
-      const response = await axios.get(apiUrl, {
-        params: { user_id: userId },
-        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-      });
-      const characterList = response?.data?.data || response?.data?.message || response?.data?.list || [];
-      const formatted = (characterList || []).map((char) => {
-        const imageUrl = char.image_url || char.character_image_url || '';
-        return { _id: char.id || char._id, content: imageUrl, ...char };
-      });
-      pictureArr.value = p === 1 ? formatted : pictureArr.value.concat(formatted);
-      hasMore.value = false;
-      return;
-    }
-
     const res = await axios.get(
       `/picture/?sort_param=heat&sort_num=desc&type=${selectType.value}&page=${p}`
     );

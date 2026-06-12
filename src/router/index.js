@@ -444,4 +444,19 @@ router.beforeEach((to, from, next) => {
     }
 })
 
+// 发版后旧 tab 仍持有旧 app.js，懒加载 chunk 会 404（或被 SPA 回退成 HTML）→ 自动刷新拉取新资源
+const CHUNK_RELOAD_KEY = 'chunk_reload_ts'
+router.onError((error) => {
+    const msg = error?.message || ''
+    const isChunkError = /ChunkLoadError|Loading chunk [\d]+ failed/i.test(msg)
+    if (!isChunkError) return
+
+    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0)
+    const now = Date.now()
+    if (now - last < 10000) return
+
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(now))
+    window.location.reload()
+})
+
 export default router

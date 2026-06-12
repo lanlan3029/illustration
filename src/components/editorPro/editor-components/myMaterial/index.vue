@@ -1,16 +1,15 @@
 
-
 <template>
   <div class="my-material" v-if="isLogin">
     <Tabs v-model="type">
-      <TabPane label="插画" name="ill">
+      <TabPane :label="$t('editorProLeft.myIllustrations')" name="ill">
         <div
           v-if="type === 'ill'"
           class="ill-wrap"
           @scroll="handleIllScroll"
         >
-          <div v-if="loadingIll && illArr.length === 0" class="tip">加载中...</div>
-          <div v-else-if="illArr.length === 0" class="tip">暂无插画</div>
+          <div v-if="loadingIll && illArr.length === 0" class="tip">{{ $t('common.loading') }}</div>
+          <div v-else-if="illArr.length === 0" class="tip">{{ $t('editorProLeft.noIllustrations') }}</div>
           <div v-else class="ill-grid">
             <div v-for="item in illArr" :key="item._id" class="ill-item">
               <img
@@ -19,31 +18,34 @@
                 :alt="item.title || '插画'"
                 @click="handlePickIll(item)"
               />
-              <div class="ill-title">{{ item.title || '未命名插画' }}</div>
+              <div class="ill-title">{{ item.title || $t('editorProLeft.unnamedIllustration') }}</div>
             </div>
           </div>
-          <div v-if="loadingIll && illArr.length > 0" class="load-more-tip">加载中...</div>
-          <div v-else-if="!hasMoreIllus && illArr.length > 0" class="load-more-tip">没有更多了</div>
+          <div v-if="loadingIll && illArr.length > 0" class="load-more-tip">{{ $t('common.loading') }}</div>
+          <div v-else-if="!hasMoreIllus && illArr.length > 0" class="load-more-tip">{{ $t('editorProLeft.noMore') }}</div>
         </div>
       </TabPane>
-      <TabPane label="模板" name="templ">
-        <myTempl v-if="type === 'templ'"></myTempl>
+      <TabPane :label="$t('editorProLeft.myCharacters')" name="char">
+        <myCharacters v-if="type === 'char'" />
       </TabPane>
-      <TabPane label="图片" name="img">
+      <TabPane :label="$t('editorProLeft.myImages')" name="img">
         <uploadMaterial v-if="type === 'img'"></uploadMaterial>
+      </TabPane>
+      <TabPane :label="$t('editorProLeft.myTemplates')" name="templ">
+        <myTempl v-if="type === 'templ'"></myTempl>
       </TabPane>
     </Tabs>
   </div>
-  <div class="tip" v-else>请先登录</div>
+  <div class="tip" v-else>{{ $t('editorProLeft.loginRequired') }}</div>
 </template>
 
 <script setup name="ImportTmpl">
 import uploadMaterial from './uploadMaterial';
 import myTempl from './myTempl';
+import myCharacters from './myCharacters.vue';
 import { ref, getCurrentInstance, onMounted, watch } from 'vue';
 import useSelect from '@/components/editorPro/hooks/select';
 const type = ref('ill');
-// 以 token 是否存在作为“是否登录”的主判断，避免接口暂时失败导致误判为未登录
 const isLogin = ref(!!localStorage.getItem('token'));
 const illArr = ref([]);
 const illPage = ref(1);
@@ -134,14 +136,12 @@ const handleIllScroll = (e) => {
   if (nearBottom) loadMoreIllus();
 };
 
-// 初始化：只要 token 存在，首屏如果当前就是“插画”tab，就立即拉取
 onMounted(() => {
   if (isLogin.value && type.value === 'ill' && illArr.value.length === 0 && !loadingIll.value) {
     getIll();
   }
 });
 
-// 切换到“插画”tab 时懒加载（避免重复请求）
 watch(
   type,
   (val) => {
@@ -157,6 +157,8 @@ watch(
 .tip {
   padding: 20px;
   text-align: center;
+  color: #999;
+  font-size: 13px;
 }
 
 .ill-wrap {
