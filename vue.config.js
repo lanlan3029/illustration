@@ -2,6 +2,14 @@ const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
 
 module.exports = defineConfig({
+    pages: {
+        index: {
+            entry: 'src/main.js',
+            template: 'public/index.html',
+            filename: 'index.html',
+            title: 'KidStory | AI插画与绘本创作平台',
+        },
+    },
     transpileDependencies: true,
     // CSS 提取配置
     css: {

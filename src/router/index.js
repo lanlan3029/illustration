@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import store from '../store'
+import { applyRouteSeo } from '@/utils/seo'
 
 
 
@@ -44,18 +45,21 @@ const routes = [{
         name: 'books',
         component: () =>
             import ( /* webpackChunkName: "original-books" */ '../views/OriginalBooks.vue'),
+        meta: { seoTitle: '原创绘本' }
     },
     {
         path: '/search-books/',
         name: 'search-books',
         component: () =>
             import ( /* webpackChunkName: "search-books" */ '../views/SearchBooks.vue'),
+        meta: { seoTitle: '搜索绘本' }
     },
     {
         path: '/illustration',
         name: 'illustration',
         component: () =>
             import ( /* webpackChunkName: "classic-books" */ '../views/OriginalIllustration.vue'),
+        meta: { seoTitle: '原创插画' }
     },
     {
         path: '/books/:bookId',
@@ -78,19 +82,21 @@ const routes = [{
         name: 'connection',
         component: () =>
             import ( /* webpackChunkName: "connection" */ '../views/Connection.vue'),
-
+        meta: { seoTitle: '联系我们' }
     },
     {
         path: '/utility-tools',
         name: 'utility-tools',
         component: () =>
             import ( /* webpackChunkName: "utility-tools" */ '../views/UtilityTools.vue'),
+        meta: { seoTitle: '实用工具' }
     },
     {
         path: '/prompt-fill',
         name: 'prompt-fill',
         component: () =>
             import ( /* webpackChunkName: "prompt-fill" */ '../views/PromptFill.vue'),
+        meta: { seoTitle: '提示词填充' }
     },
 
     {
@@ -266,7 +272,8 @@ const routes = [{
         component: () =>
             import ( /* webpackChunkName: "editorpro" */ '../views/Editorpro.vue'),
         meta: {
-            requiresAuth: false
+            requiresAuth: false,
+            seoTitle: '在线插画编辑'
         }
     },
     {
@@ -303,7 +310,8 @@ const routes = [{
                 path: 'narrative',
                 name: 'mood-diary-narrative',
                 component: () =>
-                    import ( /* webpackChunkName: "mood-diary-narrative" */ '../views/mood-diary/MoodDiaryNarrative.vue')
+                    import ( /* webpackChunkName: "mood-diary-narrative" */ '../views/mood-diary/MoodDiaryNarrative.vue'),
+                meta: { seoTitle: '心情日记' }
             },
             {
                 path: 'write',
@@ -344,7 +352,8 @@ const routes = [{
         component: () =>
             import ( /* webpackChunkName: "maze" */ '../views/Maze.vue'),
         meta: {
-            requiresAuth: false
+            requiresAuth: false,
+            seoTitle: '迷宫绘本'
         }
     },
     {
@@ -428,6 +437,10 @@ const routes = [{
 const router = createRouter({
     history: createWebHashHistory(process.env.BASE_URL),
     routes
+})
+
+router.afterEach((to) => {
+    applyRouteSeo(to)
 })
 
 router.beforeEach((to, from, next) => {
