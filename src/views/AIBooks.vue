@@ -19,16 +19,28 @@
                         </el-form-item>
 
                         <el-form-item :label="$t('aibooks.style')">
-                            <div class="style-tags-container">
-                                <el-check-tag
+                            <div class="style-picker-grid">
+                                <button
                                     v-for="style in styles"
                                     :key="style.key"
-                                    :checked="form.artStyle === style.key"
-                                    type="primary"
-                                    @change="(checked) => handleStyleChange(style.key, checked)"
-                                    class="style-tag">
-                                    {{ style.artStyle }}
-                                </el-check-tag>
+                                    type="button"
+                                    class="style-picker-item"
+                                    :class="{ selected: form.artStyle === style.key }"
+                                    :title="style.elementDetails"
+                                    @click="handleStyleChange(style.key, true)"
+                                >
+                                    <div class="style-picker-thumb">
+                                        <img
+                                            v-if="style.image"
+                                            :src="style.image"
+                                            :alt="style.artStyle"
+                                            class="style-picker-img"
+                                            loading="lazy"
+                                        />
+                                        <div v-else class="style-picker-fallback" aria-hidden="true" />
+                                    </div>
+                                    <span class="style-picker-label">{{ style.artStyle }}</span>
+                                </button>
                             </div>
                         </el-form-item>
 
@@ -192,6 +204,7 @@ import {
     isCreateCharacterResponseOk,
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask'
+import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
 
 export default {
@@ -225,12 +238,17 @@ export default {
             'oilPainting'
         ]
         
+        const styleImageMap = Object.fromEntries(
+            ILLUSTRATION_STYLE_CONFIGS.map((config) => [config.key, config.image])
+        )
+
         // 根据当前语言动态获取风格列表
         const styles = computed(() => {
             return styleKeys.map(key => ({
                 key: key,
                 artStyle: t(`aibooks.styles.${key}.artStyle`),
-                elementDetails: t(`aibooks.styles.${key}.elementDetails`)
+                elementDetails: t(`aibooks.styles.${key}.elementDetails`),
+                image: styleImageMap[key] || null,
             }))
         })
         
@@ -1652,24 +1670,88 @@ export default {
     }
 }
 
-/* 风格标签容器 */
-.style-tags-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+/* 风格选择（带预览图） */
+.style-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     margin-top: 8px;
+    width: 100%;
 }
 
-.style-tag {
+.style-picker-item {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #ececf0;
+    background: #fff;
     cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 14px;
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.style-tag:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.style-picker-item:hover {
+    border-color: #d6d9df;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+}
+
+.style-picker-item.selected {
+    border-color: #5b5bd6;
+    box-shadow: 0 0 0 2px rgba(91, 91, 214, 0.35);
+    background: #f7f7ff;
+}
+
+.style-picker-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f0f1f3;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.style-picker-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.style-picker-fallback {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e8eaf0 0%, #f5f6f8 100%);
+}
+
+.style-picker-label {
+    font-size: 12px;
+    line-height: 1.35;
+    color: #303133;
+    font-weight: 500;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .style-picker-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .style-picker-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 </style>
