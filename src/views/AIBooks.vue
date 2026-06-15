@@ -71,6 +71,41 @@
                         <p class="progress-text">{{ progressText }}</p>
                     </div>
 
+                    <!-- 角色设定卡 -->
+                    <div v-if="!generating && imagePrompts && imagePrompts.length > 0" class="character-card-editor">
+                        <h3 class="prompts-title">{{ $t('aibooks.characterCard') }}</h3>
+                        <p class="character-card-hint">{{ $t('aibooks.characterCardHint') }}</p>
+                        <el-input
+                            v-model="characterCard"
+                            type="textarea"
+                            :rows="6"
+                            :placeholder="$t('aibooks.characterCardPlaceholder')"
+                            class="character-card-textarea"
+                        />
+                        <div class="character-ref-row">
+                            <span class="character-ref-label">{{ $t('aibooks.characterRefOptional') }}</span>
+                            <el-upload
+                                :auto-upload="false"
+                                :show-file-list="false"
+                                accept="image/*"
+                                :on-change="onCharacterRefChange"
+                            >
+                                <el-button size="small">{{ $t('aibooks.uploadCharacterRef') }}</el-button>
+                            </el-upload>
+                            <el-button
+                                v-if="characterReferencePreview"
+                                size="small"
+                                type="danger"
+                                link
+                                @click="clearCharacterReference"
+                            >{{ $t('aibooks.clearCharacterRef') }}</el-button>
+                        </div>
+                        <div v-if="characterReferencePreview" class="character-ref-preview">
+                            <img :src="characterReferencePreview" alt="character reference" />
+                        </div>
+                        <p class="consistency-hint">{{ $t('aibooks.consistencyHint') }}</p>
+                    </div>
+
                     <!-- 图片生成提示词编辑区域 -->
                     <div v-if="!generating && imagePrompts && imagePrompts.length > 0" class="prompts-editor">
                         <h3 class="prompts-title">{{ $t('aibooks.editPrompts') }}</h3>
@@ -205,6 +240,16 @@ import {
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
+import {
+    appendStorySchemaGuide,
+    extractCharacterProfiles,
+    formatCharacterCard,
+    parseCharacterCardText,
+    buildPageImagePrompt,
+    scenesDetailToImagePrompts,
+    getStyleInfoText,
+    STORY_JSON_SCHEMA_GUIDE,
+} from '@/utils/aibooksPrompts'
 
 
 export default {
@@ -272,6 +317,10 @@ export default {
             bookData: null,
             storyData: null,
             imagePrompts: [],
+            characterProfiles: [],
+            characterCard: '',
+            characterReferenceBase64: '',
+            characterReferencePreview: '',
             generatingImages: false,
             // API 配置（模型名称由前端使用，具体 API 地址和密钥在后端配置）
             doubaoSeedModel: 'doubao-seed-1-6',
@@ -347,6 +396,9 @@ export default {
             this.progressStatus = ''
             this.progressText = '正在生成故事...'
             this.bookData = null
+            this.characterProfiles = []
+            this.characterCard = ''
+            this.clearCharacterReference()
             
             try {
                 // 步骤1: 调用 doubao-seed-1.6 生成故事
@@ -363,20 +415,15 @@ export default {
                 this.storyData = storyData
                 
                 // 提取 scenes_detail 并处理为可编辑的提示词
-                this.imagePrompts = storyData.scenes_detail.map((detail) => {
-                    // 移除"图片X："前缀（如果存在）
-                    let prompt = detail.replace(/^图片\d+[：:]\s*/, '')
-                    
-                    return prompt
-                })
+                this.characterProfiles = extractCharacterProfiles(storyData)
+                this.characterCard = formatCharacterCard(this.characterProfiles)
+                this.imagePrompts = scenesDetailToImagePrompts(storyData.scenes_detail)
                 
-                // 在末尾添加封面和去文字提示
-                if (this.imagePrompts.length > 0) {
-                    const lastPrompt = this.imagePrompts[this.imagePrompts.length - 1]
-                    this.imagePrompts[this.imagePrompts.length - 1] = lastPrompt + '\n\n最后，为故事书创作一个封面。 再检查所有图片，去除图片中的文字'
+                if (!this.characterCard.trim()) {
+                    console.warn('故事 JSON 未返回 character_profiles，请手动填写角色设定卡')
                 }
                 
-                ElMessage.success('故事创作完成！请编辑提示词后点击"开始生成绘本"')
+                ElMessage.success('故事创作完成！请确认角色设定卡并编辑分镜提示词')
                 
                 // 保存到本地存储
                 this.saveToLocalStorage()
@@ -407,10 +454,11 @@ export default {
             
             // 构建请求数据
             const requestData = {
-                prompt: this.form.prompt.trim(),
+                prompt: appendStorySchemaGuide(this.form.prompt.trim()),
                 model: this.doubaoSeedModel,
                 maxCompletionTokens: 65535,
-                reasoningEffort: 'medium'
+                reasoningEffort: 'medium',
+                storyGuide: STORY_JSON_SCHEMA_GUIDE,
             }
             
             // 如果存在风格提示词，添加到请求中
@@ -536,6 +584,13 @@ export default {
                 ElMessage.warning('请先生成故事');
                 return;
             }
+
+            if (!this.characterCard?.trim()) {
+                ElMessage.warning(this.$t('aibooks.characterCardRequired'));
+                return;
+            }
+
+            this.characterProfiles = parseCharacterCardText(this.characterCard)
             
             this.generatingImages = true
             this.progressPercentage = 0
@@ -552,6 +607,8 @@ export default {
                     summary: this.storyData.summary,
                     scenes: this.storyData.scenes,
                     scenes_detail: this.storyData.scenes_detail,
+                    character_profiles: this.characterProfiles,
+                    character_card: this.characterCard,
                     images: images
                 }
                 
@@ -627,139 +684,157 @@ export default {
             })
         },
         
-        // 生成图片（调用 /create-character API，参照 CreateCharacter.vue）
+        // 生成图片（逐页调用 /create-character；第 2 页起附第一页或用户上传的角色参考图）
         async generateImages(prompts, imageCount) {
             const images = []
-            
-            // prompts 现在是一个数组，每个元素对应一张图片的提示词
             const promptList = Array.isArray(prompts) ? prompts : [prompts]
-            
-            // 为每个分镜生成图片
+            const styleInfo = getStyleInfoText(this.styles, this.form.artStyle)
+            const characterCard = (this.characterCard || '').trim() || formatCharacterCard(this.characterProfiles)
+
+            let anchorImageBase64 = this.characterReferenceBase64 || ''
+            let firstPageImageBase64 = ''
+
             for (let i = 0; i < imageCount && i < promptList.length; i++) {
                 this.progressPercentage = Math.floor((i / imageCount) * 100)
                 this.progressText = `正在生成第 ${i + 1}/${imageCount} 张图片...`
-                
+
                 try {
-                    // 构建请求数据，参照 CreateCharacter.vue 的格式
+                    const useUploadedRef = Boolean(anchorImageBase64)
+                    const useFirstPageRef = !useUploadedRef && i > 0 && Boolean(firstPageImageBase64)
+                    const referenceImage = useUploadedRef
+                        ? anchorImageBase64
+                        : (useFirstPageRef ? firstPageImageBase64 : '')
+
                     const requestData = {
-                        prompt: promptList[i].trim(),
+                        prompt: buildPageImagePrompt({
+                            scenePrompt: promptList[i].trim(),
+                            characterCard,
+                            styleInfo,
+                            withReferenceImage: Boolean(referenceImage),
+                        }),
                         size: '1280x960',
-                        watermark: false
+                        watermark: false,
                     }
-                    
-                    // 在提示词中添加风格信息
-                    if (this.form.artStyle) {
-                        const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
-                        if (selectedStyle) {
-                            const styleInfo = `${selectedStyle.artStyle}。${selectedStyle.elementDetails}`
-                            requestData.prompt = `${requestData.prompt}\n\n画风：${styleInfo}`
-                        }
+
+                    if (referenceImage) {
+                        requestData.image = referenceImage
                     }
-                    
+
                     const responseData = await postCreateCharacter(
                         this.$http,
                         requestData,
                         { apiBaseUrl: this.apiBaseUrl }
                     )
-                    
-                    // 判断响应状态
+
                     if (!responseData) {
                         throw new Error('API响应为空')
                     }
-                    
-                    // 检查是否有错误信息
+
                     if (responseData.error) {
                         const errorMsg = responseData.error.message || responseData.error.code || '未知错误'
                         throw new Error(`生成图片失败: ${errorMsg}`)
                     }
-                    
+
                     if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
                         const errorMsg = responseData.desc || responseData.message?.error || `code: ${responseData.code}`
                         throw new Error(`生成图片失败: ${errorMsg}`)
                     }
 
                     const result = responseData.message
-                        
-                        // 如果后端返回了最新积分，更新全局用户信息，TopBar 会自动刷新显示
-                        if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
-                            this.$store.commit('setUserInfo', {
-                                ...(this.$store.state.userInfo || {}),
-                                points: result.points
-                            })
+
+                    if (result && typeof result === 'object' && result.points !== undefined && this.$store?.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: result.points,
+                        })
+                    }
+
+                    const imageUrl = this.resolveGeneratedImageUrl(result)
+                    if (!imageUrl) {
+                        throw new Error(`第 ${i + 1} 张图片生成成功但未找到图片URL`)
+                    }
+
+                    images.push(imageUrl)
+
+                    if (i === 0 && !anchorImageBase64) {
+                        try {
+                            firstPageImageBase64 = await this.imageToBase64(imageUrl)
+                        } catch (e) {
+                            console.warn('第一页参考图转换失败，后续页面将仅依赖文字设定卡:', e)
                         }
-                        
-                        let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
-                        if (!imageUrl && result.character_image_url) {
-                            imageUrl = result.character_image_url
-                        }
-                        if (!imageUrl && result.image_base64) {
-                            let base64Str = result.image_base64.trim()
-                            if (!base64Str.startsWith('data:')) {
-                                base64Str = base64Str.replace(/\s/g, '')
-                                base64Str = `data:image/jpeg;base64,${base64Str}`
-                            }
-                            imageUrl = base64Str
-                        }
-                        if (!imageUrl && result.character_image_base64) {
-                            let base64Str = result.character_image_base64.trim()
-                            if (!base64Str.startsWith('data:')) {
-                                base64Str = base64Str.replace(/\s/g, '')
-                                base64Str = `data:image/jpeg;base64,${base64Str}`
-                            }
-                            imageUrl = base64Str
-                        }
-                        
-                        // 如果还是没有图片URL，尝试从 full_response 中获取
-                        if (!imageUrl && result.full_response) {
-                            if (result.full_response.data && Array.isArray(result.full_response.data) && result.full_response.data.length > 0) {
-                                const firstData = result.full_response.data[0]
-                                // 处理 b64_json 格式
-                                if (firstData.b64_json) {
-                                    const base64Str = firstData.b64_json.trim()
-                                    imageUrl = `data:image/jpeg;base64,${base64Str}`
-                                } else {
-                                    imageUrl = firstData.url || firstData.ResultUrl || ''
-                                }
-                            }
-                            if (!imageUrl) {
-                                imageUrl = result.full_response.result_url || result.full_response.ResultUrl || result.full_response.url || ''
-                            }
-                        }
-                        
-                        // 尝试从其他字段获取
-                        if (!imageUrl) {
-                            imageUrl = result.character_image_oss_url || result.result_url || result.ResultUrl || ''
-                        }
-                        
-                        // 如果还是没有，尝试从 result 中直接获取 b64_json
-                        if (!imageUrl && result.b64_json) {
-                            const base64Str = result.b64_json.trim()
-                            imageUrl = `data:image/jpeg;base64,${base64Str}`
-                        }
-                        
-                        if (imageUrl) {
-                            images.push(imageUrl)
-                            console.log(`第 ${i + 1} 张图片生成成功:`, imageUrl.substring(0, 50) + '...')
-                        } else {
-                            const errorMsg = `第 ${i + 1} 张图片生成成功但未找到图片URL`
-                            console.error(errorMsg, result)
-                            throw new Error(errorMsg)
-                        }
+                    }
                 } catch (error) {
                     console.error(`生成第 ${i + 1} 张图片失败:`, error)
-                    let errorMessage = '图片生成失败'
-                    if (error.response) {
-                        const errorData = error.response.data
-                        errorMessage = errorData?.message || errorData?.desc || errorMessage
-                    } else if (error.message) {
-                        errorMessage = error.message
-                    }
-                    console.error(errorMessage)
                     images.push(null)
                 }
             }
-            
+
             return images
+        },
+
+        resolveGeneratedImageUrl(result) {
+            let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
+            if (!imageUrl && result.character_image_url) {
+                imageUrl = result.character_image_url
+            }
+            if (!imageUrl && result.image_base64) {
+                let base64Str = result.image_base64.trim()
+                if (!base64Str.startsWith('data:')) {
+                    base64Str = base64Str.replace(/\s/g, '')
+                    base64Str = `data:image/jpeg;base64,${base64Str}`
+                }
+                imageUrl = base64Str
+            }
+            if (!imageUrl && result.character_image_base64) {
+                let base64Str = result.character_image_base64.trim()
+                if (!base64Str.startsWith('data:')) {
+                    base64Str = base64Str.replace(/\s/g, '')
+                    base64Str = `data:image/jpeg;base64,${base64Str}`
+                }
+                imageUrl = base64Str
+            }
+            if (!imageUrl && result.full_response) {
+                if (result.full_response.data && Array.isArray(result.full_response.data) && result.full_response.data.length > 0) {
+                    const firstData = result.full_response.data[0]
+                    if (firstData.b64_json) {
+                        imageUrl = `data:image/jpeg;base64,${firstData.b64_json.trim()}`
+                    } else {
+                        imageUrl = firstData.url || firstData.ResultUrl || ''
+                    }
+                }
+                if (!imageUrl) {
+                    imageUrl = result.full_response.result_url || result.full_response.ResultUrl || result.full_response.url || ''
+                }
+            }
+            if (!imageUrl) {
+                imageUrl = result.character_image_oss_url || result.result_url || result.ResultUrl || ''
+            }
+            if (!imageUrl && result.b64_json) {
+                imageUrl = `data:image/jpeg;base64,${result.b64_json.trim()}`
+            }
+            return imageUrl || ''
+        },
+
+        async onCharacterRefChange(uploadFile) {
+            const file = uploadFile?.raw
+            if (!file || !file.type.startsWith('image/')) {
+                ElMessage.warning(this.$t('aibooks.invalidCharacterRef'))
+                return
+            }
+            try {
+                const dataUrl = await this.fileToBase64(file, true)
+                this.characterReferenceBase64 = dataUrl
+                this.characterReferencePreview = dataUrl
+                ElMessage.success(this.$t('aibooks.characterRefReady'))
+            } catch (e) {
+                console.error('角色参考图读取失败:', e)
+                ElMessage.error(this.$t('aibooks.characterRefFailed'))
+            }
+        },
+
+        clearCharacterReference() {
+            this.characterReferenceBase64 = ''
+            this.characterReferencePreview = ''
         },
         
         // 收集插画（保存到"我的插画"）
@@ -1112,6 +1187,17 @@ export default {
                         if (data.imagePrompts && data.imagePrompts.length > 0) {
                             this.imagePrompts = data.imagePrompts;
                         }
+
+                        if (data.characterProfiles) {
+                            this.characterProfiles = data.characterProfiles;
+                        }
+                        if (data.characterCard) {
+                            this.characterCard = data.characterCard;
+                        }
+                        if (data.characterReferencePreview) {
+                            this.characterReferencePreview = data.characterReferencePreview;
+                            this.characterReferenceBase64 = data.characterReferencePreview;
+                        }
                         
                         // 恢复生成的绘本数据
                         if (data.bookData) {
@@ -1140,6 +1226,9 @@ export default {
                     },
                     storyData: this.storyData,
                     imagePrompts: this.imagePrompts,
+                    characterProfiles: this.characterProfiles,
+                    characterCard: this.characterCard,
+                    characterReferencePreview: this.characterReferencePreview || '',
                     bookData: this.bookData,
                     timestamp: Date.now()
                 };
@@ -1153,11 +1242,13 @@ export default {
                     const dataToSave = {
                         form: {
                             prompt: this.form.prompt,
-                            readerGroup: this.form.readerGroup
+                            artStyle: this.form.artStyle,
                         },
-                        referenceImageUrl: this.referenceImageUrl,
                         storyData: this.storyData,
                         imagePrompts: this.imagePrompts,
+                        characterProfiles: this.characterProfiles,
+                        characterCard: this.characterCard,
+                        characterReferencePreview: this.characterReferencePreview || '',
                         bookData: this.bookData,
                         timestamp: Date.now()
                     };
@@ -1184,8 +1275,11 @@ export default {
                 debounceSave();
             }, { deep: true });
             
-            // 监听参考图变化
-            this.$watch('referenceImageUrl', () => {
+            this.$watch('characterCard', () => {
+                debounceSave();
+            });
+
+            this.$watch('characterReferencePreview', () => {
                 debounceSave();
             });
             
@@ -1301,6 +1395,61 @@ export default {
     text-align: center;
     margin-top: 6px;
     line-height: 1.4;
+}
+
+.character-card-editor {
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 10px;
+    background: #f8f9fc;
+    border: 1px solid #ebeef5;
+}
+
+.character-card-hint,
+.consistency-hint {
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #909399;
+}
+
+.consistency-hint {
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.character-card-textarea {
+    width: 100%;
+}
+
+.character-ref-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.character-ref-label {
+    font-size: 13px;
+    color: #606266;
+}
+
+.character-ref-preview {
+    margin-top: 10px;
+    width: 88px;
+    height: 88px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e4e7ed;
+    background: #fff;
+}
+
+.character-ref-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .prompts-editor {
