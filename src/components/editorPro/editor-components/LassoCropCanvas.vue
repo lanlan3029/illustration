@@ -13,13 +13,10 @@
         <canvas
           ref="drawRef"
           class="lasso-draw"
-        @mousedown="onPointerDown"
-        @mousemove="onPointerMove"
-        @mouseup="onPointerUp"
-        @mouseleave="onPointerLeave"
-        @touchstart.prevent="onTouchStart"
-        @touchmove.prevent="onTouchMove"
-        @touchend.prevent="onTouchEnd"
+          @pointerdown.prevent="onPointerDown"
+          @pointermove.prevent="onPointerMove"
+          @pointerup.prevent="onPointerUp"
+          @pointercancel.prevent="onPointerUp"
         />
       </div>
     </div>
@@ -29,6 +26,9 @@
         <img :src="previewUrl" alt="preview" />
         <p class="preview-label">{{ $t('lassoCrop.preview') }}</p>
       </div>
+      <el-button v-if="canFinish" size="small" type="primary" @click="completeCrop">
+        {{ $t('lassoCrop.completeCrop') }}
+      </el-button>
       <el-button v-if="hasPath" size="small" @click="resetDraw">{{ $t('lassoCrop.redraw') }}</el-button>
     </div>
   </div>
@@ -38,13 +38,14 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-  CLOSE_DISTANCE,
   MIN_LASSO_POINTS,
   loadImage,
   distance,
   displayPointsToImagePoints,
   cropImageByLasso,
   canvasToDataUrl,
+  shouldClosePath,
+  canCompletePath,
 } from '@/utils/lassoCrop';
 
 const props = defineProps({
@@ -68,6 +69,9 @@ const closed = ref(false);
 const previewUrl = ref('');
 
 const hasPath = computed(() => points.value.length > 0);
+const canFinish = computed(
+  () => hasPath.value && !previewUrl.value && !drawing.value && canCompletePath(points.value, displaySize.value)
+);
 
 const hintText = computed(() => {
   if (previewUrl.value) return t('lassoCrop.hintDone');
@@ -141,23 +145,17 @@ function redrawOverlay() {
   ctx.restore();
 }
 
-function canvasPointFromEvent(e) {
+function canvasPointFromClient(clientX, clientY) {
   const canvas = drawRef.value;
   const rect = canvas.getBoundingClientRect();
   return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
+    x: clientX - rect.left,
+    y: clientY - rect.top,
   };
 }
 
-function touchPointFromEvent(e) {
-  const touch = e.touches[0] || e.changedTouches[0];
-  const canvas = drawRef.value;
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: touch.clientX - rect.left,
-    y: touch.clientY - rect.top,
-  };
+function canvasPointFromEvent(e) {
+  return canvasPointFromClient(e.clientX, e.clientY);
 }
 
 function pushPoint(p) {
@@ -191,17 +189,14 @@ async function finishPath() {
   }
 }
 
-function tryAutoClose(p) {
-  if (points.value.length < MIN_LASSO_POINTS) return false;
-  if (distance(p, points.value[0]) <= CLOSE_DISTANCE) {
-    finishPath();
-    return true;
-  }
-  return false;
+function completeCrop() {
+  if (!canCompletePath(points.value, displaySize.value)) return;
+  finishPath();
 }
 
 function onPointerDown(e) {
   if (closed.value || previewUrl.value) return;
+  drawRef.value?.setPointerCapture?.(e.pointerId);
   drawing.value = true;
   points.value = [canvasPointFromEvent(e)];
   redrawOverlay();
@@ -209,45 +204,18 @@ function onPointerDown(e) {
 
 function onPointerMove(e) {
   if (!drawing.value || closed.value) return;
-  const p = canvasPointFromEvent(e);
-  if (tryAutoClose(p)) return;
-  pushPoint(p);
+  pushPoint(canvasPointFromEvent(e));
 }
 
 function onPointerUp(e) {
   if (!drawing.value || closed.value) return;
+  if (drawRef.value?.hasPointerCapture?.(e.pointerId)) {
+    drawRef.value.releasePointerCapture(e.pointerId);
+  }
   const p = canvasPointFromEvent(e);
-  if (!tryAutoClose(p) && points.value.length >= MIN_LASSO_POINTS) {
-    finishPath();
-  } else if (points.value.length < MIN_LASSO_POINTS) {
-    drawing.value = false;
-  }
-}
-
-function onPointerLeave() {
-  if (drawing.value && !closed.value && points.value.length >= MIN_LASSO_POINTS) {
-    finishPath();
-  }
-}
-
-function onTouchStart(e) {
-  if (closed.value || previewUrl.value) return;
-  drawing.value = true;
-  points.value = [touchPointFromEvent(e)];
-  redrawOverlay();
-}
-
-function onTouchMove(e) {
-  if (!drawing.value || closed.value) return;
-  const p = touchPointFromEvent(e);
-  if (tryAutoClose(p)) return;
   pushPoint(p);
-}
-
-function onTouchEnd(e) {
-  if (!drawing.value || closed.value) return;
-  const p = touchPointFromEvent(e);
-  if (!tryAutoClose(p) && points.value.length >= MIN_LASSO_POINTS) {
+  drawing.value = false;
+  if (shouldClosePath(points.value, p, displaySize.value)) {
     finishPath();
   }
 }

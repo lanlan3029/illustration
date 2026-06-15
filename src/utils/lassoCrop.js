@@ -2,6 +2,35 @@
 
 export const CLOSE_DISTANCE = 15;
 export const MIN_LASSO_POINTS = 8;
+export const MIN_PATH_LENGTH_FOR_CLOSE = 48;
+
+export function getPathLength(points) {
+  let total = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    total += distance(points[i - 1], points[i]);
+  }
+  return total;
+}
+
+/** 路径足够长才允许闭合，避免贴边绘制时误触 */
+export function getMinPathLengthForClose(displaySize) {
+  if (!displaySize?.width || !displaySize?.height) return MIN_PATH_LENGTH_FOR_CLOSE;
+  return Math.max(
+    MIN_PATH_LENGTH_FOR_CLOSE,
+    Math.min(displaySize.width, displaySize.height) * 0.15
+  );
+}
+
+export function canCompletePath(points, displaySize) {
+  if (!points?.length || points.length < MIN_LASSO_POINTS) return false;
+  return getPathLength(points) >= getMinPathLengthForClose(displaySize);
+}
+
+export function shouldClosePath(points, cursor, displaySize, closeDistance = CLOSE_DISTANCE) {
+  if (!canCompletePath(points, displaySize)) return false;
+  if (!cursor) return false;
+  return distance(cursor, points[0]) <= closeDistance;
+}
 
 export function loadImage(src) {
   return new Promise((resolve, reject) => {
