@@ -12,7 +12,7 @@ export const STORY_JSON_SCHEMA_GUIDE = `【绘本 JSON 输出要求】
    - appearance：固定外貌（发型发色、脸型、眼睛、服装颜色与款式、体型、配饰等，至少 80 字，全书不可变）
    - personality：性格简述（可选）
 4. scenes：每页故事文案数组
-5. scenes_detail：每页画面描述数组，与 scenes 等长；每页须写明出场角色名，并重复 appearance 中的关键外貌词
+5. scenes_detail：每页画面描述数组，与 scenes 等长；每页只描述本页实际出场的角色与场景，不要写入本页未出场的角色；建议在每页开头注明「出场角色：角色A、角色B」（仅列本页会出现的角色）
 
 分镜 4-8 页；scenes 与 scenes_detail 数量必须一致。`;
 
@@ -20,7 +20,72 @@ export const REFERENCE_IMAGE_PROMPT_SUFFIX =
   '参考附图中的主角形象，保持面部特征、发型、服装颜色与款式、体型与附图完全一致，仅根据本页描述改变姿势、表情与场景背景。';
 
 export const CHARACTER_CONSISTENCY_SUFFIX =
-  '严格要求：所有出场角色的发型、服装、体型、配色与【角色设定卡】完全一致，不得随机改变角色外貌。';
+  '严格要求：仅绘制本页列出的出场角色，其发型、服装、体型、配色与设定卡一致；不要绘制本页未列出的其他角色。';
+
+/**
+ * 从分镜文案中解析「出场角色：A、B」等显式标注。
+ */
+export function extractExplicitSceneCharacterNames(text) {
+  const combined = String(text || '');
+  const names = new Set();
+  const patterns = [
+    /出场角色[：:]\s*([^\n。；;]+)/,
+    /本页角色[：:]\s*([^\n。；;]+)/,
+    /登场角色[：:]\s*([^\n。；;]+)/,
+  ];
+
+  patterns.forEach((re) => {
+    const match = combined.match(re);
+    if (!match?.[1]) return;
+    match[1].split(/[、,，/|+\s]+/).forEach((part) => {
+      const name = part.trim().replace(/^和$/, '');
+      if (name && name.length >= 1) names.add(name);
+    });
+  });
+
+  return [...names];
+}
+
+/**
+ * 根据当页文案，筛选本页应注入的角色设定（避免全员注入导致无关角色出镜）。
+ */
+export function pickProfilesForPage({ scenePrompt, sceneText, profiles }) {
+  if (!profiles?.length) return [];
+
+  const combined = `${sceneText || ''}\n${scenePrompt || ''}`.trim();
+  if (!combined) return [];
+
+  const explicitNames = extractExplicitSceneCharacterNames(combined);
+  if (explicitNames.length > 0) {
+    const matched = profiles.filter((p) => {
+      const name = (p.name || '').trim();
+      if (!name) return false;
+      return explicitNames.includes(name) || explicitNames.some((n) => n.includes(name) || name.includes(n));
+    });
+    if (matched.length > 0) return matched;
+  }
+
+  const sorted = [...profiles].sort((a, b) => (b.name?.length || 0) - (a.name?.length || 0));
+  const matched = sorted.filter((p) => {
+    const name = (p.name || '').trim();
+    if (!name || name.length < 2) return false;
+    return combined.includes(name);
+  });
+
+  return matched;
+}
+
+/**
+ * 拼装当页角色设定卡（仅含本页出场角色）。
+ */
+export function buildPageCharacterCard({ scenePrompt, sceneText, profiles }) {
+  const pageProfiles = pickProfilesForPage({ scenePrompt, sceneText, profiles });
+  return {
+    profiles: pageProfiles,
+    card: formatCharacterCard(pageProfiles),
+    names: pageProfiles.map((p) => p.name).filter(Boolean),
+  };
+}
 
 /**
  * 为故事生成请求追加角色设定卡输出要求。
@@ -132,6 +197,7 @@ export function parseCharacterCardText(text) {
 export function buildPageImagePrompt({
   scenePrompt,
   characterCard,
+  characterNames = [],
   styleInfo,
   withReferenceImage = false,
 }) {
@@ -140,7 +206,8 @@ export function buildPageImagePrompt({
   const scene = (scenePrompt || '').trim();
 
   if (card) {
-    parts.push(`【角色设定卡·全书统一】\n${card}`);
+    const namesHint = characterNames.length ? `（${characterNames.join('、')}）` : '';
+    parts.push(`【本页出场角色·设定卡】${namesHint}\n${card}`);
     parts.push(CHARACTER_CONSISTENCY_SUFFIX);
   }
   if (scene) parts.push(scene);

@@ -246,6 +246,7 @@ import {
     formatCharacterCard,
     parseCharacterCardText,
     buildPageImagePrompt,
+    buildPageCharacterCard,
     scenesDetailToImagePrompts,
     getStyleInfoText,
     STORY_JSON_SCHEMA_GUIDE,
@@ -691,7 +692,9 @@ export default {
             const images = []
             const promptList = Array.isArray(prompts) ? prompts : [prompts]
             const styleInfo = getStyleInfoText(this.styles, this.form.artStyle)
-            const characterCard = (this.characterCard || '').trim() || formatCharacterCard(this.characterProfiles)
+            const allProfiles = this.characterProfiles?.length
+                ? this.characterProfiles
+                : parseCharacterCardText(this.characterCard)
 
             let anchorImageBase64 = this.characterReferenceBase64 || ''
             let firstPageImageBase64 = ''
@@ -707,10 +710,18 @@ export default {
                         ? anchorImageBase64
                         : (useFirstPageRef ? firstPageImageBase64 : '')
 
+                    const sceneText = this.storyData?.scenes?.[i] || ''
+                    const { card: pageCharacterCard, names: pageCharacterNames } = buildPageCharacterCard({
+                        scenePrompt: promptList[i],
+                        sceneText,
+                        profiles: allProfiles,
+                    })
+
                     const requestData = {
                         prompt: buildPageImagePrompt({
                             scenePrompt: promptList[i].trim(),
-                            characterCard,
+                            characterCard: pageCharacterCard,
+                            characterNames: pageCharacterNames,
                             styleInfo,
                             withReferenceImage: Boolean(referenceImage),
                         }),
