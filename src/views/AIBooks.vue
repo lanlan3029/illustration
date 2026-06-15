@@ -585,12 +585,14 @@ export default {
                 return;
             }
 
-            if (!this.characterCard?.trim()) {
-                ElMessage.warning(this.$t('aibooks.characterCardRequired'));
+            if (!this.characterCard?.trim() && !this.characterReferenceBase64) {
+                ElMessage.warning(this.$t('aibooks.characterCardOrRefRequired'));
                 return;
             }
 
-            this.characterProfiles = parseCharacterCardText(this.characterCard)
+            this.characterProfiles = this.characterCard?.trim()
+                ? parseCharacterCardText(this.characterCard)
+                : []
             
             this.generatingImages = true
             this.progressPercentage = 0
