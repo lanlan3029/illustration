@@ -36,7 +36,23 @@ if [ ! -f dist/index.html ] || [ ! -d dist/js ]; then
 fi
 echo "构建产物: $(ls dist/js/*.js 2>/dev/null | wc -l) 个 JS 文件"
 
-echo "部署完成！"
+# 5. 校验懒加载 chunk 存在且为 JS（非 index.html 回退）
+UPLOAD_BOOK_CHUNK=$(ls dist/js/upload-local-book.*.js 2>/dev/null | head -1)
+if [ -z "$UPLOAD_BOOK_CHUNK" ]; then
+  echo "警告: 未找到 upload-local-book chunk"
+else
+  echo "upload-local-book chunk: $(basename "$UPLOAD_BOOK_CHUNK")"
+  if head -c 20 "$UPLOAD_BOOK_CHUNK" | grep -q '<'; then
+    echo "错误: chunk 文件内容异常（像 HTML）"
+    exit 1
+  fi
+fi
+
+echo ""
+echo "部署完成！若用户仍 ChunkLoadError："
+echo "  1. 强刷 Ctrl+Shift+R 或清除站点缓存"
+echo "  2. 检查 Caddy：缺失 /js/*.js 勿回退 index.html（见 deploy/caddy-static.snippet）"
+echo "  3. index.html 应 no-cache，/js/* 可长期缓存"
 EOF
 
 echo "部署脚本执行完毕"

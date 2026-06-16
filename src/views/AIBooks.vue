@@ -189,7 +189,9 @@
                                         :src="bookData.images[index]"
                                         fit="cover"
                                         class="story-image"
-                                        :preview-src-list="bookData.images.filter(img => img)">
+                                        :preview-src-list="bookPreviewImages"
+                                        :initial-index="getPreviewInitialIndex(index)"
+                                        preview-teleported
                                         <template #error>
                                             <div class="image-slot">
                                                 <i class="el-icon-picture-outline"></i>
@@ -329,6 +331,11 @@ export default {
             autoSaveTimer: null // 自动保存定时器
         }
     },
+    computed: {
+        bookPreviewImages() {
+            return (this.bookData?.images || []).filter((img) => img);
+        },
+    },
     mounted() {
         // 页面加载时从本地存储恢复数据
         this.loadFromLocalStorage();
@@ -342,6 +349,14 @@ export default {
         }
     },
     methods: {
+        getPreviewInitialIndex(pageIndex) {
+            const images = this.bookData?.images || [];
+            let previewIndex = 0;
+            for (let i = 0; i < pageIndex; i += 1) {
+                if (images[i]) previewIndex += 1;
+            }
+            return previewIndex;
+        },
         // 处理风格选择（单选模式），并将风格信息写入提示词
         handleStyleChange(styleKey, checked) {
             if (!checked) {

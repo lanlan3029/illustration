@@ -1,0 +1,21 @@
+# KidStory 静态资源：缺失的 /js/*.js 必须返回 404，不能回退到 index.html
+# （否则会 ChunkLoadError + Unexpected token '<'）
+#
+# 在 kidstory.cc 的 site 块中，建议顺序类似：
+
+# www.kidstory.cc {
+#   root * /home/ubuntu/www/illustration/dist
+#
+#   @static path /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
+#   handle @static {
+#     file_server
+#   }
+#
+#   handle {
+#     try_files {path} /index.html
+#   }
+#
+#   header /index.html Cache-Control "no-cache, no-store, must-revalidate"
+#   header /js/* Cache-Control "public, max-age=604800, immutable"
+#   header /css/* Cache-Control "public, max-age=604800, immutable"
+# }
