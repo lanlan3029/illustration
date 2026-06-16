@@ -191,7 +191,7 @@
                                         class="story-image"
                                         :preview-src-list="bookPreviewImages"
                                         :initial-index="getPreviewInitialIndex(index)"
-                                        preview-teleported
+                                        preview-teleported>
                                         <template #error>
                                             <div class="image-slot">
                                                 <i class="el-icon-picture-outline"></i>

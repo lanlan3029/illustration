@@ -26,7 +26,7 @@ import '@/assets/lefticon/iconfont.css'
 import axios from 'axios'
 import { installChunkLoadRecovery } from '@/utils/chunkLoadRecovery'
 
-installChunkLoadRecovery()
+installChunkLoadRecovery();
 
 // 处理微信登录回调 - 必须在 Vue 应用创建之前执行
 // 微信授权成功后，会跳转到：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
