@@ -34,6 +34,78 @@
                 </button>
             </section>
 
+            <!-- AI 创作工作台介绍 -->
+            <section class="showcase showcase--workbench">
+                <div class="showcase-inner">
+                    <div class="showcase-content">
+                        <span class="showcase-kicker">{{ $t('home.showcaseWorkbenchKicker') }}</span>
+                        <h2 class="showcase-title">{{ $t('home.showcaseWorkbenchTitle') }}</h2>
+                        <p class="showcase-desc">{{ $t('home.showcaseWorkbenchDesc') }}</p>
+                        <ul class="showcase-points">
+                            <li v-for="(point, idx) in workbenchPoints" :key="idx">{{ point }}</li>
+                        </ul>
+                        <button type="button" class="showcase-cta" @click="go('/creation-studio')">
+                            {{ $t('home.showcaseWorkbenchCta') }}
+                            <span class="showcase-cta-arrow">→</span>
+                        </button>
+                    </div>
+                    <div class="showcase-visual" aria-hidden="true">
+                        <div class="mock-workbench">
+                            <div class="mock-rail">
+                                <span class="mock-rail-item active"></span>
+                                <span class="mock-rail-item"></span>
+                                <span class="mock-rail-item"></span>
+                            </div>
+                            <div class="mock-subnav">
+                                <span class="mock-line active"></span>
+                                <span class="mock-line"></span>
+                                <span class="mock-line"></span>
+                            </div>
+                            <div class="mock-main">
+                                <div class="mock-card mock-card--new"></div>
+                                <div class="mock-card">
+                                    <img :src="workbenchPreview" alt="" />
+                                </div>
+                                <div class="mock-card">
+                                    <img :src="styleImages[5].image" alt="" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIY 编辑插画介绍 -->
+            <section class="showcase showcase--editor">
+                <div class="showcase-inner showcase-inner--reverse">
+                    <div class="showcase-content">
+                        <span class="showcase-kicker">{{ $t('home.showcaseEditorKicker') }}</span>
+                        <h2 class="showcase-title">{{ $t('home.showcaseEditorTitle') }}</h2>
+                        <p class="showcase-desc">{{ $t('home.showcaseEditorDesc') }}</p>
+                        <ul class="showcase-points">
+                            <li v-for="(point, idx) in editorPoints" :key="idx">{{ point }}</li>
+                        </ul>
+                        <button type="button" class="showcase-cta" @click="go('/editorpro')">
+                            {{ $t('home.showcaseEditorCta') }}
+                            <span class="showcase-cta-arrow">→</span>
+                        </button>
+                    </div>
+                    <div class="showcase-visual" aria-hidden="true">
+                        <div class="mock-editor">
+                            <div class="mock-toolbar">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <div class="mock-canvas">
+                                <div class="mock-layer mock-layer--bg"></div>
+                                <img class="mock-sticker mock-sticker--1" :src="editorStickerA" alt="" />
+                                <img class="mock-sticker mock-sticker--2" :src="editorStickerB" alt="" />
+                                <div class="mock-text-box">{{ $t('home.showcaseEditorMockText') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- 风格展示区 -->
             <section class="styles-section">
                 <div class="styles-head">
@@ -59,8 +131,27 @@
 <script>
 export default {
     name: 'Home',
+    computed: {
+        workbenchPoints() {
+            return [
+                this.$t('home.showcaseWorkbenchPoint1'),
+                this.$t('home.showcaseWorkbenchPoint2'),
+                this.$t('home.showcaseWorkbenchPoint3'),
+            ];
+        },
+        editorPoints() {
+            return [
+                this.$t('home.showcaseEditorPoint1'),
+                this.$t('home.showcaseEditorPoint2'),
+                this.$t('home.showcaseEditorPoint3'),
+            ];
+        },
+    },
     data() {
         return {
+            workbenchPreview: require('@/assets/images/cards/reddit.png'),
+            editorStickerA: require('@/assets/prompt/5.webp'),
+            editorStickerB: require('@/assets/prompt/14.webp'),
             featureCards: [
                 { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book', img: require('@/assets/images/cards/books.png') },
                 { key: 'brush', titleKey: 'nav.aiIllustration', descKey: 'home.aiIllustrationDesc', to: '/ai-picture', cls: 'ic-brush', img: require('@/assets/images/cards/image (1).png') },
@@ -293,6 +384,279 @@ export default {
     box-shadow: 0 16px 32px -16px rgba(90, 190, 120, 0.6);
 }
 
+/* ===== 产品介绍区块 ===== */
+.showcase {
+    margin-bottom: 56px;
+}
+
+.showcase-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 40px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 28px;
+    padding: 36px 36px 36px 40px;
+    box-shadow: 0 20px 48px -28px rgba(100, 90, 160, 0.35);
+}
+
+.showcase-inner--reverse {
+    direction: rtl;
+}
+
+.showcase-inner--reverse > * {
+    direction: ltr;
+}
+
+.showcase-kicker {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8167a9;
+    background: #ede8f5;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+}
+
+.showcase-title {
+    font-size: 28px;
+    line-height: 1.25;
+    font-weight: 800;
+    color: #3d3d56;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+}
+
+.showcase-desc {
+    font-size: 15px;
+    line-height: 1.65;
+    color: #6b6b84;
+    margin: 0 0 18px;
+}
+
+.showcase-points {
+    margin: 0 0 24px;
+    padding: 0;
+    list-style: none;
+}
+
+.showcase-points li {
+    position: relative;
+    padding-left: 22px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #4a4a62;
+}
+
+.showcase-points li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8167a9, #9d8bb8);
+}
+
+.showcase-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #8167a9, #9d8bb8);
+    box-shadow: 0 12px 28px -14px rgba(129, 103, 169, 0.65);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.showcase-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px -12px rgba(129, 103, 169, 0.72);
+}
+
+.showcase-cta-arrow {
+    font-size: 16px;
+}
+
+.showcase-visual {
+    min-width: 0;
+}
+
+.mock-workbench {
+    display: flex;
+    height: 280px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #ececf0;
+    background: #f5f6f8;
+    box-shadow: 0 12px 32px -20px rgba(60, 50, 90, 0.35);
+}
+
+.mock-rail {
+    width: 52px;
+    background: #fff;
+    border-right: 1px solid #ececf0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+}
+
+.mock-rail-item {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #f0f0f4;
+}
+
+.mock-rail-item.active {
+    background: #ede8f5;
+    box-shadow: inset 0 0 0 2px #8167a9;
+}
+
+.mock-subnav {
+    width: 88px;
+    background: #fff;
+    border-right: 1px solid #ececf0;
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mock-line {
+    height: 10px;
+    border-radius: 6px;
+    background: #f0f0f4;
+}
+
+.mock-line.active {
+    background: #ede8f5;
+    width: 80%;
+}
+
+.mock-main {
+    flex: 1;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-content: start;
+}
+
+.mock-card {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #ececf0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+.mock-card--new {
+    border-style: dashed;
+    background: #fafbfc;
+}
+
+.mock-card img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.mock-editor {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #ececf0;
+    background: #fff;
+    box-shadow: 0 12px 32px -20px rgba(60, 50, 90, 0.35);
+}
+
+.mock-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    background: #fafbfc;
+    border-bottom: 1px solid #ececf0;
+}
+
+.mock-toolbar span {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #ede8f5;
+}
+
+.mock-canvas {
+    position: relative;
+    height: 240px;
+    background: linear-gradient(180deg, #e8f4fc 0%, #f5f0fa 100%);
+    overflow: hidden;
+}
+
+.mock-layer--bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.6), transparent 50%);
+}
+
+.mock-sticker {
+    position: absolute;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.25);
+    border: 3px solid #fff;
+}
+
+.mock-sticker--1 {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    left: 12%;
+    top: 18%;
+    transform: rotate(-6deg);
+}
+
+.mock-sticker--2 {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    right: 14%;
+    bottom: 22%;
+    transform: rotate(8deg);
+}
+
+.mock-text-box {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.92);
+    border: 2px dashed #8167a9;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #8167a9;
+    white-space: nowrap;
+}
+
 /* ===== 风格展示区（轻量玻璃质感，与卡片圆角/阴影体系一致） ===== */
 .styles-section {
     background: rgba(255, 255, 255, 0.55);
@@ -361,6 +725,20 @@ export default {
     .feature-cards {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .showcase-inner {
+        grid-template-columns: 1fr;
+        gap: 28px;
+        padding: 28px 24px;
+    }
+
+    .showcase-inner--reverse {
+        direction: ltr;
+    }
+
+    .showcase-title {
+        font-size: 24px;
+    }
 }
 
 /* ===== 手机 ===== */
@@ -390,6 +768,31 @@ export default {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
         margin-bottom: 32px;
+    }
+
+    .showcase {
+        margin-bottom: 32px;
+    }
+
+    .showcase-inner {
+        padding: 22px 18px;
+        border-radius: 20px;
+    }
+
+    .showcase-title {
+        font-size: 22px;
+    }
+
+    .mock-workbench {
+        height: 220px;
+    }
+
+    .mock-main {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mock-canvas {
+        height: 200px;
     }
 
     .feature-card {

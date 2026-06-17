@@ -232,6 +232,9 @@ export default {
             return this.$t('createGroupImages.groupIllustration');
         }
     },
+    activated() {
+        this.loadCharacterFromMyCharacters();
+    },
     mounted() {
         // 页面加载时检查是否有创作角色的图片，如果有则自动导入
         this.checkCharacterImage();
@@ -255,9 +258,15 @@ export default {
             }
         },
         
-        // 跳转到"我的角色"页面
+        // 跳转到创作工作台「我的角色」选择角色
         goToMyCharacters() {
-            this.$router.push('/user');
+            this.$router.push({
+                name: 'character-studio',
+                query: {
+                    pickForGroup: '1',
+                    return: this.$route.fullPath,
+                },
+            });
         },
         
         // 从"我的角色"页面加载角色信息

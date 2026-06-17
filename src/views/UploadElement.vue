@@ -502,17 +502,17 @@
                 if (segmentResponse.data && segmentResponse.data.code === 0) {
                   // 图像分割成功，角色已更新
                   ElMessage({ message: '角色保存成功', type: 'success' });
-                  this.$router.push('/user?tab=2');
+                  this.$router.push('/creation-studio/character');
                 } else {
                   // 图像分割失败，但角色已创建，仍然提示成功
                   console.warn('图像分割更新失败，但角色已创建:', segmentResponse.data?.message);
                   ElMessage({ message: '角色保存成功', type: 'success' });
-                  this.$router.push('/user?tab=2');
+                  this.$router.push('/creation-studio/character');
                 }
               } else {
                 // 如果图片不是base64，直接提示成功
                 ElMessage({ message: '角色保存成功', type: 'success' });
-                this.$router.push('/user?tab=2');
+                this.$router.push('/creation-studio/character');
               }
             } catch (error) {
               console.error('保存角色失败:', error);

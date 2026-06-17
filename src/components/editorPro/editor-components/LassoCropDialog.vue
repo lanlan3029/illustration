@@ -144,7 +144,7 @@ async function handleSaveCharacter() {
     showCharacterForm.value = false;
     visible.value = false;
     resultUrl.value = '';
-    router.push('/user?tab=2');
+    router.push('/creation-studio/character');
   } catch (e) {
     ElMessage.error(e.message || t('lassoCrop.saveFailed'));
   } finally {

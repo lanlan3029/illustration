@@ -148,7 +148,7 @@ export default {
         });
         ElMessage.success(this.$t('lassoCrop.characterSaved'));
         this.showCharacterForm = false;
-        this.$router.push('/user?tab=2');
+        this.$router.push('/creation-studio/character');
       } catch (e) {
         ElMessage.error(e.message || this.$t('lassoCrop.saveFailed'));
       } finally {

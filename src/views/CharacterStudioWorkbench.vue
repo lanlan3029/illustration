@@ -25,7 +25,10 @@
             :placeholder="$t('characterStudio.characterName')"
           />
           <div class="cs-guide-links">
-            <router-link to="/prompt-fill" class="cs-guide-link">{{ $t('characterStudio.promptGuide') }}</router-link>
+            <router-link
+              :to="{ name: 'prompt-fill', query: { return: $route.fullPath } }"
+              class="cs-guide-link"
+            >{{ $t('characterStudio.promptGuide') }}</router-link>
           </div>
         </div>
       </div>
@@ -210,6 +213,7 @@ import {
   getImageUrl,
   INSPIRE_PROMPTS,
 } from '@/utils/characterStudioPrompt';
+import { takePromptFillPending } from '@/utils/promptFillHandoff';
 
 export default {
   name: 'CharacterStudioWorkbench',
@@ -269,11 +273,19 @@ export default {
   },
   mounted() {
     this.loadSession();
+    this.applyPendingPrompt();
     if (this.characterId && this.characterId !== 'new') {
       this.loadCharacter(this.characterId);
     }
   },
   methods: {
+    applyPendingPrompt() {
+      const pending = takePromptFillPending();
+      if (pending) {
+        this.description = pending;
+        this.saveSession();
+      }
+    },
     goDashboard() {
       this.$router.push({ name: 'character-studio' });
     },

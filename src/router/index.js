@@ -93,12 +93,11 @@ const routes = [{
 
     {
         path: '/user',
-        name: 'user',
-        component: () =>
-            import ( /* webpackChunkName: "user" */ '../views/MyHomePage.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: (to) => {
+            const tab = to.query.tab;
+            if (tab === '2' || tab === 2) return '/creation-studio/character';
+            return '/user/profile';
+        },
     },
 
     {
@@ -256,20 +255,6 @@ const routes = [{
                 meta: { creationDomain: 'illustration', requiresAuth: true },
             },
             {
-                path: 'illustration/editor',
-                name: 'editorpro',
-                component: () =>
-                    import(/* webpackChunkName: "editorpro" */ '../views/Editorpro.vue'),
-                meta: { creationDomain: 'illustration', seoTitle: '在线插画编辑' },
-            },
-            {
-                path: 'illustration/layout',
-                name: 'create-layout-illustration',
-                component: () =>
-                    import(/* webpackChunkName: "create-layout-illustration" */ '../views/CreateLayoutIllustration.vue'),
-                meta: { creationDomain: 'illustration', requiresAuth: true },
-            },
-            {
                 path: 'book/ai',
                 name: 'AIbooks',
                 component: () =>
@@ -320,11 +305,30 @@ const routes = [{
     },
     {
         path: '/create-layout-illustration',
-        redirect: '/creation-studio/illustration/layout',
+        name: 'create-layout-illustration',
+        component: () =>
+            import(/* webpackChunkName: "create-layout-illustration" */ '../views/CreateLayoutIllustration.vue'),
+        meta: {
+            requiresAuth: true,
+        },
+    },
+    {
+        path: '/creation-studio/illustration/layout',
+        redirect: '/create-layout-illustration',
+    },
+    {
+        path: '/creation-studio/illustration/editor',
+        redirect: '/editorpro',
     },
     {
         path: '/editorpro',
-        redirect: '/creation-studio/illustration/editor',
+        name: 'editorpro',
+        component: () =>
+            import(/* webpackChunkName: "editorpro" */ '../views/Editorpro.vue'),
+        meta: {
+            requiresAuth: false,
+            seoTitle: '在线插画编辑',
+        },
     },
     {
         path: '/lasso-crop',

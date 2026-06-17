@@ -2,19 +2,27 @@
   <div class="cs-dashboard">
     <header class="cs-dash-header">
       <div>
-        <h1>{{ $t('characterStudio.dashboardTitle') }}</h1>
-        <p>{{ $t('characterStudio.dashboardDesc') }}</p>
+        <h1>{{ pickMode ? $t('characterStudio.pickCharacterTitle') : $t('characterStudio.dashboardTitle') }}</h1>
+        <p>{{ pickMode ? $t('characterStudio.pickCharacterDesc') : $t('characterStudio.dashboardDesc') }}</p>
       </div>
-      <el-button type="primary" @click="goNew">
-        <el-icon><Plus /></el-icon>
-        {{ $t('characterStudio.createNew') }}
-      </el-button>
+      <template v-if="!pickMode">
+        <el-button type="primary" @click="goNew">
+          <el-icon><Plus /></el-icon>
+          {{ $t('characterStudio.createNew') }}
+        </el-button>
+      </template>
+      <el-button v-else @click="cancelPick">{{ $t('common.cancel') }}</el-button>
     </header>
 
     <div v-if="loading" class="cs-dash-loading">{{ $t('common.loading') }}</div>
 
+    <div v-else-if="characters.length === 0" class="cs-dash-empty">
+      <p>{{ $t('myHomePage.noCharacters') }}</p>
+      <el-button v-if="!pickMode" type="primary" @click="goNew">{{ $t('characterStudio.createNew') }}</el-button>
+    </div>
+
     <div v-else class="cs-dash-grid">
-      <button type="button" class="cs-card cs-card--new" @click="goNew">
+      <button v-if="!pickMode" type="button" class="cs-card cs-card--new" @click="goNew">
         <div class="cs-card-new-icon">+</div>
         <span>{{ $t('characterStudio.createNew') }}</span>
       </button>
@@ -23,16 +31,22 @@
         v-for="item in characters"
         :key="item.id || item._id"
         class="cs-card cs-card--character"
-        @click="openWorkbench(item)"
+        @click="onCardClick(item)"
       >
         <div class="cs-card-thumb">
           <img :src="getImageUrl(item.image_url || item.character_image_url)" :alt="item.character_name" />
         </div>
         <div class="cs-card-meta">
           <span class="cs-card-name">{{ item.character_name || $t('characterStudio.unnamed') }}</span>
-          <el-button link type="primary" @click.stop="openWorkbench(item)">
-            <el-icon><EditPen /></el-icon>
-          </el-button>
+          <div v-if="!pickMode" class="cs-card-actions" @click.stop>
+            <el-button size="small" type="primary" @click="openWorkbench(item)">
+              {{ $t('myHomePage.edit') }}
+            </el-button>
+            <el-button size="small" @click="goGroupImages(item)">
+              {{ $t('characterStudio.createGroup') }}
+            </el-button>
+          </div>
+          <span v-else class="cs-pick-hint">{{ $t('characterStudio.tapToSelect') }}</span>
         </div>
       </div>
     </div>
@@ -40,17 +54,29 @@
 </template>
 
 <script>
-import { Plus, EditPen } from '@element-plus/icons-vue';
+import { Plus } from '@element-plus/icons-vue';
 import { getImageUrl } from '@/utils/characterStudioPrompt';
 
 export default {
   name: 'CharacterStudioDashboard',
-  components: { Plus, EditPen },
+  components: { Plus },
   data() {
     return {
       loading: false,
       characters: [],
     };
+  },
+  computed: {
+    pickMode() {
+      return this.$route.query.pickForGroup === '1';
+    },
+    pickReturnPath() {
+      const ret = this.$route.query.return;
+      if (typeof ret === 'string' && ret.startsWith('/') && !ret.startsWith('//')) {
+        return ret;
+      }
+      return '/creation-studio/character/groups';
+    },
   },
   mounted() {
     this.fetchCharacters();
@@ -63,6 +89,45 @@ export default {
     openWorkbench(item) {
       const id = item.id || item._id;
       this.$router.push({ name: 'character-studio-workbench', params: { characterId: id } });
+    },
+    goGroupImages(item) {
+      const id = item.id || item._id;
+      if (id) {
+        localStorage.setItem('lastCharacterId', String(id));
+      }
+      const name = item.character_name || item.name || '';
+      if (name) localStorage.setItem('lastCharacterName', name);
+      const imageUrl = getImageUrl(item.image_url || item.character_image_url);
+      if (imageUrl) {
+        localStorage.setItem('characterImage', imageUrl);
+        sessionStorage.setItem('createGroupImages_reference', imageUrl);
+      }
+      this.$router.push({ name: 'create-group-images' });
+    },
+    onCardClick(item) {
+      if (this.pickMode) {
+        this.selectForGroupImages(item);
+        return;
+      }
+      this.openWorkbench(item);
+    },
+    selectForGroupImages(item) {
+      const id = item.id || item._id;
+      localStorage.setItem(
+        'selectedCharacterForGroupImages',
+        JSON.stringify({
+          id,
+          _id: id,
+          character_name: item.character_name || item.name || '',
+          name: item.character_name || item.name || '',
+          image_url: item.image_url || item.character_image_url || '',
+        })
+      );
+      if (id) localStorage.setItem('lastCharacterId', String(id));
+      this.$router.push(this.pickReturnPath);
+    },
+    cancelPick() {
+      this.$router.push(this.pickReturnPath);
     },
     async fetchCharacters() {
       const userId = localStorage.getItem('id');
@@ -118,7 +183,8 @@ export default {
   color: #666;
 }
 
-.cs-dash-loading {
+.cs-dash-loading,
+.cs-dash-empty {
   text-align: center;
   padding: 80px 0;
   color: #999;
@@ -187,8 +253,8 @@ export default {
 
 .cs-card-meta {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
   padding: 12px 14px;
   border-top: 1px solid #f0f0f0;
 }
@@ -200,5 +266,17 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cs-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cs-pick-hint {
+  font-size: 12px;
+  color: #8167a9;
+  font-weight: 600;
 }
 </style>

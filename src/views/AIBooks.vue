@@ -1334,20 +1334,21 @@ export default {
 
 <style scoped>
 .inspiration-book {
-    min-height: calc(100vh - 50px - 40px);
+    min-height: 100%;
     background-color: #f5f7fa;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
 
 .inspiration-main {
     flex: 1;
-    max-width: 90vw;
+    max-width: 100%;
     margin: 0 auto;
     padding: 24px;
     display: flex;
     gap: 16px;
-    width: 90vw;
+    width: 100%;
     box-sizing: border-box;
 }
 
@@ -1360,8 +1361,8 @@ export default {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 90px - 48px);
-    max-height: calc(100vh - 90px - 48px);
+    min-height: 480px;
+    max-height: none;
     overflow: hidden;
 }
 
@@ -1546,11 +1547,9 @@ export default {
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    min-height: calc(100vh - 90px - 48px);
-    max-height: calc(100vh - 90px - 48px);
+    min-height: 480px;
+    max-height: none;
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
     flex-direction: column;
     overflow: hidden;
 }

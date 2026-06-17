@@ -87,12 +87,16 @@ export default {
   },
   methods: {
     subNavTo(item) {
+      if (item.external) {
+        return { path: item.externalPath || '/editorpro' };
+      }
       if (item.routeParams) {
         return { name: item.routeName, params: item.routeParams };
       }
       return { name: item.routeName };
     },
     isSubNavActive(item) {
+      if (item.external) return false;
       return matchSubNav(this.$route, item);
     },
     switchDomain(domain) {
@@ -246,8 +250,19 @@ export default {
 .cw-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cw-main :deep(> *) {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {

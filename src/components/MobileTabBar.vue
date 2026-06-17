@@ -42,7 +42,7 @@ export default {
       { key: 'home', to: '/', label: 'nav.home', fallback: '首页', icon: ICONS.home },
       { key: 'create', to: '/ai-picture', label: 'nav.creation', fallback: '创作', icon: ICONS.create },
       { key: 'diary', to: '/mood-diary', label: 'nav.moodDiary', fallback: '日记', icon: ICONS.diary },
-      { key: 'me', to: '/user', label: 'nav.my', fallback: '我的', icon: ICONS.me }
+      { key: 'me', to: '/user/profile', label: 'nav.my', fallback: '我的', icon: ICONS.me }
     ]
 
     const isLogin = computed(() => store.state.isLogin)
@@ -65,15 +65,15 @@ export default {
       const p = route.path
       if (tab.key === 'home') return p === '/'
       if (tab.key === 'diary') return p.startsWith('/mood-diary')
-      if (tab.key === 'me') return p.startsWith('/user')
+      if (tab.key === 'me') return p.startsWith('/user/profile') || p === '/user'
       if (tab.key === 'create') return createPaths.some((c) => p === c || p.startsWith(c))
       return false
     }
 
     const onTap = (tab) => {
-      if (tab.key === 'me') {
+        if (tab.key === 'me') {
         if (isLogin.value || localStorage.getItem('token')) {
-          if (route.path !== '/user') router.push('/user')
+          if (route.path !== '/user/profile') router.push('/user/profile')
         } else {
           store.commit('showMask')
         }

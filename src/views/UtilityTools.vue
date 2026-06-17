@@ -616,7 +616,7 @@ export default {
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
-            this.$router.push('/user?tab=2');
+            this.$router.push('/creation-studio/character');
             return;
           } else {
             throw new Error(createResponse.data?.message || this.$t('utilityTools.saveCharacterFailed'));
@@ -654,7 +654,7 @@ export default {
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
-            this.$router.push('/user?tab=2');
+            this.$router.push('/creation-studio/character');
             return;
           } else {
             throw new Error(segmentResponse.data?.message || this.$t('utilityTools.saveCharacterFailed'));
@@ -688,7 +688,7 @@ export default {
             this.showAddToCharacterDialog = false;
             this.characterForm = { name: '', category: '', description: '' };
             // 跳转到我的角色页面
-            this.$router.push('/user?tab=2');
+            this.$router.push('/creation-studio/character');
           } else {
             throw new Error(createResponse.data?.message || this.$t('utilityTools.createCharacterFailed'));
           }

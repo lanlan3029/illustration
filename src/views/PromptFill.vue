@@ -1,6 +1,20 @@
 <template>
     <div class="prompt-fill-page">
-        <div class="prompt-fill-container">
+        <header v-if="returnPath" class="prompt-fill-topbar">
+            <button type="button" class="prompt-fill-back" @click="goBack">
+                ← {{ $t('promptFill.back') }}
+            </button>
+            <span class="prompt-fill-topbar-title">{{ $t('promptFill.title') }}</span>
+            <div class="prompt-fill-topbar-actions">
+                <el-button size="small" @click="copyPrompt" :disabled="!finalPrompt">
+                    {{ $t('promptFill.copy') }}
+                </el-button>
+                <el-button type="primary" size="small" :disabled="!finalPrompt" @click="applyAndReturn">
+                    {{ $t('promptFill.applyAndReturn') }}
+                </el-button>
+            </div>
+        </header>
+        <div class="prompt-fill-container" :class="{ 'prompt-fill-container--with-bar': returnPath }">
             <!-- 三列布局 -->
             <div class="three-column-layout">
                 <!-- 第一列：模板选择器 -->
@@ -93,6 +107,10 @@ import { INITIAL_BANKS, INITIAL_CATEGORIES } from '@/prompt-core/banks';
 import { INITIAL_TEMPLATES_CONFIG } from '@/prompt-core/constants';
 import { renderTemplate } from '@/prompt-core/parseTemplate';
 import { ElMessage } from 'element-plus';
+import {
+    setPromptFillPending,
+    resolvePromptFillReturnPath,
+} from '@/utils/promptFillHandoff';
 
 export default {
     name: 'PromptFill',
@@ -107,6 +125,9 @@ export default {
         }
     },
     computed: {
+        returnPath() {
+            return resolvePromptFillReturnPath(this.$route.query.return);
+        },
         // 排序后的分类（按照：人物 -> 动作 -> 物品 -> 地点 -> 画面 -> 其他）
         sortedCategories() {
             const categoryOrder = ['character', 'action', 'item', 'location', 'visual', 'other'];
@@ -158,6 +179,26 @@ export default {
         this.onTemplateChange(this.selectedTemplateId);
     },
     methods: {
+        goBack() {
+            if (this.returnPath) {
+                this.$router.push(this.returnPath);
+            } else {
+                this.$router.back();
+            }
+        },
+        applyAndReturn() {
+            if (!this.finalPrompt) {
+                ElMessage.warning(this.$t('promptFill.pleaseComplete'));
+                return;
+            }
+            if (!this.returnPath) {
+                this.copyPrompt();
+                return;
+            }
+            setPromptFillPending(this.finalPrompt);
+            this.$router.push(this.returnPath);
+            ElMessage.success(this.$t('promptFill.appliedReturning'));
+        },
         // 获取模板名称
         getTemplateName(template) {
             if (template.id === 'character-detail') {
@@ -305,6 +346,53 @@ export default {
     min-height: calc(100vh - 50px - 40px);
     background-color: #f5f7fa;
     padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prompt-fill-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #ececf0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+}
+
+.prompt-fill-back {
+    border: none;
+    background: none;
+    color: #8167a9;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    white-space: nowrap;
+}
+
+.prompt-fill-back:hover {
+    color: #6d5694;
+}
+
+.prompt-fill-topbar-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #303133;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.prompt-fill-topbar-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .prompt-fill-container {
@@ -312,6 +400,12 @@ export default {
     margin: 0 auto;
     width: 100%;
     height: calc(100vh - 50px - 40px - 48px);
+    flex: 1;
+    min-height: 0;
+}
+
+.prompt-fill-container--with-bar {
+    height: calc(100vh - 50px - 40px - 48px - 56px);
 }
 
 .three-column-layout {
@@ -635,8 +729,27 @@ export default {
     .prompt-fill-page {
         padding: 16px;
     }
+
+    .prompt-fill-topbar {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+    }
+
+    .prompt-fill-topbar-title {
+        order: -1;
+        width: 100%;
+        margin-bottom: 4px;
+    }
+
+    .prompt-fill-topbar-actions {
+        margin-left: auto;
+    }
     
     .prompt-fill-container {
+        height: auto;
+    }
+
+    .prompt-fill-container--with-bar {
         height: auto;
     }
     

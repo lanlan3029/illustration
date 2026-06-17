@@ -98,10 +98,6 @@
               </div>
             </a>
             <ul class="dropdown-menu">
-              <li><a @click.prevent="toMyHomePage(); closeSubmenu();" class="dropdown-item">
-                <i class="iconfont icon-a-collection"></i>
-                <span>{{ $t('nav.myWorks') }}</span>
-              </a></li>
               <li><a @click.prevent="toProfile(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-zhanghu"></i>
                 <span>{{ $t('nav.accountSettings') }}</span>
@@ -295,37 +291,31 @@ export default {
         const showMask = () => {
             store.commit("showMask")
         }
-        
-        const toMyHomePage = () => {
-            router.push("/user/")
-        }
-        
+
         const toProfile = () => {
-            router.push("/user/profile")
+            router.push('/user/profile')
         }
-        
+
         const toMemberRecharge = () => {
-            router.push("/member/recharge")
+            router.push('/member/recharge')
         }
-        
+
         const contactUs = () => {
-            // 联系我们功能，可以跳转到联系页面或显示联系方式
             $message.info('请联系客服：support@kidstory.cc')
         }
-        
+
         const toggleMobileMenu = () => {
             mobileMenuVisible.value = !mobileMenuVisible.value
         }
-        
+
         const closeMobileMenu = () => {
             mobileMenuVisible.value = false
         }
-
-        // 手机端「我的」：已登录进个人中心，未登录弹登录框
+        
         const handleMobileMy = () => {
             closeMobileMenu()
             if (isLogin.value) {
-                router.push('/user/')
+                router.push('/user/profile')
             } else {
                 store.commit('showMask')
             }
@@ -536,7 +526,6 @@ export default {
             closeSubmenu,
             handleClickOutside,
             showMask,
-            toMyHomePage,
             toProfile,
             toMemberRecharge,
             contactUs,

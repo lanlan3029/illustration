@@ -45,10 +45,14 @@ export const CREATION_SUB_NAV = {
     {
       routeName: 'editorpro',
       labelKey: 'nav.createIllustration',
+      external: true,
+      externalPath: '/editorpro',
     },
     {
       routeName: 'create-layout-illustration',
       labelKey: 'nav.createLayoutIllustration',
+      external: true,
+      externalPath: '/create-layout-illustration',
     },
   ],
   book: [

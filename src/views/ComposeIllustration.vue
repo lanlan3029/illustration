@@ -197,11 +197,11 @@ export default {
 
 <style scoped>
 .container{
-    width:100vw;
-    height: calc(100vh - 90px); /* 扣除 TopBar 高度，内容超出时出现垂直滚动 */
-    padding:0 10vw;
+    width: 100%;
+    min-height: 100%;
+    padding: 0 24px 32px;
     background-color: #f5f5f5;
-    overflow-y: auto;
+    overflow-y: visible;
     overflow-x: hidden;
     position: relative;
     box-sizing: border-box;
