@@ -34,40 +34,50 @@
                 </button>
             </section>
 
-            <!-- AI 创作工作台介绍 -->
+            <!-- 创作工作台介绍 -->
             <section class="showcase showcase--workbench">
                 <div class="showcase-inner">
                     <div class="showcase-content">
                         <span class="showcase-kicker">{{ $t('home.showcaseWorkbenchKicker') }}</span>
                         <h2 class="showcase-title">{{ $t('home.showcaseWorkbenchTitle') }}</h2>
                         <p class="showcase-desc">{{ $t('home.showcaseWorkbenchDesc') }}</p>
-                        <ul class="showcase-points">
-                            <li v-for="(point, idx) in workbenchPoints" :key="idx">{{ point }}</li>
-                        </ul>
                         <button type="button" class="showcase-cta" @click="go('/creation-studio')">
                             {{ $t('home.showcaseWorkbenchCta') }}
                             <span class="showcase-cta-arrow">→</span>
                         </button>
                     </div>
                     <div class="showcase-visual" aria-hidden="true">
-                        <div class="mock-workbench">
-                            <div class="mock-rail">
-                                <span class="mock-rail-item active"></span>
-                                <span class="mock-rail-item"></span>
-                                <span class="mock-rail-item"></span>
+                        <div class="preview-workbench">
+                            <div class="preview-wb-rail">
+                                <span class="preview-wb-rail-icon"></span>
+                                <span class="preview-wb-rail-icon active"></span>
+                                <span class="preview-wb-rail-icon"></span>
+                                <span class="preview-wb-rail-icon"></span>
                             </div>
-                            <div class="mock-subnav">
-                                <span class="mock-line active"></span>
-                                <span class="mock-line"></span>
-                                <span class="mock-line"></span>
+                            <div class="preview-wb-subnav">
+                                <span class="preview-wb-subnav-title"></span>
+                                <span class="preview-wb-subnav-item active"></span>
+                                <span class="preview-wb-subnav-item"></span>
+                                <span class="preview-wb-subnav-item"></span>
                             </div>
-                            <div class="mock-main">
-                                <div class="mock-card mock-card--new"></div>
-                                <div class="mock-card">
-                                    <img :src="workbenchPreview" alt="" />
+                            <div class="preview-wb-main">
+                                <div class="preview-wb-header">
+                                    <span class="preview-wb-heading"></span>
+                                    <span class="preview-wb-btn"></span>
                                 </div>
-                                <div class="mock-card">
-                                    <img :src="styleImages[5].image" alt="" />
+                                <div class="preview-wb-grid">
+                                    <div class="preview-wb-card preview-wb-card--new">
+                                        <span class="preview-wb-plus">+</span>
+                                    </div>
+                                    <div v-for="n in 3" :key="n" class="preview-wb-card">
+                                        <div class="preview-wb-thumb">
+                                            <span class="preview-wb-avatar"></span>
+                                        </div>
+                                        <span class="preview-wb-name"></span>
+                                        <div class="preview-wb-actions">
+                                            <span></span><span></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -75,53 +85,55 @@
                 </div>
             </section>
 
-            <!-- DIY 编辑插画介绍 -->
+            <!-- DIY 插画介绍 -->
             <section class="showcase showcase--editor">
                 <div class="showcase-inner showcase-inner--reverse">
                     <div class="showcase-content">
                         <span class="showcase-kicker">{{ $t('home.showcaseEditorKicker') }}</span>
                         <h2 class="showcase-title">{{ $t('home.showcaseEditorTitle') }}</h2>
                         <p class="showcase-desc">{{ $t('home.showcaseEditorDesc') }}</p>
-                        <ul class="showcase-points">
-                            <li v-for="(point, idx) in editorPoints" :key="idx">{{ point }}</li>
-                        </ul>
                         <button type="button" class="showcase-cta" @click="go('/editorpro')">
                             {{ $t('home.showcaseEditorCta') }}
                             <span class="showcase-cta-arrow">→</span>
                         </button>
                     </div>
                     <div class="showcase-visual" aria-hidden="true">
-                        <div class="mock-editor">
-                            <div class="mock-toolbar">
-                                <span></span><span></span><span></span>
-                            </div>
-                            <div class="mock-canvas">
-                                <div class="mock-layer mock-layer--bg"></div>
-                                <img class="mock-sticker mock-sticker--1" :src="editorStickerA" alt="" />
-                                <img class="mock-sticker mock-sticker--2" :src="editorStickerB" alt="" />
-                                <div class="mock-text-box">{{ $t('home.showcaseEditorMockText') }}</div>
-                            </div>
+                        <div class="showcase-screenshot-wrap">
+                            <img
+                                class="showcase-screenshot"
+                                :src="editorScreenshot"
+                                alt=""
+                                loading="lazy"
+                            />
+                            <span class="showcase-screenshot-avatar"></span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- 风格展示区 -->
+            <!-- 风格轮播展示 -->
             <section class="styles-section">
                 <div class="styles-head">
                     <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
                     <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
                 </div>
-                <div class="styles-grid">
-                    <button
-                        v-for="style in styleImages"
-                        :key="style.id"
-                        type="button"
-                        class="style-tile"
-                        @click="go('/ai-picture')"
-                    >
-                        <el-image :src="style.image" fit="cover" class="style-tile-img" :lazy="true" />
-                    </button>
+                <div class="styles-carousel-outer">
+                    <div class="styles-carousel-track">
+                        <button
+                            v-for="(style, idx) in carouselStyles"
+                            :key="`${style.id}-${idx}`"
+                            type="button"
+                            class="style-carousel-card"
+                            @click="go('/ai-picture')"
+                        >
+                            <img
+                                :src="style.image"
+                                :alt="styleLabel(style)"
+                                class="style-carousel-img"
+                                loading="lazy"
+                            />
+                        </button>
+                    </div>
                 </div>
             </section>
         </div>
@@ -132,26 +144,13 @@
 export default {
     name: 'Home',
     computed: {
-        workbenchPoints() {
-            return [
-                this.$t('home.showcaseWorkbenchPoint1'),
-                this.$t('home.showcaseWorkbenchPoint2'),
-                this.$t('home.showcaseWorkbenchPoint3'),
-            ];
-        },
-        editorPoints() {
-            return [
-                this.$t('home.showcaseEditorPoint1'),
-                this.$t('home.showcaseEditorPoint2'),
-                this.$t('home.showcaseEditorPoint3'),
-            ];
+        carouselStyles() {
+            return [...this.styleImages, ...this.styleImages];
         },
     },
     data() {
         return {
-            workbenchPreview: require('@/assets/images/cards/reddit.png'),
-            editorStickerA: require('@/assets/prompt/5.webp'),
-            editorStickerB: require('@/assets/prompt/14.webp'),
+            editorScreenshot: require('@/assets/images/home/showcase-editor.png'),
             featureCards: [
                 { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book', img: require('@/assets/images/cards/books.png') },
                 { key: 'brush', titleKey: 'nav.aiIllustration', descKey: 'home.aiIllustrationDesc', to: '/ai-picture', cls: 'ic-brush', img: require('@/assets/images/cards/image (1).png') },
@@ -187,7 +186,10 @@ export default {
     methods: {
         go(to) {
             this.$router.push(to);
-        }
+        },
+        styleLabel(style) {
+            return this.$t(`aibooks.styles.${style.key}.artStyle`);
+        },
     }
 }
 </script>
@@ -437,33 +439,7 @@ export default {
     font-size: 15px;
     line-height: 1.65;
     color: #6b6b84;
-    margin: 0 0 18px;
-}
-
-.showcase-points {
     margin: 0 0 24px;
-    padding: 0;
-    list-style: none;
-}
-
-.showcase-points li {
-    position: relative;
-    padding-left: 22px;
-    margin-bottom: 10px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #4a4a62;
-}
-
-.showcase-points li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.55em;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #8167a9, #9d8bb8);
 }
 
 .showcase-cta {
@@ -495,224 +471,313 @@ export default {
     min-width: 0;
 }
 
-.mock-workbench {
+/* 创作工作台预览（参照「我的角色」页，头像用占位符） */
+.preview-workbench {
     display: flex;
-    height: 280px;
-    border-radius: 18px;
+    height: 300px;
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid #ececf0;
+    border: 1px solid #e8e8ec;
     background: #f5f6f8;
     box-shadow: 0 12px 32px -20px rgba(60, 50, 90, 0.35);
 }
 
-.mock-rail {
-    width: 52px;
+.preview-wb-rail {
+    width: 48px;
+    flex-shrink: 0;
     background: #fff;
     border-right: 1px solid #ececf0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 14px 0;
+    gap: 8px;
+    padding: 12px 0;
 }
 
-.mock-rail-item {
-    width: 28px;
-    height: 28px;
+.preview-wb-rail-icon {
+    width: 26px;
+    height: 26px;
     border-radius: 8px;
     background: #f0f0f4;
 }
 
-.mock-rail-item.active {
+.preview-wb-rail-icon.active {
     background: #ede8f5;
     box-shadow: inset 0 0 0 2px #8167a9;
 }
 
-.mock-subnav {
-    width: 88px;
+.preview-wb-subnav {
+    width: 96px;
+    flex-shrink: 0;
     background: #fff;
     border-right: 1px solid #ececf0;
-    padding: 16px 10px;
+    padding: 14px 10px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
-.mock-line {
+.preview-wb-subnav-title {
     height: 10px;
+    width: 70%;
+    border-radius: 4px;
+    background: #d8d8e0;
+    margin-bottom: 4px;
+}
+
+.preview-wb-subnav-item {
+    height: 22px;
     border-radius: 6px;
     background: #f0f0f4;
 }
 
-.mock-line.active {
+.preview-wb-subnav-item.active {
     background: #ede8f5;
-    width: 80%;
+    border-left: 3px solid #8167a9;
 }
 
-.mock-main {
+.preview-wb-main {
     flex: 1;
-    padding: 16px;
+    min-width: 0;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.preview-wb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.preview-wb-heading {
+    height: 12px;
+    width: 40%;
+    border-radius: 4px;
+    background: #d0d0d8;
+}
+
+.preview-wb-btn {
+    height: 24px;
+    width: 72px;
+    border-radius: 6px;
+    background: #8167a9;
+    opacity: 0.85;
+}
+
+.preview-wb-grid {
+    flex: 1;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
     align-content: start;
 }
 
-.mock-card {
-    aspect-ratio: 1;
-    border-radius: 12px;
+.preview-wb-card {
+    border-radius: 10px;
     background: #fff;
     border: 1px solid #ececf0;
-    overflow: hidden;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.preview-wb-card--new {
+    border-style: dashed;
+    border-color: #c8c8d4;
+    background: #fafbfc;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+}
+
+.preview-wb-plus {
+    font-size: 22px;
+    color: #b0b0bc;
+    line-height: 1;
+}
+
+.preview-wb-thumb {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    background:
+        linear-gradient(45deg, #ececf0 25%, transparent 25%),
+        linear-gradient(-45deg, #ececf0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ececf0 75%),
+        linear-gradient(-45deg, transparent 75%, #ececf0 75%);
+    background-size: 10px 10px;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+    background-color: #f8f8fa;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
 }
 
-.mock-card--new {
-    border-style: dashed;
-    background: #fafbfc;
+.preview-wb-avatar {
+    width: 36%;
+    height: 36%;
+    border-radius: 50%;
+    background: #d4d4dc;
+    position: relative;
 }
 
-.mock-card img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+.preview-wb-avatar::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 58%;
+    transform: translate(-50%, -50%);
+    width: 55%;
+    height: 38%;
+    border-radius: 50% 50% 0 0;
+    background: #c0c0c8;
 }
 
-.mock-editor {
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid #ececf0;
-    background: #fff;
-    box-shadow: 0 12px 32px -20px rgba(60, 50, 90, 0.35);
+.preview-wb-name {
+    height: 8px;
+    width: 55%;
+    margin: 0 auto;
+    border-radius: 3px;
+    background: #e4e4ea;
 }
 
-.mock-toolbar {
+.preview-wb-actions {
     display: flex;
-    gap: 8px;
-    padding: 12px 14px;
-    background: #fafbfc;
-    border-bottom: 1px solid #ececf0;
+    gap: 4px;
+    justify-content: center;
 }
 
-.mock-toolbar span {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+.preview-wb-actions span {
+    height: 14px;
+    flex: 1;
+    border-radius: 4px;
     background: #ede8f5;
 }
 
-.mock-canvas {
+/* DIY 插画编辑器截图 */
+.showcase-screenshot-wrap {
     position: relative;
-    height: 240px;
-    background: linear-gradient(180deg, #e8f4fc 0%, #f5f0fa 100%);
+    border-radius: 14px;
     overflow: hidden;
+    border: 1px solid #e8e8ec;
+    box-shadow: 0 12px 32px -20px rgba(60, 50, 90, 0.35);
+    background: #f5f6f8;
 }
 
-.mock-layer--bg {
+.showcase-screenshot {
+    display: block;
+    width: 100%;
+    height: auto;
+    vertical-align: top;
+}
+
+.showcase-screenshot-avatar {
     position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.6), transparent 50%);
+    left: 0.9%;
+    bottom: 1.6%;
+    width: 2.8%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #d4d4dc;
+    box-shadow: 0 0 0 2px #fff;
 }
 
-.mock-sticker {
-    position: absolute;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.25);
-    border: 3px solid #fff;
-}
-
-.mock-sticker--1 {
-    width: 88px;
-    height: 88px;
-    object-fit: cover;
-    left: 12%;
-    top: 18%;
-    transform: rotate(-6deg);
-}
-
-.mock-sticker--2 {
-    width: 72px;
-    height: 72px;
-    object-fit: cover;
-    right: 14%;
-    bottom: 22%;
-    transform: rotate(8deg);
-}
-
-.mock-text-box {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(255, 255, 255, 0.92);
-    border: 2px dashed #8167a9;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #8167a9;
-    white-space: nowrap;
-}
-
-/* ===== 风格展示区（轻量玻璃质感，与卡片圆角/阴影体系一致） ===== */
+/* ===== 风格轮播（参照横向画廊） ===== */
 .styles-section {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    border-radius: 28px;
-    padding: 28px 24px 32px;
-    box-shadow: 0 16px 40px -24px rgba(100, 90, 160, 0.35);
+    margin-top: 8px;
+    padding: 36px 0 12px;
 }
 
 .styles-head {
     text-align: center;
-    margin-bottom: 22px;
+    margin-bottom: 28px;
+    padding: 0 8px;
 }
 
 .styles-title {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: #3d3d56;
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     letter-spacing: -0.02em;
 }
 
 .styles-subtitle {
-    font-size: 14px;
+    font-size: 15px;
     color: #7a7a94;
     margin: 0;
 }
 
-.styles-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 14px;
+.styles-carousel-outer {
+    overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: 8px 0 24px;
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        #000 6%,
+        #000 94%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        #000 6%,
+        #000 94%,
+        transparent 100%
+    );
 }
 
-.style-tile {
-    border: 2px solid rgba(255, 255, 255, 0.85);
+.styles-carousel-track {
+    display: flex;
+    align-items: stretch;
+    gap: 18px;
+    width: max-content;
+    padding: 0 24px;
+    animation: styles-carousel-scroll 55s linear infinite;
+}
+
+.styles-carousel-track:hover {
+    animation-play-state: paused;
+}
+
+@keyframes styles-carousel-scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.style-carousel-card {
+    flex-shrink: 0;
+    width: clamp(148px, 16vw, 210px);
+    aspect-ratio: 3 / 4;
+    border: none;
     cursor: pointer;
     padding: 0;
-    border-radius: 20px;
+    border-radius: 22px;
     overflow: hidden;
-    aspect-ratio: 1;
-    background: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 20px -14px rgba(80, 70, 120, 0.35);
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    background: #fff;
+    box-shadow: 0 10px 28px -14px rgba(60, 50, 90, 0.38);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
 }
 
-.style-tile:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 28px -12px rgba(100, 90, 160, 0.4);
+.style-carousel-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 18px 36px -12px rgba(60, 50, 90, 0.45);
 }
 
-.style-tile-img {
+.style-carousel-img {
     width: 100%;
     height: 100%;
+    object-fit: cover;
     display: block;
 }
 
@@ -783,16 +848,16 @@ export default {
         font-size: 22px;
     }
 
-    .mock-workbench {
-        height: 220px;
+    .preview-workbench {
+        height: 240px;
     }
 
-    .mock-main {
+    .preview-wb-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .mock-canvas {
-        height: 200px;
+    .preview-wb-subnav {
+        display: none;
     }
 
     .feature-card {
@@ -825,23 +890,68 @@ export default {
     }
 
     .styles-section {
-        border-radius: 20px;
-        padding: 20px 16px 24px;
+        padding: 24px 0 8px;
     }
 
     .styles-title {
-        font-size: 20px;
+        font-size: 22px;
     }
 
-    .styles-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
+    .styles-subtitle {
+        font-size: 14px;
+    }
+
+    .styles-carousel-outer {
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            #000 3%,
+            #000 97%,
+            transparent 100%
+        );
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            #000 3%,
+            #000 97%,
+            transparent 100%
+        );
+    }
+
+    .styles-carousel-track {
+        gap: 12px;
+        padding: 0 14px;
+        animation-duration: 45s;
+    }
+
+    .style-carousel-card {
+        width: clamp(120px, 38vw, 168px);
+        border-radius: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .styles-carousel-track {
+        animation: none;
+        overflow-x: auto;
+        max-width: 100%;
+        scrollbar-width: none;
+    }
+
+    .styles-carousel-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .styles-carousel-outer {
+        overflow-x: auto;
+        -webkit-mask-image: none;
+        mask-image: none;
     }
 }
 
 @media (max-width: 420px) {
-    .styles-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .style-carousel-card {
+        width: clamp(108px, 42vw, 140px);
     }
 }
 </style>
