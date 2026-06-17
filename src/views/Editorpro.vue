@@ -142,7 +142,9 @@ onMounted(() => {
 
   // 「我的插画」编辑入口：带入图片到画布
   nextTick(() => {
-    loadPendingIllustrationImage();
+    setTimeout(() => {
+      loadPendingIllustrationImage();
+    }, 350);
   });
 });
 
@@ -151,7 +153,9 @@ async function loadPendingIllustrationImage() {
   if (!url || !canvasEditor?.createImgByElement) return;
 
   const imgEl = document.createElement('img');
-  imgEl.crossOrigin = 'anonymous';
+  if (!url.startsWith('data:') && !url.startsWith('blob:')) {
+    imgEl.crossOrigin = 'anonymous';
+  }
   try {
     await new Promise((resolve, reject) => {
       imgEl.onload = resolve;

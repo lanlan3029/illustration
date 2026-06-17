@@ -56,6 +56,7 @@
 <script>
 import { Plus } from '@element-plus/icons-vue';
 import { getImageUrl } from '@/utils/characterStudioPrompt';
+import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
 
 export default {
   name: 'CharacterStudioDashboard',
@@ -92,16 +93,13 @@ export default {
     },
     goGroupImages(item) {
       const id = item.id || item._id;
-      if (id) {
-        localStorage.setItem('lastCharacterId', String(id));
-      }
       const name = item.character_name || item.name || '';
-      if (name) localStorage.setItem('lastCharacterName', name);
       const imageUrl = getImageUrl(item.image_url || item.character_image_url);
-      if (imageUrl) {
-        localStorage.setItem('characterImage', imageUrl);
-        sessionStorage.setItem('createGroupImages_reference', imageUrl);
-      }
+      if (!imageUrl) return;
+      setCreateGroupImagesReference(imageUrl, {
+        characterId: id,
+        characterName: name || undefined,
+      });
       this.$router.push({ name: 'create-group-images' });
     },
     onCardClick(item) {

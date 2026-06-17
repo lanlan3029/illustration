@@ -171,12 +171,15 @@ export default {
   box-shadow: 0 2px 8px rgba(129, 103, 169, 0.08);
   overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cw-rail-icon--domain img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
   display: block;
 }
 

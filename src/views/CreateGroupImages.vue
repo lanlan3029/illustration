@@ -177,6 +177,7 @@
 
 <script>
 import { ElMessage } from 'element-plus'
+import { takeCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
 
 export default {
     name: 'CreateGroupImages',
@@ -233,19 +234,25 @@ export default {
         }
     },
     activated() {
+        this.importPendingReference();
         this.loadCharacterFromMyCharacters();
     },
     mounted() {
-        // 页面加载时检查是否有创作角色的图片，如果有则自动导入
-        this.checkCharacterImage();
-        
-        // 检查是否从"我的角色"页面跳转过来，如果是则自动加载角色信息
+        this.importPendingReference();
         this.loadCharacterFromMyCharacters();
-        
-        // 从localStorage恢复生成的组图数据
         this.loadGroupImagesFromLocalStorage();
     },
     methods: {
+        importPendingReference() {
+            const pendingRef = takeCreateGroupImagesReference();
+            if (pendingRef) {
+                this.referenceImageUrl = pendingRef;
+                this.referenceFile = null;
+                localStorage.setItem('characterImage', pendingRef);
+                return;
+            }
+            this.checkCharacterImage();
+        },
         // 检查创作角色页面的图片，如果有则自动导入
         checkCharacterImage() {
             const characterImage = localStorage.getItem('characterImage');

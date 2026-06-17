@@ -2,9 +2,9 @@
 
 /** 与首页 showcase 一致的域图标 */
 export const CREATION_DOMAIN_ICONS = {
-  character: require('@/assets/images/cards/reddit.png'),
-  illustration: require('@/assets/images/cards/image (1).png'),
-  book: require('@/assets/images/cards/books.png'),
+  character: require('@/assets/lefticon/user set-line.svg'),
+  illustration: require('@/assets/lefticon/picture.svg'),
+  book: require('@/assets/lefticon/books.svg'),
 };
 
 export const CREATION_DOMAINS = [

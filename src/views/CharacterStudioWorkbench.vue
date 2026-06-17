@@ -169,8 +169,7 @@
           :class="{ 'is-anchor': anchorUrl === gen.url }"
         >
           <img :src="gen.url" alt="generation" @click="previewImage(idx)" />
-          <div class="cs-gen-actions">
-            <el-button size="small" @click="setAnchor(gen)">{{ $t('characterStudio.setAnchor') }}</el-button>
+          <div class="cs-gen-actions" @click.stop>
             <el-button size="small" type="primary" @click="saveToMyCharacters(gen)">
               {{ $t('characterStudio.saveCharacter') }}
             </el-button>
@@ -205,6 +204,7 @@ import {
   resolveGenerationImageUrl,
 } from '@/utils/createCharacterTask';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
+import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_ACTION,
@@ -447,7 +447,7 @@ export default {
         const gen = { id: `${Date.now()}`, url: imageUrl, prompt };
         this.generations.unshift(gen);
         if (!this.anchorUrl) {
-          await this.setAnchor(gen);
+          await this.setAnchor(gen, { silent: true });
         }
         this.saveSession();
         ElMessage.success(this.$t('characterStudio.generateSuccess'));
@@ -457,7 +457,7 @@ export default {
         this.generating = false;
       }
     },
-    async setAnchor(gen) {
+    async setAnchor(gen, { silent = false } = {}) {
       this.anchorUrl = gen.url;
       try {
         this.anchorBase64 = gen.url.startsWith('data:') ? gen.url : await this.urlToBase64(gen.url);
@@ -465,7 +465,9 @@ export default {
         this.anchorBase64 = '';
       }
       this.saveSession();
-      ElMessage.success(this.$t('characterStudio.anchorUpdated'));
+      if (!silent) {
+        ElMessage.success(this.$t('characterStudio.anchorUpdated'));
+      }
     },
     async saveToMyCharacters(gen) {
       const token = localStorage.getItem('token');
@@ -515,11 +517,22 @@ export default {
       }
     },
     openEditorPro(url) {
-      setEditorproPendingImage(url, { title: this.characterName || '' });
-      this.$router.push('/editorpro');
+      if (!url) return;
+      const imageUrl = url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http')
+        ? url
+        : getImageUrl(url);
+      setEditorproPendingImage(imageUrl, { title: this.characterName || '' });
+      this.$router.push({ name: 'editorpro' });
     },
     goGroupImages(url) {
-      sessionStorage.setItem('createGroupImages_reference', url);
+      if (!url) return;
+      const imageUrl = url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http')
+        ? url
+        : getImageUrl(url);
+      setCreateGroupImagesReference(imageUrl, {
+        characterId: this.savedCharacterId || undefined,
+        characterName: (this.characterName || '').trim() || undefined,
+      });
       this.$router.push({ name: 'create-group-images' });
     },
     previewImage(index) {
