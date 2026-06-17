@@ -340,6 +340,16 @@ const routes = [{
         }
     },
     {
+        path: '/canvas-matting',
+        name: 'canvas-matting',
+        component: () =>
+            import(/* webpackChunkName: "canvas-matting" */ '../views/CanvasMattingPage.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '白底抠图',
+        },
+    },
+    {
         path: '/newyear',
         name: 'newyear',
         component: () =>
