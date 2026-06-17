@@ -3,7 +3,7 @@
     <!-- 第一栏：上图标下文字，窄轨 -->
     <nav class="cw-rail" aria-label="creation domains">
       <router-link :to="{ name: 'Home' }" class="cw-rail-home" :title="$t('nav.home')">
-        <span class="cw-rail-icon" v-html="icons.home" />
+        <span class="cw-rail-icon" v-html="homeIcon" />
         <span class="cw-rail-label">{{ $t('nav.home') }}</span>
       </router-link>
 
@@ -15,7 +15,9 @@
         :class="{ active: activeDomain === domain.key }"
         @click="switchDomain(domain)"
       >
-        <span class="cw-rail-icon cw-rail-icon--domain" v-html="icons[domain.icon]" />
+        <span class="cw-rail-icon cw-rail-icon--domain">
+          <img :src="domain.iconSrc" :alt="$t(domain.labelKey)" />
+        </span>
         <span class="cw-rail-label">{{ $t(domain.labelKey) }}</span>
       </button>
     </nav>
@@ -54,23 +56,15 @@ import {
   isSubNavActive as matchSubNav,
 } from '@/data/creationStudioNav';
 
-const ICONS = {
-  home:
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>',
-  character:
-    '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="4.25" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="8.5" r="2.1" fill="currentColor"/><path d="M5.5 20v-.75c0-3.45 2.9-6.25 6.5-6.25s6.5 2.8 6.5 6.25V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17.2 4.8 18.5 7l2.3.8-2.3.8-1.3 2.2-1.3-2.2-2.3-.8 2.3-.8z" fill="currentColor" stroke="currentColor" stroke-width="0.6" stroke-linejoin="round"/></svg>',
-  illustration:
-    '<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="13.5" height="10.5" rx="2" fill="currentColor" fill-opacity="0.14" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 12.5 8.2 9.8l2.2 2 3.4-3.8 2.7 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.2" fill="currentColor"/><path d="M15.8 3.2 20 7.4l-8.2 8.2-4.1.9.9-4.1z" fill="currentColor" fill-opacity="0.85" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M17.6 4.6 19.4 6.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
-  book:
-    '<svg viewBox="0 0 24 24" fill="none"><path d="M12 4.5c-2.2 0-4.3-.9-6.5-1.6v13.2c2.1.9 4.2 1.6 6.5 1.6s4.4-.7 6.5-1.6V2.9C16.3 3.6 14.2 4.5 12 4.5z" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 4.5c2.2 0 4.3-.9 6.5-1.6v13.2c-2.1.9-4.2 1.6-6.5 1.6S7.6 17.5 5.5 16.6V2.9C7.7 3.6 9.8 4.5 12 4.5z" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 4.5v14.8" stroke="currentColor" stroke-width="1.3"/><rect x="7.2" y="8.2" width="3.2" height="2.8" rx=".6" fill="currentColor" fill-opacity="0.55"/><path d="M14.2 9.2h3M14.2 11.8h2.2" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" opacity=".75"/></svg>',
-};
+const HOME_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>';
 
 export default {
   name: 'CreationStudioLayout',
   data() {
     return {
       domains: CREATION_DOMAINS,
-      icons: ICONS,
+      homeIcon: HOME_ICON,
     };
   },
   computed: {
@@ -172,28 +166,29 @@ export default {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: linear-gradient(145deg, #f7f5fb 0%, #ece8f4 100%);
-  color: #6b5589;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
+  background: #fff;
+  border: 1px solid #ece8f4;
+  box-shadow: 0 2px 8px rgba(129, 103, 169, 0.08);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
-.cw-rail-icon--domain :deep(svg) {
-  width: 26px;
-  height: 26px;
+.cw-rail-icon--domain img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .cw-rail-item:hover .cw-rail-icon--domain {
-  background: linear-gradient(145deg, #9a82bc 0%, #8167a9 100%);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(129, 103, 169, 0.28);
+  border-color: #c4b3dc;
+  box-shadow: 0 4px 12px rgba(129, 103, 169, 0.18);
   transform: translateY(-1px);
 }
 
 .cw-rail-item.active .cw-rail-icon--domain {
-  background: linear-gradient(145deg, #9a82bc 0%, #8167a9 100%);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(129, 103, 169, 0.32);
+  border-color: #8167a9;
+  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.22), 0 4px 14px rgba(129, 103, 169, 0.16);
 }
 
 .cw-rail-label {

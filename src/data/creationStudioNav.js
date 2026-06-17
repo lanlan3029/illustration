@@ -1,23 +1,30 @@
 /** 创作工作台：第一栏域 + 第二栏子导航配置 */
 
+/** 与首页 showcase 一致的域图标 */
+export const CREATION_DOMAIN_ICONS = {
+  character: require('@/assets/images/cards/reddit.png'),
+  illustration: require('@/assets/images/cards/image (1).png'),
+  book: require('@/assets/images/cards/books.png'),
+};
+
 export const CREATION_DOMAINS = [
   {
     key: 'character',
     labelKey: 'creationStudio.domainCharacter',
     defaultRoute: 'character-studio',
-    icon: 'character',
+    iconSrc: CREATION_DOMAIN_ICONS.character,
   },
   {
     key: 'illustration',
     labelKey: 'creationStudio.domainIllustration',
     defaultRoute: 'AIPicture',
-    icon: 'illustration',
+    iconSrc: CREATION_DOMAIN_ICONS.illustration,
   },
   {
     key: 'book',
     labelKey: 'creationStudio.domainBook',
     defaultRoute: 'AIbooks',
-    icon: 'book',
+    iconSrc: CREATION_DOMAIN_ICONS.book,
   },
 ];
 
