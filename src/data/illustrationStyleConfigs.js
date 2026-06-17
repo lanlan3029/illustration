@@ -20,5 +20,7 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
   { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.webp'), category: 'toon' },
   { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.webp'), category: 'toon' },
   { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp'), category: 'paint' },
-  { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp'), category: 'paint' }
+  { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp'), category: 'paint' },
+  { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp'), category: 'toon' },
+  { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp'), category: 'paint' }
 ]

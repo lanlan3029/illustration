@@ -719,6 +719,14 @@
         "artStyle": "Oil Painting Style",
         "elementDetails": "Thick brushstrokes oil painting style, children's picture book, colorful light and shadow, clear brushstrokes, complex scenes, extreme details, ultra-high definition, 32k."
       },
+      "europeanComic": {
+        "artStyle": "European Comic Style",
+        "elementDetails": "European comic style, clean simple linework, muted flat colors, richly detailed backgrounds."
+      },
+      "gouacheChildrenBook": {
+        "artStyle": "Gouache Children's Book",
+        "elementDetails": "Thick opaque gouache paint texture, rounded cute silhouettes, warm soft color palette, hand-painted brushstrokes, picture-book publishing quality, narrative storytelling mood, cozy healing atmosphere, children's picture book illustration style."
+      },
       "blackWhiteDoodle": {
         "artStyle": "Black and White Doodle",
         "elementDetails": "A dense doodle illustration filled with various cartoon-style black line-drawn images. These elements are arranged randomly and repetitively, creating a chaotic yet vibrant atmosphere. Characters have simple lines, rounded outlines, and various expressions, showing innocence and humor. The composition is compact with no obvious white space. The entire image uses only black and white, with sharp contrast, consistent line thickness, and unified style. Lighting is even with no shadows, presenting a flat visual effect. The overall style is cartoon, doodle, with childlike fun and creativity, creating a casual yet imaginative feeling."

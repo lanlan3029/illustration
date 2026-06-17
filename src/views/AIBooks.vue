@@ -283,7 +283,9 @@ export default {
             'doodleSoul',
             'abstractFlatDesign',
             'simpleCartoon',
-            'oilPainting'
+            'oilPainting',
+            'europeanComic',
+            'gouacheChildrenBook'
         ]
         
         const styleImageMap = Object.fromEntries(

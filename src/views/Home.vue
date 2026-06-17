@@ -87,7 +87,9 @@ export default {
                 { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.webp') },
                 { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.webp') },
                 { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp') },
-                { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') }
+                { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') },
+                { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp') },
+                { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp') }
             ]
         };
     },

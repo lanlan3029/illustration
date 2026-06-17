@@ -235,6 +235,8 @@ const STYLE_NAME_TO_KEY = {
   '抽象平面设计': 'abstractFlatDesign',
   '简洁卡通插画': 'simpleCartoon',
   '油画风格': 'oilPainting',
+  '欧洲漫画风格': 'europeanComic',
+  '水粉童书绘本': 'gouacheChildrenBook',
   '黑白涂鸦风': 'blackWhiteDoodle',
   '质朴手绘风格': 'rusticHandDrawn',
   '极繁铜版印刷': 'maximalistCopperplate',
@@ -261,7 +263,9 @@ const STYLE_KEY_TO_NUM = {
   pencilSketch3D: 16,
   vintageSketch: 17,
   feltCollage: 18,
-  oilPainting: 19
+  oilPainting: 19,
+  europeanComic: 20,
+  gouacheChildrenBook: 21
 };
 
 export default {
@@ -806,6 +810,8 @@ export default {
         'abstractFlatDesign': '抽象平面设计',
         'simpleCartoon': '简洁卡通插画',
         'oilPainting': '油画风格',
+        'europeanComic': '欧洲漫画风格',
+        'gouacheChildrenBook': '水粉童书绘本',
         'blackWhiteDoodle': '黑白涂鸦风',
         'rusticHandDrawn': '质朴手绘风格',
         'maximalistCopperplate': '极繁铜版印刷',
