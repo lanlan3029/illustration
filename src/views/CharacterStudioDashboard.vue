@@ -163,8 +163,8 @@ export default {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #fff5f0 0%, #ffe8dc 100%);
-  color: #e86b3a;
+  background: linear-gradient(135deg, #f5f0fa 0%, #ebe5f5 100%);
+  color: #8167a9;
   font-size: 32px;
   line-height: 56px;
   text-align: center;

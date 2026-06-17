@@ -324,7 +324,7 @@
     "aiBooks": "AI绘本",
     "creation": "创作",
     "createCharacter": "创作角色",
-    "characterStudio": "角色工作台",
+    "characterStudio": "创作工作台",
     "createCharacterLegacy": "创作角色（经典页）",
     "createGroupImages": "创作组图",
     "createLayoutIllustration": "布局编辑器创作",
@@ -1021,8 +1021,17 @@
     "sizeSmall": "较小尺寸",
     "sizeMedium": "中等尺寸"
   },
+  "creationStudio": {
+    "layoutTitle": "创作工作台",
+    "domainCharacter": "角色",
+    "domainIllustration": "插画",
+    "domainBook": "绘本",
+    "myCharacters": "我的角色",
+    "generateCharacter": "生成角色",
+    "characterGroups": "角色组图"
+  },
   "characterStudio": {
-    "dashboardTitle": "角色工作台",
+    "dashboardTitle": "我的角色",
     "dashboardDesc": "创建并管理卡通角色，保持形象一致，用于绘本、插画与组图。",
     "createNew": "创建新角色",
     "unnamed": "未命名角色",
@@ -1060,7 +1069,7 @@
     "saveSuccess": "已保存到我的角色",
     "saveFailed": "保存失败",
     "pleaseLogin": "请先登录",
-    "layoutTitle": "角色工作台",
+    "layoutTitle": "创作工作台",
     "navCreate": "创作",
     "navProjects": "我的项目",
     "navMore": "更多",

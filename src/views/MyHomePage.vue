@@ -380,7 +380,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
        this.$router.push("/");
    },
    goCharacterStudio() {
-       this.$router.push('/character-studio');
+       this.$router.push('/creation-studio');
    },
     showImagePreview(imageUrl) {
       this.previewImageUrl = imageUrl

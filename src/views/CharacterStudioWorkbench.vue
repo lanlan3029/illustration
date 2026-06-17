@@ -64,11 +64,6 @@
         <el-input v-model="actionText" :placeholder="DEFAULT_ACTION" />
       </section>
 
-      <section class="cs-section">
-        <label class="cs-label">{{ $t('characterStudio.backgroundOptional') }}</label>
-        <el-input v-model="backgroundText" :placeholder="DEFAULT_BACKGROUND" />
-      </section>
-
       <div class="cs-row-2">
         <section class="cs-section cs-section--half">
           <label class="cs-label">{{ $t('characterStudio.aspectRatio') }}</label>
@@ -149,10 +144,10 @@
       <div v-if="generations.length === 0 && !generating" class="cs-empty">
         <div class="cs-empty-art">
           <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
-            <rect x="20" y="30" width="80" height="60" rx="8" fill="#fff3ed" stroke="#e86b3a" stroke-width="2"/>
-            <circle cx="45" cy="52" r="6" fill="#e86b3a" opacity="0.6"/>
-            <circle cx="75" cy="52" r="6" fill="#e86b3a" opacity="0.6"/>
-            <path d="M42 68 Q60 78 78 68" stroke="#e86b3a" stroke-width="2" fill="none" opacity="0.6"/>
+            <rect x="20" y="30" width="80" height="60" rx="8" fill="#f3f0f8" stroke="#8167a9" stroke-width="2"/>
+            <circle cx="45" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
+            <circle cx="75" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
+            <path d="M42 68 Q60 78 78 68" stroke="#8167a9" stroke-width="2" fill="none" opacity="0.6"/>
           </svg>
         </div>
         <p>{{ $t('characterStudio.noGenerations') }}</p>
@@ -210,7 +205,6 @@ import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_ACTION,
-  DEFAULT_BACKGROUND,
   buildCharacterStudioPrompt,
   resolveStyleInfo,
   getImageUrl,
@@ -233,14 +227,13 @@ export default {
         image: config.image,
       }))
     );
-    return { styles, DEFAULT_ACTION, DEFAULT_BACKGROUND, aspectOptions: ASPECT_RATIO_OPTIONS };
+    return { styles, DEFAULT_ACTION, aspectOptions: ASPECT_RATIO_OPTIONS };
   },
   data() {
     return {
       characterName: '',
       description: '',
       actionText: DEFAULT_ACTION,
-      backgroundText: DEFAULT_BACKGROUND,
       artStyleKey: 'healingWatercolor',
       aspectRatio: '1024x1024',
       referenceBase64: '',
@@ -292,7 +285,6 @@ export default {
         if (data.characterName) this.characterName = data.characterName;
         if (data.description) this.description = data.description;
         if (data.actionText) this.actionText = data.actionText;
-        if (data.backgroundText) this.backgroundText = data.backgroundText;
         if (data.artStyleKey) this.artStyleKey = data.artStyleKey;
         if (data.aspectRatio) this.aspectRatio = data.aspectRatio;
         if (data.anchorUrl) this.anchorUrl = data.anchorUrl;
@@ -308,7 +300,6 @@ export default {
           characterName: this.characterName,
           description: this.description,
           actionText: this.actionText,
-          backgroundText: this.backgroundText,
           artStyleKey: this.artStyleKey,
           aspectRatio: this.aspectRatio,
           anchorUrl: this.anchorUrl,
@@ -404,7 +395,6 @@ export default {
         const prompt = buildCharacterStudioPrompt({
           description: desc,
           action: this.actionText || DEFAULT_ACTION,
-          background: this.backgroundText || DEFAULT_BACKGROUND,
           styleInfo,
           withReferenceImage: Boolean(refImage),
         });
@@ -572,7 +562,7 @@ export default {
 }
 
 .cs-back:hover {
-  color: #e86b3a;
+  color: #8167a9;
 }
 
 .cs-steps {
@@ -592,7 +582,7 @@ export default {
 }
 
 .cs-step--active {
-  color: #e86b3a;
+  color: #8167a9;
 }
 
 .cs-step--muted {
@@ -611,7 +601,7 @@ export default {
 }
 
 .cs-step--active .cs-step-dot {
-  background: #e86b3a;
+  background: #8167a9;
 }
 
 .cs-step--muted .cs-step-dot {
@@ -636,7 +626,7 @@ export default {
 
 .cs-guide-link {
   font-size: 12px;
-  color: #e86b3a;
+  color: #8167a9;
   text-decoration: none;
 }
 
@@ -755,8 +745,8 @@ export default {
 
 .cs-style-opt.active,
 .cs-style-opt:hover {
-  border-color: #e86b3a;
-  background: #fff8f5;
+  border-color: #8167a9;
+  background: #f3f0f8;
 }
 
 .cs-generate-btn {
@@ -765,10 +755,10 @@ export default {
   margin-top: 8px;
   font-size: 15px;
   font-weight: 600;
-  --el-button-bg-color: #e86b3a;
-  --el-button-border-color: #e86b3a;
-  --el-button-hover-bg-color: #d45a2a;
-  --el-button-hover-border-color: #d45a2a;
+  --el-button-bg-color: #8167a9;
+  --el-button-border-color: #8167a9;
+  --el-button-hover-bg-color: #6d5694;
+  --el-button-hover-border-color: #6d5694;
 }
 
 .cs-points-hint {
@@ -810,9 +800,9 @@ export default {
 }
 
 .cs-view-btn.active {
-  border-color: #e86b3a;
-  background: #fff3ed;
-  color: #e86b3a;
+  border-color: #8167a9;
+  background: #ede8f5;
+  color: #8167a9;
 }
 
 .cs-gen-grid--list {
@@ -846,8 +836,8 @@ export default {
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 20px;
-  background: #fff3ed;
-  color: #e86b3a;
+  background: #ede8f5;
+  color: #8167a9;
 }
 
 .cs-empty {
@@ -886,7 +876,7 @@ export default {
 }
 
 .cs-gen-card.is-anchor {
-  border-color: #e86b3a;
+  border-color: #8167a9;
 }
 
 .cs-gen-card img {

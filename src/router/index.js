@@ -17,20 +17,11 @@ const routes = [{
     },
     {
         path: '/ai-picture',
-        name: 'AIPicture',
-        component: () => import(/* webpackChunkName: "ai-picture" */ '../views/AIpicture.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/illustration/ai',
     },
     {
         path: '/AIbooks',
-        name: 'AIbooks',
-        component: () =>
-            import ( /* webpackChunkName: "ai-books" */ '../views/AIBooks.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/book/ai',
     },
     {
         path: '/creation',
@@ -196,12 +187,7 @@ const routes = [{
     },
     {
         path: '/user/upload/compose-illustration',
-        name: 'compose-illustration',
-        component: () =>
-            import ( /* webpackChunkName: "compose-illustration" */ '../views/ComposeIllustration.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/book/compose',
     },
     {
         path: '/user/upload/upload-loacl-pdf',
@@ -231,31 +217,83 @@ const routes = [{
         }
     },
     {
-        path: '/character-studio',
+        path: '/creation-studio',
         component: () =>
-            import(/* webpackChunkName: "character-studio-layout" */ '../views/CharacterStudioLayout.vue'),
+            import(/* webpackChunkName: "creation-studio-layout" */ '../views/CreationStudioLayout.vue'),
         meta: {
             requiresAuth: true,
-            seoTitle: '角色工作台'
+            seoTitle: '创作工作台',
         },
+        redirect: '/creation-studio/character',
         children: [
             {
-                path: '',
+                path: 'character',
                 name: 'character-studio',
                 component: () =>
                     import(/* webpackChunkName: "character-studio" */ '../views/CharacterStudioDashboard.vue'),
+                meta: { creationDomain: 'character', seoTitle: '我的角色' },
             },
             {
-                path: 'workbench/:characterId?',
+                path: 'character/generate/:characterId?',
                 name: 'character-studio-workbench',
                 component: () =>
                     import(/* webpackChunkName: "character-studio-workbench" */ '../views/CharacterStudioWorkbench.vue'),
                 props: true,
-                meta: {
-                    seoTitle: '角色创作'
-                },
+                meta: { creationDomain: 'character', seoTitle: '生成角色' },
+            },
+            {
+                path: 'character/groups',
+                name: 'create-group-images',
+                component: () =>
+                    import(/* webpackChunkName: "create-group-images" */ '../views/CreateGroupImages.vue'),
+                meta: { creationDomain: 'character', requiresAuth: true },
+            },
+            {
+                path: 'illustration/ai',
+                name: 'AIPicture',
+                component: () =>
+                    import(/* webpackChunkName: "ai-picture" */ '../views/AIpicture.vue'),
+                meta: { creationDomain: 'illustration', requiresAuth: true },
+            },
+            {
+                path: 'illustration/editor',
+                name: 'editorpro',
+                component: () =>
+                    import(/* webpackChunkName: "editorpro" */ '../views/Editorpro.vue'),
+                meta: { creationDomain: 'illustration', seoTitle: '在线插画编辑' },
+            },
+            {
+                path: 'illustration/layout',
+                name: 'create-layout-illustration',
+                component: () =>
+                    import(/* webpackChunkName: "create-layout-illustration" */ '../views/CreateLayoutIllustration.vue'),
+                meta: { creationDomain: 'illustration', requiresAuth: true },
+            },
+            {
+                path: 'book/ai',
+                name: 'AIbooks',
+                component: () =>
+                    import(/* webpackChunkName: "ai-books" */ '../views/AIBooks.vue'),
+                meta: { creationDomain: 'book', requiresAuth: true },
+            },
+            {
+                path: 'book/compose',
+                name: 'compose-illustration',
+                component: () =>
+                    import(/* webpackChunkName: "compose-illustration" */ '../views/ComposeIllustration.vue'),
+                meta: { creationDomain: 'book', requiresAuth: true },
             },
         ],
+    },
+    {
+        path: '/character-studio',
+        redirect: '/creation-studio/character',
+    },
+    {
+        path: '/character-studio/workbench/:characterId?',
+        redirect: (to) => ({
+            path: `/creation-studio/character/generate/${to.params.characterId || 'new'}`,
+        }),
     },
     {
         path: '/create-character',
@@ -268,12 +306,7 @@ const routes = [{
     },
     {
         path: '/create-group-images',
-        name: 'create-group-images',
-        component: () =>
-            import ( /* webpackChunkName: "create-group-images" */ '../views/CreateGroupImages.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/character/groups',
     },
     {
         path: '/character-group-images/:characterId',
@@ -287,22 +320,11 @@ const routes = [{
     },
     {
         path: '/create-layout-illustration',
-        name: 'create-layout-illustration',
-        component: () =>
-            import ( /* webpackChunkName: "create-layout-illustration" */ '../views/CreateLayoutIllustration.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/illustration/layout',
     },
     {
         path: '/editorpro',
-        name: 'editorpro',
-        component: () =>
-            import ( /* webpackChunkName: "editorpro" */ '../views/Editorpro.vue'),
-        meta: {
-            requiresAuth: false,
-            seoTitle: '在线插画编辑'
-        }
+        redirect: '/creation-studio/illustration/editor',
     },
     {
         path: '/lasso-crop',

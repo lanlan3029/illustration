@@ -20,22 +20,21 @@ export const DEFAULT_BACKGROUND = 'Plain white background';
 export function buildCharacterStudioPrompt({
   description = '',
   action = '',
-  background = '',
   styleInfo = '',
   withReferenceImage = false,
 }) {
   const parts = [];
   const desc = (description || '').trim();
-  const act = (action || '').trim();
-  const bg = (background || '').trim();
+  const act = (action || DEFAULT_ACTION).trim();
+  const bg = DEFAULT_BACKGROUND;
 
   if (desc) parts.push(desc);
   if (act) parts.push(`ACTION: ${act}`);
-  if (bg) parts.push(`BACKGROUND: ${bg}`);
+  parts.push(`BACKGROUND: ${bg}`);
   if (styleInfo) parts.push(`STYLE: ${styleInfo}`);
   if (withReferenceImage) {
     parts.push(
-      '参考附图中的角色形象，保持面部特征、发型、服装与体型一致，仅根据 ACTION 改变姿势与表情，背景按 BACKGROUND 描述。'
+      '参考附图中的角色形象，保持面部特征、发型、服装与体型一致，仅根据 ACTION 改变姿势与表情，使用纯色白背景。'
     );
   }
 

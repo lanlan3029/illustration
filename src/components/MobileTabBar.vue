@@ -48,8 +48,10 @@ export default {
     const isLogin = computed(() => store.state.isLogin)
 
     const createPaths = [
+      '/creation-studio',
       '/ai-picture',
       '/AIbooks',
+      '/creation-studio',
       '/character-studio',
       '/create-character',
       '/create-group-images',

@@ -309,7 +309,7 @@
     "aiBooks": "AI Picture Book",
     "creation": "Creation",
     "createCharacter": "Create Character",
-    "characterStudio": "Character Studio",
+    "characterStudio": "Creation Studio",
     "createCharacterLegacy": "Create Character (Classic)",
     "createGroupImages": "Create Group Images",
     "createLayoutIllustration": "Layout Editor Creation",
@@ -1006,8 +1006,17 @@
     "sizeSmall": "small size",
     "sizeMedium": "medium size"
   },
+  "creationStudio": {
+    "layoutTitle": "Creation Studio",
+    "domainCharacter": "Character",
+    "domainIllustration": "Illustration",
+    "domainBook": "Picture Book",
+    "myCharacters": "My Characters",
+    "generateCharacter": "Generate Character",
+    "characterGroups": "Character Groups"
+  },
   "characterStudio": {
-    "dashboardTitle": "Character Studio",
+    "dashboardTitle": "My Characters",
     "dashboardDesc": "Create and manage cartoon characters with consistent looks for books, illustrations, and group images.",
     "createNew": "Create New Character",
     "unnamed": "Unnamed Character",
@@ -1045,7 +1054,7 @@
     "saveSuccess": "Saved to My Characters",
     "saveFailed": "Save failed",
     "pleaseLogin": "Please log in first",
-    "layoutTitle": "Character Studio",
+    "layoutTitle": "Creation Studio",
     "navCreate": "Create",
     "navProjects": "My Projects",
     "navMore": "More",
