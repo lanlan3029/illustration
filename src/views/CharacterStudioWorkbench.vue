@@ -41,21 +41,21 @@
           :rows="5"
           :placeholder="$t('characterStudio.describePlaceholder')"
         />
-        <div class="cs-prompt-tools">
+        <div class="cs-prompt-toolbar">
+          <div class="cs-prompt-toolbar-left">
+            <el-upload
+              :auto-upload="false"
+              :show-file-list="false"
+              accept="image/*"
+              :on-change="onRefUpload"
+            >
+              <el-button size="small">{{ $t('characterStudio.uploadReference') }}</el-button>
+            </el-upload>
+            <el-button v-if="referencePreview" size="small" link type="danger" @click="clearReference">
+              {{ $t('characterStudio.clearReference') }}
+            </el-button>
+          </div>
           <el-button size="small" @click="inspireMe">{{ $t('characterStudio.inspireMe') }}</el-button>
-        </div>
-        <div class="cs-ref-row">
-          <el-upload
-            :auto-upload="false"
-            :show-file-list="false"
-            accept="image/*"
-            :on-change="onRefUpload"
-          >
-            <el-button size="small">{{ $t('characterStudio.uploadReference') }}</el-button>
-          </el-upload>
-          <el-button v-if="referencePreview" size="small" link type="danger" @click="clearReference">
-            {{ $t('characterStudio.clearReference') }}
-          </el-button>
         </div>
         <div v-if="referencePreview" class="cs-ref-preview">
           <img :src="referencePreview" alt="ref" />
@@ -64,10 +64,7 @@
 
       <section class="cs-section">
         <label class="cs-label">{{ $t('characterStudio.actionOptional') }}</label>
-        <el-input
-          v-model="actionText"
-          :placeholder="$t('characterStudio.actionPlaceholder')"
-        />
+        <el-input v-model="actionText" :placeholder="DEFAULT_ACTION" />
       </section>
 
       <div class="cs-row-2">
@@ -122,79 +119,64 @@
 
     <!-- 右侧结果区 -->
     <main class="cs-gallery">
-      <div class="cs-gallery-head">
-        <div class="cs-gallery-toolbar">
-          <div>
-            <h2 class="cs-gallery-title">{{ $t('characterStudio.generations') }}</h2>
-            <p v-if="generations.length" class="cs-gallery-sub">
-              {{ $t('characterStudio.generationCount', { count: generations.length }) }}
-            </p>
-          </div>
-          <span v-if="anchorUrl" class="cs-anchor-badge">{{ $t('characterStudio.anchorSet') }}</span>
-          <div class="cs-view-toggle">
-            <button
-              type="button"
-              class="cs-view-btn"
-              :class="{ active: galleryView === 'grid' }"
-              :title="$t('characterStudio.viewGrid')"
-              @click="galleryView = 'grid'"
-            >
-              ▦
-            </button>
-            <button
-              type="button"
-              class="cs-view-btn"
-              :class="{ active: galleryView === 'list' }"
-              :title="$t('characterStudio.viewList')"
-              @click="galleryView = 'list'"
-            >
-              ☰
-            </button>
-          </div>
+      <div class="cs-gallery-toolbar">
+        <span class="cs-gallery-title">{{ $t('characterStudio.generations') }}</span>
+        <span v-if="anchorUrl" class="cs-anchor-badge">{{ $t('characterStudio.anchorSet') }}</span>
+        <div class="cs-view-toggle">
+          <button
+            type="button"
+            class="cs-view-btn"
+            :class="{ active: galleryView === 'grid' }"
+            :title="$t('characterStudio.viewGrid')"
+            @click="galleryView = 'grid'"
+          >
+            ▦
+          </button>
+          <button
+            type="button"
+            class="cs-view-btn"
+            :class="{ active: galleryView === 'list' }"
+            :title="$t('characterStudio.viewList')"
+            @click="galleryView = 'list'"
+          >
+            ☰
+          </button>
         </div>
       </div>
 
-      <div class="cs-gallery-body">
-        <div v-if="generations.length === 0 && !generating" class="cs-empty">
-          <div class="cs-empty-art">
-            <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
-              <rect x="20" y="30" width="80" height="60" rx="8" fill="#f3f0f8" stroke="#8167a9" stroke-width="2"/>
-              <circle cx="45" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
-              <circle cx="75" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
-              <path d="M42 68 Q60 78 78 68" stroke="#8167a9" stroke-width="2" fill="none" opacity="0.6"/>
-            </svg>
-          </div>
-          <p>{{ $t('characterStudio.noGenerations') }}</p>
+      <div v-if="generations.length === 0 && !generating" class="cs-empty">
+        <div class="cs-empty-art">
+          <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+            <rect x="20" y="30" width="80" height="60" rx="8" fill="#f3f0f8" stroke="#8167a9" stroke-width="2"/>
+            <circle cx="45" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
+            <circle cx="75" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
+            <path d="M42 68 Q60 78 78 68" stroke="#8167a9" stroke-width="2" fill="none" opacity="0.6"/>
+          </svg>
         </div>
+        <p>{{ $t('characterStudio.noGenerations') }}</p>
+      </div>
 
-        <div v-if="generating" class="cs-generating">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <p>{{ $t('characterStudio.generatingWait') }}</p>
-        </div>
+      <div v-if="generating" class="cs-generating">
+        <el-icon class="is-loading"><Loading /></el-icon>
+        <p>{{ $t('characterStudio.generatingWait') }}</p>
+      </div>
 
-        <div v-if="generations.length" class="cs-gen-grid" :class="{ 'cs-gen-grid--list': galleryView === 'list' }">
-          <div
-            v-for="(gen, idx) in generations"
-            :key="gen.id"
-            class="cs-gen-card"
-            :class="{ 'is-anchor': anchorUrl === gen.url }"
-          >
-            <img :src="gen.url" alt="generation" @click="previewImage(idx)" />
-            <div class="cs-gen-actions">
-              <div class="cs-gen-actions-row">
-                <el-button size="small" @click="setAnchor(gen)">{{ $t('characterStudio.setAnchor') }}</el-button>
-                <el-button size="small" type="primary" @click="saveToMyCharacters(gen)">
-                  {{ $t('characterStudio.saveCharacter') }}
-                </el-button>
-              </div>
-              <div class="cs-gen-actions-row cs-gen-actions-row--secondary">
-                <el-button size="small" text @click="downloadImage(gen.url)">{{ $t('characterStudio.download') }}</el-button>
-                <el-button size="small" text @click="openEditorPro(gen.url)">{{ $t('characterStudio.editInEditor') }}</el-button>
-                <el-button size="small" class="cs-gen-group-btn" round @click="goGroupImages(gen.url)">
-                  {{ $t('characterStudio.createGroup') }}
-                </el-button>
-              </div>
-            </div>
+      <div v-if="generations.length" class="cs-gen-grid" :class="{ 'cs-gen-grid--list': galleryView === 'list' }">
+        <div
+          v-for="(gen, idx) in generations"
+          :key="gen.id"
+          class="cs-gen-card"
+          :class="{ 'is-anchor': anchorUrl === gen.url }"
+        >
+          <img :src="gen.url" alt="generation" @click="previewImage(idx)" />
+          <div class="cs-gen-actions">
+            <el-button size="small" @click="setAnchor(gen)">{{ $t('characterStudio.setAnchor') }}</el-button>
+            <el-button size="small" type="primary" @click="saveToMyCharacters(gen)">
+              {{ $t('characterStudio.saveCharacter') }}
+            </el-button>
+            <el-button size="small" @click="downloadImage(gen.url)">{{ $t('characterStudio.download') }}</el-button>
+            <el-button size="small" @click="openEditorPro(gen.url)">{{ $t('characterStudio.editInEditor') }}</el-button>
+            <el-button size="small" @click="goGroupImages(gen.url)">{{ $t('characterStudio.createGroup') }}</el-button>
           </div>
         </div>
       </div>
@@ -225,6 +207,7 @@ import {
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 import {
   ASPECT_RATIO_OPTIONS,
+  DEFAULT_ACTION,
   buildCharacterStudioPrompt,
   resolveStyleInfo,
   getImageUrl,
@@ -249,13 +232,13 @@ export default {
         image: config.image,
       }))
     );
-    return { styles, aspectOptions: ASPECT_RATIO_OPTIONS };
+    return { styles, DEFAULT_ACTION, aspectOptions: ASPECT_RATIO_OPTIONS };
   },
   data() {
     return {
       characterName: '',
       description: '',
-      actionText: '',
+      actionText: DEFAULT_ACTION,
       artStyleKey: 'healingWatercolor',
       aspectRatio: '1024x1024',
       referenceBase64: '',
@@ -424,7 +407,7 @@ export default {
         const refImage = this.referenceBase64 || this.anchorBase64 || '';
         const prompt = buildCharacterStudioPrompt({
           description: desc,
-          action: (this.actionText || '').trim(),
+          action: this.actionText || DEFAULT_ACTION,
           styleInfo,
           withReferenceImage: Boolean(refImage),
         });
@@ -579,24 +562,22 @@ export default {
 }
 
 .cs-panel {
-  width: 400px;
+  width: 380px;
   flex-shrink: 0;
   background: #fff;
-  border-right: 1px solid rgba(129, 103, 169, 0.1);
-  box-shadow: 2px 0 24px rgba(129, 103, 169, 0.06);
-  padding: 28px 24px 36px;
+  border-right: 1px solid #ececf0;
+  padding: 20px 18px 32px;
   overflow-y: auto;
 }
 
 .cs-back {
   border: none;
   background: none;
-  color: #6b7280;
+  color: #606266;
   font-size: 13px;
-  font-weight: 500;
   cursor: pointer;
   padding: 0;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .cs-back:hover {
@@ -605,17 +586,17 @@ export default {
 
 .cs-steps {
   display: flex;
-  gap: 20px;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(129, 103, 169, 0.1);
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .cs-step {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -624,39 +605,37 @@ export default {
 }
 
 .cs-step--muted {
-  color: #c4c4c4;
+  color: #bbb;
 }
 
 .cs-step-dot {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: currentColor;
   color: #fff;
-  font-size: 12px;
-  line-height: 24px;
+  font-size: 11px;
+  line-height: 22px;
   text-align: center;
-  flex-shrink: 0;
 }
 
 .cs-step--active .cs-step-dot {
   background: #8167a9;
-  box-shadow: 0 2px 8px rgba(129, 103, 169, 0.35);
 }
 
 .cs-step--muted .cs-step-dot {
-  background: #e5e7eb;
-  color: #9ca3af;
+  background: #ddd;
+  color: #999;
 }
 
 .cs-field-head {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .cs-field-head-row {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .cs-guide-links {
@@ -665,26 +644,28 @@ export default {
 }
 
 .cs-guide-link {
-  font-size: 13px;
+  font-size: 12px;
   color: #8167a9;
   text-decoration: none;
-  font-weight: 500;
 }
 
 .cs-guide-link:hover {
   text-decoration: underline;
 }
 
-.cs-prompt-tools {
+.cs-prompt-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-.cs-name-input :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  box-shadow: 0 0 0 1px rgba(129, 103, 169, 0.15) inset;
+.cs-prompt-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .cs-name-input :deep(.el-input__inner) {
@@ -693,7 +674,7 @@ export default {
 }
 
 .cs-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .cs-section--half {
@@ -705,29 +686,17 @@ export default {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
-  margin-bottom: 10px;
-}
-
-.cs-section :deep(.el-textarea__inner),
-.cs-section :deep(.el-input__wrapper) {
-  border-radius: 12px;
-}
-
-.cs-ref-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  color: #303133;
+  margin-bottom: 8px;
 }
 
 .cs-ref-preview {
-  margin-top: 10px;
-  width: 80px;
-  height: 80px;
-  border-radius: 12px;
+  margin-top: 8px;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(129, 103, 169, 0.15);
-  box-shadow: 0 2px 8px rgba(129, 103, 169, 0.08);
+  border: 1px solid #eee;
 }
 
 .cs-ref-preview img {
@@ -738,39 +707,33 @@ export default {
 
 .cs-row-2 {
   display: flex;
-  gap: 14px;
+  gap: 12px;
 }
 
 .cs-style-trigger {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid rgba(129, 103, 169, 0.18);
-  border-radius: 12px;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
   background: #fff;
   cursor: pointer;
   font-size: 13px;
   text-align: left;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.cs-style-trigger:hover {
-  border-color: #8167a9;
-  box-shadow: 0 0 0 3px rgba(129, 103, 169, 0.08);
 }
 
 .cs-style-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   object-fit: cover;
 }
 
 .cs-caret {
   margin-left: auto;
-  color: #9ca3af;
+  color: #999;
 }
 
 .cs-style-popover {
@@ -785,19 +748,19 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   text-align: left;
 }
 
 .cs-style-opt img {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 6px;
   object-fit: cover;
 }
 
@@ -809,63 +772,52 @@ export default {
 
 .cs-generate-btn {
   width: 100%;
-  height: 48px;
-  margin-top: 12px;
-  font-size: 16px;
+  height: 44px;
+  margin-top: 8px;
+  font-size: 15px;
   font-weight: 600;
-  border-radius: 24px;
   --el-button-bg-color: #8167a9;
   --el-button-border-color: #8167a9;
-  --el-button-hover-bg-color: #6f5694;
-  --el-button-hover-border-color: #6f5694;
+  --el-button-hover-bg-color: #6d5694;
+  --el-button-hover-border-color: #6d5694;
 }
 
 .cs-points-hint {
   text-align: center;
   font-size: 12px;
-  color: #9ca3af;
-  margin: 10px 0 0;
+  color: #909399;
+  margin: 8px 0 0;
 }
 
 .cs-gallery {
   flex: 1;
-  padding: 28px 32px 40px;
+  padding: 24px;
   overflow-y: auto;
-  min-width: 0;
-}
-
-.cs-gallery-head {
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(129, 103, 169, 0.1);
 }
 
 .cs-gallery-toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
-}
-
-.cs-gallery-body {
-  min-height: 360px;
 }
 
 .cs-view-toggle {
   margin-left: auto;
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .cs-view-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(129, 103, 169, 0.15);
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
   font-size: 14px;
-  color: #6b7280;
+  color: #606266;
 }
 
 .cs-view-btn.active {
@@ -884,39 +836,29 @@ export default {
 }
 
 .cs-gen-grid--list .cs-gen-card img {
-  width: 220px;
+  width: 200px;
   flex-shrink: 0;
   aspect-ratio: auto;
-  min-height: 180px;
+  min-height: 160px;
 }
 
 .cs-gen-grid--list .cs-gen-actions {
   flex: 1;
-  justify-content: center;
+  align-content: center;
 }
 
 .cs-gallery-title {
-  margin: 0 0 4px;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #1a1a2e;
-}
-
-.cs-gallery-sub {
-  margin: 0;
-  font-size: 13px;
-  color: #8167a9;
-  font-weight: 600;
+  color: #1f1f1f;
 }
 
 .cs-anchor-badge {
   font-size: 12px;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 20px;
   background: #ede8f5;
   color: #8167a9;
-  font-weight: 600;
 }
 
 .cs-empty {
@@ -924,113 +866,63 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 420px;
-  padding: 48px 24px;
-  border-radius: 20px;
-  background: #fff;
-  border: 1px dashed rgba(129, 103, 169, 0.2);
-  color: #9ca3af;
-  font-size: 14px;
-  line-height: 1.6;
+  min-height: 360px;
+  color: #909399;
 }
 
 .cs-empty-art {
-  margin-bottom: 20px;
-  opacity: 0.85;
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
 }
 
 .cs-generating {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  min-height: 320px;
+  text-align: center;
   padding: 48px;
-  color: #6b7280;
-  font-size: 14px;
+  color: #666;
 }
 
 .cs-gen-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 
 .cs-gen-card {
   background: #fff;
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   border: 2px solid transparent;
-  box-shadow: 0 2px 12px rgba(129, 103, 169, 0.08);
-  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
-}
-
-.cs-gen-card:hover {
-  box-shadow: 0 12px 32px rgba(129, 103, 169, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .cs-gen-card.is-anchor {
   border-color: #8167a9;
-  box-shadow: 0 8px 24px rgba(129, 103, 169, 0.18);
 }
 
 .cs-gen-card img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: contain;
-  background:
-    repeating-conic-gradient(rgba(129, 103, 169, 0.06) 0% 25%, transparent 0% 50%) 50% / 18px 18px,
-    linear-gradient(180deg, #fafafa 0%, #f3f4f6 100%);
+  background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 50% / 16px 16px;
   cursor: pointer;
 }
 
 .cs-gen-actions {
-  padding: 14px 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-top: 1px solid rgba(129, 103, 169, 0.08);
-}
-
-.cs-gen-actions-row {
+  padding: 10px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.cs-gen-actions-row--secondary {
-  justify-content: space-between;
-  padding-top: 4px;
-}
-
-.cs-gen-group-btn {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-weight: 600;
-  --el-button-bg-color: #8167a9;
-  --el-button-border-color: #8167a9;
-  --el-button-text-color: #fff;
-  --el-button-hover-bg-color: #6f5694;
-  --el-button-hover-border-color: #6f5694;
-  --el-button-hover-text-color: #fff;
+  gap: 6px;
 }
 
 @media (max-width: 900px) {
   .cs-workbench {
     flex-direction: column;
   }
-
   .cs-panel {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(129, 103, 169, 0.1);
-  }
-
-  .cs-gallery {
-    padding: 20px 16px 32px;
+    border-bottom: 1px solid #ececf0;
   }
 }
 </style>

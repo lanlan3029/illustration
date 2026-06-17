@@ -1048,7 +1048,6 @@
   "characterStudio": {
     "dashboardTitle": "我的角色",
     "dashboardDesc": "创建并管理卡通角色，保持形象一致，用于绘本、插画与组图。",
-    "characterCount": "共 {count} 个角色",
     "createNew": "创建新角色",
     "unnamed": "未命名角色",
     "backToProjects": "返回项目",
@@ -1060,7 +1059,6 @@
     "uploadReference": "上传参考图",
     "clearReference": "清除",
     "actionOptional": "动作与表情（可选）",
-    "actionPlaceholder": "如：站立微笑、挥手、奔跑（留空则按描述生成）",
     "backgroundOptional": "背景（可选）",
     "aspectRatio": "画面比例",
     "ratioSquare": "正方形 1:1",
@@ -1072,7 +1070,6 @@
     "generating": "生成中…",
     "generatingWait": "正在生成角色，请稍候…",
     "generations": "生成结果",
-    "generationCount": "本次共 {count} 张",
     "noGenerations": "暂无生成记录，填写左侧信息后点击「生成」",
     "anchorSet": "已设锚定图",
     "setAnchor": "设为锚定",

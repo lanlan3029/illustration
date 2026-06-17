@@ -1033,7 +1033,6 @@
   "characterStudio": {
     "dashboardTitle": "My Characters",
     "dashboardDesc": "Create and manage cartoon characters with consistent looks for books, illustrations, and group images.",
-    "characterCount": "{count} character(s)",
     "createNew": "Create New Character",
     "unnamed": "Unnamed Character",
     "backToProjects": "Back to Projects",
@@ -1045,7 +1044,6 @@
     "uploadReference": "Upload Reference",
     "clearReference": "Clear",
     "actionOptional": "Action & Expression (optional)",
-    "actionPlaceholder": "e.g. standing smile, waving, running (leave blank to use description only)",
     "backgroundOptional": "Background (optional)",
     "aspectRatio": "Aspect Ratio",
     "ratioSquare": "Square 1:1",
@@ -1057,7 +1055,6 @@
     "generating": "Generating…",
     "generatingWait": "Generating character, please wait…",
     "generations": "Generations",
-    "generationCount": "{count} image(s) this session",
     "noGenerations": "No generations yet. Fill in the form and click Generate.",
     "anchorSet": "Anchor set",
     "setAnchor": "Set as anchor",
