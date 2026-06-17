@@ -132,6 +132,55 @@ export async function mattingFromDataUrl(dataUrl, options = {}) {
   return mattingWhiteBackground(image, options);
 }
 
+/** 相对路径 / OSS 路径 → 可加载的完整 URL */
+export function resolveImageSourceUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `https://static.kidstory.cc${url}`;
+  return `https://static.kidstory.cc/${String(url).replace(/^\/+/, '')}`;
+}
+
+export async function mattingFromImageUrl(url, options = {}) {
+  const src = resolveImageSourceUrl(url);
+  const image = await loadImage(src);
+  return mattingWhiteBackground(image, options);
+}
+
+/** 白底抠图 → PNG data URL（供编辑器 / 保存角色使用） */
+export async function matCharacterImageUrl(imageUrl, options = {}) {
+  const canvas = await mattingFromImageUrl(imageUrl, options);
+  return canvasToDataUrl(canvas);
+}
+
+/**
+ * 前端抠图并可选更新已有角色（替代 /image-segmentation/general）
+ * @returns {{ imageURL: string, localPath: string, filename: string } | string}
+ */
+export async function segmentCharacterImageClient(http, imageUrl, characterParams = {}, options = {}) {
+  const dataUrl = await matCharacterImageUrl(imageUrl, options.mattingOptions);
+  const meta = { imageURL: dataUrl, localPath: '', filename: '' };
+
+  if (characterParams.character_id && http) {
+    const token = localStorage.getItem('token') || '';
+    const payload = {
+      character_id: characterParams.character_id,
+      image_url: dataUrl,
+    };
+    if (characterParams.character_type) payload.character_type = characterParams.character_type;
+    if (characterParams.description) payload.description = characterParams.description;
+    if (characterParams.is_public !== undefined) payload.is_public = characterParams.is_public;
+    await http.post('/character', payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  if (options.returnMeta) return meta;
+  return dataUrl;
+}
+
 export function canvasToDataUrl(canvas) {
   return canvas.toDataURL('image/png');
 }

@@ -196,7 +196,6 @@ export default {
             { to: '/create-layout-illustration', label: 'nav.createLayoutIllustration' },
             { to: '/editorpro', label: 'nav.createIllustration' },
             { to: '/lasso-crop', label: 'nav.lassoCrop' },
-            { to: '/canvas-matting', label: 'nav.canvasMatting' },
             { to: '/user/upload/compose-illustration', label: 'nav.composeBook' },
         ]
 
@@ -219,7 +218,6 @@ export default {
                 p.startsWith('/create-layout-illustration') ||
                 p.startsWith('/editorpro') ||
                 p.startsWith('/lasso-crop') ||
-                p.startsWith('/canvas-matting') ||
                 p.startsWith('/user/upload/compose-illustration')
             )
         })

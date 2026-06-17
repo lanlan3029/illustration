@@ -77,13 +77,6 @@ const routes = [{
         meta: { seoTitle: '联系我们' }
     },
     {
-        path: '/utility-tools',
-        name: 'utility-tools',
-        component: () =>
-            import ( /* webpackChunkName: "utility-tools" */ '../views/UtilityTools.vue'),
-        meta: { seoTitle: '实用工具' }
-    },
-    {
         path: '/prompt-fill',
         name: 'prompt-fill',
         component: () =>
@@ -338,16 +331,6 @@ const routes = [{
         meta: {
             requiresAuth: true
         }
-    },
-    {
-        path: '/canvas-matting',
-        name: 'canvas-matting',
-        component: () =>
-            import(/* webpackChunkName: "canvas-matting" */ '../views/CanvasMattingPage.vue'),
-        meta: {
-            requiresAuth: true,
-            seoTitle: '白底抠图',
-        },
     },
     {
         path: '/newyear',

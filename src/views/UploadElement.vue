@@ -476,39 +476,27 @@
                 throw new Error(createResponse.data?.message || '创建角色失败');
               }
 
-              // 步骤2：如果图片是分割后的图片（base64），调用图像分割接口更新角色
+              // 步骤2：抠图后的 PNG（base64）直接更新角色，不走阿里云
               if (isBase64 && characterId) {
-                // 提取base64数据（去掉data:image/xxx;base64,前缀）
-                let base64Data = imageUrl;
-                if (imageUrl.includes(',')) {
-                  base64Data = imageUrl.split(',')[1];
-                }
-
-                const segmentResponse = await this.$http.post('/image-segmentation/general', {
-                  image_base64: base64Data,
+                const updateResponse = await this.$http.post('/character', {
                   character_id: characterId,
+                  image_url: imageUrl,
                   character_name: this.form.name,
                   character_type: this.form.category,
                   description: this.form.desc || undefined,
-                  is_public: this.form.is_public !== undefined ? this.form.is_public : 1
+                  is_public: this.form.is_public !== undefined ? this.form.is_public : 1,
                 }, {
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
+                    'Authorization': `Bearer ${token}`,
                   },
-                  timeout: 120000 // 2分钟超时：抠图分割耗时较长
                 });
 
-                if (segmentResponse.data && segmentResponse.data.code === 0) {
-                  // 图像分割成功，角色已更新
-                  ElMessage({ message: '角色保存成功', type: 'success' });
-                  this.$router.push('/creation-studio/character');
-                } else {
-                  // 图像分割失败，但角色已创建，仍然提示成功
-                  console.warn('图像分割更新失败，但角色已创建:', segmentResponse.data?.message);
-                  ElMessage({ message: '角色保存成功', type: 'success' });
-                  this.$router.push('/creation-studio/character');
+                if (!(updateResponse.data && (updateResponse.data.code === 0 || updateResponse.data.code === '0'))) {
+                  console.warn('角色已创建，抠图更新失败:', updateResponse.data?.message);
                 }
+                ElMessage({ message: '角色保存成功', type: 'success' });
+                this.$router.push('/creation-studio/character');
               } else {
                 // 如果图片不是base64，直接提示成功
                 ElMessage({ message: '角色保存成功', type: 'success' });

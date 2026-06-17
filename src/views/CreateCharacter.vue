@@ -178,6 +178,7 @@ import {
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
+import { segmentCharacterImageClient } from '@/utils/canvasMatting';
 
 export default {
     name: 'CreateCharacter',
@@ -751,135 +752,9 @@ export default {
                 return new File([byteArray], filename, { type: mimeType });
         },
         
-        // 图像分割：抠图只保留主体
-        // 支持角色相关参数：character_id, character_type, description, tags, is_public
+        // 图像分割：前端 Canvas 白底抠图（不走阿里云）
         async segmentImage(imageUrl, characterParams = {}, options = {}) {
-            const token = localStorage.getItem('token') || '';
-            
-            let response;
-            
-            // 构建角色相关参数
-            const params = {};
-            if (characterParams.character_id) {
-                params.character_id = characterParams.character_id;
-            }
-            if (characterParams.character_type) {
-                params.character_type = characterParams.character_type;
-            }
-            if (characterParams.description) {
-                params.description = characterParams.description;
-            }
-            if (characterParams.tags && Array.isArray(characterParams.tags)) {
-                params.tags = characterParams.tags;
-            }
-            if (characterParams.is_public !== undefined) {
-                params.is_public = characterParams.is_public;
-            }
-            
-            // 判断是base64、URL还是File
-            if (imageUrl.startsWith('data:')) {
-                // Base64格式：优先使用文件上传方式，失败则使用JSON方式
-                try {
-                    const file = this.base64ToFile(imageUrl, 'character.png');
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    
-                    // 添加角色相关参数到 FormData
-                    Object.keys(params).forEach(key => {
-                        if (Array.isArray(params[key])) {
-                            params[key].forEach((item, index) => {
-                                formData.append(`${key}[${index}]`, item);
-                            });
-                        } else {
-                            formData.append(key, params[key]);
-                        }
-                    });
-                    
-                    response = await this.$http.post('/image-segmentation/general', formData, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            'Authorization': 'Bearer ' + token
-                        },
-                        timeout: 120000 // 2分钟超时：抠图分割耗时较长
-                    });
-                } catch (fileError) {
-                    // 如果File转换失败，使用JSON方式发送base64
-                    // 提取base64数据（去掉data:image/xxx;base64,前缀）
-                    let base64Data = imageUrl;
-                    if (imageUrl.includes(',')) {
-                        base64Data = imageUrl.split(',')[1];
-                    }
-                    
-                    response = await this.$http.post('/image-segmentation/general', {
-                        image_base64: base64Data,
-                        ...params
-                    }, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + token
-                        },
-                        timeout: 120000 // 2分钟超时
-                    });
-                }
-            } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-                // URL格式：使用JSON方式
-                response = await this.$http.post('/image-segmentation/general', {
-                    image_url: imageUrl,
-                    ...params
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    timeout: 120000 // 2分钟超时
-                });
-            } else {
-                // 相对路径，转换为完整URL
-                const fullUrl = `https://static.kidstory.cc/${imageUrl}`;
-                response = await this.$http.post('/image-segmentation/general', {
-                    image_url: fullUrl,
-                    ...params
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    timeout: 120000 // 2分钟超时
-                });
-            }
-            
-            if (response.data && response.data.code === 0) {
-                const message = response.data.message || {};
-                const meta = {
-                    imageURL: message.imageURL || message.foreground_image || message.image_url || '',
-                    localPath: message.localPath || '',
-                    filename: message.filename || ''
-                };
-
-                // collectCharacter 需要同时拿到 localPath 与 imageURL
-                if (options && options.returnMeta) {
-                    return meta;
-                }
-
-                const imageURL = meta.imageURL;
-                if (imageURL) {
-                    // 如果是完整的URL，直接返回
-                    if (imageURL.startsWith('http://') || imageURL.startsWith('https://')) {
-                        return imageURL;
-                    }
-                    // 如果是base64，转换为data URI格式
-                    if (imageURL.startsWith('data:')) {
-                        return imageURL;
-                    }
-                    // 如果是相对路径，拼接完整URL
-                    if (!imageURL.startsWith('/')) {
-                        return `https://static.kidstory.cc/${imageURL}`;
-                    }
-                    return `https://static.kidstory.cc${imageURL}`;
-                }
-                throw new Error(response.data?.message || '未获取到分割后的图片');
-            }
-            throw new Error(response.data?.message || '图像分割失败');
+            return segmentCharacterImageClient(this.$http, imageUrl, characterParams, options);
         },
         
         // 收集角色：跳转到上传页面确认信息后保存
@@ -901,10 +776,8 @@ export default {
                 
                 // 将角色数据存储到 localStorage，供 UploadElement.vue 使用
                 const characterDataForUpload = {
-                    mode: 'character', // 标识这是角色模式
-                    // 保存角色时使用后端返回的 localPath（稳定、可持久化）
-                    image_url: seg.localPath || '',
-                    // 页面预览使用临时 imageURL
+                    mode: 'character',
+                    image_url: seg.imageURL || '',
                     preview_url: seg.imageURL || '',
                     filename: seg.filename || '',
                     localPath: seg.localPath || '',

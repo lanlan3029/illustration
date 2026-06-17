@@ -25,7 +25,7 @@ export function buildCharacterStudioPrompt({
 }) {
   const parts = [];
   const desc = (description || '').trim();
-  const act = (action || DEFAULT_ACTION).trim();
+  const act = (action || '').trim();
   const bg = DEFAULT_BACKGROUND;
 
   if (desc) parts.push(desc);

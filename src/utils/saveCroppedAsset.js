@@ -26,10 +26,6 @@ export async function uploadPictureElement(http, dataUrl, { title, type, desc = 
 /** 保存裁剪结果为「我的角色」 */
 export async function saveCroppedCharacter(http, dataUrl, { character_name, character_type, description = '', is_public = 1 }) {
   const token = localStorage.getItem('token') || '';
-  let base64Data = dataUrl;
-  if (dataUrl.includes(',')) {
-    base64Data = dataUrl.split(',')[1];
-  }
 
   const createData = {
     character_name,
@@ -55,31 +51,6 @@ export async function saveCroppedCharacter(http, dataUrl, { character_name, char
 
   const characterData = createResponse.data.data || createResponse.data.message || createResponse.data;
   const characterId = characterData.id || characterData._id || createResponse.data.id;
-
-  if (characterId) {
-    try {
-      await http.post(
-        '/image-segmentation/general',
-        {
-          image_base64: base64Data,
-          character_id: characterId,
-          character_name,
-          character_type,
-          description: description || undefined,
-          is_public,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          timeout: 120000,
-        }
-      );
-    } catch (e) {
-      console.warn('角色已创建，抠图更新失败:', e);
-    }
-  }
 
   return { characterId, response: createResponse.data };
 }

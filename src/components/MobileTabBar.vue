@@ -58,7 +58,6 @@ export default {
       '/create-layout-illustration',
       '/editorpro',
       '/lasso-crop',
-      '/canvas-matting',
       '/user/upload/compose-illustration'
     ]
 
