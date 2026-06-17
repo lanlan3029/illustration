@@ -194,7 +194,8 @@ export default {
         const creationItems = [
             { to: '/ai-picture', label: 'nav.aiIllustration' },
             { to: '/AIbooks', label: 'nav.aiBooks' },
-            { to: '/create-character', label: 'nav.createCharacter' },
+            { to: '/character-studio', label: 'nav.characterStudio' },
+            { to: '/create-character', label: 'nav.createCharacterLegacy' },
             { to: '/create-group-images', label: 'nav.createGroupImages' },
             { to: '/create-layout-illustration', label: 'nav.createLayoutIllustration' },
             { to: '/editorpro', label: 'nav.createIllustration' },
@@ -214,6 +215,7 @@ export default {
             return (
                 p === '/ai-picture' ||
                 p === '/AIbooks' ||
+                p.startsWith('/character-studio') ||
                 p.startsWith('/create-character') ||
                 p.startsWith('/create-group-images') ||
                 p.startsWith('/create-layout-illustration') ||

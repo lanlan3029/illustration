@@ -103,6 +103,7 @@
         <!-- 加载完成但没有角色 -->
         <div v-else class="empty-state">
           <p>{{ $t('myHomePage.noCharacters') }}</p>
+          <el-button type="primary" @click="goCharacterStudio">{{ $t('myHomePage.createCharacter') }}</el-button>
         </div>
       </div>
 <!-- 我的插画 -->
@@ -377,6 +378,9 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
    },
    goHome(){
        this.$router.push("/");
+   },
+   goCharacterStudio() {
+       this.$router.push('/character-studio');
    },
     showImagePreview(imageUrl) {
       this.previewImageUrl = imageUrl

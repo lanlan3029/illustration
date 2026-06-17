@@ -231,6 +231,33 @@ const routes = [{
         }
     },
     {
+        path: '/character-studio',
+        component: () =>
+            import(/* webpackChunkName: "character-studio-layout" */ '../views/CharacterStudioLayout.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '角色工作台'
+        },
+        children: [
+            {
+                path: '',
+                name: 'character-studio',
+                component: () =>
+                    import(/* webpackChunkName: "character-studio" */ '../views/CharacterStudioDashboard.vue'),
+            },
+            {
+                path: 'workbench/:characterId?',
+                name: 'character-studio-workbench',
+                component: () =>
+                    import(/* webpackChunkName: "character-studio-workbench" */ '../views/CharacterStudioWorkbench.vue'),
+                props: true,
+                meta: {
+                    seoTitle: '角色创作'
+                },
+            },
+        ],
+    },
+    {
         path: '/create-character',
         name: 'create-character',
         component: () =>
