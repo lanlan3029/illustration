@@ -125,6 +125,9 @@ export default createStore({
         addImages(state, item) {
             state.imgToPDF = state.imgToPDF.concat(item)
         },
+        setBookIllustrations(state, items) {
+            state.imgToPDF = Array.isArray(items) ? [...items] : []
+        },
         removeImages(state) {
             state.imgToPDF = [];
         },

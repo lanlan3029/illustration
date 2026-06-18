@@ -1,6 +1,10 @@
 <template>
     <div class="container">
-      
+        <div class="page-head">
+            <h2>{{ $t('layoutExport.title') }}</h2>
+            <p>{{ $t('layoutExport.subtitle') }}</p>
+        </div>
+
         <!-- 已选插画预览区域和操作栏 -->
         <div class="selected-section">
             <div v-if="checkedImage.length > 0">
@@ -11,7 +15,7 @@
                 <div class="selected-preview" @dragover.prevent @drop.prevent>
                     <div 
                         v-for="(item, index) in checkedImage" 
-                        :key="index" 
+                        :key="item._id || index" 
                         class="selected-item"
                         :draggable="true"
                         :data-index="index"
@@ -45,15 +49,27 @@
                 <span class="selected-info" v-else>
                     {{ $t('composeIllustration.pleaseSelect') }}
                 </span>
-                <el-button 
-                    @click="toPDF" 
-                    type="primary" 
-                    size="medium"
+            </div>
+
+            <div class="mode-actions" :class="{ 'is-disabled': checkedImage.length === 0 }">
+                <button
+                    type="button"
+                    class="mode-card mode-card--primary"
                     :disabled="checkedImage.length === 0"
-                    class="compose-btn">
-                    <i class="el-icon-document"></i>
-                    {{ $t('composeIllustration.composeBook') }}
-                </el-button>
+                    @click="toQuickCompose"
+                >
+                    <span class="mode-card-title">{{ $t('layoutExport.quickCompose') }}</span>
+                    <span class="mode-card-desc">{{ $t('layoutExport.quickComposeDesc') }}</span>
+                </button>
+                <button
+                    type="button"
+                    class="mode-card"
+                    :disabled="checkedImage.length === 0"
+                    @click="toPrintLayout"
+                >
+                    <span class="mode-card-title">{{ $t('layoutExport.printLayout') }}</span>
+                    <span class="mode-card-desc">{{ $t('layoutExport.printLayoutDesc') }}</span>
+                </button>
             </div>
         </div>
 
@@ -62,15 +78,15 @@
             <ul class="items" v-infinite-scroll="getMore">
                 <li 
                     v-for="(item, index) in illusArr" 
-                    :key="index" 
+                    :key="item._id || index" 
                     @click="handleAdd(item)"
-                    :class="{ 'selected': checkedImage.includes(item) }">
+                    :class="{ 'selected': isSelected(item) }">
                     <el-image 
                         :src="(`https://static.kidstory.cc/`+item.content)" 
                         fit="cover"
                         class="illus-thumb">
                     </el-image>
-                    <span v-if="checkedImage.includes(item)" class="check-mark">
+                    <span v-if="isSelected(item)" class="check-mark">
                         <i class="el-icon-check"></i>
                     </span>
                 </li>
@@ -80,56 +96,54 @@
 </template>
 
 <script>
-import {mapState} from "vuex"
+import { mapState } from 'vuex';
+
+const LAYOUT_FROM_PICK_KEY = 'book_layout_from_pick';
 
 export default {
-     data() {
+  data() {
     return {
-      illusArr:[],
-      num:1,
-      checkedImage:[],
-      checkedId:[],
-      userid:localStorage.getItem("id"),
-      dragIndex: null, // 当前拖拽的元素索引
-      dragOverIndex: null, // 当前拖拽经过的元素索引
+      illusArr: [],
+      num: 1,
+      checkedImage: [],
+      userid: localStorage.getItem('id'),
+      dragIndex: null,
+      dragOverIndex: null,
     };
   },
-    computed:mapState([
-        "imgToPDF",      
-    ]),
-  methods:{
-    //获取我的插画
-    async getIll(){
-      try{
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.userid+`&page=1`)
-          this.illusArr=res.data.message
-        } catch(err){
-          console.log(err)
-        }
+  computed: mapState(['imgToPDF']),
+  methods: {
+    async getIll() {
+      try {
+        const res = await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=${this.userid}&page=1`);
+        this.illusArr = res.data.message;
+      } catch (err) {
+        console.log(err);
+      }
     },
-    handleAdd(item){
-      // 如果已选中，则移除；否则添加
-      const index = this.checkedImage.findIndex(img => img._id === item._id);
+    isSelected(item) {
+      return this.checkedImage.some((img) => img._id === item._id);
+    },
+    handleAdd(item) {
+      const index = this.checkedImage.findIndex((img) => img._id === item._id);
       if (index > -1) {
         this.checkedImage.splice(index, 1);
       } else {
         this.checkedImage.push(item);
       }
     },
-    removeSelected(index){
+    removeSelected(index) {
       this.checkedImage.splice(index, 1);
     },
-    clearSelected(){
+    clearSelected() {
       this.checkedImage = [];
     },
-    // 拖拽开始
     handleDragStart(event, index) {
       this.dragIndex = index;
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/html', event.target.outerHTML);
       event.target.style.opacity = '0.5';
     },
-    // 拖拽经过
     handleDragOver(event, index) {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
@@ -138,65 +152,71 @@ export default {
       }
       return false;
     },
-    // 拖拽离开
     handleDragLeave(event) {
-      // 只有当离开整个预览区域时才清除，避免在子元素间移动时频繁触发
       if (!event.currentTarget.contains(event.relatedTarget)) {
         this.dragOverIndex = null;
       }
     },
-    // 拖拽放下
     handleDrop(event, dropIndex) {
       event.preventDefault();
       event.stopPropagation();
-      
+
       if (this.dragIndex === null || this.dragIndex === dropIndex) {
         this.dragOverIndex = null;
         return false;
       }
-      
-      // 重新排序数组
+
       const draggedItem = this.checkedImage[this.dragIndex];
       this.checkedImage.splice(this.dragIndex, 1);
       this.checkedImage.splice(dropIndex, 0, draggedItem);
-      
-      // 重置拖拽状态
+
       this.dragIndex = null;
       this.dragOverIndex = null;
       return false;
     },
-    // 拖拽结束
     handleDragEnd(event) {
       event.target.style.opacity = '';
       this.dragIndex = null;
       this.dragOverIndex = null;
     },
-    toPDF() {
-      if (!this.checkedImage.length) return;
-      const images = [...this.checkedImage];
-      this.$store.commit('removeImages');
-      this.$store.commit('addImages', images);
+    commitSelected() {
+      if (!this.checkedImage.length) return false;
+      this.$store.commit('setBookIllustrations', [...this.checkedImage]);
+      return true;
+    },
+    toQuickCompose() {
+      if (!this.commitSelected()) return;
       this.$router.push({ name: 'topdf' });
     },
-    async getMore(){
-      this.num++
-      try{
-          let res=await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=`+this.userid+`&page=`+this.num)
-          this.illusArr=this.illusArr.concat(res.data.message)
-        } catch(err){
-          console.log(err)
-        }
-    }
-
+    toPrintLayout() {
+      if (!this.commitSelected()) return;
+      sessionStorage.setItem(LAYOUT_FROM_PICK_KEY, '1');
+      this.$router.push({ name: 'print-book-layout' });
+    },
+    async getMore() {
+      this.num += 1;
+      try {
+        const res = await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=${this.userid}&page=${this.num}`);
+        this.illusArr = this.illusArr.concat(res.data.message);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    restoreFromStore() {
+      if (this.imgToPDF?.length) {
+        this.checkedImage = [...this.imgToPDF];
+      }
+    },
   },
-  async mounted(){
-    await this.getIll(); 
-  }
-}
+  async mounted() {
+    this.restoreFromStore();
+    await this.getIll();
+  },
+};
 </script>
 
 <style scoped>
-.container{
+.container {
     width: 100%;
     min-height: 100%;
     padding: 0 24px 32px;
@@ -205,30 +225,45 @@ export default {
     overflow-x: hidden;
     position: relative;
     box-sizing: border-box;
+    text-align: left;
 }
 
+.page-head {
+    margin: 1vw 1vw 0;
+    padding: 8px 4px 16px;
+}
 
+.page-head h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #303133;
+}
 
-/* 已选插画预览区域 */
-.selected-section{
-    margin: 1vw;
+.page-head p {
+    margin: 0;
+    font-size: 14px;
+    color: #909399;
+    line-height: 1.5;
+}
+
+.selected-section {
+    margin: 0 1vw 1vw;
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* 操作栏 */
-.action-bar{
+.action-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 4px;
+    padding-top: 16px;
     border-top: 1px solid #ebeef5;
 }
 
-.selected-header{
+.selected-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -237,59 +272,55 @@ export default {
     border-bottom: 1px solid #ebeef5;
 }
 
-.selected-count{
+.selected-count {
     font-size: 16px;
     font-weight: 600;
-    color: #409eff;
+    color: #8167a9;
 }
 
-.selected-preview{
+.selected-preview {
     display: flex;
     gap: 12px;
     overflow-x: auto;
     padding: 5px 0;
 }
 
-.selected-item{
+.selected-item {
     position: relative;
     width: 120px;
     height: 90px;
     flex-shrink: 0;
     border-radius: 6px;
     overflow: hidden;
-    border: 2px solid #409eff;
+    border: 2px solid #8167a9;
     cursor: move;
     transition: all 0.3s;
     user-select: none;
 }
 
-.selected-item:hover{
+.selected-item:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(129, 103, 169, 0.3);
 }
 
-.selected-item.dragging{
+.selected-item.dragging {
     opacity: 0.5;
     cursor: grabbing;
 }
 
-.selected-item.drag-over{
+.selected-item.drag-over {
     border-color: #67c23a;
     box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.3);
     transform: scale(1.1);
 }
 
-.selected-item:active{
-    cursor: grabbing;
-}
-
-.selected-order{
+.selected-order {
     position: absolute;
     top: 4px;
     left: 4px;
     width: 24px;
     height: 24px;
-    background-color: #409eff;
+    background-color: #8167a9;
     color: #fff;
     border-radius: 50%;
     display: flex;
@@ -299,7 +330,7 @@ export default {
     font-weight: 600;
 }
 
-.selected-remove{
+.selected-remove {
     position: absolute;
     top: 4px;
     right: 4px;
@@ -316,49 +347,103 @@ export default {
     transition: opacity 0.3s;
 }
 
-.selected-item:hover .selected-remove{
+.selected-item:hover .selected-remove {
     opacity: 1;
 }
 
-/* 插画列表区域 */
-.images-section{
-    margin: 1vw;
+.mode-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.mode-actions.is-disabled {
+    opacity: 0.55;
+}
+
+.mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 18px 20px;
+    border: 2px solid #ebeef5;
+    border-radius: 10px;
+    background: #fafafa;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.mode-card:hover:not(:disabled) {
+    border-color: #b7a6d6;
+    background: #f9f8fc;
+    box-shadow: 0 4px 12px rgba(129, 103, 169, 0.12);
+}
+
+.mode-card:disabled {
+    cursor: not-allowed;
+}
+
+.mode-card--primary {
+    border-color: #8167a9;
+    background: #f3f0f8;
+}
+
+.mode-card--primary:hover:not(:disabled) {
+    background: #ede8f5;
+}
+
+.mode-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.mode-card-desc {
+    font-size: 13px;
+    color: #909399;
+    line-height: 1.45;
+}
+
+.images-section {
+    margin: 0 1vw 1vw;
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.container .items{
-    width:100%;
+.container .items {
+    width: 100%;
     display: flex;
-    flex-wrap:wrap;
+    flex-wrap: wrap;
     gap: 1.5%;
 }
 
-.container .items li{
-    /* 五列布局：每行 5 个，预留间距 */
+.container .items li {
     width: 18%;
     position: relative;
-    padding:0.5vw;
+    padding: 0.5vw;
     border-radius: 4px;
     background-color: #fff;
-    cursor:pointer;
+    cursor: pointer;
     transition: all 0.3s;
     border: 2px solid transparent;
 }
 
-.container .items li:hover{
+.container .items li:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.container .items li.selected{
-    border-color: #409eff;
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+.container .items li.selected {
+    border-color: #8167a9;
+    box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.2);
 }
 
-.check-mark{
+.check-mark {
     position: absolute;
     top: 0;
     left: 0;
@@ -367,44 +452,31 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(64, 158, 255, 0.8);
+    background-color: rgba(129, 103, 169, 0.75);
     border-radius: 4px;
     color: #fff;
     font-size: 40px;
 }
 
-.selected-info{
+.selected-info {
     font-size: 16px;
     color: #606266;
 }
 
-.compose-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 32px;
-    font-size: 16px;
-    line-height: 1;
-    vertical-align: middle;
-}
-
-.compose-btn :deep(.el-icon) {
-    margin-right: 8px;
-    vertical-align: middle;
-}
-
-.compose-btn i {
-    margin-right: 8px;
-    line-height: 1;
-    vertical-align: middle;
-}
-
-/* 插画缩略图：填满 4:3 容器 */
-.illus-thumb{
+.illus-thumb {
     width: 100%;
     aspect-ratio: 4 / 3;
     display: block;
     border-radius: 4px;
 }
 
+@media (max-width: 768px) {
+    .mode-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .container .items li {
+        width: 31%;
+    }
+}
 </style>

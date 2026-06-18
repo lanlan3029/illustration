@@ -77,13 +77,7 @@ export const CREATION_SUB_NAV = {
     },
     {
       routeName: 'compose-illustration',
-      labelKey: 'nav.composeBook',
-    },
-    {
-      routeName: 'print-book-layout',
-      labelKey: 'nav.printBookLayout',
-      external: true,
-      externalPath: '/print-book-layout',
+      labelKey: 'nav.layoutExport',
     },
   ],
 };
@@ -120,7 +114,10 @@ export function resolveCreationDomain(route) {
 }
 
 export function isSubNavActive(route, item) {
-  if (route.name === 'topdf' && item.routeName === 'compose-illustration') {
+  if (
+    (route.name === 'topdf' || route.name === 'print-book-layout')
+    && item.routeName === 'compose-illustration'
+  ) {
     return true;
   }
   return route.name === item.routeName;

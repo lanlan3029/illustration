@@ -75,24 +75,17 @@
         </div>
       </el-form>
     </aside>
-
-    <!-- PDF 导出专用：屏幕外完整页栈 -->
-    <div ref="pdfBox" class="box topdf-export-area" aria-hidden="true">
-      <div v-for="(item, index) in imgToPDF" :key="index" class="item">
-        <el-image :src="`https://static.kidstory.cc/${item.content}`" fit="contain" />
-      </div>
-      <div v-if="imgToPDF.length > 0" class="item">
-        <el-image :src="codeImg" fit="contain" />
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
-import html2Canvas from 'html2canvas';
 import JsPDF from 'jspdf';
 import { mapState } from 'vuex';
 import { ElMessage } from 'element-plus';
+
+const PDF_W = 984.3;
+const PDF_H = 699;
+const PDF_RENDER_SCALE = 2;
 
 export default {
   data() {
@@ -174,42 +167,83 @@ export default {
     },
     downPDF() {
       if (!this.validateCompliance()) return;
-
-      const target = this.$refs.pdfBox;
-      if (!target) return;
+      if (!this.previewPages.length) return;
 
       this.disabled = true;
       ElMessage(this.$t('toPdf.downloading'));
 
-      html2Canvas(target, {
-        dpi: 172,
-        useCORS: true,
-      }).then((canvas) => {
-        const contentWidth = canvas.width;
-        const contentHeight = canvas.height;
-        const pageHeight = (contentWidth / 984.3) * 699;
-        let leftHeight = contentHeight;
-        let position = 0;
-        const imgWidth = 984.3;
-        const imgHeight = (984.3 / contentWidth) * contentHeight;
-        const pageData = canvas.toDataURL('image/jpeg');
-        const pdf = new JsPDF('l', 'pt', [imgWidth, 699]);
-
-        if (leftHeight < pageHeight) {
-          pdf.addImage(pageData, 'JPEG', 0, 0, imgWidth, imgHeight);
-        } else {
-          while (leftHeight > 0) {
-            pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight);
-            leftHeight -= pageHeight;
-            position -= 699;
-            if (leftHeight > 0) {
-              pdf.addPage();
-            }
-          }
+      this.buildPdfFromPages()
+        .then((pdf) => {
+          pdf.save('StoryTime.pdf');
+          this.pdfBase64 = pdf.output('dataurlstring');
+        })
+        .catch((err) => {
+          console.error(err);
+          ElMessage.error(this.$t('toPdf.downloadFailed'));
+        })
+        .finally(() => {
+          this.disabled = false;
+        });
+    },
+    loadImageElement(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const isLocal = src.startsWith('data:')
+          || src.startsWith('blob:')
+          || src.startsWith('/')
+          || src.startsWith(window.location.origin);
+        if (!isLocal) {
+          img.crossOrigin = 'anonymous';
         }
-        pdf.save('StoryTime.pdf');
-        this.pdfBase64 = pdf.output('dataurlstring');
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`image load failed: ${src}`));
+        img.src = src;
       });
+    },
+    findPreviewImage(src) {
+      const imgs = document.querySelectorAll('.topdf-scroll img');
+      for (let i = 0; i < imgs.length; i += 1) {
+        const el = imgs[i];
+        if (el.src === src || el.currentSrc === src) {
+          return el;
+        }
+      }
+      return null;
+    },
+    async pageToDataUrl(src) {
+      let img;
+      try {
+        img = await this.loadImageElement(src);
+      } catch (firstErr) {
+        const previewImg = this.findPreviewImage(src);
+        if (previewImg?.complete && previewImg.naturalWidth > 0) {
+          img = previewImg;
+        } else {
+          throw firstErr;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = PDF_W * PDF_RENDER_SCALE;
+      canvas.height = PDF_H * PDF_RENDER_SCALE;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const fit = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+      const w = img.naturalWidth * fit;
+      const h = img.naturalHeight * fit;
+      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      return canvas.toDataURL('image/jpeg', 0.92);
+    },
+    async buildPdfFromPages() {
+      const pdf = new JsPDF({ orientation: 'landscape', unit: 'pt', format: [PDF_W, PDF_H] });
+      for (let i = 0; i < this.previewPages.length; i += 1) {
+        const dataUrl = await this.pageToDataUrl(this.previewPages[i].src);
+        if (i > 0) {
+          pdf.addPage([PDF_W, PDF_H], 'l');
+        }
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, PDF_W, PDF_H);
+      }
+      return pdf;
     },
   },
 };
@@ -430,34 +464,6 @@ export default {
 .topdf-actions :deep(.el-button--primary:hover) {
   background-color: #6e5494;
   border-color: #6e5494;
-}
-
-/* —— PDF 导出（屏幕外） —— */
-.topdf-export-area {
-  position: fixed;
-  left: -10000px;
-  top: 0;
-  width: 984px;
-  pointer-events: none;
-  visibility: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 0;
-  background: #fff;
-}
-
-.topdf-export-area .item {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.topdf-export-area .item :deep(.el-image) {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  background-color: #fff;
 }
 
 @media (max-width: 960px) {

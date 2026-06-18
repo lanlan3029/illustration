@@ -191,7 +191,7 @@ export default {
             { to: '/creation-studio', label: 'nav.characterStudio' },
             { to: '/editorpro', label: 'nav.createIllustration' },
             { to: '/lasso-crop', label: 'nav.lassoCrop' },
-            { to: '/user/upload/compose-illustration', label: 'nav.composeBook' },
+            { to: '/creation-studio/book/compose', label: 'nav.layoutExport' },
         ]
 
         const homeNavItem = navItems[0]
@@ -208,7 +208,8 @@ export default {
                 p.startsWith('/character-studio') ||
                 p.startsWith('/editorpro') ||
                 p.startsWith('/lasso-crop') ||
-                p.startsWith('/user/upload/compose-illustration')
+                p.startsWith('/user/upload/compose-illustration') ||
+                p.startsWith('/print-book-layout')
             )
         })
 

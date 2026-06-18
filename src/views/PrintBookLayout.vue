@@ -3,7 +3,7 @@
     <!-- 顶栏 -->
     <header class="pbl-header">
       <div class="pbl-header-left">
-        <router-link :to="{ name: 'compose-illustration' }" class="pbl-back">← {{ $t('printBookLayout.backStudio') }}</router-link>
+        <router-link :to="{ name: 'compose-illustration' }" class="pbl-back">← {{ $t('layoutExport.backReselect') }}</router-link>
         <h1>{{ $t('printBookLayout.title') }}</h1>
         <span class="pbl-stat">{{ $t('printBookLayout.pageStat', { filled: filledStoryCount, total: 28 }) }}</span>
       </div>
@@ -28,13 +28,15 @@
     </header>
 
     <div class="pbl-body">
-      <!-- 左侧：插画选择（常驻） -->
+      <!-- 左侧：已选插画（画笔 / 批量） -->
       <aside class="pbl-picker">
         <div class="pbl-picker-head">
-          <h3>{{ $t('printBookLayout.myIllustrations') }}</h3>
+          <h3>{{ $t('layoutExport.selectedIlls') }}</h3>
+          <router-link :to="{ name: 'compose-illustration' }" class="pbl-reselect">
+            {{ $t('layoutExport.changeSelection') }}
+          </router-link>
         </div>
-        <p class="pbl-picker-hint">{{ $t('printBookLayout.selectHint') }}</p>
-        <p class="pbl-picker-hint pbl-picker-hint--sub">{{ $t('printBookLayout.batchSelectHint') }}</p>
+        <p class="pbl-picker-hint">{{ $t('layoutExport.brushFromSelected') }}</p>
 
         <div v-if="activeIll" class="pbl-picker-brush">
           <img :src="illUrl(activeIll)" alt="" class="pbl-picker-brush-img" />
@@ -45,45 +47,25 @@
           <button type="button" class="pbl-picker-brush-clear" @click="clearBrush">×</button>
         </div>
 
-        <div v-if="selectedIlls.length" class="pbl-picker-selected">
-          <div class="pbl-picker-selected-head">
-            <span>{{ $t('printBookLayout.selectedCount', { count: selectedIlls.length }) }}</span>
-            <el-button link type="danger" size="small" @click="clearSelected">{{ $t('printBookLayout.clear') }}</el-button>
-          </div>
-          <div class="pbl-picker-strip">
-            <div
-              v-for="(item, idx) in selectedIlls"
-              :key="item._id"
-              class="pbl-picker-thumb"
-              draggable="true"
-              @dragstart="onDragStartIll($event, item)"
-              @dragend="onDragEndIll"
-            >
-              <img :src="illUrl(item)" alt="" />
-              <span class="pbl-order">{{ idx + 1 }}</span>
-            </div>
-          </div>
+        <div v-if="!selectedIlls.length" class="pbl-picker-empty">
+          <router-link :to="{ name: 'compose-illustration' }">{{ $t('layoutExport.goSelect') }}</router-link>
         </div>
 
-        <div
-          class="pbl-picker-grid"
-          v-infinite-scroll="loadMoreIlls"
-          :infinite-scroll-disabled="!hasMoreIlls || loadingIll"
-          :infinite-scroll-distance="120"
-        >
+        <div v-else class="pbl-picker-list">
           <button
-            v-for="item in illList"
+            v-for="(item, idx) in selectedIlls"
             :key="item._id"
             type="button"
             class="pbl-ill-btn"
-            :class="{ 'is-selected': isIllSelected(item), 'is-active-pick': activeIllId === item._id }"
-            @click="pickIll(item, $event)"
+            :class="{ 'is-active-pick': activeIllId === item._id }"
+            draggable="true"
+            @click="pickIll(item)"
+            @dragstart="onDragStartIll($event, item)"
+            @dragend="onDragEndIll"
           >
             <img :src="illUrl(item)" alt="" />
-            <span v-if="isIllSelected(item)" class="pbl-batch-mark">{{ $t('printBookLayout.batchMark') }}</span>
+            <span class="pbl-order-badge">{{ idx + 1 }}</span>
           </button>
-          <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
-          <p v-else-if="!illList.length" class="pbl-load-tip">{{ $t('printBookLayout.noIllustrations') }}</p>
         </div>
       </aside>
 
@@ -217,6 +199,7 @@ import {
 } from '@/data/pictureBookPrintLayout';
 
 const STORAGE_KEY = 'print_book_layout_v2';
+const LAYOUT_FROM_PICK_KEY = 'book_layout_from_pick';
 
 export default {
   name: 'PrintBookLayout',
@@ -229,10 +212,6 @@ export default {
       editingBlockId: null,
       activePageId: null,
       activeIllId: null,
-      illList: [],
-      illPage: 1,
-      hasMoreIlls: true,
-      loadingIll: false,
       selectedIlls: [],
       dragIll: null,
       zoomVisible: false,
@@ -260,9 +239,7 @@ export default {
     },
     activeIll() {
       if (!this.activeIllId) return null;
-      return this.illList.find((i) => i._id === this.activeIllId)
-        || this.selectedIlls.find((i) => i._id === this.activeIllId)
-        || null;
+      return this.selectedIlls.find((i) => i._id === this.activeIllId) || null;
     },
     editorCanvasClass() {
       if (!this.editingBlock) return '';
@@ -279,7 +256,8 @@ export default {
   },
   mounted() {
     this.loadSession();
-    this.fetchIllustrations(true);
+    this.syncFromStore();
+    this.maybeAutoLayout();
   },
   methods: {
     illUrl(item) {
@@ -318,19 +296,28 @@ export default {
       this.viewMode = 'edit';
       this.activePageId = block.pages[0]?.id || null;
     },
-    pickIll(item, event) {
-      const batchToggle = event?.shiftKey || event?.metaKey || event?.ctrlKey;
-      if (batchToggle) {
-        const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
-        if (idx >= 0) this.selectedIlls.splice(idx, 1);
-        else this.selectedIlls.push(item);
+    syncFromStore() {
+      const fromStore = this.$store.state.imgToPDF || [];
+      const fromPick = sessionStorage.getItem(LAYOUT_FROM_PICK_KEY);
+      if (!fromStore.length) return;
+      if (fromPick || !this.selectedIlls.length) {
+        this.selectedIlls = fromStore.map((i) => ({
+          _id: i._id,
+          content: i.content,
+          title: i.title,
+        }));
         this.saveSession();
-        return;
       }
-      this.activeIllId = item._id;
     },
-    isIllSelected(item) {
-      return this.selectedIlls.some((x) => x._id === item._id);
+    maybeAutoLayout() {
+      if (!sessionStorage.getItem(LAYOUT_FROM_PICK_KEY)) return;
+      sessionStorage.removeItem(LAYOUT_FROM_PICK_KEY);
+      if (this.selectedIlls.length && this.filledStoryCount === 0) {
+        this.generateLayout();
+      }
+    },
+    pickIll(item) {
+      this.activeIllId = item._id;
     },
     clearBrush() {
       this.activeIllId = null;
@@ -430,40 +417,6 @@ export default {
       } catch {
         /* cancelled */
       }
-    },
-    async fetchIllustrations(reset = false) {
-      if (this.loadingIll) return;
-      if (reset) {
-        this.illPage = 1;
-        this.hasMoreIlls = true;
-        this.illList = [];
-      }
-      if (!this.hasMoreIlls) return;
-      this.loadingIll = true;
-      try {
-        const token = localStorage.getItem('token') || '';
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const res = await this.$http.get(
-          `/ill/?page=${this.illPage}&sort_param=createdAt&sort_num=desc`,
-          { headers }
-        );
-        const list = res.data?.message || res.data?.data || [];
-        const items = Array.isArray(list) ? list : [];
-        if (!items.length) {
-          this.hasMoreIlls = false;
-          return;
-        }
-        const existing = new Set(this.illList.map((i) => i._id));
-        this.illList.push(...items.filter((i) => i._id && !existing.has(i._id)));
-        this.illPage += 1;
-      } catch {
-        ElMessage.error(this.$t('printBookLayout.loadIllFailed'));
-      } finally {
-        this.loadingIll = false;
-      }
-    },
-    loadMoreIlls() {
-      this.fetchIllustrations(false);
     },
     saveSession() {
       try {
@@ -1073,6 +1026,62 @@ export default {
 .pbl-picker-head h3 {
   margin: 0;
   font-size: 15px;
+}
+
+.pbl-reselect {
+  font-size: 12px;
+  color: #8167a9;
+  text-decoration: none;
+}
+
+.pbl-reselect:hover {
+  color: #6e5494;
+  text-decoration: underline;
+}
+
+.pbl-picker-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.pbl-picker-empty a {
+  color: #8167a9;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.pbl-picker-empty a:hover {
+  text-decoration: underline;
+}
+
+.pbl-picker-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pbl-order-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #8167a9;
+  color: #fff;
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+  font-weight: 600;
 }
 
 .pbl-picker-close {

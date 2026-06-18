@@ -332,6 +332,7 @@
     "lassoCrop": "自由裁剪贴纸",
     "composeBook": "合成绘本",
     "printBookLayout": "打印排版",
+    "layoutExport": "排版导出",
     "myWorks": "我的创作",
     "accountSettings": "账户设置",
     "subscription": "订阅管理",
@@ -1219,12 +1220,25 @@
   "composeIllustration": {
     "selectedCount": "已选择 {count} 张插画",
     "clear": "清空",
-    "selectedInfo": "已选择 {count} 张，点击合成按钮继续",
-    "pleaseSelect": "请选择要合成的插画",
+    "selectedInfo": "已选择 {count} 张，选择下方导出方式继续",
+    "pleaseSelect": "请从下方选择要排版的插画",
     "composeBook": "合成绘本"
   },
+  "layoutExport": {
+    "title": "排版导出",
+    "subtitle": "先选择插画并调整顺序，再进入对应模式编辑与导出",
+    "quickCompose": "合成PDF",
+    "quickComposeDesc": "按顺序成书，可发布作品或下载 PDF",
+    "printLayout": "印刷排版",
+    "printLayoutDesc": "32 页书册模板，封面跨页，适合打印",
+    "backReselect": "返回改选图",
+    "changeSelection": "改选插画",
+    "goSelect": "去选插画",
+    "selectedIlls": "已选插画",
+    "brushFromSelected": "点击下方插画设为画笔，再点右侧页面填入"
+  },
   "toPdf": {
-    "backToSelect": "返回选图",
+    "backToSelect": "返回改选图",
     "totalPages": "共 {total} 页",
     "pageLabel": "第 {n} 页",
     "addIllustrations": "点击添加插画",
@@ -1245,7 +1259,8 @@
     "complianceRequired": "请确认审核与合规声明",
     "downloadPdf": "下载 PDF",
     "publish": "发布作品",
-    "downloading": "正在下载，请勿重复点击"
+    "downloading": "正在下载，请勿重复点击",
+    "downloadFailed": "PDF 下载失败，请稍后重试"
   },
   "printBookLayout": {
     "title": "绘本打印排版",

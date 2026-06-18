@@ -317,6 +317,7 @@
     "lassoCrop": "Free-form Sticker Crop",
     "composeBook": "Compose Book",
     "printBookLayout": "Print Layout",
+    "layoutExport": "Layout & Export",
     "myWorks": "My Works",
     "accountSettings": "Account Settings",
     "subscription": "Subscription",
@@ -1204,12 +1205,25 @@
   "composeIllustration": {
     "selectedCount": "Selected {count} illustration(s)",
     "clear": "Clear",
-    "selectedInfo": "Selected {count} illustration(s), click compose button to continue",
-    "pleaseSelect": "Please select illustrations to compose",
+    "selectedInfo": "Selected {count} — choose an export mode below",
+    "pleaseSelect": "Select illustrations below to continue",
     "composeBook": "Compose Picture Book"
   },
+  "layoutExport": {
+    "title": "Layout & Export",
+    "subtitle": "Select illustrations and order them, then choose a mode to edit and export",
+    "quickCompose": "Compose PDF",
+    "quickComposeDesc": "Stack in order, publish or download PDF",
+    "printLayout": "Print Layout",
+    "printLayoutDesc": "32-page book template with spreads, for printing",
+    "backReselect": "Change selection",
+    "changeSelection": "Reselect",
+    "goSelect": "Select illustrations",
+    "selectedIlls": "Selected",
+    "brushFromSelected": "Click an illustration below to use as brush, then click a page slot"
+  },
   "toPdf": {
-    "backToSelect": "Back to selection",
+    "backToSelect": "Change selection",
     "totalPages": "{total} pages",
     "pageLabel": "Page {n}",
     "addIllustrations": "Click to add illustrations",
@@ -1230,7 +1244,8 @@
     "complianceRequired": "Please confirm the compliance statement",
     "downloadPdf": "Download PDF",
     "publish": "Publish",
-    "downloading": "Downloading, please do not click again"
+    "downloading": "Downloading, please do not click again",
+    "downloadFailed": "PDF download failed, please try again"
   },
   "printBookLayout": {
     "title": "Picture Book Print Layout",
