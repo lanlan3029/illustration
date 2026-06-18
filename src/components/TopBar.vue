@@ -188,12 +188,7 @@ export default {
 
         // 「创作」下拉项配置（同样集中管理）
         const creationItems = [
-            { to: '/ai-picture', label: 'nav.aiIllustration' },
-            { to: '/AIbooks', label: 'nav.aiBooks' },
             { to: '/creation-studio', label: 'nav.characterStudio' },
-            { to: '/create-character', label: 'nav.createCharacterLegacy' },
-            { to: '/create-group-images', label: 'nav.createGroupImages' },
-            { to: '/create-layout-illustration', label: 'nav.createLayoutIllustration' },
             { to: '/editorpro', label: 'nav.createIllustration' },
             { to: '/lasso-crop', label: 'nav.lassoCrop' },
             { to: '/user/upload/compose-illustration', label: 'nav.composeBook' },
@@ -209,13 +204,8 @@ export default {
         const isCreationNavActive = computed(() => {
             const p = route.path
             return (
-                p === '/ai-picture' ||
-                p === '/AIbooks' ||
                 p.startsWith('/creation-studio') ||
                 p.startsWith('/character-studio') ||
-                p.startsWith('/create-character') ||
-                p.startsWith('/create-group-images') ||
-                p.startsWith('/create-layout-illustration') ||
                 p.startsWith('/editorpro') ||
                 p.startsWith('/lasso-crop') ||
                 p.startsWith('/user/upload/compose-illustration')

@@ -7,7 +7,7 @@
                     {{ $t('home.welcomeTitle') || '让想象变成美丽的故事' }}
                 </h1>
                 <p class="hero-subtitle">{{ $t('home.welcomeSubtitle') || '选择您想要使用的创作功能' }}</p>
-                <button class="hero-cta" type="button" @click="go('/AIbooks')">
+                <button class="hero-cta" type="button" @click="go('/creation-studio')">
                     {{ $t('home.startCreating') || '开始创作' }}
                     <span class="hero-cta-arrow">↗</span>
                 </button>
@@ -32,6 +32,32 @@
                         <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
                     </span>
                 </button>
+            </section>
+
+            <!-- 风格轮播展示 -->
+            <section class="styles-section">
+                <div class="styles-head">
+                    <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
+                    <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
+                </div>
+                <div class="styles-carousel-outer">
+                    <div class="styles-carousel-track">
+                        <button
+                            v-for="(style, idx) in carouselStyles"
+                            :key="`${style.id}-${idx}`"
+                            type="button"
+                            class="style-carousel-card"
+                            @click="go('/ai-picture')"
+                        >
+                            <img
+                                :src="style.image"
+                                :alt="styleLabel(style)"
+                                class="style-carousel-img"
+                                loading="lazy"
+                            />
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <!-- 创作工作台介绍 -->
@@ -107,32 +133,6 @@
                             />
                             <span class="showcase-screenshot-avatar"></span>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 风格轮播展示 -->
-            <section class="styles-section">
-                <div class="styles-head">
-                    <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
-                    <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
-                </div>
-                <div class="styles-carousel-outer">
-                    <div class="styles-carousel-track">
-                        <button
-                            v-for="(style, idx) in carouselStyles"
-                            :key="`${style.id}-${idx}`"
-                            type="button"
-                            class="style-carousel-card"
-                            @click="go('/ai-picture')"
-                        >
-                            <img
-                                :src="style.image"
-                                :alt="styleLabel(style)"
-                                class="style-carousel-img"
-                                loading="lazy"
-                            />
-                        </button>
                     </div>
                 </div>
             </section>
@@ -268,7 +268,7 @@ export default {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
-    margin-bottom: 56px;
+    margin-bottom: 32px;
 }
 
 .feature-card {
@@ -687,8 +687,8 @@ export default {
 
 /* ===== 风格轮播（参照横向画廊） ===== */
 .styles-section {
-    margin-top: 8px;
-    padding: 36px 0 12px;
+    margin-bottom: 56px;
+    padding: 8px 0 12px;
 }
 
 .styles-head {
@@ -890,7 +890,8 @@ export default {
     }
 
     .styles-section {
-        padding: 24px 0 8px;
+        margin-bottom: 32px;
+        padding: 16px 0 8px;
     }
 
     .styles-title {

@@ -89,6 +89,8 @@ const routes = [{
         redirect: (to) => {
             const tab = to.query.tab;
             if (tab === '2' || tab === 2) return '/creation-studio/character';
+            if (tab === '3' || tab === 3) return '/creation-studio/illustration/mine';
+            if (tab === '4' || tab === 4) return '/creation-studio/book/mine';
             return '/user/profile';
         },
     },
@@ -248,6 +250,13 @@ const routes = [{
                 meta: { creationDomain: 'illustration', requiresAuth: true },
             },
             {
+                path: 'illustration/mine',
+                name: 'my-illustrations',
+                component: () =>
+                    import(/* webpackChunkName: "my-illustrations-studio" */ '../views/MyIllustrationsStudio.vue'),
+                meta: { creationDomain: 'illustration', requiresAuth: true, seoTitle: '我的插画' },
+            },
+            {
                 path: 'book/ai',
                 name: 'AIbooks',
                 component: () =>
@@ -260,6 +269,13 @@ const routes = [{
                 component: () =>
                     import(/* webpackChunkName: "compose-illustration" */ '../views/ComposeIllustration.vue'),
                 meta: { creationDomain: 'book', requiresAuth: true },
+            },
+            {
+                path: 'book/mine',
+                name: 'my-books',
+                component: () =>
+                    import(/* webpackChunkName: "my-books-studio" */ '../views/MyBooksStudio.vue'),
+                meta: { creationDomain: 'book', requiresAuth: true, seoTitle: '我的绘本' },
             },
         ],
     },

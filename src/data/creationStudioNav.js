@@ -50,6 +50,10 @@ export const CREATION_SUB_NAV = {
       labelKey: 'nav.aiIllustration',
     },
     {
+      routeName: 'my-illustrations',
+      labelKey: 'creationStudio.myIllustrations',
+    },
+    {
       routeName: 'editorpro',
       labelKey: 'nav.createIllustration',
       external: true,
@@ -68,6 +72,10 @@ export const CREATION_SUB_NAV = {
       labelKey: 'nav.aiBooks',
     },
     {
+      routeName: 'my-books',
+      labelKey: 'creationStudio.myBooks',
+    },
+    {
       routeName: 'compose-illustration',
       labelKey: 'nav.composeBook',
     },
@@ -80,9 +88,11 @@ export const ROUTE_DOMAIN_MAP = {
   'character-studio-workbench': 'character',
   'create-group-images': 'character',
   AIPicture: 'illustration',
+  'my-illustrations': 'illustration',
   editorpro: 'illustration',
   'create-layout-illustration': 'illustration',
   AIbooks: 'book',
+  'my-books': 'book',
   'compose-illustration': 'book',
 };
 

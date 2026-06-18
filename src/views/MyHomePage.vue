@@ -1,9 +1,9 @@
 <template>
-  <div class="container">
+  <div class="container" :class="{ 'studio-mode': studioMode }">
     <div class="left">
 
       <!-- 手机端个人头部卡（对齐设计稿「我的」） -->
-      <div class="mobile-profile only-mobile">
+      <div v-if="!studioMode" class="mobile-profile only-mobile">
         <div class="mp-card">
           <img class="mp-avatar" :src="(userInfo && userInfo.avatar) ? userInfo.avatar : defaultAvatar" alt="avatar" />
           <div class="mp-meta">
@@ -34,7 +34,15 @@
         </div>
       </div>
 
+      <header v-if="studioMode" class="studio-dash-header">
+        <div>
+          <h1>{{ studioTitle }}</h1>
+          <p>{{ studioDesc }}</p>
+        </div>
+      </header>
+
       <el-menu
+        v-if="!studioMode"
         :default-active="activeIndex"
         class="el-menu-demo"
         mode="horizontal"
@@ -304,6 +312,10 @@ export default {
   components:{
 MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
   },
+  props: {
+    fixedTab: { type: String, default: '' },
+    studioMode: { type: Boolean, default: false },
+  },
   data() {
     return {
       id:localStorage.getItem("id"),
@@ -336,10 +348,22 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
       hasMoreBooks: true,
     };
   },
-  computed:mapState([
-        "myBooks",
-        "userInfo"
+  computed: {
+    ...mapState([
+      'myBooks',
+      'userInfo',
     ]),
+    studioTitle() {
+      if (this.fixedTab === '3') return this.$t('creationStudio.myIllustrations');
+      if (this.fixedTab === '4') return this.$t('creationStudio.myBooks');
+      return '';
+    },
+    studioDesc() {
+      if (this.fixedTab === '3') return this.$t('creationStudio.myIllustrationsDesc');
+      if (this.fixedTab === '4') return this.$t('creationStudio.myBooksDesc');
+      return '';
+    },
+  },
   methods: {
     goProfile() {
       this.$router.push("/user/profile");
@@ -1142,6 +1166,16 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
 
   },
   async mounted(){
+    if (this.fixedTab) {
+      this.activeIndex = this.fixedTab;
+      if (this.fixedTab === '3') {
+        await this.getIll();
+      } else if (this.fixedTab === '4') {
+        await this.getBook();
+      }
+      return;
+    }
+
     // 检查路由参数，如果有 tab 参数，切换到对应的标签
     const tab = this.$route.query.tab;
     if (tab) {
@@ -1167,6 +1201,38 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
 </script>
 
 <style scoped>
+.container.studio-mode {
+  background: transparent;
+  min-height: auto;
+}
+
+.container.studio-mode .left {
+  height: auto;
+  max-width: none;
+  padding: 0;
+}
+
+.studio-dash-header {
+  padding: 24px 20px 28px;
+}
+
+.studio-dash-header h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.studio-dash-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.container.studio-mode .card-container {
+  padding: 0 20px 48px;
+}
+
 .container {
   width: 100%;
   background-color: #f5f6fa;

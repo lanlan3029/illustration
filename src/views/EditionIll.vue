@@ -222,7 +222,7 @@ export default {
         });
             // 跳转到我的主页，并显示"我的插画"标签（tab=3）
             setTimeout(() => {
-              this.$router.push({ path: '/user', query: { tab: '3' } });
+            this.$router.push({ name: 'my-illustrations' });
             }, 1000);
           } else {
             ElMessage.error(response.data.message || '删除失败，请重试');

@@ -1036,7 +1036,11 @@
     "domainBook": "绘本",
     "myCharacters": "我的角色",
     "generateCharacter": "生成角色",
-    "characterGroups": "角色组图"
+    "characterGroups": "角色组图",
+    "myIllustrations": "我的插画",
+    "myIllustrationsDesc": "查看、编辑和下载你保存的插画作品。",
+    "myBooks": "我的绘本",
+    "myBooksDesc": "管理已创作的绘本，阅读、编辑或删除。"
   },
   "characterStudio": {
     "dashboardTitle": "我的角色",

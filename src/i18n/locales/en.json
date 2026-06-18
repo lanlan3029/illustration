@@ -1021,7 +1021,11 @@
     "domainBook": "Picture Book",
     "myCharacters": "My Characters",
     "generateCharacter": "Generate Character",
-    "characterGroups": "Character Groups"
+    "characterGroups": "Character Groups",
+    "myIllustrations": "My Illustrations",
+    "myIllustrationsDesc": "View, edit, and download your saved illustrations.",
+    "myBooks": "My Books",
+    "myBooksDesc": "Manage your picture books — read, edit, or delete."
   },
   "characterStudio": {
     "dashboardTitle": "My Characters",
