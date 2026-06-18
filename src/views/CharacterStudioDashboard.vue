@@ -39,13 +39,13 @@
         <div class="cs-card-meta">
           <span class="cs-card-name">{{ item.character_name || $t('characterStudio.unnamed') }}</span>
           <div v-if="!pickMode" class="cs-card-actions" @click.stop>
-            <el-button size="small" type="primary" @click="openWorkbench(item)">
+            <el-button size="small" type="primary" class="cs-action-btn" @click="openWorkbench(item)">
               {{ $t('myHomePage.edit') }}
             </el-button>
-            <el-button size="small" @click="openEditorPro(item)">
+            <el-button size="small" class="cs-action-btn" @click="openEditorPro(item)">
               {{ $t('characterStudio.editInEditor') }}
             </el-button>
-            <el-button size="small" class="cs-card-action-group" @click="goGroupImages(item)">
+            <el-button size="small" class="cs-action-btn cs-action-btn--full" @click="goGroupImages(item)">
               {{ $t('characterStudio.createGroup') }}
             </el-button>
           </div>
@@ -266,7 +266,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px 12px 14px;
   border-top: 1px solid #f0f0f0;
 }
 
@@ -274,21 +274,27 @@ export default {
   font-size: 14px;
   font-weight: 600;
   color: #303133;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .cs-card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
 
-.cs-card-action-group {
-  margin-left: 0;
+.cs-card-actions :deep(.el-button) {
+  width: 100%;
+  margin: 0;
+  padding: 6px 4px;
+  font-size: 12px;
+}
+
+.cs-card-actions :deep(.cs-action-btn--full) {
+  grid-column: 1 / -1;
 }
 
 .cs-pick-hint {
