@@ -77,6 +77,33 @@
                             </div>
                         </div>
 
+                        <!-- 风格选择 -->
+                        <div class="style-section">
+                            <label class="cgi-label">{{ $t('characterStudio.style') }}</label>
+                            <el-popover placement="bottom" :width="280" trigger="click">
+                                <template #reference>
+                                    <button type="button" class="cgi-style-trigger">
+                                        <img v-if="selectedStyleImage" :src="selectedStyleImage" alt="" class="cgi-style-thumb" />
+                                        <span>{{ selectedStyleLabel }}</span>
+                                        <span class="cgi-caret">▾</span>
+                                    </button>
+                                </template>
+                                <div class="cgi-style-popover">
+                                    <button
+                                        v-for="s in styles"
+                                        :key="s.key"
+                                        type="button"
+                                        class="cgi-style-opt"
+                                        :class="{ active: artStyleKey === s.key }"
+                                        @click="selectStyle(s.key)"
+                                    >
+                                        <img :src="s.image" :alt="s.artStyle" />
+                                        <span>{{ s.artStyle }}</span>
+                                    </button>
+                                </div>
+                            </el-popover>
+                        </div>
+
                         <!-- Prompt输入框 -->
                         <div class="prompt-section">
                             
@@ -184,6 +211,10 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { takeCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
+import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs';
+import { resolveStyleInfo } from '@/utils/characterStudioPrompt';
+
+const STYLE_STORAGE_KEY = 'createGroupImages_styleKey';
 
 export default {
     name: 'CreateGroupImages',
@@ -197,6 +228,9 @@ export default {
             
             // 10个prompt输入框
             prompts: Array(10).fill(''),
+
+            // 风格
+            artStyleKey: localStorage.getItem(STYLE_STORAGE_KEY) || 'healingWatercolor',
             
             // 处理状态
             processing: false,
@@ -238,7 +272,26 @@ export default {
                 return this.characterName;
             }
             return this.$t('createGroupImages.groupIllustration');
-        }
+        },
+        styles() {
+            return ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
+                key: config.key,
+                artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
+                elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`),
+                image: config.image,
+            }));
+        },
+        selectedStyleLabel() {
+            const s = this.styles.find((x) => x.key === this.artStyleKey);
+            return s?.artStyle || this.$t('characterStudio.pickStyle');
+        },
+        selectedStyleImage() {
+            const s = this.styles.find((x) => x.key === this.artStyleKey);
+            return s?.image || null;
+        },
+        styleInfoText() {
+            return resolveStyleInfo(this.styles, this.artStyleKey);
+        },
     },
     activated() {
         this.importPendingReference();
@@ -250,6 +303,10 @@ export default {
         this.loadGroupImagesFromLocalStorage();
     },
     methods: {
+        selectStyle(key) {
+            this.artStyleKey = key;
+            localStorage.setItem(STYLE_STORAGE_KEY, key);
+        },
         importPendingReference() {
             const pendingRef = takeCreateGroupImagesReference();
             if (pendingRef) {
@@ -476,11 +533,14 @@ export default {
             try {
                 // 过滤掉空的prompt，并在每个prompt前拼接前缀
                 const prefix = this.$t('createGroupImages.promptPrefix');
-                // 根据当前语言环境使用不同的分隔符
                 const separator = this.$i18n.locale.value === 'zh' ? '，' : ', ';
+                const styleInfo = this.styleInfoText;
+                const stylePart = styleInfo
+                    ? `${separator}STYLE: ${styleInfo}`
+                    : '';
                 const validPrompts = this.prompts
                     .filter(p => p && p.trim())
-                    .map(p => `${prefix}${separator}${p.trim()}`);
+                    .map(p => `${prefix}${separator}${p.trim()}${stylePart}`);
                 
                 // 将参考图转换为Base64（带压缩）
                 let referenceImageBase64 = null;
@@ -1181,6 +1241,81 @@ export default {
 .reference-actions {
     display: flex;
     justify-content: center;
+}
+
+/* 风格选择 */
+.style-section {
+    margin-bottom: 24px;
+}
+
+.cgi-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 10px;
+}
+
+.cgi-style-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+}
+
+.cgi-style-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.cgi-caret {
+    margin-left: auto;
+    color: #999;
+}
+
+.cgi-style-popover {
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cgi-style-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.cgi-style-opt img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.cgi-style-opt.active,
+.cgi-style-opt:hover {
+    border-color: #8167a9;
+    background: #f3f0f8;
 }
 
 /* Prompt输入 */
