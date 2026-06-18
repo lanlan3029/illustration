@@ -34,6 +34,16 @@
           <h3>{{ $t('printBookLayout.myIllustrations') }}</h3>
         </div>
         <p class="pbl-picker-hint">{{ $t('printBookLayout.selectHint') }}</p>
+        <p class="pbl-picker-hint pbl-picker-hint--sub">{{ $t('printBookLayout.batchSelectHint') }}</p>
+
+        <div v-if="activeIll" class="pbl-picker-brush">
+          <img :src="illUrl(activeIll)" alt="" class="pbl-picker-brush-img" />
+          <div class="pbl-picker-brush-text">
+            <strong>{{ $t('printBookLayout.brushActive') }}</strong>
+            <span>{{ $t('printBookLayout.brushHint') }}</span>
+          </div>
+          <button type="button" class="pbl-picker-brush-clear" @click="clearBrush">×</button>
+        </div>
 
         <div v-if="selectedIlls.length" class="pbl-picker-selected">
           <div class="pbl-picker-selected-head">
@@ -67,10 +77,10 @@
             type="button"
             class="pbl-ill-btn"
             :class="{ 'is-selected': isIllSelected(item), 'is-active-pick': activeIllId === item._id }"
-            @click="pickIll(item)"
+            @click="pickIll(item, $event)"
           >
             <img :src="illUrl(item)" alt="" />
-            <span v-if="isIllSelected(item)" class="pbl-check">✓</span>
+            <span v-if="isIllSelected(item)" class="pbl-batch-mark">{{ $t('printBookLayout.batchMark') }}</span>
           </button>
           <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
           <p v-else-if="!illList.length" class="pbl-load-tip">{{ $t('printBookLayout.noIllustrations') }}</p>
@@ -78,7 +88,7 @@
       </aside>
 
       <!-- 右侧：排版主区域 -->
-      <main class="pbl-stage" :class="{ 'pbl-stage--edit': viewMode === 'edit' }">
+      <main class="pbl-stage" :class="{ 'pbl-stage--edit': viewMode === 'edit', 'pbl-stage--brush': !!activeIll }">
         <div v-if="viewMode === 'overview'" class="pbl-overview">
           <p class="pbl-overview-hint">{{ $t('printBookLayout.overviewHint') }}</p>
           <div class="pbl-matrix" :style="matrixStyle">
@@ -308,35 +318,36 @@ export default {
       this.viewMode = 'edit';
       this.activePageId = block.pages[0]?.id || null;
     },
-    pickIll(item) {
-      this.activeIllId = item._id;
-      const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
-      if (idx >= 0) {
-        this.selectedIlls.splice(idx, 1);
-      } else {
-        this.selectedIlls.push(item);
+    pickIll(item, event) {
+      const batchToggle = event?.shiftKey || event?.metaKey || event?.ctrlKey;
+      if (batchToggle) {
+        const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
+        if (idx >= 0) this.selectedIlls.splice(idx, 1);
+        else this.selectedIlls.push(item);
+        this.saveSession();
+        return;
       }
-      this.saveSession();
+      this.activeIllId = item._id;
     },
     isIllSelected(item) {
       return this.selectedIlls.some((x) => x._id === item._id);
     },
-    toggleIll(item) {
-      this.pickIll(item);
+    clearBrush() {
+      this.activeIllId = null;
     },
     clearSelected() {
       this.selectedIlls = [];
-      this.activeIllId = null;
       this.saveSession();
     },
     assignToPage(page) {
       this.activePageId = page.id;
-      const ill = this.activeIll || (this.selectedIlls.length === 1 ? this.selectedIlls[0] : null);
+      const ill = this.activeIll;
       if (!ill) return;
       page.illustration = { _id: ill._id, content: ill.content, title: ill.title };
       this.syncBlocks();
     },
     onDragStartIll(e, item) {
+      this.activeIllId = item._id;
       this.dragIll = item;
       e.dataTransfer.effectAllowed = 'copy';
     },
@@ -1047,6 +1058,7 @@ export default {
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   max-height: calc(100vh - 57px);
   order: -1;
 }
@@ -1104,18 +1116,20 @@ export default {
 .pbl-picker-thumb {
   position: relative;
   width: 56px;
-  height: 42px;
   flex-shrink: 0;
   border-radius: 4px;
   overflow: hidden;
   border: 2px solid #8167a9;
   cursor: grab;
+  background: #f5f5f5;
+  line-height: 0;
 }
 
 .pbl-picker-thumb img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
+  object-fit: contain;
 }
 
 .pbl-order {
@@ -1134,56 +1148,123 @@ export default {
 
 .pbl-picker-grid {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  align-content: start;
+  padding: 10px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-content: flex-start;
 }
 
 .pbl-ill-btn {
   position: relative;
-  aspect-ratio: 4 / 3;
+  display: block;
+  width: 100%;
   border: 2px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   padding: 0;
   cursor: pointer;
-  background: #fafafa;
-}
-
-.pbl-ill-btn.is-selected {
-  border-color: #8167a9;
+  background: #f5f5f5;
+  line-height: 0;
+  flex-shrink: 0;
 }
 
 .pbl-ill-btn.is-active-pick {
-  box-shadow: 0 0 0 2px #409eff;
+  border-color: #8167a9;
+  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.35);
+}
+
+.pbl-ill-btn.is-selected {
+  border-color: #409eff;
+}
+
+.pbl-picker-hint--sub {
+  margin-top: -6px;
+  font-size: 11px;
+  color: #a8abb2;
 }
 
 .pbl-ill-btn img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  vertical-align: top;
 }
 
-.pbl-check {
-  position: absolute;
-  inset: 0;
+.pbl-stage--brush .pbl-face,
+.pbl-stage--brush .pbl-editor-page {
+  cursor: copy;
+}
+
+.pbl-picker-brush {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(129, 103, 169, 0.5);
+  gap: 10px;
+  margin: 0 12px 10px;
+  padding: 8px 10px;
+  background: #ede8f5;
+  border: 2px solid #8167a9;
+  border-radius: 8px;
+}
+
+.pbl-picker-brush-img {
+  width: 48px;
+  max-height: 64px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.pbl-picker-brush-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #606266;
+  line-height: 1.3;
+}
+
+.pbl-picker-brush-text strong {
+  font-size: 12px;
+  color: #8167a9;
+}
+
+.pbl-picker-brush-clear {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: #909399;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.pbl-batch-mark {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(64, 158, 255, 0.9);
   color: #fff;
-  font-size: 24px;
+  font-size: 9px;
   font-weight: 700;
+  line-height: 1.3;
 }
 
 .pbl-load-tip {
-  grid-column: 1 / -1;
   text-align: center;
   color: #909399;
   font-size: 12px;
+  padding: 12px 0;
+  line-height: 1.4;
 }
 
 @media (max-width: 1100px) {
