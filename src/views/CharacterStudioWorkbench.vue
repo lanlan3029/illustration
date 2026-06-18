@@ -6,17 +6,6 @@
         ← {{ $t('characterStudio.backToProjects') }}
       </button>
 
-      <div class="cs-steps">
-        <div class="cs-step cs-step--active">
-          <span class="cs-step-dot">1</span>
-          <span>{{ $t('characterStudio.stepTurbo') }}</span>
-        </div>
-        <div class="cs-step cs-step--muted">
-          <span class="cs-step-dot">2</span>
-          <span>{{ $t('characterStudio.stepAction') }}</span>
-        </div>
-      </div>
-
       <div class="cs-field-head">
         <div class="cs-field-head-row">
           <el-input
@@ -60,11 +49,6 @@
         <div v-if="referencePreview" class="cs-ref-preview">
           <img :src="referencePreview" alt="ref" />
         </div>
-      </section>
-
-      <section class="cs-section">
-        <label class="cs-label">{{ $t('characterStudio.actionOptional') }}</label>
-        <el-input v-model="actionText" :placeholder="DEFAULT_ACTION" />
       </section>
 
       <div class="cs-row-2">
@@ -121,7 +105,6 @@
     <main class="cs-gallery">
       <div class="cs-gallery-toolbar">
         <span class="cs-gallery-title">{{ $t('characterStudio.generations') }}</span>
-        <span v-if="anchorUrl" class="cs-anchor-badge">{{ $t('characterStudio.anchorSet') }}</span>
         <div class="cs-view-toggle">
           <button
             type="button"
@@ -166,7 +149,7 @@
           v-for="(gen, idx) in generations"
           :key="gen.id"
           class="cs-gen-card"
-          :class="{ 'is-anchor': anchorUrl === gen.url, 'is-saved': isGenSaved(gen) }"
+          :class="{ 'is-saved': isGenSaved(gen) }"
         >
           <img :src="gen.url" alt="generation" @click="previewImage(idx)" />
           <div class="cs-gen-actions" @click.stop>
@@ -242,13 +225,12 @@ export default {
         image: config.image,
       }))
     );
-    return { styles, DEFAULT_ACTION, aspectOptions: ASPECT_RATIO_OPTIONS };
+    return { styles, aspectOptions: ASPECT_RATIO_OPTIONS };
   },
   data() {
     return {
       characterName: '',
       description: '',
-      actionText: DEFAULT_ACTION,
       artStyleKey: 'healingWatercolor',
       aspectRatio: '1024x1024',
       referenceBase64: '',
@@ -309,7 +291,6 @@ export default {
         const data = JSON.parse(raw);
         if (data.characterName) this.characterName = data.characterName;
         if (data.description) this.description = data.description;
-        if (data.actionText) this.actionText = data.actionText;
         if (data.artStyleKey) this.artStyleKey = data.artStyleKey;
         if (data.aspectRatio) this.aspectRatio = data.aspectRatio;
         if (data.anchorUrl) this.anchorUrl = data.anchorUrl;
@@ -326,7 +307,6 @@ export default {
         JSON.stringify({
           characterName: this.characterName,
           description: this.description,
-          actionText: this.actionText,
           artStyleKey: this.artStyleKey,
           aspectRatio: this.aspectRatio,
           anchorUrl: this.anchorUrl,
@@ -426,7 +406,7 @@ export default {
         const refImage = this.referenceBase64 || this.anchorBase64 || '';
         const prompt = buildCharacterStudioPrompt({
           description: desc,
-          action: this.actionText || DEFAULT_ACTION,
+          action: DEFAULT_ACTION,
           styleInfo,
           withReferenceImage: Boolean(refImage),
         });
@@ -635,50 +615,6 @@ export default {
 
 .cs-back:hover {
   color: #8167a9;
-}
-
-.cs-steps {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.cs-step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.cs-step--active {
-  color: #8167a9;
-}
-
-.cs-step--muted {
-  color: #bbb;
-}
-
-.cs-step-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: currentColor;
-  color: #fff;
-  font-size: 11px;
-  line-height: 22px;
-  text-align: center;
-}
-
-.cs-step--active .cs-step-dot {
-  background: #8167a9;
-}
-
-.cs-step--muted .cs-step-dot {
-  background: #ddd;
-  color: #999;
 }
 
 .cs-field-head {
@@ -906,14 +842,6 @@ export default {
   color: #1f1f1f;
 }
 
-.cs-anchor-badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: #ede8f5;
-  color: #8167a9;
-}
-
 .cs-empty {
   display: flex;
   flex-direction: column;
@@ -947,10 +875,6 @@ export default {
   overflow: hidden;
   border: 2px solid transparent;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-}
-
-.cs-gen-card.is-anchor {
-  border-color: #8167a9;
 }
 
 .cs-gen-card.is-saved {

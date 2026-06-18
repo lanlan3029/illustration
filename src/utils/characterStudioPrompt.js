@@ -14,7 +14,7 @@ export const INSPIRE_PROMPTS = [
   'Fluffy white rabbit wearing a blue scarf, holding a carrot',
   'Young astronaut in a white suit, helmet under arm, cheerful expression',
 ];
-export const DEFAULT_ACTION = 'Full body front view, standing and smiling';
+export const DEFAULT_ACTION = '';
 export const DEFAULT_BACKGROUND = 'Plain white background';
 
 export function buildCharacterStudioPrompt({
