@@ -1211,7 +1211,7 @@
   "printBookLayout": {
     "title": "Picture Book Print Layout",
     "backStudio": "Back to Studio",
-    "overviewHint": "Select illustrations and click Generate Layout; or pick one and click a page slot",
+    "overviewHint": "5 spreads per row; cover page right-aligned, back cover left-aligned; others are spreads",
     "pageRatio": "Page ratio",
     "backOverview": "Overview",
     "editBlock": "Edit",

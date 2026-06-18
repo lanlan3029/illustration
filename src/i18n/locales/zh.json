@@ -1226,7 +1226,7 @@
   "printBookLayout": {
     "title": "绘本打印排版",
     "backStudio": "返回创作工作台",
-    "overviewHint": "选中插画后点「生成排版」填入正文页；或点选单张插画后点击页面 slot 填入",
+    "overviewHint": "每行 5 跨页；封面单页居右、封底单页居左；其余为左右双页跨页",
     "pageRatio": "单页比例",
     "backOverview": "整体预览",
     "editBlock": "编辑",

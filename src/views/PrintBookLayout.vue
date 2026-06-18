@@ -81,7 +81,7 @@
       <main class="pbl-stage" :class="{ 'pbl-stage--edit': viewMode === 'edit' }">
         <div v-if="viewMode === 'overview'" class="pbl-overview">
           <p class="pbl-overview-hint">{{ $t('printBookLayout.overviewHint') }}</p>
-          <div class="pbl-matrix">
+          <div class="pbl-matrix" :style="matrixStyle">
             <div
               v-for="block in layoutBlocks"
               :key="block.id"
@@ -107,27 +107,49 @@
               </div>
 
               <div class="pbl-cell-inner">
-                <div class="pbl-sheet" :class="`pbl-sheet--${block.type}`">
-                  <div
-                    v-for="pg in block.pages"
-                    :key="pg.id"
-                    class="pbl-face"
-                    :style="faceStyle"
-                    @click.stop="assignToPage(pg)"
-                    @dragover.prevent
-                    @drop.prevent="onDropPage(pg, $event)"
-                  >
-                    <img
-                      v-if="pg.illustration"
-                      :src="illUrl(pg.illustration)"
-                      class="pbl-face-img"
-                      alt=""
-                    />
-                    <div v-else class="pbl-face-empty">
-                      <span v-if="pg.pageNum" class="pbl-face-num">{{ pg.pageNum }}</span>
-                      <span class="pbl-face-label">{{ $t(pg.labelKey) }}</span>
+                <div class="pbl-sheet" :class="sheetClass(block)">
+                  <template v-if="block.type === 'single'">
+                    <div
+                      class="pbl-face pbl-face--solo"
+                      @click.stop="assignToPage(block.pages[0])"
+                      @dragover.prevent
+                      @drop.prevent="onDropPage(block.pages[0], $event)"
+                    >
+                      <img
+                        v-if="block.pages[0].illustration"
+                        :src="illUrl(block.pages[0].illustration)"
+                        class="pbl-face-img"
+                        alt=""
+                      />
+                      <div v-else class="pbl-face-empty">
+                        <span class="pbl-face-label">{{ $t(block.pages[0].labelKey) }}</span>
+                      </div>
                     </div>
-                  </div>
+                  </template>
+                  <template v-else>
+                    <div
+                      v-for="(pg, pi) in block.pages"
+                      :key="pg.id"
+                      class="pbl-face"
+                      @click.stop="assignToPage(pg)"
+                      @dragover.prevent
+                      @drop.prevent="onDropPage(pg, $event)"
+                    >
+                      <span v-if="pg.pageNum" class="pbl-face-num" :class="{ 'pbl-face-num--right': pi === 1 }">
+                        {{ pg.pageNum }}
+                      </span>
+                      <img
+                        v-if="pg.illustration"
+                        :src="illUrl(pg.illustration)"
+                        class="pbl-face-img"
+                        alt=""
+                      />
+                      <div v-else class="pbl-face-empty">
+                        <span v-if="pg.pageNum" class="pbl-face-num-inline">{{ pg.pageNum }}</span>
+                        <span class="pbl-face-label">{{ $t(pg.labelKey) }}</span>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -141,7 +163,7 @@
               {{ $t('printBookLayout.deleteSpread') }}
             </button>
           </div>
-          <div class="pbl-editor-canvas" :class="`pbl-editor-canvas--${editingBlock.type}`">
+          <div class="pbl-editor-canvas" :class="editorCanvasClass">
             <div
               v-for="pg in editingBlock.pages"
               :key="pg.id"
@@ -222,11 +244,27 @@ export default {
       const [w, h] = this.pageRatio.split(':').map(Number);
       return { aspectRatio: `${w} / ${h}` };
     },
+    matrixStyle() {
+      const [w, h] = this.pageRatio.split(':').map(Number);
+      return { '--page-ar': `${w} / ${h}` };
+    },
     activeIll() {
       if (!this.activeIllId) return null;
       return this.illList.find((i) => i._id === this.activeIllId)
         || this.selectedIlls.find((i) => i._id === this.activeIllId)
         || null;
+    },
+    editorCanvasClass() {
+      if (!this.editingBlock) return '';
+      if (this.editingBlock.type === 'spread') return 'pbl-editor-canvas--spread';
+      const pg = this.editingBlock.pages[0];
+      if (this.isCoverFront(pg, this.editingBlock)) {
+        return 'pbl-editor-canvas--single pbl-editor-canvas--cover-front';
+      }
+      if (this.isCoverBack(pg, this.editingBlock)) {
+        return 'pbl-editor-canvas--single pbl-editor-canvas--cover-back';
+      }
+      return 'pbl-editor-canvas--single';
     },
   },
   mounted() {
@@ -249,6 +287,21 @@ export default {
     },
     isBlockEmpty(block) {
       return isBlockEmpty(block);
+    },
+    isCoverFront(page, block) {
+      const label = page?.labelKey || block?.labelKey;
+      return page?.id === 'fp' || label === 'printBookLayout.pastedownFront';
+    },
+    isCoverBack(page, block) {
+      const label = page?.labelKey || block?.labelKey;
+      return page?.id === 'bp' || label === 'printBookLayout.pastedownBack';
+    },
+    sheetClass(block) {
+      if (block.type === 'spread') return 'pbl-sheet--spread';
+      const pg = block.pages[0];
+      if (this.isCoverFront(pg, block)) return 'pbl-sheet--single pbl-sheet--cover-front';
+      if (this.isCoverBack(pg, block)) return 'pbl-sheet--single pbl-sheet--cover-back';
+      return 'pbl-sheet--single';
     },
     openEditBlock(block) {
       this.editingBlockId = block.id;
@@ -618,28 +671,28 @@ export default {
   margin: 0 0 16px;
 }
 
-/* 5 列网格 — 参照模板图 */
+/* 10 列底层网格：每块占 2 列（= 1 跨页宽）；单页内容宽 = 1 列 */
 .pbl-matrix {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  max-width: 1400px;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 .pbl-cell {
+  grid-column: span 2;
   background: #fff;
   border: 2px solid #1f1f1f;
-  border-radius: 4px;
+  border-radius: 2px;
   overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow 0.15s, transform 0.15s;
+  transition: box-shadow 0.15s;
   min-width: 0;
+  align-self: start;
 }
 
 .pbl-cell:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .pbl-cell--active {
@@ -705,33 +758,57 @@ export default {
 }
 
 .pbl-cell-inner {
-  padding: 6px;
-  background: #fafafa;
+  padding: 4px;
+  background: #f5f5f5;
 }
 
 .pbl-sheet {
   display: flex;
-  gap: 4px;
   width: 100%;
+  align-items: stretch;
 }
 
-.pbl-sheet--single .pbl-face {
-  flex: 1;
+/* 封面/封底：占 2 列宽，单页占 1 列 — 封面居右、封底居左 */
+.pbl-sheet--single .pbl-face--solo {
+  width: 50%;
+  flex: none;
+}
+
+.pbl-sheet--single.pbl-sheet--cover-front {
+  justify-content: flex-end;
+}
+
+.pbl-sheet--single.pbl-sheet--cover-back {
+  justify-content: flex-start;
+}
+
+/* 跨页：左右各 1 列 */
+.pbl-sheet--spread {
+  gap: 0;
+  border: 1px solid #999;
 }
 
 .pbl-sheet--spread .pbl-face {
   flex: 1;
   min-width: 0;
+  width: 50%;
+  border: none;
+  border-right: 1px solid #999;
+}
+
+.pbl-sheet--spread .pbl-face:last-child {
+  border-right: none;
 }
 
 .pbl-face {
   position: relative;
-  width: 100%;
+  aspect-ratio: var(--page-ar, 3 / 4);
+  height: auto;
   background: #fff;
   border: 1px solid #bbb;
   overflow: hidden;
   cursor: pointer;
-  min-height: 72px;
+  min-height: 0;
 }
 
 .pbl-face:hover {
@@ -739,6 +816,8 @@ export default {
 }
 
 .pbl-face-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -747,28 +826,43 @@ export default {
 }
 
 .pbl-face-empty {
-  width: 100%;
-  height: 100%;
-  min-height: 72px;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 4px;
   text-align: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .pbl-face-num {
-  font-size: 11px;
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  z-index: 2;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1f1f1f;
+  line-height: 1;
+}
+
+.pbl-face-num--right {
+  left: auto;
+  right: 4px;
+}
+
+.pbl-face-num-inline {
+  font-size: 10px;
   font-weight: 700;
   color: #1f1f1f;
 }
 
 .pbl-face-label {
-  font-size: 9px;
-  color: #909399;
-  line-height: 1.2;
+  font-size: 8px;
+  color: #606266;
+  line-height: 1.15;
   word-break: break-word;
 }
 
@@ -811,14 +905,44 @@ export default {
   min-height: 420px;
 }
 
+.pbl-editor-canvas--single {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
 .pbl-editor-canvas--single .pbl-editor-page {
-  max-width: 480px;
-  width: 100%;
+  width: 50%;
+  max-width: 280px;
+  margin: 0;
+}
+
+.pbl-editor-canvas--single.pbl-editor-canvas--cover-front {
+  justify-content: flex-end;
+}
+
+.pbl-editor-canvas--single.pbl-editor-canvas--cover-back {
+  justify-content: flex-start;
+}
+
+.pbl-editor-canvas--spread {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px;
+  gap: 0;
+  border: 1px solid #999;
 }
 
 .pbl-editor-canvas--spread .pbl-editor-page {
   flex: 1;
-  max-width: 420px;
+  max-width: none;
+  width: 50%;
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid #999;
+}
+
+.pbl-editor-canvas--spread .pbl-editor-page:last-child {
+  border-right: none;
 }
 
 .pbl-editor-page {
@@ -1064,13 +1188,21 @@ export default {
 
 @media (max-width: 1100px) {
   .pbl-matrix {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .pbl-cell {
+    grid-column: span 2;
   }
 }
 
 @media (max-width: 720px) {
   .pbl-matrix {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .pbl-cell {
+    grid-column: span 2;
   }
 
   .pbl-body {
