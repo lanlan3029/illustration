@@ -1,13 +1,12 @@
 /**
- * Standard 32-page picture book print layout (reference grid).
- * Each row is a spread or single page block shown in the layout editor.
+ * 32 页绘本打印排版 — 5 列网格块（单页 1 列宽，跨页 1 格内左右两页）
  */
 
-let rowIdCounter = 0;
+let blockIdCounter = 0;
 
-function nextRowId(prefix) {
-  rowIdCounter += 1;
-  return `${prefix}-${rowIdCounter}`;
+function nextBlockId(prefix) {
+  blockIdCounter += 1;
+  return `${prefix}-${blockIdCounter}`;
 }
 
 function page(id, labelKey, pageNum = null, kind = 'blank') {
@@ -16,103 +15,86 @@ function page(id, labelKey, pageNum = null, kind = 'blank') {
     labelKey,
     pageNum,
     kind,
-    illustration: null, // { _id, content, title }
+    illustration: null,
   };
 }
 
-/** @returns {Array<{ id: string, type: 'single'|'spread', deletable: boolean, labelKey?: string, spreadIndex?: number, pages: object[] }>} */
-export function createDefaultPrintLayout() {
-  rowIdCounter = 0;
-  const rows = [];
-
-  rows.push({
-    id: nextRowId('row'),
-    type: 'single',
-    deletable: true,
-    labelKey: 'printBookLayout.pastedownFront',
-    pages: [page('fp', 'printBookLayout.pastedownFront', null, 'pastedown')],
-  });
-
-  rows.push({
-    id: nextRowId('row'),
+function spreadBlock(idPrefix, labelKey, pages, opts = {}) {
+  return {
+    id: nextBlockId(idPrefix),
     type: 'spread',
-    deletable: true,
-    labelKey: 'printBookLayout.endpapers',
-    pages: [
+    deletable: opts.deletable ?? false,
+    labelKey,
+    spreadIndex: opts.spreadIndex,
+    pages,
+  };
+}
+
+function singleBlock(idPrefix, labelKey, pageDef, opts = {}) {
+  return {
+    id: nextBlockId(idPrefix),
+    type: 'single',
+    deletable: opts.deletable ?? false,
+    labelKey,
+    pages: [pageDef],
+  };
+}
+
+/** @returns {Array} 按 5 列网格顺序排列的排版块 */
+export function createDefaultPrintLayout() {
+  blockIdCounter = 0;
+  const blocks = [];
+
+  blocks.push(
+    singleBlock('cover', 'printBookLayout.pastedownFront', page('fp', 'printBookLayout.pastedownFront', null, 'pastedown'), { deletable: true })
+  );
+  blocks.push(
+    spreadBlock('ep', 'printBookLayout.endpapers', [
       page('ep1-l', 'printBookLayout.endpaper', null, 'endpaper'),
       page('ep1-r', 'printBookLayout.endpaper', null, 'endpaper'),
-    ],
-  });
-
-  rows.push({
-    id: nextRowId('row'),
-    type: 'spread',
-    deletable: false,
-    labelKey: 'printBookLayout.titleSpread',
-    pages: [
+    ], { deletable: true })
+  );
+  blocks.push(
+    spreadBlock('title', 'printBookLayout.titleSpread', [
       page('ep2-l', 'printBookLayout.endpaper', null, 'endpaper'),
       page('title', 'printBookLayout.titlePage', 1, 'title'),
-    ],
-  });
-
-  rows.push({
-    id: nextRowId('row'),
-    type: 'spread',
-    deletable: false,
-    labelKey: 'printBookLayout.frontMatter',
-    pages: [
+    ])
+  );
+  blocks.push(
+    spreadBlock('fm', 'printBookLayout.frontMatter', [
       page('copyright', 'printBookLayout.copyright', 2, 'copyright'),
       page('dedication', 'printBookLayout.dedication', 3, 'dedication'),
-    ],
-  });
+    ])
+  );
 
   for (let i = 1; i <= 14; i += 1) {
     const leftNum = 2 + i * 2;
     const rightNum = leftNum + 1;
-    rows.push({
-      id: nextRowId('story'),
-      type: 'spread',
-      deletable: true,
-      labelKey: 'printBookLayout.storySpread',
-      spreadIndex: i,
-      pages: [
+    blocks.push(
+      spreadBlock('story', 'printBookLayout.storySpread', [
         page(`story-${i}-l`, 'printBookLayout.storyPage', leftNum, 'story'),
         page(`story-${i}-r`, 'printBookLayout.storyPage', rightNum, 'story'),
-      ],
-    });
+      ], { deletable: true, spreadIndex: i })
+    );
   }
 
-  rows.push({
-    id: nextRowId('row'),
-    type: 'spread',
-    deletable: true,
-    labelKey: 'printBookLayout.closingSpread',
-    pages: [
+  blocks.push(
+    spreadBlock('close', 'printBookLayout.closingSpread', [
       page('final', 'printBookLayout.finalPage', 32, 'closing'),
       page('ep3-r', 'printBookLayout.endpaper', null, 'endpaper'),
-    ],
-  });
-
-  rows.push({
-    id: nextRowId('row'),
-    type: 'spread',
-    deletable: true,
-    labelKey: 'printBookLayout.endpapers',
-    pages: [
+    ], { deletable: true })
+  );
+  blocks.push(
+    spreadBlock('ep', 'printBookLayout.endpapers', [
       page('ep4-l', 'printBookLayout.endpaper', null, 'endpaper'),
       page('ep4-r', 'printBookLayout.endpaper', null, 'endpaper'),
-    ],
-  });
+    ], { deletable: true })
+  );
+  blocks.push(
+    singleBlock('cover', 'printBookLayout.pastedownBack', page('bp', 'printBookLayout.pastedownBack', null, 'pastedown'), { deletable: true })
+  );
 
-  rows.push({
-    id: nextRowId('row'),
-    type: 'single',
-    deletable: true,
-    labelKey: 'printBookLayout.pastedownBack',
-    pages: [page('bp', 'printBookLayout.pastedownBack', null, 'pastedown')],
-  });
-
-  return rows;
+  return blocks;
 }
 
 export function getIllustrationUrl(item) {
@@ -124,47 +106,58 @@ export function getIllustrationUrl(item) {
   return `https://static.kidstory.cc/${c}`;
 }
 
-/** Story pages only — interior pages 4–31 */
-export function getStoryPageSlots(rows) {
+export function getStoryPageSlots(blocks) {
   const slots = [];
-  rows.forEach((row) => {
-    if (row.spreadIndex == null) return;
-    row.pages.forEach((p) => {
+  blocks.forEach((block) => {
+    if (block.spreadIndex == null) return;
+    block.pages.forEach((p) => {
       if (p.kind === 'story') slots.push(p);
     });
   });
   return slots;
 }
 
-export function assignIllustrationsInOrder(rows, illustrations) {
-  const slots = getStoryPageSlots(rows);
+export function assignIllustrationsInOrder(blocks, illustrations) {
+  const slots = getStoryPageSlots(blocks);
   const list = Array.isArray(illustrations) ? illustrations : [];
   slots.forEach((slot, idx) => {
     slot.illustration = list[idx] || null;
   });
-  return rows;
+  return blocks;
 }
 
-export function isRowEmpty(row) {
-  return row.pages.every((p) => !p.illustration);
+export function isBlockEmpty(block) {
+  return block.pages.every((p) => !p.illustration);
 }
 
-/** Remove trailing empty story spreads; optionally trim other empty deletable rows from end */
-export function trimEmptyStorySpreads(rows) {
-  const next = [...rows];
+export function trimEmptyStorySpreads(blocks) {
+  const next = [...blocks];
   for (let i = next.length - 1; i >= 0; i -= 1) {
-    const row = next[i];
-    if (row.spreadIndex == null) continue;
-    if (!isRowEmpty(row)) break;
+    const block = next[i];
+    if (block.spreadIndex == null) continue;
+    if (!isBlockEmpty(block)) break;
     next.splice(i, 1);
   }
   return next;
 }
 
-export function countFilledStoryPages(rows) {
-  return getStoryPageSlots(rows).filter((p) => p.illustration).length;
+export function countFilledStoryPages(blocks) {
+  return getStoryPageSlots(blocks).filter((p) => p.illustration).length;
 }
 
-export function cloneLayoutRows(rows) {
-  return JSON.parse(JSON.stringify(rows));
+export function migrateRowsToBlocks(rows) {
+  if (!Array.isArray(rows) || !rows.length) return null;
+  if (rows[0]?.type && !rows[0].pages?.length && rows[0].pages !== undefined) return null;
+  const flat = [];
+  rows.forEach((row) => {
+    flat.push({
+      id: row.id,
+      type: row.type === 'single' ? 'single' : 'spread',
+      deletable: row.deletable,
+      labelKey: row.labelKey,
+      spreadIndex: row.spreadIndex,
+      pages: row.pages || [],
+    });
+  });
+  return flat.length ? flat : null;
 }

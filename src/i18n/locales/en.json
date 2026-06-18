@@ -1210,6 +1210,10 @@
   },
   "printBookLayout": {
     "title": "Picture Book Print Layout",
+    "backStudio": "Back to Studio",
+    "overviewHint": "Click any block to edit; cover/pastedown uses single-page width, spreads use two pages",
+    "pageRatio": "Page ratio",
+    "backOverview": "Overview",
     "myIllustrations": "My Illustrations",
     "selectHint": "Select illustrations, click Generate Layout, or drag/click a page slot to assign",
     "selectedCount": "{count} selected",

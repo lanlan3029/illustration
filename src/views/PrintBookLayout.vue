@@ -1,185 +1,173 @@
 <template>
-  <div class="print-book-layout">
-    <!-- 左侧：我的插画 -->
-    <aside class="pbl-sidebar">
-      <div class="pbl-sidebar-head">
-        <h2>{{ $t('printBookLayout.myIllustrations') }}</h2>
-        <p class="pbl-hint">{{ $t('printBookLayout.selectHint') }}</p>
+  <div class="pbl-page">
+    <!-- 顶栏 -->
+    <header class="pbl-header">
+      <div class="pbl-header-left">
+        <router-link :to="{ name: 'compose-illustration' }" class="pbl-back">← {{ $t('printBookLayout.backStudio') }}</router-link>
+        <h1>{{ $t('printBookLayout.title') }}</h1>
+        <span class="pbl-stat">{{ $t('printBookLayout.pageStat', { filled: filledStoryCount, total: 28 }) }}</span>
       </div>
-
-      <div v-if="selectedIlls.length" class="pbl-selected">
-        <div class="pbl-selected-head">
-          <span>{{ $t('printBookLayout.selectedCount', { count: selectedIlls.length }) }}</span>
-          <el-button link type="danger" size="small" @click="clearSelected">
-            {{ $t('printBookLayout.clear') }}
-          </el-button>
+      <div class="pbl-header-actions">
+        <div class="pbl-ratio">
+          <span>{{ $t('printBookLayout.pageRatio') }}</span>
+          <el-radio-group v-model="pageRatio" size="small" @change="saveSession">
+            <el-radio-button label="1:1">1:1</el-radio-button>
+            <el-radio-button label="3:4">3:4</el-radio-button>
+          </el-radio-group>
         </div>
-        <div class="pbl-selected-strip">
-          <div
-            v-for="(item, idx) in selectedIlls"
-            :key="item._id"
-            class="pbl-selected-thumb"
-            draggable="true"
-            @dragstart="onDragStartIll($event, item)"
-            @dragend="onDragEndIll"
-          >
-            <img :src="illUrl(item)" :alt="item.title || ''" />
-            <span class="pbl-order">{{ idx + 1 }}</span>
-            <button type="button" class="pbl-remove" @click.stop="toggleIll(item)">×</button>
-          </div>
-        </div>
+        <el-button @click="pickerOpen = !pickerOpen" :type="pickerOpen ? 'primary' : 'default'">
+          {{ $t('printBookLayout.myIllustrations') }}
+        </el-button>
+        <el-button type="primary" :disabled="!selectedIlls.length" @click="generateLayout">
+          {{ $t('printBookLayout.generateLayout') }}
+        </el-button>
+        <el-button @click="trimEmptySpreads">{{ $t('printBookLayout.trimEmpty') }}</el-button>
+        <el-button v-if="viewMode === 'edit'" @click="viewMode = 'overview'">
+          {{ $t('printBookLayout.backOverview') }}
+        </el-button>
+        <el-button :disabled="!hasAnyImage" @click="exportPdf">{{ $t('printBookLayout.exportPdf') }}</el-button>
       </div>
+    </header>
 
-      <div
-        class="pbl-ill-grid"
-        v-infinite-scroll="loadMoreIlls"
-        :infinite-scroll-disabled="!hasMoreIlls || loadingIll"
-        :infinite-scroll-distance="120"
-      >
-        <button
-          v-for="item in illList"
-          :key="item._id"
-          type="button"
-          class="pbl-ill-item"
-          :class="{ 'is-selected': isIllSelected(item) }"
-          @click="toggleIll(item)"
-        >
-          <img :src="illUrl(item)" :alt="item.title || ''" />
-          <span v-if="isIllSelected(item)" class="pbl-check">✓</span>
-        </button>
-        <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
-        <p v-else-if="!illList.length" class="pbl-empty">{{ $t('printBookLayout.noIllustrations') }}</p>
-      </div>
-    </aside>
-
-    <!-- 右侧：排版视图 -->
-    <main class="pbl-main">
-      <div class="pbl-toolbar">
-        <div class="pbl-toolbar-left">
-          <h1>{{ $t('printBookLayout.title') }}</h1>
-          <span class="pbl-stat">
-            {{ $t('printBookLayout.pageStat', { filled: filledStoryCount, total: 28 }) }}
-          </span>
-        </div>
-        <div class="pbl-toolbar-actions">
-          <el-button
-            type="primary"
-            :disabled="!selectedIlls.length"
-            @click="generateLayout"
-          >
-            {{ $t('printBookLayout.generateLayout') }}
-          </el-button>
-          <el-button @click="trimEmptySpreads">
-            {{ $t('printBookLayout.trimEmpty') }}
-          </el-button>
-          <el-button @click="openSpreadPreview(0)">
-            {{ $t('printBookLayout.spreadPreview') }}
-          </el-button>
-          <el-button :disabled="!hasAnyImage" @click="exportPdf">
-            {{ $t('printBookLayout.exportPdf') }}
-          </el-button>
-        </div>
-      </div>
-
-      <div ref="layoutGridRef" class="pbl-grid">
-        <div
-          v-for="row in layoutRows"
-          :key="row.id"
-          class="pbl-row"
-          :class="[`pbl-row--${row.type}`, { 'pbl-row--empty': isRowEmpty(row) }]"
-        >
-          <div class="pbl-row-label">
-            <span>{{ rowLabel(row) }}</span>
-            <button
-              v-if="row.deletable"
-              type="button"
-              class="pbl-row-delete"
-              :title="$t('printBookLayout.deleteSpread')"
-              @click="deleteRow(row.id)"
-            >
-              {{ $t('printBookLayout.deleteSpread') }}
-            </button>
-          </div>
-
-          <div class="pbl-spread" :class="{ 'pbl-spread--single': row.type === 'single' }">
+    <div class="pbl-body">
+      <!-- 主区域 -->
+      <main class="pbl-stage" :class="{ 'pbl-stage--edit': viewMode === 'edit' }">
+        <!-- 整体预览：5 列网格 -->
+        <div v-if="viewMode === 'overview'" class="pbl-overview">
+          <p class="pbl-overview-hint">{{ $t('printBookLayout.overviewHint') }}</p>
+          <div class="pbl-matrix">
             <div
-              v-for="page in row.pages"
-              :key="page.id"
-              class="pbl-page"
-              :class="{ 'is-active': activePageId === page.id, 'has-image': !!page.illustration }"
-              @click="onPageClick(page)"
-              @dragover.prevent
-              @drop.prevent="onDropPage(page, $event)"
+              v-for="block in layoutBlocks"
+              :key="block.id"
+              class="pbl-cell"
+              :class="[
+                `pbl-cell--${block.type}`,
+                { 'pbl-cell--empty': isBlockEmpty(block), 'pbl-cell--active': editingBlockId === block.id },
+              ]"
+              @click="openEditBlock(block)"
             >
-              <span v-if="page.pageNum" class="pbl-page-num">{{ page.pageNum }}</span>
-              <span class="pbl-page-kind">{{ $t(page.labelKey) }}</span>
-
-              <img
-                v-if="page.illustration"
-                :src="illUrl(page.illustration)"
-                :alt="page.illustration.title || ''"
-                class="pbl-page-img"
-              />
-              <div v-else class="pbl-page-placeholder">
-                <span>{{ $t('printBookLayout.clickToAssign') }}</span>
+              <div class="pbl-cell-bar">
+                <span>{{ blockLabel(block) }}</span>
+                <button
+                  v-if="block.deletable"
+                  type="button"
+                  class="pbl-cell-del"
+                  @click.stop="deleteBlock(block.id)"
+                >×</button>
               </div>
 
-              <div v-if="page.illustration" class="pbl-page-actions" @click.stop>
-                <button type="button" @click="zoomPage(page)">{{ $t('printBookLayout.zoom') }}</button>
-                <button type="button" @click="clearPage(page)">{{ $t('printBookLayout.clearPage') }}</button>
+              <div class="pbl-cell-inner" :style="cellInnerStyle(block)">
+                <template v-if="block.type === 'single'">
+                  <div class="pbl-sheet pbl-sheet--single">
+                    <PageThumb :page="block.pages[0]" :ratio="pageRatio" :ill-url="illUrl" :empty-label="$t(block.pages[0].labelKey)" />
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="pbl-sheet pbl-sheet--spread">
+                    <PageThumb
+                      v-for="pg in block.pages"
+                      :key="pg.id"
+                      :page="pg"
+                      :ratio="pageRatio"
+                      :ill-url="illUrl"
+                      :empty-label="$t(pg.labelKey)"
+                      half
+                    />
+                  </div>
+                </template>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
 
-    <!-- 放大预览：单页 -->
-    <el-image-viewer
-      v-if="zoomVisible && zoomUrl"
-      :url-list="[zoomUrl]"
-      teleported
-      @close="zoomVisible = false"
-    />
-
-    <!-- 跨页预览 -->
-    <el-dialog
-      v-model="spreadPreviewVisible"
-      :title="$t('printBookLayout.spreadPreview')"
-      width="min(920px, 96vw)"
-      class="pbl-spread-dialog"
-      destroy-on-close
-    >
-      <div class="pbl-spread-nav">
-        <el-button :disabled="spreadPreviewIndex <= 0" @click="spreadPreviewIndex -= 1">‹</el-button>
-        <span>{{ spreadPreviewIndex + 1 }} / {{ layoutRows.length }}</span>
-        <el-button
-          :disabled="spreadPreviewIndex >= layoutRows.length - 1"
-          @click="spreadPreviewIndex += 1"
-        >›</el-button>
-      </div>
-      <div v-if="currentPreviewRow" class="pbl-spread-preview">
-        <div
-          v-for="page in currentPreviewRow.pages"
-          :key="page.id"
-          class="pbl-spread-preview-page"
-        >
-          <span v-if="page.pageNum" class="pbl-page-num">{{ page.pageNum }}</span>
-          <img
-            v-if="page.illustration"
-            :src="illUrl(page.illustration)"
-            :alt="page.illustration.title || ''"
-          />
-          <div v-else class="pbl-spread-preview-empty">
-            <span>{{ $t(page.labelKey) }}</span>
+        <!-- 单独编辑 -->
+        <div v-else-if="editingBlock" class="pbl-editor">
+          <div class="pbl-editor-head">
+            <h2>{{ blockLabel(editingBlock) }}</h2>
+            <button v-if="editingBlock.deletable" type="button" class="pbl-editor-del" @click="deleteBlock(editingBlock.id)">
+              {{ $t('printBookLayout.deleteSpread') }}
+            </button>
+          </div>
+          <div class="pbl-editor-canvas" :class="`pbl-editor-canvas--${editingBlock.type}`">
+            <div
+              v-for="pg in editingBlock.pages"
+              :key="pg.id"
+              class="pbl-editor-page"
+              :class="{ 'is-active': activePageId === pg.id, 'has-image': !!pg.illustration }"
+              :style="editorPageStyle"
+              @click="onPageClick(pg)"
+              @dragover.prevent
+              @drop.prevent="onDropPage(pg, $event)"
+            >
+              <span v-if="pg.pageNum" class="pbl-pg-num">{{ pg.pageNum }}</span>
+              <span class="pbl-pg-kind">{{ $t(pg.labelKey) }}</span>
+              <img v-if="pg.illustration" :src="illUrl(pg.illustration)" alt="" class="pbl-pg-img" />
+              <div v-else class="pbl-pg-empty">{{ $t('printBookLayout.clickToAssign') }}</div>
+              <div v-if="pg.illustration" class="pbl-pg-actions" @click.stop>
+                <button type="button" @click="zoomPage(pg)">{{ $t('printBookLayout.zoom') }}</button>
+                <button type="button" @click="clearPage(pg)">{{ $t('printBookLayout.clearPage') }}</button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </el-dialog>
+      </main>
+
+      <!-- 插画选择抽屉 -->
+      <aside v-show="pickerOpen" class="pbl-picker">
+        <div class="pbl-picker-head">
+          <h3>{{ $t('printBookLayout.myIllustrations') }}</h3>
+          <button type="button" class="pbl-picker-close" @click="pickerOpen = false">×</button>
+        </div>
+        <p class="pbl-picker-hint">{{ $t('printBookLayout.selectHint') }}</p>
+
+        <div v-if="selectedIlls.length" class="pbl-picker-selected">
+          <div class="pbl-picker-selected-head">
+            <span>{{ $t('printBookLayout.selectedCount', { count: selectedIlls.length }) }}</span>
+            <el-button link type="danger" size="small" @click="clearSelected">{{ $t('printBookLayout.clear') }}</el-button>
+          </div>
+          <div class="pbl-picker-strip">
+            <div
+              v-for="(item, idx) in selectedIlls"
+              :key="item._id"
+              class="pbl-picker-thumb"
+              draggable="true"
+              @dragstart="onDragStartIll($event, item)"
+              @dragend="onDragEndIll"
+            >
+              <img :src="illUrl(item)" alt="" />
+              <span class="pbl-order">{{ idx + 1 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="pbl-picker-grid"
+          v-infinite-scroll="loadMoreIlls"
+          :infinite-scroll-disabled="!hasMoreIlls || loadingIll"
+          :infinite-scroll-distance="120"
+        >
+          <button
+            v-for="item in illList"
+            :key="item._id"
+            type="button"
+            class="pbl-ill-btn"
+            :class="{ 'is-selected': isIllSelected(item) }"
+            @click="toggleIll(item)"
+          >
+            <img :src="illUrl(item)" alt="" />
+            <span v-if="isIllSelected(item)" class="pbl-check">✓</span>
+          </button>
+          <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
+        </div>
+      </aside>
+    </div>
+
+    <el-image-viewer v-if="zoomVisible && zoomUrl" :url-list="[zoomUrl]" teleported @close="zoomVisible = false" />
   </div>
 </template>
 
 <script>
+import { defineComponent, h } from 'vue';
 import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus';
 import html2canvas from 'html2canvas';
 import JsPDF from 'jspdf';
@@ -189,40 +177,82 @@ import {
   assignIllustrationsInOrder,
   trimEmptyStorySpreads,
   countFilledStoryPages,
-  isRowEmpty,
+  isBlockEmpty,
+  migrateRowsToBlocks,
 } from '@/data/pictureBookPrintLayout';
 
-const STORAGE_KEY = 'print_book_layout_v1';
+const STORAGE_KEY = 'print_book_layout_v2';
+
+const PageThumb = defineComponent({
+  name: 'PageThumb',
+  props: {
+    page: { type: Object, required: true },
+    ratio: { type: String, default: '3:4' },
+    illUrl: { type: Function, required: true },
+    half: { type: Boolean, default: false },
+    emptyLabel: { type: String, default: '' },
+  },
+  setup(props) {
+    return () => {
+      const [w, h] = props.ratio.split(':').map(Number);
+      const aspect = `${w} / ${h}`;
+      const pg = props.page;
+      const children = [];
+      if (pg.pageNum) {
+        children.push(h('span', { class: 'pbl-thumb-num' }, String(pg.pageNum)));
+      }
+      if (pg.illustration) {
+        children.push(h('img', { class: 'pbl-thumb-img', src: props.illUrl(pg.illustration), alt: '' }));
+      } else {
+        children.push(h('span', { class: 'pbl-thumb-label' }, props.emptyLabel || ''));
+      }
+      return h(
+        'div',
+        {
+          class: ['pbl-thumb', props.half && 'pbl-thumb--half'],
+          style: { aspectRatio: aspect },
+        },
+        children
+      );
+    };
+  },
+});
 
 export default {
   name: 'PrintBookLayout',
-  components: { ElImageViewer },
+  components: { ElImageViewer, PageThumb },
   data() {
     return {
+      layoutBlocks: createDefaultPrintLayout(),
+      pageRatio: '3:4',
+      viewMode: 'overview',
+      editingBlockId: null,
+      activePageId: null,
+      pickerOpen: false,
       illList: [],
       illPage: 1,
       hasMoreIlls: true,
       loadingIll: false,
       selectedIlls: [],
-      layoutRows: createDefaultPrintLayout(),
-      activePageId: null,
       dragIll: null,
       zoomVisible: false,
       zoomUrl: '',
-      spreadPreviewVisible: false,
-      spreadPreviewIndex: 0,
       exporting: false,
     };
   },
   computed: {
     filledStoryCount() {
-      return countFilledStoryPages(this.layoutRows);
+      return countFilledStoryPages(this.layoutBlocks);
     },
     hasAnyImage() {
-      return this.layoutRows.some((row) => row.pages.some((p) => p.illustration));
+      return this.layoutBlocks.some((b) => b.pages.some((p) => p.illustration));
     },
-    currentPreviewRow() {
-      return this.layoutRows[this.spreadPreviewIndex] || null;
+    editingBlock() {
+      return this.layoutBlocks.find((b) => b.id === this.editingBlockId) || null;
+    },
+    editorPageStyle() {
+      const [w, h] = this.pageRatio.split(':').map(Number);
+      return { aspectRatio: `${w} / ${h}` };
     },
   },
   mounted() {
@@ -233,16 +263,31 @@ export default {
     illUrl(item) {
       return getIllustrationUrl(item);
     },
+    cellInnerStyle(block) {
+      return {};
+    },
+    blockLabel(block) {
+      if (block.spreadIndex != null) {
+        return this.$t('printBookLayout.storySpreadNum', { num: block.spreadIndex });
+      }
+      return block.labelKey ? this.$t(block.labelKey) : '';
+    },
+    isBlockEmpty(block) {
+      return isBlockEmpty(block);
+    },
+    openEditBlock(block) {
+      this.editingBlockId = block.id;
+      this.viewMode = 'edit';
+      this.pickerOpen = true;
+      this.activePageId = block.pages[0]?.id || null;
+    },
     isIllSelected(item) {
       return this.selectedIlls.some((x) => x._id === item._id);
     },
     toggleIll(item) {
       const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
-      if (idx >= 0) {
-        this.selectedIlls.splice(idx, 1);
-      } else {
-        this.selectedIlls.push(item);
-      }
+      if (idx >= 0) this.selectedIlls.splice(idx, 1);
+      else this.selectedIlls.push(item);
       this.saveSession();
     },
     clearSelected() {
@@ -291,30 +336,20 @@ export default {
       this.zoomUrl = this.illUrl(page.illustration);
       this.zoomVisible = true;
     },
-    rowLabel(row) {
-      if (row.spreadIndex != null) {
-        return this.$t('printBookLayout.storySpreadNum', { num: row.spreadIndex });
-      }
-      if (row.labelKey) return this.$t(row.labelKey);
-      return '';
-    },
-    isRowEmpty(row) {
-      return isRowEmpty(row);
-    },
     generateLayout() {
       if (!this.selectedIlls.length) {
         ElMessage.warning(this.$t('printBookLayout.pleaseSelect'));
         return;
       }
-      assignIllustrationsInOrder(this.layoutRows, this.selectedIlls);
-      this.layoutRows = trimEmptyStorySpreads(this.layoutRows);
+      assignIllustrationsInOrder(this.layoutBlocks, this.selectedIlls);
+      this.layoutBlocks = trimEmptyStorySpreads(this.layoutBlocks);
       this.saveSession();
       ElMessage.success(this.$t('printBookLayout.layoutGenerated'));
     },
     trimEmptySpreads() {
-      const before = this.layoutRows.length;
-      this.layoutRows = trimEmptyStorySpreads(this.layoutRows);
-      const removed = before - this.layoutRows.length;
+      const before = this.layoutBlocks.length;
+      this.layoutBlocks = trimEmptyStorySpreads(this.layoutBlocks);
+      const removed = before - this.layoutBlocks.length;
       this.saveSession();
       if (removed > 0) {
         ElMessage.success(this.$t('printBookLayout.trimmed', { count: removed }));
@@ -322,24 +357,24 @@ export default {
         ElMessage.info(this.$t('printBookLayout.nothingToTrim'));
       }
     },
-    async deleteRow(rowId) {
-      const row = this.layoutRows.find((r) => r.id === rowId);
-      if (!row?.deletable) return;
+    async deleteBlock(blockId) {
+      const block = this.layoutBlocks.find((b) => b.id === blockId);
+      if (!block?.deletable) return;
       try {
         await ElMessageBox.confirm(
           this.$t('printBookLayout.confirmDeleteSpread'),
           this.$t('printBookLayout.deleteSpread'),
           { type: 'warning', confirmButtonText: this.$t('common.confirm'), cancelButtonText: this.$t('common.cancel') }
         );
-        this.layoutRows = this.layoutRows.filter((r) => r.id !== rowId);
+        this.layoutBlocks = this.layoutBlocks.filter((b) => b.id !== blockId);
+        if (this.editingBlockId === blockId) {
+          this.editingBlockId = null;
+          this.viewMode = 'overview';
+        }
         this.saveSession();
       } catch {
         /* cancelled */
       }
-    },
-    openSpreadPreview(index) {
-      this.spreadPreviewIndex = Math.max(0, Math.min(index, this.layoutRows.length - 1));
-      this.spreadPreviewVisible = true;
     },
     async fetchIllustrations(reset = false) {
       if (this.loadingIll) return;
@@ -349,7 +384,6 @@ export default {
         this.illList = [];
       }
       if (!this.hasMoreIlls) return;
-
       this.loadingIll = true;
       try {
         const token = localStorage.getItem('token') || '';
@@ -367,8 +401,7 @@ export default {
         const existing = new Set(this.illList.map((i) => i._id));
         this.illList.push(...items.filter((i) => i._id && !existing.has(i._id)));
         this.illPage += 1;
-      } catch (e) {
-        console.warn('fetch illustrations failed', e);
+      } catch {
         ElMessage.error(this.$t('printBookLayout.loadIllFailed'));
       } finally {
         this.loadingIll = false;
@@ -382,12 +415,9 @@ export default {
         sessionStorage.setItem(
           STORAGE_KEY,
           JSON.stringify({
-            layoutRows: this.layoutRows,
-            selectedIlls: this.selectedIlls.map((i) => ({
-              _id: i._id,
-              content: i.content,
-              title: i.title,
-            })),
+            layoutBlocks: this.layoutBlocks,
+            pageRatio: this.pageRatio,
+            selectedIlls: this.selectedIlls.map((i) => ({ _id: i._id, content: i.content, title: i.title })),
           })
         );
       } catch {
@@ -397,67 +427,87 @@ export default {
     loadSession() {
       try {
         const raw = sessionStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const data = JSON.parse(raw);
-        if (Array.isArray(data.layoutRows) && data.layoutRows.length) {
-          this.layoutRows = data.layoutRows;
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (Array.isArray(data.layoutBlocks) && data.layoutBlocks.length) {
+            this.layoutBlocks = data.layoutBlocks;
+          }
+          if (data.pageRatio) this.pageRatio = data.pageRatio;
+          if (Array.isArray(data.selectedIlls)) this.selectedIlls = data.selectedIlls;
+          return;
         }
-        if (Array.isArray(data.selectedIlls) && data.selectedIlls.length) {
-          this.selectedIlls = data.selectedIlls;
+        const legacy = sessionStorage.getItem('print_book_layout_v1');
+        if (legacy) {
+          const data = JSON.parse(legacy);
+          const migrated = migrateRowsToBlocks(data.layoutRows);
+          if (migrated) this.layoutBlocks = migrated;
+          if (Array.isArray(data.selectedIlls)) this.selectedIlls = data.selectedIlls;
         }
       } catch {
         /* ignore */
       }
-    },
-    restoreSelectedFromList() {
-      if (!this.selectedIdsCache?.length) return;
-      this.selectedIlls = this.selectedIdsCache
-        .map((id) => this.illList.find((i) => i._id === id))
-        .filter(Boolean);
     },
     async exportPdf() {
       if (this.exporting || !this.hasAnyImage) return;
       this.exporting = true;
       ElMessage.info(this.$t('printBookLayout.exporting'));
 
+      const [rw, rh] = this.pageRatio.split(':').map(Number);
+      const singleW = 595;
+      const singleH = Math.round((singleW * rh) / rw);
+
       try {
-        const pdf = new JsPDF('l', 'pt', [984.3, 699]);
-        let first = true;
+        let pdf = null;
 
-        for (const row of this.layoutRows) {
-          const hasImage = row.pages.some((p) => p.illustration);
-          if (!hasImage) continue;
+        for (const block of this.layoutBlocks) {
+          if (!block.pages.some((p) => p.illustration)) continue;
 
-          const el = document.createElement('div');
-          el.style.cssText = 'position:fixed;left:-9999px;top:0;width:984px;height:699px;display:flex;background:#fff;';
-          row.pages.forEach((page) => {
-            const cell = document.createElement('div');
-            cell.style.cssText = 'flex:1;height:100%;display:flex;align-items:center;justify-content:center;border:1px solid #eee;box-sizing:border-box;overflow:hidden;';
-            if (page.illustration) {
-              const img = document.createElement('img');
-              img.src = this.illUrl(page.illustration);
-              img.crossOrigin = 'anonymous';
-              img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
-              cell.appendChild(img);
+          if (block.type === 'single') {
+            const pg = block.pages[0];
+            if (!pg?.illustration) continue;
+            if (!pdf) {
+              pdf = new JsPDF('p', 'pt', [singleW, singleH]);
+            } else {
+              pdf.addPage([singleW, singleH], 'p');
             }
-            el.appendChild(cell);
-          });
-          document.body.appendChild(el);
-
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise((r) => setTimeout(r, 300));
-          // eslint-disable-next-line no-await-in-loop
-          const canvas = await html2canvas(el, { useCORS: true, scale: 2, backgroundColor: '#ffffff' });
-          document.body.removeChild(el);
-
-          const imgData = canvas.toDataURL('image/jpeg', 0.92);
-          if (!first) pdf.addPage([984.3, 699], 'l');
-          first = false;
-          pdf.addImage(imgData, 'JPEG', 0, 0, 984.3, 699);
+            // eslint-disable-next-line no-await-in-loop
+            await this.renderPageImage(pdf, singleW, singleH, pg);
+          } else {
+            const spreadW = singleW * 2;
+            const spreadH = singleH;
+            if (!pdf) {
+              pdf = new JsPDF('l', 'pt', [spreadW, spreadH]);
+            } else {
+              pdf.addPage([spreadW, spreadH], 'l');
+            }
+            const el = document.createElement('div');
+            el.style.cssText = `position:fixed;left:-9999px;top:0;width:${spreadW}px;height:${spreadH}px;display:flex;background:#fff;`;
+            block.pages.forEach((page) => {
+              const cell = document.createElement('div');
+              cell.style.cssText = 'flex:1;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+              if (page.illustration) {
+                const img = document.createElement('img');
+                img.src = this.illUrl(page.illustration);
+                img.crossOrigin = 'anonymous';
+                img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+                cell.appendChild(img);
+              }
+              el.appendChild(cell);
+            });
+            document.body.appendChild(el);
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => setTimeout(r, 200));
+            // eslint-disable-next-line no-await-in-loop
+            const canvas = await html2canvas(el, { useCORS: true, scale: 2, backgroundColor: '#fff' });
+            document.body.removeChild(el);
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, spreadW, spreadH);
+          }
         }
 
-        pdf.save(`picture-book-layout-${Date.now()}.pdf`);
-        ElMessage.success(this.$t('printBookLayout.exportDone'));
+        if (pdf) {
+          pdf.save(`picture-book-layout-${Date.now()}.pdf`);
+          ElMessage.success(this.$t('printBookLayout.exportDone'));
+        }
       } catch (e) {
         console.error(e);
         ElMessage.error(this.$t('printBookLayout.exportFailed'));
@@ -465,81 +515,465 @@ export default {
         this.exporting = false;
       }
     },
+    async renderPageImage(pdf, pageW, pageH, pg) {
+      const el = document.createElement('div');
+      el.style.cssText = `position:fixed;left:-9999px;top:0;width:${pageW}px;height:${pageH}px;display:flex;align-items:center;justify-content:center;background:#fff;`;
+      if (pg?.illustration) {
+        const img = document.createElement('img');
+        img.src = this.illUrl(pg.illustration);
+        img.crossOrigin = 'anonymous';
+        img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+        el.appendChild(img);
+      }
+      document.body.appendChild(el);
+      await new Promise((r) => setTimeout(r, 200));
+      const canvas = await html2canvas(el, { useCORS: true, scale: 2, backgroundColor: '#fff' });
+      document.body.removeChild(el);
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, pageH);
+    },
   },
 };
 </script>
 
 <style scoped>
-.print-book-layout {
-  display: flex;
-  gap: 0;
-  min-height: calc(100vh - 50px);
-  background: #f5f3f8;
-}
-
-.pbl-sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  background: #fff;
-  border-right: 1px solid #ece6f2;
+.pbl-page {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 50px);
-}
-
-.pbl-sidebar-head {
-  padding: 20px 16px 12px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.pbl-sidebar-head h2 {
-  margin: 0 0 6px;
-  font-size: 16px;
-  font-weight: 700;
+  background: #eceae4;
   color: #1f1f1f;
 }
 
-.pbl-hint {
-  margin: 0;
-  font-size: 12px;
-  color: #909399;
-  line-height: 1.5;
+.pbl-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
-.pbl-selected {
-  padding: 12px 16px;
+.pbl-header-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.pbl-back {
+  font-size: 13px;
+  color: #8167a9;
+  text-decoration: none;
+}
+
+.pbl-back:hover {
+  text-decoration: underline;
+}
+
+.pbl-header-left h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pbl-stat {
+  font-size: 12px;
+  color: #909399;
+}
+
+.pbl-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pbl-ratio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #606266;
+  margin-right: 4px;
+}
+
+.pbl-header-actions :deep(.el-button--primary) {
+  --el-button-bg-color: #8167a9;
+  --el-button-border-color: #8167a9;
+}
+
+.pbl-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.pbl-stage {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 20px 24px 40px;
+}
+
+.pbl-overview-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #606266;
+  margin: 0 0 16px;
+}
+
+/* 5 列网格 — 参照模板图 */
+.pbl-matrix {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pbl-cell {
+  background: #fff;
+  border: 2px solid #1f1f1f;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  min-width: 0;
+}
+
+.pbl-cell:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.pbl-cell--active {
+  box-shadow: 0 0 0 3px #8167a9;
+}
+
+.pbl-cell--empty {
+  opacity: 0.85;
+}
+
+.pbl-cell-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: #d8d8d8;
+  border-bottom: 1px solid #1f1f1f;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  min-height: 22px;
+}
+
+.pbl-cell-bar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pbl-cell-del {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #f56c6c;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.pbl-cell-inner {
+  padding: 6px;
+  background: #fafafa;
+}
+
+.pbl-sheet--single {
+  display: flex;
+  justify-content: center;
+}
+
+.pbl-sheet--spread {
+  display: flex;
+  gap: 4px;
+}
+
+.pbl-sheet--spread .pbl-thumb {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 缩略页 */
+.pbl-thumb {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pbl-thumb--half {
+  width: auto;
+  flex: 1;
+}
+
+.pbl-thumb-num {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 2;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1f1f1f;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.pbl-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pbl-thumb-label {
+  font-size: 8px;
+  color: #909399;
+  text-align: center;
+  padding: 4px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* 单独编辑 */
+.pbl-editor {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pbl-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.pbl-editor-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.pbl-editor-del {
+  border: none;
+  background: #fef0f0;
+  color: #f56c6c;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pbl-editor-canvas {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px solid #e8e0f0;
+  min-height: 420px;
+}
+
+.pbl-editor-canvas--single .pbl-editor-page {
+  max-width: 480px;
+  width: 100%;
+}
+
+.pbl-editor-canvas--spread .pbl-editor-page {
+  flex: 1;
+  max-width: 420px;
+}
+
+.pbl-editor-page {
+  position: relative;
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #fafafa;
+  width: 100%;
+}
+
+.pbl-editor-page.has-image {
+  border-style: solid;
+  border-color: #8167a9;
+}
+
+.pbl-editor-page.is-active {
+  box-shadow: 0 0 0 3px rgba(129, 103, 169, 0.35);
+}
+
+.pbl-pg-num {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: rgba(31, 31, 31, 0.8);
+  color: #fff;
+  font-size: 13px;
+  line-height: 28px;
+  text-align: center;
+}
+
+.pbl-pg-kind {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
+}
+
+.pbl-pg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+  display: block;
+  min-height: 200px;
+}
+
+.pbl-pg-empty {
+  width: 100%;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c4cc;
+  font-size: 14px;
+}
+
+.pbl-pg-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pbl-editor-page:hover .pbl-pg-actions {
+  opacity: 1;
+}
+
+.pbl-pg-actions button {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* 插画抽屉 */
+.pbl-picker {
+  width: 300px;
+  flex-shrink: 0;
+  background: #fff;
+  border-left: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 57px);
+}
+
+.pbl-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+}
+
+.pbl-picker-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.pbl-picker-close {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #909399;
+}
+
+.pbl-picker-hint {
+  margin: 0;
+  padding: 0 16px 10px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.4;
+}
+
+.pbl-picker-selected {
+  padding: 0 16px 10px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.pbl-selected-head {
+.pbl-picker-selected-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #8167a9;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
-.pbl-selected-strip {
+.pbl-picker-strip {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding-bottom: 4px;
 }
 
-.pbl-selected-thumb {
+.pbl-picker-thumb {
   position: relative;
-  width: 64px;
-  height: 48px;
+  width: 56px;
+  height: 42px;
   flex-shrink: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   border: 2px solid #8167a9;
   cursor: grab;
 }
 
-.pbl-selected-thumb img {
+.pbl-picker-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -549,69 +983,45 @@ export default {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #8167a9;
   color: #fff;
-  font-size: 10px;
-  line-height: 18px;
+  font-size: 9px;
+  line-height: 16px;
   text-align: center;
 }
 
-.pbl-remove {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(245, 108, 108, 0.95);
-  color: #fff;
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-}
-
-.pbl-ill-grid {
+.pbl-picker-grid {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 8px;
   align-content: start;
 }
 
-.pbl-ill-item {
+.pbl-ill-btn {
   position: relative;
   aspect-ratio: 4 / 3;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   padding: 0;
   cursor: pointer;
   background: #fafafa;
-  transition: border-color 0.2s, transform 0.2s;
 }
 
-.pbl-ill-item:hover {
-  transform: translateY(-2px);
-  border-color: #c4b5dc;
-}
-
-.pbl-ill-item.is-selected {
+.pbl-ill-btn.is-selected {
   border-color: #8167a9;
-  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.25);
 }
 
-.pbl-ill-item img {
+.pbl-ill-btn img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .pbl-check {
@@ -620,284 +1030,44 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(129, 103, 169, 0.55);
+  background: rgba(129, 103, 169, 0.5);
   color: #fff;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
 }
 
-.pbl-load-tip,
-.pbl-empty {
+.pbl-load-tip {
   grid-column: 1 / -1;
   text-align: center;
   color: #909399;
-  font-size: 13px;
-  padding: 24px 0;
-}
-
-.pbl-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 50px);
-}
-
-.pbl-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 24px;
-  background: #fff;
-  border-bottom: 1px solid #ece6f2;
-}
-
-.pbl-toolbar-left h1 {
-  margin: 0 0 4px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #1f1f1f;
-}
-
-.pbl-stat {
-  font-size: 12px;
-  color: #909399;
-}
-
-.pbl-toolbar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.pbl-toolbar-actions :deep(.el-button--primary) {
-  --el-button-bg-color: #8167a9;
-  --el-button-border-color: #8167a9;
-}
-
-.pbl-grid {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px 32px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-content: start;
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.pbl-row {
-  background: #fff;
-  border-radius: 12px;
-  border: 2px solid #e8e0f0;
-  padding: 12px 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  width: 100%;
-}
-
-.pbl-row--empty {
-  opacity: 0.72;
-}
-
-.pbl-row-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #606266;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.pbl-row-delete {
-  border: none;
-  background: transparent;
-  color: #f56c6c;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.pbl-row-delete:hover {
-  background: #fef0f0;
-}
-
-.pbl-spread {
-  display: flex;
-  gap: 8px;
-}
-
-.pbl-spread--single .pbl-page {
-  flex: 1;
-}
-
-.pbl-page {
-  position: relative;
-  flex: 1;
-  aspect-ratio: 4 / 3;
-  border: 2px dashed #dcdfe6;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  background: #fafafa;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.pbl-page:hover,
-.pbl-page.is-active {
-  border-color: #8167a9;
-  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.15);
-}
-
-.pbl-page.has-image {
-  border-style: solid;
-  border-color: #8167a9;
-}
-
-.pbl-page-num {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  z-index: 2;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 11px;
-  background: rgba(31, 31, 31, 0.75);
-  color: #fff;
-  font-size: 11px;
-  line-height: 22px;
-  text-align: center;
-}
-
-.pbl-page-kind {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 2;
-  max-width: 55%;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #606266;
-  font-size: 10px;
-  font-weight: 600;
-  text-align: right;
-  line-height: 1.3;
-}
-
-.pbl-page-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #fff;
-  display: block;
-}
-
-.pbl-page-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  text-align: center;
-  color: #c0c4cc;
   font-size: 12px;
 }
 
-.pbl-page-actions {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: 4px;
-  padding: 6px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
-  opacity: 0;
-  transition: opacity 0.2s;
+@media (max-width: 1100px) {
+  .pbl-matrix {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
-.pbl-page:hover .pbl-page-actions {
-  opacity: 1;
-}
+@media (max-width: 720px) {
+  .pbl-matrix {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-.pbl-page-actions button {
-  flex: 1;
-  border: none;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #303133;
-  font-size: 11px;
-  padding: 4px 0;
-  cursor: pointer;
-}
-
-.pbl-spread-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  font-weight: 600;
-}
-
-.pbl-spread-preview {
-  display: flex;
-  gap: 12px;
-  min-height: 320px;
-}
-
-.pbl-spread-preview-page {
-  flex: 1;
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fafafa;
-}
-
-.pbl-spread-preview-page img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #fff;
-}
-
-.pbl-spread-preview-empty {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #909399;
-  font-size: 14px;
-}
-
-@media (max-width: 960px) {
-  .print-book-layout {
+  .pbl-body {
     flex-direction: column;
   }
 
-  .pbl-sidebar {
+  .pbl-picker {
     width: 100%;
-    max-height: 40vh;
-    border-right: none;
-    border-bottom: 1px solid #ece6f2;
+    max-height: 45vh;
+    border-left: none;
+    border-top: 1px solid #ddd;
   }
 
-  .pbl-main {
-    max-height: none;
+  .pbl-editor-canvas {
+    flex-direction: column;
+    align-items: center;
   }
 }
 </style>

@@ -82,6 +82,8 @@ export const CREATION_SUB_NAV = {
     {
       routeName: 'print-book-layout',
       labelKey: 'nav.printBookLayout',
+      external: true,
+      externalPath: '/print-book-layout',
     },
   ],
 };
