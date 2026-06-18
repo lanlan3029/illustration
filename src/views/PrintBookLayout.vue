@@ -28,15 +28,13 @@
     </header>
 
     <div class="pbl-body">
-      <!-- 左侧：已选插画（画笔 / 批量） -->
+      <!-- 左侧：全部插画（画笔 / 批量） -->
       <aside class="pbl-picker">
         <div class="pbl-picker-head">
-          <h3>{{ $t('layoutExport.selectedIlls') }}</h3>
-          <router-link :to="{ name: 'compose-illustration' }" class="pbl-reselect">
-            {{ $t('layoutExport.changeSelection') }}
-          </router-link>
+          <h3>{{ $t('printBookLayout.myIllustrations') }}</h3>
         </div>
-        <p class="pbl-picker-hint">{{ $t('layoutExport.brushFromSelected') }}</p>
+        <p class="pbl-picker-hint">{{ $t('printBookLayout.selectHint') }}</p>
+        <p class="pbl-picker-hint pbl-picker-hint--sub">{{ $t('printBookLayout.batchSelectHint') }}</p>
 
         <div v-if="activeIll" class="pbl-picker-brush">
           <img :src="illUrl(activeIll)" alt="" class="pbl-picker-brush-img" />
@@ -47,25 +45,45 @@
           <button type="button" class="pbl-picker-brush-clear" @click="clearBrush">×</button>
         </div>
 
-        <div v-if="!selectedIlls.length" class="pbl-picker-empty">
-          <router-link :to="{ name: 'compose-illustration' }">{{ $t('layoutExport.goSelect') }}</router-link>
+        <div v-if="selectedIlls.length" class="pbl-picker-selected">
+          <div class="pbl-picker-selected-head">
+            <span>{{ $t('printBookLayout.selectedCount', { count: selectedIlls.length }) }}</span>
+            <el-button link type="danger" size="small" @click="clearSelected">{{ $t('printBookLayout.clear') }}</el-button>
+          </div>
+          <div class="pbl-picker-strip">
+            <div
+              v-for="(item, idx) in selectedIlls"
+              :key="item._id"
+              class="pbl-picker-thumb"
+              draggable="true"
+              @dragstart="onDragStartIll($event, item)"
+              @dragend="onDragEndIll"
+            >
+              <img :src="illUrl(item)" alt="" />
+              <span class="pbl-order">{{ idx + 1 }}</span>
+            </div>
+          </div>
         </div>
 
-        <div v-else class="pbl-picker-list">
+        <div
+          class="pbl-picker-grid"
+          v-infinite-scroll="loadMoreIlls"
+          :infinite-scroll-disabled="!hasMoreIlls || loadingIll"
+          :infinite-scroll-distance="120"
+        >
           <button
-            v-for="(item, idx) in selectedIlls"
+            v-for="item in illList"
             :key="item._id"
             type="button"
             class="pbl-ill-btn"
-            :class="{ 'is-active-pick': activeIllId === item._id }"
-            draggable="true"
-            @click="pickIll(item)"
-            @dragstart="onDragStartIll($event, item)"
-            @dragend="onDragEndIll"
+            :class="{ 'is-selected': isIllSelected(item), 'is-active-pick': activeIllId === item._id }"
+            @click="pickIll(item, $event)"
           >
             <img :src="illUrl(item)" alt="" />
-            <span class="pbl-order-badge">{{ idx + 1 }}</span>
+            <span v-if="isIllSelected(item)" class="pbl-batch-mark">{{ $t('printBookLayout.batchMark') }}</span>
           </button>
+          <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
+          <p v-else-if="!illList.length" class="pbl-load-tip">{{ $t('printBookLayout.noIllustrations') }}</p>
         </div>
       </aside>
 
@@ -196,6 +214,7 @@ import {
   countFilledStoryPages,
   isBlockEmpty,
   migrateRowsToBlocks,
+  shiftStoryIllustrationForward,
 } from '@/data/pictureBookPrintLayout';
 
 const STORAGE_KEY = 'print_book_layout_v2';
@@ -212,6 +231,10 @@ export default {
       editingBlockId: null,
       activePageId: null,
       activeIllId: null,
+      illList: [],
+      illPage: 1,
+      hasMoreIlls: true,
+      loadingIll: false,
       selectedIlls: [],
       dragIll: null,
       zoomVisible: false,
@@ -239,7 +262,9 @@ export default {
     },
     activeIll() {
       if (!this.activeIllId) return null;
-      return this.selectedIlls.find((i) => i._id === this.activeIllId) || null;
+      return this.illList.find((i) => i._id === this.activeIllId)
+        || this.selectedIlls.find((i) => i._id === this.activeIllId)
+        || null;
     },
     editorCanvasClass() {
       if (!this.editingBlock) return '';
@@ -257,6 +282,7 @@ export default {
   mounted() {
     this.loadSession();
     this.syncFromStore();
+    this.fetchIllustrations(true);
     this.maybeAutoLayout();
   },
   methods: {
@@ -296,6 +322,16 @@ export default {
       this.viewMode = 'edit';
       this.activePageId = block.pages[0]?.id || null;
     },
+    mergeIllsIntoList(items) {
+      if (!Array.isArray(items) || !items.length) return;
+      const existing = new Set(this.illList.map((i) => i._id));
+      items.forEach((item) => {
+        if (item?._id && !existing.has(item._id)) {
+          this.illList.unshift(item);
+          existing.add(item._id);
+        }
+      });
+    },
     syncFromStore() {
       const fromStore = this.$store.state.imgToPDF || [];
       const fromPick = sessionStorage.getItem(LAYOUT_FROM_PICK_KEY);
@@ -308,6 +344,7 @@ export default {
         }));
         this.saveSession();
       }
+      this.mergeIllsIntoList(fromStore);
     },
     maybeAutoLayout() {
       if (!sessionStorage.getItem(LAYOUT_FROM_PICK_KEY)) return;
@@ -316,8 +353,19 @@ export default {
         this.generateLayout();
       }
     },
-    pickIll(item) {
+    pickIll(item, event) {
+      const batchToggle = event?.shiftKey || event?.metaKey || event?.ctrlKey;
+      if (batchToggle) {
+        const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
+        if (idx >= 0) this.selectedIlls.splice(idx, 1);
+        else this.selectedIlls.push(item);
+        this.saveSession();
+        return;
+      }
       this.activeIllId = item._id;
+    },
+    isIllSelected(item) {
+      return this.selectedIlls.some((x) => x._id === item._id);
     },
     clearBrush() {
       this.activeIllId = null;
@@ -362,7 +410,11 @@ export default {
       }
     },
     clearPage(page) {
-      page.illustration = null;
+      if (page.kind === 'story') {
+        shiftStoryIllustrationForward(this.layoutBlocks, page.id);
+      } else {
+        page.illustration = null;
+      }
       this.syncBlocks();
     },
     zoomPage(page) {
@@ -417,6 +469,42 @@ export default {
       } catch {
         /* cancelled */
       }
+    },
+    async fetchIllustrations(reset = false) {
+      if (this.loadingIll) return;
+      if (reset) {
+        this.illPage = 1;
+        this.hasMoreIlls = true;
+        this.illList = [];
+      }
+      if (!this.hasMoreIlls) return;
+      this.loadingIll = true;
+      try {
+        const token = localStorage.getItem('token') || '';
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await this.$http.get(
+          `/ill/?page=${this.illPage}&sort_param=createdAt&sort_num=desc`,
+          { headers }
+        );
+        const list = res.data?.message || res.data?.data || [];
+        const items = Array.isArray(list) ? list : [];
+        if (!items.length) {
+          this.hasMoreIlls = false;
+          return;
+        }
+        const existing = new Set(this.illList.map((i) => i._id));
+        this.illList.push(...items.filter((i) => i._id && !existing.has(i._id)));
+        this.illPage += 1;
+        this.mergeIllsIntoList(this.selectedIlls);
+        this.mergeIllsIntoList(this.$store.state.imgToPDF || []);
+      } catch {
+        ElMessage.error(this.$t('printBookLayout.loadIllFailed'));
+      } finally {
+        this.loadingIll = false;
+      }
+    },
+    loadMoreIlls() {
+      this.fetchIllustrations(false);
     },
     saveSession() {
       try {

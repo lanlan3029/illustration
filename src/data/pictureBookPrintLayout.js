@@ -121,8 +121,26 @@ export function assignIllustrationsInOrder(blocks, illustrations) {
   const slots = getStoryPageSlots(blocks);
   const list = Array.isArray(illustrations) ? illustrations : [];
   slots.forEach((slot, idx) => {
-    slot.illustration = list[idx] || null;
+    const src = list[idx];
+    slot.illustration = src
+      ? { _id: src._id, content: src.content, title: src.title }
+      : null;
   });
+  return blocks;
+}
+
+/** 删除正文页插画后，后续插画依次前移填补空位 */
+export function shiftStoryIllustrationForward(blocks, pageId) {
+  const slots = getStoryPageSlots(blocks);
+  const idx = slots.findIndex((s) => s.id === pageId);
+  if (idx < 0) return blocks;
+  for (let i = idx; i < slots.length - 1; i += 1) {
+    const next = slots[i + 1].illustration;
+    slots[i].illustration = next
+      ? { _id: next._id, content: next.content, title: next.title }
+      : null;
+  }
+  slots[slots.length - 1].illustration = null;
   return blocks;
 }
 
