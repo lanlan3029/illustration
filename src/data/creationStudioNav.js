@@ -100,6 +100,7 @@ export const ROUTE_DOMAIN_MAP = {
   AIbooks: 'book',
   'my-books': 'book',
   'compose-illustration': 'book',
+  topdf: 'book',
   'print-book-layout': 'book',
 };
 
@@ -119,5 +120,8 @@ export function resolveCreationDomain(route) {
 }
 
 export function isSubNavActive(route, item) {
+  if (route.name === 'topdf' && item.routeName === 'compose-illustration') {
+    return true;
+  }
   return route.name === item.routeName;
 }

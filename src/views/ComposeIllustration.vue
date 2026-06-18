@@ -171,12 +171,12 @@ export default {
       this.dragIndex = null;
       this.dragOverIndex = null;
     },
-    toPDF(){
-      this.checkedImage.push()
-      this.$store.commit("removeImages")
-      this.$router.push('/user/upload/compose-illustration/topdf');
-       this.$store.commit("addImages",this.checkedImage)
-       
+    toPDF() {
+      if (!this.checkedImage.length) return;
+      const images = [...this.checkedImage];
+      this.$store.commit('removeImages');
+      this.$store.commit('addImages', images);
+      this.$router.push({ name: 'topdf' });
     },
     async getMore(){
       this.num++
@@ -378,13 +378,25 @@ export default {
     color: #606266;
 }
 
-.compose-btn{
+.compose-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 12px 32px;
     font-size: 16px;
+    line-height: 1;
+    vertical-align: middle;
 }
 
-.compose-btn i{
+.compose-btn :deep(.el-icon) {
     margin-right: 8px;
+    vertical-align: middle;
+}
+
+.compose-btn i {
+    margin-right: 8px;
+    line-height: 1;
+    vertical-align: middle;
 }
 
 /* 插画缩略图：填满 4:3 容器 */

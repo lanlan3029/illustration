@@ -172,12 +172,7 @@ const routes = [{
     },
     {
         path: '/user/upload/compose-illustration/topdf',
-        name: 'topdf',
-        component: () =>
-            import ( /* webpackChunkName: "topdf" */ '../views/ToPdf.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/book/topdf',
     },
     {
         path: '/user/upload/compose-illustration',
@@ -268,6 +263,13 @@ const routes = [{
                 name: 'compose-illustration',
                 component: () =>
                     import(/* webpackChunkName: "compose-illustration" */ '../views/ComposeIllustration.vue'),
+                meta: { creationDomain: 'book', requiresAuth: true },
+            },
+            {
+                path: 'book/topdf',
+                name: 'topdf',
+                component: () =>
+                    import(/* webpackChunkName: "topdf" */ '../views/ToPdf.vue'),
                 meta: { creationDomain: 'book', requiresAuth: true },
             },
             {
