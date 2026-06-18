@@ -271,6 +271,13 @@ const routes = [{
                 meta: { creationDomain: 'book', requiresAuth: true },
             },
             {
+                path: 'book/print-layout',
+                name: 'print-book-layout',
+                component: () =>
+                    import(/* webpackChunkName: "print-book-layout" */ '../views/PrintBookLayout.vue'),
+                meta: { creationDomain: 'book', requiresAuth: true },
+            },
+            {
                 path: 'book/mine',
                 name: 'my-books',
                 component: () =>

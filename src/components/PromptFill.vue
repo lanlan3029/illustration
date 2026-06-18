@@ -237,6 +237,7 @@ const STYLE_NAME_TO_KEY = {
   '油画风格': 'oilPainting',
   '欧洲漫画风格': 'europeanComic',
   '水粉童书绘本': 'gouacheChildrenBook',
+  '北欧奇趣风格': 'nordicWhimsical',
   '黑白涂鸦风': 'blackWhiteDoodle',
   '质朴手绘风格': 'rusticHandDrawn',
   '极繁铜版印刷': 'maximalistCopperplate',
@@ -265,7 +266,8 @@ const STYLE_KEY_TO_NUM = {
   feltCollage: 18,
   oilPainting: 19,
   europeanComic: 20,
-  gouacheChildrenBook: 21
+  gouacheChildrenBook: 21,
+  nordicWhimsical: 22
 };
 
 export default {
@@ -812,6 +814,7 @@ export default {
         'oilPainting': '油画风格',
         'europeanComic': '欧洲漫画风格',
         'gouacheChildrenBook': '水粉童书绘本',
+        'nordicWhimsical': '北欧奇趣风格',
         'blackWhiteDoodle': '黑白涂鸦风',
         'rusticHandDrawn': '质朴手绘风格',
         'maximalistCopperplate': '极繁铜版印刷',

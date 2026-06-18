@@ -79,6 +79,10 @@ export const CREATION_SUB_NAV = {
       routeName: 'compose-illustration',
       labelKey: 'nav.composeBook',
     },
+    {
+      routeName: 'print-book-layout',
+      labelKey: 'nav.printBookLayout',
+    },
   ],
 };
 
@@ -94,6 +98,7 @@ export const ROUTE_DOMAIN_MAP = {
   AIbooks: 'book',
   'my-books': 'book',
   'compose-illustration': 'book',
+  'print-book-layout': 'book',
 };
 
 export function resolveCreationDomain(route) {

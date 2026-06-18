@@ -179,7 +179,8 @@ export default {
                 { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp') },
                 { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') },
                 { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp') },
-                { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp') }
+                { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp') },
+                { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp') }
             ]
         };
     },
