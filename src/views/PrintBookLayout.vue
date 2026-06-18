@@ -15,13 +15,11 @@
             <el-radio-button label="3:4">3:4</el-radio-button>
           </el-radio-group>
         </div>
-        <el-button @click="pickerOpen = !pickerOpen" :type="pickerOpen ? 'primary' : 'default'">
-          {{ $t('printBookLayout.myIllustrations') }}
-        </el-button>
         <el-button type="primary" :disabled="!selectedIlls.length" @click="generateLayout">
           {{ $t('printBookLayout.generateLayout') }}
         </el-button>
         <el-button @click="trimEmptySpreads">{{ $t('printBookLayout.trimEmpty') }}</el-button>
+        <el-button @click="resetLayout">{{ $t('printBookLayout.resetLayout') }}</el-button>
         <el-button v-if="viewMode === 'edit'" @click="viewMode = 'overview'">
           {{ $t('printBookLayout.backOverview') }}
         </el-button>
@@ -30,93 +28,10 @@
     </header>
 
     <div class="pbl-body">
-      <!-- 主区域 -->
-      <main class="pbl-stage" :class="{ 'pbl-stage--edit': viewMode === 'edit' }">
-        <!-- 整体预览：5 列网格 -->
-        <div v-if="viewMode === 'overview'" class="pbl-overview">
-          <p class="pbl-overview-hint">{{ $t('printBookLayout.overviewHint') }}</p>
-          <div class="pbl-matrix">
-            <div
-              v-for="block in layoutBlocks"
-              :key="block.id"
-              class="pbl-cell"
-              :class="[
-                `pbl-cell--${block.type}`,
-                { 'pbl-cell--empty': isBlockEmpty(block), 'pbl-cell--active': editingBlockId === block.id },
-              ]"
-              @click="openEditBlock(block)"
-            >
-              <div class="pbl-cell-bar">
-                <span>{{ blockLabel(block) }}</span>
-                <button
-                  v-if="block.deletable"
-                  type="button"
-                  class="pbl-cell-del"
-                  @click.stop="deleteBlock(block.id)"
-                >×</button>
-              </div>
-
-              <div class="pbl-cell-inner" :style="cellInnerStyle(block)">
-                <template v-if="block.type === 'single'">
-                  <div class="pbl-sheet pbl-sheet--single">
-                    <PageThumb :page="block.pages[0]" :ratio="pageRatio" :ill-url="illUrl" :empty-label="$t(block.pages[0].labelKey)" />
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="pbl-sheet pbl-sheet--spread">
-                    <PageThumb
-                      v-for="pg in block.pages"
-                      :key="pg.id"
-                      :page="pg"
-                      :ratio="pageRatio"
-                      :ill-url="illUrl"
-                      :empty-label="$t(pg.labelKey)"
-                      half
-                    />
-                  </div>
-                </template>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 单独编辑 -->
-        <div v-else-if="editingBlock" class="pbl-editor">
-          <div class="pbl-editor-head">
-            <h2>{{ blockLabel(editingBlock) }}</h2>
-            <button v-if="editingBlock.deletable" type="button" class="pbl-editor-del" @click="deleteBlock(editingBlock.id)">
-              {{ $t('printBookLayout.deleteSpread') }}
-            </button>
-          </div>
-          <div class="pbl-editor-canvas" :class="`pbl-editor-canvas--${editingBlock.type}`">
-            <div
-              v-for="pg in editingBlock.pages"
-              :key="pg.id"
-              class="pbl-editor-page"
-              :class="{ 'is-active': activePageId === pg.id, 'has-image': !!pg.illustration }"
-              :style="editorPageStyle"
-              @click="onPageClick(pg)"
-              @dragover.prevent
-              @drop.prevent="onDropPage(pg, $event)"
-            >
-              <span v-if="pg.pageNum" class="pbl-pg-num">{{ pg.pageNum }}</span>
-              <span class="pbl-pg-kind">{{ $t(pg.labelKey) }}</span>
-              <img v-if="pg.illustration" :src="illUrl(pg.illustration)" alt="" class="pbl-pg-img" />
-              <div v-else class="pbl-pg-empty">{{ $t('printBookLayout.clickToAssign') }}</div>
-              <div v-if="pg.illustration" class="pbl-pg-actions" @click.stop>
-                <button type="button" @click="zoomPage(pg)">{{ $t('printBookLayout.zoom') }}</button>
-                <button type="button" @click="clearPage(pg)">{{ $t('printBookLayout.clearPage') }}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <!-- 插画选择抽屉 -->
-      <aside v-show="pickerOpen" class="pbl-picker">
+      <!-- 左侧：插画选择（常驻） -->
+      <aside class="pbl-picker">
         <div class="pbl-picker-head">
           <h3>{{ $t('printBookLayout.myIllustrations') }}</h3>
-          <button type="button" class="pbl-picker-close" @click="pickerOpen = false">×</button>
         </div>
         <p class="pbl-picker-hint">{{ $t('printBookLayout.selectHint') }}</p>
 
@@ -151,15 +66,104 @@
             :key="item._id"
             type="button"
             class="pbl-ill-btn"
-            :class="{ 'is-selected': isIllSelected(item) }"
-            @click="toggleIll(item)"
+            :class="{ 'is-selected': isIllSelected(item), 'is-active-pick': activeIllId === item._id }"
+            @click="pickIll(item)"
           >
             <img :src="illUrl(item)" alt="" />
             <span v-if="isIllSelected(item)" class="pbl-check">✓</span>
           </button>
           <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
+          <p v-else-if="!illList.length" class="pbl-load-tip">{{ $t('printBookLayout.noIllustrations') }}</p>
         </div>
       </aside>
+
+      <!-- 右侧：排版主区域 -->
+      <main class="pbl-stage" :class="{ 'pbl-stage--edit': viewMode === 'edit' }">
+        <div v-if="viewMode === 'overview'" class="pbl-overview">
+          <p class="pbl-overview-hint">{{ $t('printBookLayout.overviewHint') }}</p>
+          <div class="pbl-matrix">
+            <div
+              v-for="block in layoutBlocks"
+              :key="block.id"
+              class="pbl-cell"
+              :class="[
+                `pbl-cell--${block.type}`,
+                { 'pbl-cell--filled': !isBlockEmpty(block), 'pbl-cell--active': editingBlockId === block.id },
+              ]"
+            >
+              <div class="pbl-cell-bar">
+                <span>{{ blockLabel(block) }}</span>
+                <div class="pbl-cell-bar-actions">
+                  <button type="button" class="pbl-cell-edit" @click.stop="openEditBlock(block)">
+                    {{ $t('printBookLayout.editBlock') }}
+                  </button>
+                  <button
+                    v-if="block.deletable"
+                    type="button"
+                    class="pbl-cell-del"
+                    @click.stop="deleteBlock(block.id)"
+                  >×</button>
+                </div>
+              </div>
+
+              <div class="pbl-cell-inner">
+                <div class="pbl-sheet" :class="`pbl-sheet--${block.type}`">
+                  <div
+                    v-for="pg in block.pages"
+                    :key="pg.id"
+                    class="pbl-face"
+                    :style="faceStyle"
+                    @click.stop="assignToPage(pg)"
+                    @dragover.prevent
+                    @drop.prevent="onDropPage(pg, $event)"
+                  >
+                    <img
+                      v-if="pg.illustration"
+                      :src="illUrl(pg.illustration)"
+                      class="pbl-face-img"
+                      alt=""
+                    />
+                    <div v-else class="pbl-face-empty">
+                      <span v-if="pg.pageNum" class="pbl-face-num">{{ pg.pageNum }}</span>
+                      <span class="pbl-face-label">{{ $t(pg.labelKey) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="editingBlock" class="pbl-editor">
+          <div class="pbl-editor-head">
+            <h2>{{ blockLabel(editingBlock) }}</h2>
+            <button v-if="editingBlock.deletable" type="button" class="pbl-editor-del" @click="deleteBlock(editingBlock.id)">
+              {{ $t('printBookLayout.deleteSpread') }}
+            </button>
+          </div>
+          <div class="pbl-editor-canvas" :class="`pbl-editor-canvas--${editingBlock.type}`">
+            <div
+              v-for="pg in editingBlock.pages"
+              :key="pg.id"
+              class="pbl-editor-page"
+              :class="{ 'is-active': activePageId === pg.id, 'has-image': !!pg.illustration }"
+              :style="faceStyle"
+              @click="assignToPage(pg)"
+              @dragover.prevent
+              @drop.prevent="onDropPage(pg, $event)"
+            >
+              <span v-if="pg.pageNum" class="pbl-pg-num">{{ pg.pageNum }}</span>
+              <span class="pbl-pg-kind">{{ $t(pg.labelKey) }}</span>
+              <img v-if="pg.illustration" :src="illUrl(pg.illustration)" alt="" class="pbl-pg-img" />
+              <div v-else class="pbl-pg-empty">{{ $t('printBookLayout.clickToAssign') }}</div>
+              <div v-if="pg.illustration" class="pbl-pg-actions" @click.stop>
+                <button type="button" @click="zoomPage(pg)">{{ $t('printBookLayout.zoom') }}</button>
+                <button type="button" @click="clearPage(pg)">{{ $t('printBookLayout.clearPage') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
     <el-image-viewer v-if="zoomVisible && zoomUrl" :url-list="[zoomUrl]" teleported @close="zoomVisible = false" />
@@ -167,7 +171,6 @@
 </template>
 
 <script>
-import { defineComponent, h } from 'vue';
 import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus';
 import html2canvas from 'html2canvas';
 import JsPDF from 'jspdf';
@@ -183,44 +186,9 @@ import {
 
 const STORAGE_KEY = 'print_book_layout_v2';
 
-const PageThumb = defineComponent({
-  name: 'PageThumb',
-  props: {
-    page: { type: Object, required: true },
-    ratio: { type: String, default: '3:4' },
-    illUrl: { type: Function, required: true },
-    half: { type: Boolean, default: false },
-    emptyLabel: { type: String, default: '' },
-  },
-  setup(props) {
-    return () => {
-      const [w, h] = props.ratio.split(':').map(Number);
-      const aspect = `${w} / ${h}`;
-      const pg = props.page;
-      const children = [];
-      if (pg.pageNum) {
-        children.push(h('span', { class: 'pbl-thumb-num' }, String(pg.pageNum)));
-      }
-      if (pg.illustration) {
-        children.push(h('img', { class: 'pbl-thumb-img', src: props.illUrl(pg.illustration), alt: '' }));
-      } else {
-        children.push(h('span', { class: 'pbl-thumb-label' }, props.emptyLabel || ''));
-      }
-      return h(
-        'div',
-        {
-          class: ['pbl-thumb', props.half && 'pbl-thumb--half'],
-          style: { aspectRatio: aspect },
-        },
-        children
-      );
-    };
-  },
-});
-
 export default {
   name: 'PrintBookLayout',
-  components: { ElImageViewer, PageThumb },
+  components: { ElImageViewer },
   data() {
     return {
       layoutBlocks: createDefaultPrintLayout(),
@@ -228,7 +196,7 @@ export default {
       viewMode: 'overview',
       editingBlockId: null,
       activePageId: null,
-      pickerOpen: false,
+      activeIllId: null,
       illList: [],
       illPage: 1,
       hasMoreIlls: true,
@@ -250,9 +218,15 @@ export default {
     editingBlock() {
       return this.layoutBlocks.find((b) => b.id === this.editingBlockId) || null;
     },
-    editorPageStyle() {
+    faceStyle() {
       const [w, h] = this.pageRatio.split(':').map(Number);
       return { aspectRatio: `${w} / ${h}` };
+    },
+    activeIll() {
+      if (!this.activeIllId) return null;
+      return this.illList.find((i) => i._id === this.activeIllId)
+        || this.selectedIlls.find((i) => i._id === this.activeIllId)
+        || null;
     },
   },
   mounted() {
@@ -263,8 +237,9 @@ export default {
     illUrl(item) {
       return getIllustrationUrl(item);
     },
-    cellInnerStyle(block) {
-      return {};
+    syncBlocks() {
+      this.layoutBlocks = JSON.parse(JSON.stringify(this.layoutBlocks));
+      this.saveSession();
     },
     blockLabel(block) {
       if (block.spreadIndex != null) {
@@ -278,21 +253,35 @@ export default {
     openEditBlock(block) {
       this.editingBlockId = block.id;
       this.viewMode = 'edit';
-      this.pickerOpen = true;
       this.activePageId = block.pages[0]?.id || null;
+    },
+    pickIll(item) {
+      this.activeIllId = item._id;
+      const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
+      if (idx >= 0) {
+        this.selectedIlls.splice(idx, 1);
+      } else {
+        this.selectedIlls.push(item);
+      }
+      this.saveSession();
     },
     isIllSelected(item) {
       return this.selectedIlls.some((x) => x._id === item._id);
     },
     toggleIll(item) {
-      const idx = this.selectedIlls.findIndex((x) => x._id === item._id);
-      if (idx >= 0) this.selectedIlls.splice(idx, 1);
-      else this.selectedIlls.push(item);
-      this.saveSession();
+      this.pickIll(item);
     },
     clearSelected() {
       this.selectedIlls = [];
+      this.activeIllId = null;
       this.saveSession();
+    },
+    assignToPage(page) {
+      this.activePageId = page.id;
+      const ill = this.activeIll || (this.selectedIlls.length === 1 ? this.selectedIlls[0] : null);
+      if (!ill) return;
+      page.illustration = { _id: ill._id, content: ill.content, title: ill.title };
+      this.syncBlocks();
     },
     onDragStartIll(e, item) {
       this.dragIll = item;
@@ -302,9 +291,10 @@ export default {
       this.dragIll = null;
     },
     onDropPage(page, e) {
-      if (this.dragIll) {
-        page.illustration = this.dragIll;
-        this.saveSession();
+      const ill = this.dragIll || this.activeIll;
+      if (ill) {
+        page.illustration = { _id: ill._id, content: ill.content, title: ill.title };
+        this.syncBlocks();
         return;
       }
       try {
@@ -313,23 +303,16 @@ export default {
           const data = JSON.parse(raw);
           if (data?.item) {
             page.illustration = data.item;
-            this.saveSession();
+            this.syncBlocks();
           }
         }
       } catch {
         /* ignore */
       }
     },
-    onPageClick(page) {
-      this.activePageId = page.id;
-      if (this.selectedIlls.length === 1) {
-        page.illustration = this.selectedIlls[0];
-        this.saveSession();
-      }
-    },
     clearPage(page) {
       page.illustration = null;
-      this.saveSession();
+      this.syncBlocks();
     },
     zoomPage(page) {
       if (!page.illustration) return;
@@ -341,16 +324,24 @@ export default {
         ElMessage.warning(this.$t('printBookLayout.pleaseSelect'));
         return;
       }
-      assignIllustrationsInOrder(this.layoutBlocks, this.selectedIlls);
-      this.layoutBlocks = trimEmptyStorySpreads(this.layoutBlocks);
+      const blocks = JSON.parse(JSON.stringify(this.layoutBlocks));
+      assignIllustrationsInOrder(blocks, this.selectedIlls);
+      this.layoutBlocks = blocks;
       this.saveSession();
       ElMessage.success(this.$t('printBookLayout.layoutGenerated'));
+    },
+    resetLayout() {
+      this.layoutBlocks = createDefaultPrintLayout();
+      this.viewMode = 'overview';
+      this.editingBlockId = null;
+      this.saveSession();
+      ElMessage.success(this.$t('printBookLayout.layoutReset'));
     },
     trimEmptySpreads() {
       const before = this.layoutBlocks.length;
       this.layoutBlocks = trimEmptyStorySpreads(this.layoutBlocks);
       const removed = before - this.layoutBlocks.length;
-      this.saveSession();
+      this.syncBlocks();
       if (removed > 0) {
         ElMessage.success(this.$t('printBookLayout.trimmed', { count: removed }));
       } else {
@@ -371,7 +362,7 @@ export default {
           this.editingBlockId = null;
           this.viewMode = 'overview';
         }
-        this.saveSession();
+        this.syncBlocks();
       } catch {
         /* cancelled */
       }
@@ -659,6 +650,28 @@ export default {
   opacity: 0.85;
 }
 
+.pbl-cell--filled {
+  border-color: #8167a9;
+}
+
+.pbl-cell-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pbl-cell-edit {
+  border: none;
+  background: rgba(255, 255, 255, 0.7);
+  color: #8167a9;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
 .pbl-cell-bar {
   display: flex;
   align-items: center;
@@ -696,64 +709,65 @@ export default {
   background: #fafafa;
 }
 
-.pbl-sheet--single {
-  display: flex;
-  justify-content: center;
-}
-
-.pbl-sheet--spread {
+.pbl-sheet {
   display: flex;
   gap: 4px;
+  width: 100%;
 }
 
-.pbl-sheet--spread .pbl-thumb {
+.pbl-sheet--single .pbl-face {
+  flex: 1;
+}
+
+.pbl-sheet--spread .pbl-face {
   flex: 1;
   min-width: 0;
 }
 
-/* 缩略页 */
-.pbl-thumb {
+.pbl-face {
   position: relative;
   width: 100%;
-  max-width: 100%;
-  border: 1px solid #ccc;
   background: #fff;
+  border: 1px solid #bbb;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  cursor: pointer;
+  min-height: 72px;
 }
 
-.pbl-thumb--half {
-  width: auto;
-  flex: 1;
+.pbl-face:hover {
+  border-color: #8167a9;
 }
 
-.pbl-thumb-num {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  z-index: 2;
-  font-size: 9px;
-  font-weight: 700;
-  color: #1f1f1f;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 1px 4px;
-  border-radius: 2px;
-}
-
-.pbl-thumb-img {
+.pbl-face-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
+  background: #fff;
 }
 
-.pbl-thumb-label {
-  font-size: 8px;
-  color: #909399;
+.pbl-face-empty {
+  width: 100%;
+  height: 100%;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
   text-align: center;
-  padding: 4px;
+  gap: 4px;
+}
+
+.pbl-face-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.pbl-face-label {
+  font-size: 9px;
+  color: #909399;
   line-height: 1.2;
   word-break: break-word;
 }
@@ -901,15 +915,16 @@ export default {
   cursor: pointer;
 }
 
-/* 插画抽屉 */
+/* 左侧插画选择 */
 .pbl-picker {
-  width: 300px;
+  width: 280px;
   flex-shrink: 0;
   background: #fff;
-  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 57px);
+  order: -1;
 }
 
 .pbl-picker-head {
@@ -1016,6 +1031,10 @@ export default {
 
 .pbl-ill-btn.is-selected {
   border-color: #8167a9;
+}
+
+.pbl-ill-btn.is-active-pick {
+  box-shadow: 0 0 0 2px #409eff;
 }
 
 .pbl-ill-btn img {
