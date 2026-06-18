@@ -42,6 +42,9 @@
             <el-button size="small" type="primary" @click="openWorkbench(item)">
               {{ $t('myHomePage.edit') }}
             </el-button>
+            <el-button size="small" @click="openEditorPro(item)">
+              {{ $t('characterStudio.editInEditor') }}
+            </el-button>
             <el-button size="small" class="cs-card-action-group" @click="goGroupImages(item)">
               {{ $t('characterStudio.createGroup') }}
             </el-button>
@@ -57,6 +60,8 @@
 import { Plus } from '@element-plus/icons-vue';
 import { getImageUrl } from '@/utils/characterStudioPrompt';
 import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
+import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
+import { navigateTo } from '@/utils/navigate';
 
 export default {
   name: 'CharacterStudioDashboard',
@@ -91,6 +96,14 @@ export default {
       const id = item.id || item._id;
       this.$router.push({ name: 'character-studio-workbench', params: { characterId: id } });
     },
+    openEditorPro(item) {
+      const imageUrl = getImageUrl(item.image_url || item.character_image_url);
+      if (!imageUrl) return;
+      setEditorproPendingImage(imageUrl, {
+        title: item.character_name || item.name || '',
+      });
+      navigateTo(this.$router, { name: 'editorpro' }, '#/editorpro');
+    },
     goGroupImages(item) {
       const id = item.id || item._id;
       const name = item.character_name || item.name || '';
@@ -100,7 +113,7 @@ export default {
         characterId: id,
         characterName: name || undefined,
       });
-      this.$router.push({ name: 'create-group-images' });
+      navigateTo(this.$router, { name: 'create-group-images' }, '#/creation-studio/character/groups');
     },
     onCardClick(item) {
       if (this.pickMode) {
@@ -269,12 +282,13 @@ export default {
 .cs-card-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .cs-card-action-group {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .cs-pick-hint {

@@ -512,6 +512,7 @@ router.beforeEach((to, from, next) => {
         const cango = (to.name == 'Home' || to.name == 'books' || to.name == 'illustration' || to.name == 'connection')
         if ((!token || token == "undefined") && (!cango)) {
             store.state.isMask = true
+            next(false)
         } else {
             next()
         }

@@ -163,6 +163,12 @@
                                                 @click="collectIllustration(image, index)">
                                                 {{ $t('createGroupImages.collectIllustration') }}
                                             </el-button>
+                                            <el-button
+                                                size="small"
+                                                :loading="downloadingImageKey === getDisplayOrder(image, index)"
+                                                @click="downloadGroupImage(image, index)">
+                                                {{ $t('createGroupImages.download') }}
+                                            </el-button>
                         </div>
                     </div>
                 </el-card>
@@ -197,6 +203,7 @@ export default {
             
             // 生成结果
             resultImages: [],
+            downloadingImageKey: null,
             // 角色名称（用于生成标题）
             characterName: localStorage.getItem('lastCharacterName') || '',
             
@@ -248,7 +255,13 @@ export default {
             if (pendingRef) {
                 this.referenceImageUrl = pendingRef;
                 this.referenceFile = null;
-                localStorage.setItem('characterImage', pendingRef);
+                try {
+                    if (!pendingRef.startsWith('data:') || pendingRef.length < 400000) {
+                        localStorage.setItem('characterImage', pendingRef);
+                    }
+                } catch (e) {
+                    /* 大图仅存内存，referenceImageUrl 已赋值即可 */
+                }
                 return;
             }
             this.checkCharacterImage();
@@ -933,6 +946,59 @@ export default {
                 ElMessage.error(this.$t('createGroupImages.collectFailed', { message: errorMessage }));
             }
         },
+
+        async downloadGroupImage(image, index) {
+            const displayOrder = this.getDisplayOrder(image, index);
+            if (this.downloadingImageKey === displayOrder) return;
+
+            let pictureUrl = image?.url || image;
+            if (!pictureUrl) {
+                ElMessage.error(this.$t('createGroupImages.downloadFailed'));
+                return;
+            }
+
+            if (
+                !pictureUrl.startsWith('http://') &&
+                !pictureUrl.startsWith('https://') &&
+                !pictureUrl.startsWith('data:')
+            ) {
+                pictureUrl = `https://static.kidstory.cc/${pictureUrl}`;
+            }
+
+            this.downloadingImageKey = displayOrder;
+            try {
+                const characterId = localStorage.getItem('lastCharacterId') || localStorage.getItem('viewCharacterId');
+                const defaultTitle = this.$t('createGroupImages.groupIllustration');
+                const titlePrefix = characterId && this.characterName ? this.characterName : defaultTitle;
+                const safeName = `${titlePrefix}-${displayOrder}`.replace(/[\\/:*?"<>|]/g, '_');
+
+                if (pictureUrl.startsWith('data:')) {
+                    const link = document.createElement('a');
+                    link.href = pictureUrl;
+                    link.download = `${safeName}.png`;
+                    link.click();
+                } else {
+                    const response = await fetch(pictureUrl);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const blob = await response.blob();
+                    const ext = blob.type.includes('jpeg') ? 'jpg' : 'png';
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = `${safeName}.${ext}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                }
+                ElMessage.success(this.$t('createGroupImages.downloadSuccess'));
+            } catch (error) {
+                console.error('下载组图失败:', error);
+                ElMessage.error(this.$t('createGroupImages.downloadFailed'));
+            } finally {
+                this.downloadingImageKey = null;
+            }
+        },
         
         
     }
@@ -1310,6 +1376,8 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .collected-text {

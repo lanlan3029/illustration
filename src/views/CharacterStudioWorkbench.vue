@@ -166,12 +166,21 @@
           v-for="(gen, idx) in generations"
           :key="gen.id"
           class="cs-gen-card"
-          :class="{ 'is-anchor': anchorUrl === gen.url }"
+          :class="{ 'is-anchor': anchorUrl === gen.url, 'is-saved': isGenSaved(gen) }"
         >
           <img :src="gen.url" alt="generation" @click="previewImage(idx)" />
           <div class="cs-gen-actions" @click.stop>
-            <el-button size="small" type="primary" @click="saveToMyCharacters(gen)">
-              {{ $t('characterStudio.saveCharacter') }}
+            <span v-if="isGenSaved(gen)" class="cs-saved-badge">
+              {{ $t('characterStudio.savedToMyCharacters') }}
+            </span>
+            <el-button
+              v-else
+              size="small"
+              type="primary"
+              :loading="savingGenId === gen.id"
+              @click="saveToMyCharacters(gen)"
+            >
+              {{ savedCharacterId ? $t('characterStudio.setAsCharacter') : $t('characterStudio.saveCharacter') }}
             </el-button>
             <el-button size="small" @click="downloadImage(gen.url)">{{ $t('characterStudio.download') }}</el-button>
             <el-button size="small" @click="openEditorPro(gen.url)">{{ $t('characterStudio.editInEditor') }}</el-button>
@@ -205,6 +214,7 @@ import {
 } from '@/utils/createCharacterTask';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
+import { navigateTo } from '@/utils/navigate';
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_ACTION,
@@ -252,6 +262,8 @@ export default {
       previewVisible: false,
       previewIndex: 0,
       savedCharacterId: '',
+      savedImageUrl: '',
+      savingGenId: null,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
     };
   },
@@ -302,6 +314,8 @@ export default {
         if (data.aspectRatio) this.aspectRatio = data.aspectRatio;
         if (data.anchorUrl) this.anchorUrl = data.anchorUrl;
         if (Array.isArray(data.generations)) this.generations = data.generations;
+        if (data.savedCharacterId) this.savedCharacterId = data.savedCharacterId;
+        if (data.savedImageUrl) this.savedImageUrl = data.savedImageUrl;
       } catch {
         /* ignore */
       }
@@ -317,6 +331,8 @@ export default {
           aspectRatio: this.aspectRatio,
           anchorUrl: this.anchorUrl,
           generations: this.generations,
+          savedCharacterId: this.savedCharacterId,
+          savedImageUrl: this.savedImageUrl,
         })
       );
     },
@@ -333,6 +349,9 @@ export default {
         this.savedCharacterId = String(char.id || char._id || '');
         this.characterName = char.character_name || char.name || '';
         const url = getImageUrl(char.image_url || char.character_image_url);
+        if (url) {
+          this.savedImageUrl = url;
+        }
         if (url && !this.anchorUrl) {
           this.anchorUrl = url;
           try {
@@ -449,8 +468,13 @@ export default {
         if (!this.anchorUrl) {
           await this.setAnchor(gen, { silent: true });
         }
+        const saved = await this.saveToMyCharacters(gen, { silent: true });
         this.saveSession();
-        ElMessage.success(this.$t('characterStudio.generateSuccess'));
+        ElMessage.success(
+          saved
+            ? this.$t('characterStudio.generateAndSaveSuccess')
+            : this.$t('characterStudio.generateSuccess')
+        );
       } catch (e) {
         ElMessage.error(e.message || this.$t('characterStudio.generateFailed'));
       } finally {
@@ -469,14 +493,19 @@ export default {
         ElMessage.success(this.$t('characterStudio.anchorUpdated'));
       }
     },
-    async saveToMyCharacters(gen) {
+    isGenSaved(gen) {
+      if (!gen?.url || !this.savedCharacterId || !this.savedImageUrl) return false;
+      return gen.url === this.savedImageUrl;
+    },
+    async saveToMyCharacters(gen, { silent = false } = {}) {
       const token = localStorage.getItem('token');
       if (!token) {
-        ElMessage.error(this.$t('characterStudio.pleaseLogin'));
-        return;
+        if (!silent) ElMessage.error(this.$t('characterStudio.pleaseLogin'));
+        return false;
       }
       const name = (this.characterName || '').trim() || this.$t('characterStudio.unnamed');
       const apiUrl = this.apiBaseUrl ? `${this.apiBaseUrl}/character` : '/character';
+      this.savingGenId = gen.id;
       try {
         let imageUrl = gen.url;
         if (imageUrl.startsWith('data:')) {
@@ -508,12 +537,23 @@ export default {
               this.$router.replace({ name: 'character-studio-workbench', params: { characterId: id } });
             }
           }
-          ElMessage.success(this.$t('characterStudio.saveSuccess'));
-        } else {
-          throw new Error(res.data?.message || 'save failed');
+          this.savedImageUrl = gen.url;
+          this.saveSession();
+          if (!silent) {
+            ElMessage.success(
+              this.savedCharacterId && payload.character_id
+                ? this.$t('characterStudio.updateSuccess')
+                : this.$t('characterStudio.saveSuccess')
+            );
+          }
+          return true;
         }
+        throw new Error(res.data?.message || 'save failed');
       } catch (e) {
-        ElMessage.error(e.message || this.$t('characterStudio.saveFailed'));
+        if (!silent) ElMessage.error(e.message || this.$t('characterStudio.saveFailed'));
+        return false;
+      } finally {
+        this.savingGenId = null;
       }
     },
     openEditorPro(url) {
@@ -522,7 +562,7 @@ export default {
         ? url
         : getImageUrl(url);
       setEditorproPendingImage(imageUrl, { title: this.characterName || '' });
-      this.$router.push({ name: 'editorpro' });
+      navigateTo(this.$router, { name: 'editorpro' }, '#/editorpro');
     },
     goGroupImages(url) {
       if (!url) return;
@@ -533,7 +573,7 @@ export default {
         characterId: this.savedCharacterId || undefined,
         characterName: (this.characterName || '').trim() || undefined,
       });
-      this.$router.push({ name: 'create-group-images' });
+      navigateTo(this.$router, { name: 'create-group-images' }, '#/creation-studio/character/groups');
     },
     previewImage(index) {
       this.previewIndex = index;
@@ -911,6 +951,22 @@ export default {
 
 .cs-gen-card.is-anchor {
   border-color: #8167a9;
+}
+
+.cs-gen-card.is-saved {
+  border-color: #67c23a;
+}
+
+.cs-saved-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #529b2e;
+  background: #f0f9eb;
+  white-space: nowrap;
 }
 
 .cs-gen-card img {
