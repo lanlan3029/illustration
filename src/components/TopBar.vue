@@ -183,7 +183,6 @@ export default {
             { key: 'upload', to: '/user/upload', label: 'common.upload', mobile: false },
             { key: 'books', to: '/books', label: 'common.books', mobile: true },
             { key: 'moodDiary', to: '/mood-diary', label: 'nav.moodDiary', linkClass: 'nav-link-mood-diary', mobile: true },
-            { key: 'maze', to: '/maze', label: 'nav.maze', linkClass: 'nav-link-maze', mobile: true },
         ]
 
         // 「创作」下拉项配置（同样集中管理）
@@ -771,15 +770,6 @@ export default {
 
 .nav-item.active .nav-link-mood-diary {
 	color: #6a4f96 !important;
-}
-
-.nav-link-maze {
-	color: #6b8a7a !important;
-	font-weight: 600;
-}
-
-.nav-item.active .nav-link-maze {
-	color: #4d6b5a !important;
 }
 
 .nav-item:after {

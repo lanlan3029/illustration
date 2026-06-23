@@ -327,23 +327,7 @@
     "connection": "Connection",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
-    "maze": "Maze",
     "my": "Mine"
-  },
-  "maze": {
-    "title": "Maze",
-    "subtitle": "Choose a layout, then trace a path through the corridors to the goal. Works with touch and mouse.",
-    "choosePattern": "Maze design",
-    "drawHint": "Draw on the white paths. Green is start, red is finish.",
-    "clearPath": "Clear path",
-    "patterns": {
-      "classic": "Classic",
-      "forest": "Forest",
-      "sunset": "Sunset",
-      "ocean": "Ocean",
-      "compact": "Compact",
-      "wide": "Wide"
-    }
   },
   "moodDiary": {
     "title": "Mood Diary",
@@ -853,8 +837,6 @@
     "categoryEnglish": "English Enlightenment",
     "categoryMath": "Math Enlightenment",
     "categoryKnowledge": "Science Encyclopedia",
-    "categoryMaze": "Maze",
-    "categoryPuzzle": "Puzzle Maze",
     "categoryStory": "Story Adventure",
     "categoryNature": "Nature Exploration",
     "categoryHistory": "History & Culture",

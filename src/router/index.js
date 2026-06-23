@@ -426,16 +426,6 @@ const routes = [{
         ]
     },
     {
-        path: '/maze',
-        name: 'maze',
-        component: () =>
-            import ( /* webpackChunkName: "maze" */ '../views/Maze.vue'),
-        meta: {
-            requiresAuth: false,
-            seoTitle: '迷宫绘本'
-        }
-    },
-    {
         path: '/member/recharge',
         name: 'member-recharge',
         component: () =>

@@ -342,23 +342,7 @@
     "connection": "联系我们",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
-    "maze": "迷宫",
     "my": "我的"
-  },
-  "maze": {
-    "title": "迷宫",
-    "subtitle": "选择一张迷宫图案，在通道里画线从起点走到终点（支持触屏与鼠标）。",
-    "choosePattern": "迷宫图案",
-    "drawHint": "沿白色通道画线；绿色为起点，红色为终点。",
-    "clearPath": "清除路线",
-    "patterns": {
-      "classic": "经典",
-      "forest": "森林",
-      "sunset": "晚霞",
-      "ocean": "海洋",
-      "compact": "紧凑",
-      "wide": "开阔"
-    }
   },
   "moodDiary": {
     "title": "心情日记",
@@ -868,8 +852,6 @@
     "categoryEnglish": "英语启蒙",
     "categoryMath": "数学启蒙",
     "categoryKnowledge": "科普百科",
-    "categoryMaze": "迷宫",
-    "categoryPuzzle": "益智迷宫",
     "categoryStory": "故事冒险",
     "categoryNature": "自然探索",
     "categoryHistory": "历史人文",

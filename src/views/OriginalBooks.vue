@@ -140,7 +140,6 @@ export default {
         english: this.$t('upload.categoryEnglish'),
         math: this.$t('upload.categoryMath'),
         knowledge: this.$t('upload.categoryKnowledge'),
-        puzzle: this.$t('upload.categoryPuzzle'),
         story: this.$t('upload.categoryStory'),
         nature: this.$t('upload.categoryNature'),
         history: this.$t('upload.categoryHistory'),
