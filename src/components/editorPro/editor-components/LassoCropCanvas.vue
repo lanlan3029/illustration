@@ -1,7 +1,7 @@
 <template>
   <div class="lasso-crop-canvas" ref="rootRef">
     <div class="lasso-stage" ref="stageRef">
-      <div class="lasso-frame" ref="frameRef">
+      <div class="lasso-frame">
         <img
           ref="imgRef"
           class="lasso-image"
@@ -48,8 +48,8 @@ import {
   MIN_LASSO_POINTS,
   loadImage,
   distance,
+  fitDisplaySize,
   getImageLayout,
-  clientToDisplayPoint,
   layoutPointsToImagePoints,
   expandPolygonOutward,
   getLassoCropOutset,
@@ -62,6 +62,8 @@ import {
 
 const props = defineProps({
   imageSrc: { type: String, default: '' },
+  naturalWidth: { type: Number, default: 0 },
+  naturalHeight: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['cropped', 'reset']);
@@ -70,7 +72,6 @@ const { t } = useI18n();
 
 const rootRef = ref(null);
 const stageRef = ref(null);
-const frameRef = ref(null);
 const imgRef = ref(null);
 const drawRef = ref(null);
 
@@ -99,11 +100,46 @@ function getCtx() {
   return drawRef.value?.getContext('2d');
 }
 
-function resizeCanvas() {
+function getMaxDisplayBounds() {
+  const stage = stageRef.value;
+  const padding = 24;
+  const maxH = Math.min(window.innerHeight * 0.68, 680);
+  if (!stage) {
+    return {
+      maxW: Math.max(240, window.innerWidth * 0.72 - 200),
+      maxH,
+    };
+  }
+  return {
+    maxW: Math.max(240, stage.clientWidth - padding),
+    maxH: Math.max(200, Math.min(maxH, stage.clientHeight - padding || maxH)),
+  };
+}
+
+/** 按原图比例 fit，避免被弹窗宽度撑成画布比例 */
+function applyImageFit() {
+  const img = imgRef.value;
+  if (!img) return null;
+
+  const nw = img.naturalWidth || props.naturalWidth;
+  const nh = img.naturalHeight || props.naturalHeight;
+  if (!nw || !nh) return null;
+
+  const { maxW, maxH } = getMaxDisplayBounds();
+  const fitted = fitDisplaySize(nw, nh, maxW, maxH);
+  img.style.width = `${fitted.width}px`;
+  img.style.height = `${fitted.height}px`;
+  img.style.maxWidth = 'none';
+  img.style.maxHeight = 'none';
+  return fitted;
+}
+
+function resizeCanvas({ scalePoints = true } = {}) {
   const img = imgRef.value;
   const canvas = drawRef.value;
-  const frame = frameRef.value;
-  if (!img || !canvas || !frame) return;
+  if (!img || !canvas) return;
+
+  applyImageFit();
 
   const layout = getImageLayout(img);
   if (!layout) return;
@@ -113,6 +149,7 @@ function resizeCanvas() {
   const cssH = layout.displayHeight;
 
   if (
+    scalePoints &&
     prev.width > 0 &&
     prev.height > 0 &&
     points.value.length > 0 &&
@@ -126,15 +163,11 @@ function resizeCanvas() {
   displaySize.value = { width: cssW, height: cssH };
   naturalSize.value = { width: layout.naturalWidth, height: layout.naturalHeight };
 
-  const frameRect = frame.getBoundingClientRect();
-  const offsetLeft = layout.left - frameRect.left;
-  const offsetTop = layout.top - frameRect.top;
-
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.max(1, Math.round(cssW * dpr));
   canvas.height = Math.max(1, Math.round(cssH * dpr));
-  canvas.style.left = `${offsetLeft}px`;
-  canvas.style.top = `${offsetTop}px`;
+  canvas.style.left = `${layout.offsetX}px`;
+  canvas.style.top = `${layout.offsetY}px`;
   canvas.style.width = `${cssW}px`;
   canvas.style.height = `${cssH}px`;
 
@@ -192,9 +225,14 @@ function redrawOverlay() {
 }
 
 function canvasPointFromClient(clientX, clientY) {
-  const layout = getImageLayout(imgRef.value);
-  if (!layout) return { x: 0, y: 0 };
-  return clientToDisplayPoint(clientX, clientY, layout);
+  const canvas = drawRef.value;
+  if (!canvas) return { x: 0, y: 0 };
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return { x: 0, y: 0 };
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
 }
 
 function canvasPointFromEvent(e) {
@@ -202,6 +240,10 @@ function canvasPointFromEvent(e) {
 }
 
 function pushPoint(p) {
+  const w = displaySize.value.width;
+  const h = displaySize.value.height;
+  if (w > 0 && h > 0 && (p.x < 0 || p.y < 0 || p.x > w || p.y > h)) return;
+
   const last = points.value[points.value.length - 1];
   if (last && distance(last, p) < 2) return;
   points.value.push(p);
@@ -211,7 +253,7 @@ function pushPoint(p) {
 async function applyCrop() {
   if (points.value.length < MIN_LASSO_POINTS) return;
   try {
-    resizeCanvas();
+    resizeCanvas({ scalePoints: false });
     const layout = getImageLayout(imgRef.value);
     if (!layout) return;
 
@@ -222,7 +264,12 @@ async function applyCrop() {
 
     const cropOutset = getLassoCropOutset(LASSO_OVERLAY_STROKE_WIDTH);
     const expandedPoints = expandPolygonOutward(points.value, cropOutset);
-    const imagePoints = layoutPointsToImagePoints(expandedPoints, layout);
+    const imagePoints = layoutPointsToImagePoints(expandedPoints, {
+      displayWidth: displaySize.value.width,
+      displayHeight: displaySize.value.height,
+      naturalWidth: layout.naturalWidth,
+      naturalHeight: layout.naturalHeight,
+    });
     const canvas = cropImageByLasso(img, imagePoints, {
       sticker: exportMode.value === 'sticker',
     });
@@ -351,27 +398,24 @@ onBeforeUnmount(() => {
 .lasso-crop-canvas {
   display: flex;
   gap: 16px;
-  min-height: 420px;
+  align-items: flex-start;
 }
 
 .lasso-stage {
   flex: 1;
+  min-width: 0;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: repeating-conic-gradient(#e8e8e8 0% 25%, #f5f5f5 0% 50%) 50% / 20px 20px;
-  border-radius: 8px;
-  overflow: hidden;
-  min-height: 400px;
+  overflow: auto;
+  max-height: 75vh;
   padding: 12px;
+  background: #ececec;
+  border-radius: 8px;
 }
 
 .lasso-image {
-  max-width: 100%;
-  max-height: 70vh;
-  width: auto;
-  height: auto;
   display: block;
   user-select: none;
   pointer-events: none;
@@ -380,8 +424,11 @@ onBeforeUnmount(() => {
 .lasso-frame {
   position: relative;
   display: inline-block;
-  max-width: 100%;
+  flex-shrink: 0;
   line-height: 0;
+  background: repeating-conic-gradient(#e8e8e8 0% 25%, #f5f5f5 0% 50%) 50% / 20px 20px;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .lasso-draw {
@@ -390,6 +437,7 @@ onBeforeUnmount(() => {
   top: 0;
   cursor: crosshair;
   touch-action: none;
+  pointer-events: auto;
 }
 
 .lasso-side {

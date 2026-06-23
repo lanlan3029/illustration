@@ -21,14 +21,28 @@ function openLassoCrop() {
   const activeObject = canvasEditor.canvas.getActiveObjects()[0];
   if (!activeObject || activeObject.type !== 'image') return;
 
-  const src = activeObject._element?.src || activeObject.getSrc?.();
+  const el = activeObject._element;
+  const src = activeObject.originSrc || activeObject.getSrc?.() || el?.src;
   if (!src) return;
 
-  lassoDialogRef.value.open({ img: src }, (dataUrl) => {
-    activeObject.setSrc(dataUrl, () => {
-      canvasEditor.canvas.renderAll();
-    });
-  });
+  lassoDialogRef.value.open(
+    {
+      img: src,
+      naturalWidth: activeObject.originWidth || el?.naturalWidth || 0,
+      naturalHeight: activeObject.originHeight || el?.naturalHeight || 0,
+    },
+    (dataUrl) => {
+      const width = activeObject.get('width');
+      const height = activeObject.get('height');
+      const scaleX = activeObject.get('scaleX');
+      const scaleY = activeObject.get('scaleY');
+      activeObject.setSrc(dataUrl, () => {
+        activeObject.set('scaleX', (width * scaleX) / (activeObject.width || 1));
+        activeObject.set('scaleY', (height * scaleY) / (activeObject.height || 1));
+        canvasEditor.canvas.renderAll();
+      });
+    }
+  );
 }
 
 function init() {

@@ -12,6 +12,8 @@
       v-if="visible && img"
       ref="canvasRef"
       :image-src="img"
+      :natural-width="naturalWidth"
+      :natural-height="naturalHeight"
       @cropped="onCropped"
       @reset="resultUrl = ''"
     />
@@ -85,6 +87,8 @@ const { proxy } = getCurrentInstance() || {};
 
 const visible = ref(false);
 const img = ref('');
+const naturalWidth = ref(0);
+const naturalHeight = ref(0);
 const resultUrl = ref('');
 const canvasRef = ref(null);
 const showCharacterForm = ref(false);
@@ -166,6 +170,8 @@ async function handleSaveCharacter() {
 defineExpose({
   open(data, onReplace) {
     img.value = data.img;
+    naturalWidth.value = data.naturalWidth || 0;
+    naturalHeight.value = data.naturalHeight || 0;
     _onReplace = onReplace;
     resultUrl.value = '';
     characterForm.value = { name: '', category: '', desc: '', is_public: 1 };
@@ -183,5 +189,13 @@ defineExpose({
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid #eee;
+}
+</style>
+
+<style>
+/* 弹窗内容区不强制撑满视口高度，由图片比例决定裁剪区大小 */
+.lasso-crop-modal .ivu-modal-body {
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 </style>

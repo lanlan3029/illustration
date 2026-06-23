@@ -69,9 +69,22 @@ export function getPointsBounds(points) {
   return { minX, minY, maxX, maxY, width, height };
 }
 
+/** 在 max 边界内按原图比例计算显示尺寸（CSS px） */
+export function fitDisplaySize(naturalWidth, naturalHeight, maxWidth, maxHeight) {
+  if (!naturalWidth || !naturalHeight || !maxWidth || !maxHeight) {
+    return { width: 0, height: 0 };
+  }
+  const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1);
+  return {
+    width: Math.max(1, Math.round(naturalWidth * scale)),
+    height: Math.max(1, Math.round(naturalHeight * scale)),
+  };
+}
+
 /**
- * 读取 img 在页面上的实际显示区域（含 object-fit 留白时的内容区）。
- * 返回 left/top 为视口坐标，displayWidth/Height 为可见图像区域 CSS 尺寸。
+ * 读取 img 在页面上的实际显示区域。
+ * left/top = 可见图像内容区在视口中的左上角（视口 CSS 像素）。
+ * offsetX/offsetY = 内容区相对 img 元素盒的 inset（仅 object-fit: contain 时有值）。
  */
 export function getImageLayout(imgEl) {
   if (!imgEl?.naturalWidth || !imgEl?.naturalHeight) return null;
@@ -79,40 +92,39 @@ export function getImageLayout(imgEl) {
   const rect = imgEl.getBoundingClientRect();
   const nw = imgEl.naturalWidth;
   const nh = imgEl.naturalHeight;
-  const dw = rect.width;
-  const dh = rect.height;
-  if (!dw || !dh) return null;
+  if (!rect.width || !rect.height) return null;
 
-  const imageAspect = nw / nh;
-  const boxAspect = dw / dh;
-  const aspectDrift = Math.abs(imageAspect - boxAspect);
-
-  let contentWidth = dw;
-  let contentHeight = dh;
   let offsetX = 0;
   let offsetY = 0;
+  let displayWidth = rect.width;
+  let displayHeight = rect.height;
 
-  // object-fit: contain 或未指定宽高比时，图像内容可能未铺满元素盒
-  if (aspectDrift > 0.002) {
-    const fit = window.getComputedStyle(imgEl).objectFit;
-    if (fit === 'contain' || fit === 'scale-down') {
-      if (imageAspect > boxAspect) {
-        contentWidth = dw;
-        contentHeight = dw / imageAspect;
-        offsetY = (dh - contentHeight) / 2;
-      } else {
-        contentHeight = dh;
-        contentWidth = dh * imageAspect;
-        offsetX = (dw - contentWidth) / 2;
-      }
+  const fit = window.getComputedStyle(imgEl).objectFit;
+  const imageAspect = nw / nh;
+  const boxAspect = rect.width / rect.height;
+  const needsLetterbox =
+    (fit === 'contain' || fit === 'scale-down') &&
+    Math.abs(imageAspect - boxAspect) > 0.002;
+
+  if (needsLetterbox) {
+    if (imageAspect > boxAspect) {
+      displayWidth = rect.width;
+      displayHeight = rect.width / imageAspect;
+      offsetY = (rect.height - displayHeight) / 2;
+    } else {
+      displayHeight = rect.height;
+      displayWidth = rect.height * imageAspect;
+      offsetX = (rect.width - displayWidth) / 2;
     }
   }
 
   return {
     left: rect.left + offsetX,
     top: rect.top + offsetY,
-    displayWidth: contentWidth,
-    displayHeight: contentHeight,
+    offsetX,
+    offsetY,
+    displayWidth,
+    displayHeight,
     naturalWidth: nw,
     naturalHeight: nh,
   };
