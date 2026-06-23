@@ -21,6 +21,13 @@
       </div>
     </div>
     <div class="lasso-side">
+      <div class="lasso-export-mode">
+        <span class="lasso-export-label">{{ $t('lassoCrop.exportMode') }}</span>
+        <el-radio-group v-model="exportMode" size="small" class="lasso-export-radios">
+          <el-radio-button label="sticker">{{ $t('lassoCrop.modeSticker') }}</el-radio-button>
+          <el-radio-button label="plain">{{ $t('lassoCrop.modePlain') }}</el-radio-button>
+        </el-radio-group>
+      </div>
       <p class="lasso-hint">{{ hintText }}</p>
       <div v-if="previewUrl" class="lasso-preview">
         <img :src="previewUrl" alt="preview" />
@@ -42,6 +49,9 @@ import {
   loadImage,
   distance,
   displayPointsToImagePoints,
+  expandPolygonOutward,
+  getLassoCropOutset,
+  LASSO_OVERLAY_STROKE_WIDTH,
   cropImageByLasso,
   canvasToDataUrl,
   shouldClosePath,
@@ -67,6 +77,7 @@ const points = ref([]);
 const drawing = ref(false);
 const closed = ref(false);
 const previewUrl = ref('');
+const exportMode = ref('sticker');
 
 const hasPath = computed(() => points.value.length > 0);
 const canFinish = computed(
@@ -89,13 +100,22 @@ function resizeCanvas() {
   if (!img || !canvas) return;
 
   const rect = img.getBoundingClientRect();
-  displaySize.value = { width: rect.width, height: rect.height };
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = rect.width;
+  const cssH = rect.height;
+
+  displaySize.value = { width: cssW, height: cssH };
   naturalSize.value = { width: img.naturalWidth, height: img.naturalHeight };
 
-  canvas.width = Math.max(1, Math.floor(rect.width));
-  canvas.height = Math.max(1, Math.floor(rect.height));
-  canvas.style.width = `${rect.width}px`;
-  canvas.style.height = `${rect.height}px`;
+  canvas.width = Math.max(1, Math.round(cssW * dpr));
+  canvas.height = Math.max(1, Math.round(cssH * dpr));
+  canvas.style.width = `${cssW}px`;
+  canvas.style.height = `${cssH}px`;
+
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   redrawOverlay();
 }
 
@@ -103,11 +123,11 @@ function redrawOverlay() {
   const ctx = getCtx();
   const canvas = drawRef.value;
   if (!ctx || !canvas) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, displaySize.value.width || canvas.width, displaySize.value.height || canvas.height);
   if (points.value.length < 2) return;
 
   ctx.save();
-  const lineWidth = 4;
+  const lineWidth = LASSO_OVERLAY_STROKE_WIDTH;
   const dash = [12, 10];
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
@@ -120,13 +140,13 @@ function redrawOverlay() {
 
   // 黑白相间虚线：先白后黑，错开相位
   ctx.setLineDash(dash);
-  ctx.lineWidth = lineWidth + 2;
+  ctx.lineWidth = lineWidth;
   ctx.strokeStyle = '#ffffff';
   ctx.stroke();
 
   ctx.setLineDash(dash);
   ctx.lineDashOffset = dash[0];
-  ctx.lineWidth = lineWidth + 2;
+  ctx.lineWidth = lineWidth;
   ctx.strokeStyle = '#000000';
   ctx.stroke();
 
@@ -165,28 +185,36 @@ function pushPoint(p) {
   redrawOverlay();
 }
 
+async function applyCrop() {
+  if (points.value.length < MIN_LASSO_POINTS) return;
+  try {
+    const img = await loadImage(props.imageSrc);
+    const cropOutset = getLassoCropOutset(LASSO_OVERLAY_STROKE_WIDTH);
+    const expandedPoints = expandPolygonOutward(points.value, cropOutset);
+    const imagePoints = displayPointsToImagePoints(
+      expandedPoints,
+      displaySize.value,
+      naturalSize.value.width,
+      naturalSize.value.height
+    );
+    const canvas = cropImageByLasso(img, imagePoints, {
+      sticker: exportMode.value === 'sticker',
+    });
+    const dataUrl = canvasToDataUrl(canvas);
+    previewUrl.value = dataUrl;
+    emit('cropped', { dataUrl, width: canvas.width, height: canvas.height, mode: exportMode.value });
+  } catch (e) {
+    console.error('[lasso] crop failed:', e);
+    resetDraw();
+  }
+}
+
 async function finishPath() {
   if (points.value.length < MIN_LASSO_POINTS) return;
   closed.value = true;
   drawing.value = false;
   redrawOverlay();
-
-  try {
-    const img = await loadImage(props.imageSrc);
-    const imagePoints = displayPointsToImagePoints(
-      points.value,
-      displaySize.value,
-      naturalSize.value.width,
-      naturalSize.value.height
-    );
-    const canvas = cropImageByLasso(img, imagePoints);
-    const dataUrl = canvasToDataUrl(canvas);
-    previewUrl.value = dataUrl;
-    emit('cropped', { dataUrl, width: canvas.width, height: canvas.height });
-  } catch (e) {
-    console.error('[lasso] crop failed:', e);
-    resetDraw();
-  }
+  await applyCrop();
 }
 
 function completeCrop() {
@@ -227,7 +255,9 @@ function resetDraw() {
   previewUrl.value = '';
   const ctx = getCtx();
   const canvas = drawRef.value;
-  if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (ctx && canvas) {
+    ctx.clearRect(0, 0, displaySize.value.width || canvas.width, displaySize.value.height || canvas.height);
+  }
   emit('reset');
 }
 
@@ -242,6 +272,12 @@ watch(
     nextTick(() => resizeCanvas());
   }
 );
+
+watch(exportMode, () => {
+  if (closed.value && points.value.length >= MIN_LASSO_POINTS) {
+    applyCrop();
+  }
+});
 
 defineExpose({
   resetDraw,
@@ -302,11 +338,33 @@ onBeforeUnmount(() => {
 }
 
 .lasso-side {
-  width: 140px;
+  width: 168px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.lasso-export-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lasso-export-label {
+  font-size: 12px;
+  color: #606266;
+  font-weight: 600;
+}
+
+.lasso-export-radios {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.lasso-export-radios :deep(.el-radio-button__inner) {
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 .lasso-hint {

@@ -123,6 +123,7 @@
                                     <el-option label="3:4" value="3:4"></el-option>
                                     <el-option label="9:16" value="9:16"></el-option>
                                     <el-option label="16:9" value="16:9"></el-option>
+                                    <el-option label="2:1" value="2:1"></el-option>
                                 </el-select>
                             </div>
                             
@@ -771,7 +772,7 @@ export default {
         calculateCanvasSize() {
             // 使用 1280 作为基准，确保满足火山引擎的最小尺寸要求（最小 512x512）
             // 这样所有比例都能满足要求：
-            // 3:4: 960x1280, 4:3: 1707x1280, 1:1: 1280x1280, 9:16: 720x1280, 16:9: 2276x1280
+            // 3:4: 960x1280, 4:3: 1707x1280, 1:1: 1280x1280, 9:16: 720x1280, 16:9: 2276x1280, 2:1: 2560x1280
             const baseSize = 1280;
             let width, height;
             
@@ -795,6 +796,10 @@ export default {
                 case '16:9':
                     height = baseSize;
                     width = Math.round(height * 16 / 9);
+                    break;
+                case '2:1':
+                    height = baseSize;
+                    width = height * 2;
                     break;
                 default:
                     height = baseSize;

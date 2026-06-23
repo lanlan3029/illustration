@@ -3,6 +3,8 @@
 export const CLOSE_DISTANCE = 15;
 export const MIN_LASSO_POINTS = 8;
 export const MIN_PATH_LENGTH_FOR_CLOSE = 48;
+/** 绘制裁剪虚线的线宽（与 LassoCropCanvas 一致） */
+export const LASSO_OVERLAY_STROKE_WIDTH = 6;
 
 export function getPathLength(points) {
   let total = 0;
@@ -75,6 +77,34 @@ export function displayPointsToImagePoints(displayPoints, displaySize, naturalWi
     x: p.x * scaleX,
     y: p.y * scaleY,
   }));
+}
+
+/**
+ * 将闭合路径从质心向外扩张，使实际裁剪区域覆盖虚线外缘（虚线以路径为中心绘制）。
+ */
+export function expandPolygonOutward(points, deltaDisplay) {
+  if (!points?.length || !deltaDisplay) return points;
+  let cx = 0;
+  let cy = 0;
+  points.forEach((p) => {
+    cx += p.x;
+    cy += p.y;
+  });
+  cx /= points.length;
+  cy /= points.length;
+  return points.map((p) => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return { x: p.x, y: p.y };
+    const scale = (len + deltaDisplay) / len;
+    return { x: cx + dx * scale, y: cy + dy * scale };
+  });
+}
+
+/** 虚线线宽的一半 + 1px 余量，避免边缘被裁切 */
+export function getLassoCropOutset(strokeWidth = LASSO_OVERLAY_STROKE_WIDTH) {
+  return strokeWidth / 2 + 1;
 }
 
 export const STICKER_STYLE_DEFAULTS = {

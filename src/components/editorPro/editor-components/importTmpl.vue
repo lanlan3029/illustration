@@ -140,6 +140,7 @@ const templateOptions = computed(() => {
     byRatio('4:3', 4, 3),
     byRatio('9:16', 9, 16),
     byRatio('16:9', 16, 9),
+    byRatio('2:1', 2, 1),
     byA4('A4 竖向', false),
     byA4('A4 横向', true),
   ];

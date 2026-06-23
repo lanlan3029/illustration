@@ -121,7 +121,10 @@
     "saveFailed": "保存失败",
     "fillNameAndCategory": "请填写名称并选择类别",
     "invalidImage": "请选择图片文件",
-    "loadFailed": "图片加载失败"
+    "loadFailed": "图片加载失败",
+    "exportMode": "导出模式",
+    "modeSticker": "贴纸",
+    "modePlain": "透明底"
   },
   "createClip": "添加裁切",
   "removeClip": "移除裁切",

@@ -54,6 +54,7 @@
           <el-option label="3:4" value="3:4"></el-option>
           <el-option label="9:16" value="9:16"></el-option>
           <el-option label="16:9" value="16:9"></el-option>
+          <el-option label="2:1" value="2:1"></el-option>
         </el-select>
       </div>
       
@@ -243,6 +244,10 @@ export default {
           // 16:9 表示宽:高 = 16:9，所以 width = height * 16/9
           height = baseSize;
           width = Math.round(height * 16 / 9);
+          break;
+        case '2:1':
+          height = baseSize;
+          width = height * 2;
           break;
         default:
           height = baseSize;

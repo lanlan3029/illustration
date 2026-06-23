@@ -40,6 +40,7 @@
                <el-option label="3:4" value="3:4"></el-option>
                <el-option label="9:16" value="9:16"></el-option>
                <el-option label="16:9" value="16:9"></el-option>
+               <el-option label="2:1" value="2:1"></el-option>
              </el-select>
            </div>
            <div class="center-content-wrapper">
@@ -519,7 +520,8 @@ export default {
                '1:1': 1,        // 36/36 = 1
                '3:4': 3/4,      // 27/36 = 0.75
                '9:16': 9/16,    // 20.25/36 = 0.5625
-               '16:9': 16/9     // 64/36 = 1.777...
+               '16:9': 16/9,    // 64/36 = 1.777...
+               '2:1': 2          // 72/36 = 2
            };
            
            let closestRatio = '4:3';
@@ -655,6 +657,9 @@ export default {
                case '16:9':
                    // 16:9 表示宽:高 = 16:9，所以 width = height * 16/9
                    width = fixedHeight * 16 / 9; // 36 * 16/9 = 64vw
+                   break;
+               case '2:1':
+                   width = fixedHeight * 2; // 36 * 2 = 72vw
                    break;
                default:
                    width = fixedHeight * 4 / 3; // 默认 4:3

@@ -121,7 +121,10 @@
     "saveFailed": "Save failed",
     "fillNameAndCategory": "Please enter a name and select a category",
     "invalidImage": "Please select an image file",
-    "loadFailed": "Failed to load image"
+    "loadFailed": "Failed to load image",
+    "exportMode": "Export mode",
+    "modeSticker": "Sticker",
+    "modePlain": "Plain"
   },
   "createClip": "Add Clip",
   "removeClip": "Remove Clip",

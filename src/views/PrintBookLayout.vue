@@ -13,6 +13,7 @@
           <el-radio-group v-model="pageRatio" size="small" @change="saveSession">
             <el-radio-button label="1:1">1:1</el-radio-button>
             <el-radio-button label="3:4">3:4</el-radio-button>
+            <el-radio-button label="2:1">2:1</el-radio-button>
           </el-radio-group>
         </div>
         <el-button type="primary" :disabled="!selectedIlls.length" @click="generateLayout">
