@@ -5,6 +5,7 @@
     width="90%"
     :footer-hide="true"
     class-name="lasso-crop-modal"
+    @on-visible-change="onVisibleChange"
     @on-cancel="onCancel"
   >
     <LassoCropCanvas
@@ -69,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, getCurrentInstance } from 'vue';
+import { ref, getCurrentInstance, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Modal, Button, Message } from 'view-ui-plus';
 import { useI18n } from 'vue-i18n';
@@ -101,6 +102,16 @@ let _onReplace = null;
 
 function onCropped({ dataUrl }) {
   resultUrl.value = dataUrl;
+}
+
+function onVisibleChange(open) {
+  if (!open) return;
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      canvasRef.value?.resize?.();
+      requestAnimationFrame(() => canvasRef.value?.resize?.());
+    });
+  });
 }
 
 function onCancel() {

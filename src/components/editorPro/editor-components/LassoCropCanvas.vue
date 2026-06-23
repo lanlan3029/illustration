@@ -1,7 +1,7 @@
 <template>
   <div class="lasso-crop-canvas" ref="rootRef">
     <div class="lasso-stage" ref="stageRef">
-      <div class="lasso-frame">
+      <div class="lasso-frame" ref="frameRef">
         <img
           ref="imgRef"
           class="lasso-image"
@@ -48,7 +48,9 @@ import {
   MIN_LASSO_POINTS,
   loadImage,
   distance,
-  displayPointsToImagePoints,
+  getImageLayout,
+  clientToDisplayPoint,
+  layoutPointsToImagePoints,
   expandPolygonOutward,
   getLassoCropOutset,
   LASSO_OVERLAY_STROKE_WIDTH,
@@ -68,8 +70,11 @@ const { t } = useI18n();
 
 const rootRef = ref(null);
 const stageRef = ref(null);
+const frameRef = ref(null);
 const imgRef = ref(null);
 const drawRef = ref(null);
+
+let resizeObserver = null;
 
 const displaySize = ref({ width: 0, height: 0 });
 const naturalSize = ref({ width: 0, height: 0 });
@@ -97,18 +102,39 @@ function getCtx() {
 function resizeCanvas() {
   const img = imgRef.value;
   const canvas = drawRef.value;
-  if (!img || !canvas) return;
+  const frame = frameRef.value;
+  if (!img || !canvas || !frame) return;
 
-  const rect = img.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = rect.width;
-  const cssH = rect.height;
+  const layout = getImageLayout(img);
+  if (!layout) return;
+
+  const prev = displaySize.value;
+  const cssW = layout.displayWidth;
+  const cssH = layout.displayHeight;
+
+  if (
+    prev.width > 0 &&
+    prev.height > 0 &&
+    points.value.length > 0 &&
+    (Math.abs(cssW - prev.width) > 0.5 || Math.abs(cssH - prev.height) > 0.5)
+  ) {
+    const sx = cssW / prev.width;
+    const sy = cssH / prev.height;
+    points.value = points.value.map((p) => ({ x: p.x * sx, y: p.y * sy }));
+  }
 
   displaySize.value = { width: cssW, height: cssH };
-  naturalSize.value = { width: img.naturalWidth, height: img.naturalHeight };
+  naturalSize.value = { width: layout.naturalWidth, height: layout.naturalHeight };
 
+  const frameRect = frame.getBoundingClientRect();
+  const offsetLeft = layout.left - frameRect.left;
+  const offsetTop = layout.top - frameRect.top;
+
+  const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.max(1, Math.round(cssW * dpr));
   canvas.height = Math.max(1, Math.round(cssH * dpr));
+  canvas.style.left = `${offsetLeft}px`;
+  canvas.style.top = `${offsetTop}px`;
   canvas.style.width = `${cssW}px`;
   canvas.style.height = `${cssH}px`;
 
@@ -166,12 +192,9 @@ function redrawOverlay() {
 }
 
 function canvasPointFromClient(clientX, clientY) {
-  const canvas = drawRef.value;
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
-  };
+  const layout = getImageLayout(imgRef.value);
+  if (!layout) return { x: 0, y: 0 };
+  return clientToDisplayPoint(clientX, clientY, layout);
 }
 
 function canvasPointFromEvent(e) {
@@ -188,15 +211,18 @@ function pushPoint(p) {
 async function applyCrop() {
   if (points.value.length < MIN_LASSO_POINTS) return;
   try {
-    const img = await loadImage(props.imageSrc);
+    resizeCanvas();
+    const layout = getImageLayout(imgRef.value);
+    if (!layout) return;
+
+    let img = imgRef.value;
+    if (!img?.complete || !img.naturalWidth) {
+      img = await loadImage(props.imageSrc);
+    }
+
     const cropOutset = getLassoCropOutset(LASSO_OVERLAY_STROKE_WIDTH);
     const expandedPoints = expandPolygonOutward(points.value, cropOutset);
-    const imagePoints = displayPointsToImagePoints(
-      expandedPoints,
-      displaySize.value,
-      naturalSize.value.width,
-      naturalSize.value.height
-    );
+    const imagePoints = layoutPointsToImagePoints(expandedPoints, layout);
     const canvas = cropImageByLasso(img, imagePoints, {
       sticker: exportMode.value === 'sticker',
     });
@@ -261,15 +287,34 @@ function resetDraw() {
   emit('reset');
 }
 
+function observeImageResize() {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+  const img = imgRef.value;
+  if (!img || typeof ResizeObserver === 'undefined') return;
+  resizeObserver = new ResizeObserver(() => {
+    resizeCanvas();
+  });
+  resizeObserver.observe(img);
+}
+
 function onImageLoad() {
-  nextTick(() => resizeCanvas());
+  nextTick(() => {
+    resizeCanvas();
+    observeImageResize();
+  });
 }
 
 watch(
   () => props.imageSrc,
   () => {
     resetDraw();
-    nextTick(() => resizeCanvas());
+    nextTick(() => {
+      resizeCanvas();
+      observeImageResize();
+    });
   }
 );
 
@@ -287,10 +332,18 @@ defineExpose({
 
 onMounted(() => {
   window.addEventListener('resize', resizeCanvas);
+  nextTick(() => {
+    if (imgRef.value?.complete) {
+      resizeCanvas();
+      observeImageResize();
+    }
+  });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCanvas);
+  resizeObserver?.disconnect();
+  resizeObserver = null;
 });
 </script>
 
@@ -317,6 +370,8 @@ onBeforeUnmount(() => {
 .lasso-image {
   max-width: 100%;
   max-height: 70vh;
+  width: auto;
+  height: auto;
   display: block;
   user-select: none;
   pointer-events: none;

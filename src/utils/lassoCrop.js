@@ -69,6 +69,63 @@ export function getPointsBounds(points) {
   return { minX, minY, maxX, maxY, width, height };
 }
 
+/**
+ * 读取 img 在页面上的实际显示区域（含 object-fit 留白时的内容区）。
+ * 返回 left/top 为视口坐标，displayWidth/Height 为可见图像区域 CSS 尺寸。
+ */
+export function getImageLayout(imgEl) {
+  if (!imgEl?.naturalWidth || !imgEl?.naturalHeight) return null;
+
+  const rect = imgEl.getBoundingClientRect();
+  const nw = imgEl.naturalWidth;
+  const nh = imgEl.naturalHeight;
+  const dw = rect.width;
+  const dh = rect.height;
+  if (!dw || !dh) return null;
+
+  const imageAspect = nw / nh;
+  const boxAspect = dw / dh;
+  const aspectDrift = Math.abs(imageAspect - boxAspect);
+
+  let contentWidth = dw;
+  let contentHeight = dh;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  // object-fit: contain 或未指定宽高比时，图像内容可能未铺满元素盒
+  if (aspectDrift > 0.002) {
+    const fit = window.getComputedStyle(imgEl).objectFit;
+    if (fit === 'contain' || fit === 'scale-down') {
+      if (imageAspect > boxAspect) {
+        contentWidth = dw;
+        contentHeight = dw / imageAspect;
+        offsetY = (dh - contentHeight) / 2;
+      } else {
+        contentHeight = dh;
+        contentWidth = dh * imageAspect;
+        offsetX = (dw - contentWidth) / 2;
+      }
+    }
+  }
+
+  return {
+    left: rect.left + offsetX,
+    top: rect.top + offsetY,
+    displayWidth: contentWidth,
+    displayHeight: contentHeight,
+    naturalWidth: nw,
+    naturalHeight: nh,
+  };
+}
+
+/** 视口坐标 → 显示坐标（相对图像内容区左上角） */
+export function clientToDisplayPoint(clientX, clientY, layout) {
+  return {
+    x: clientX - layout.left,
+    y: clientY - layout.top,
+  };
+}
+
 /** display 坐标 → 原图像素坐标 */
 export function displayPointsToImagePoints(displayPoints, displaySize, naturalWidth, naturalHeight) {
   const scaleX = naturalWidth / displaySize.width;
@@ -77,6 +134,16 @@ export function displayPointsToImagePoints(displayPoints, displaySize, naturalWi
     x: p.x * scaleX,
     y: p.y * scaleY,
   }));
+}
+
+/** 从 layout 对象批量换算 display → image 坐标 */
+export function layoutPointsToImagePoints(displayPoints, layout) {
+  return displayPointsToImagePoints(
+    displayPoints,
+    { width: layout.displayWidth, height: layout.displayHeight },
+    layout.naturalWidth,
+    layout.naturalHeight
+  );
 }
 
 /**
