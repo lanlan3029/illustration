@@ -23,5 +23,7 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
   { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp'), category: 'paint' },
   { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp'), category: 'toon' },
   { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp'), category: 'paint' },
-  { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp'), category: 'sketch' }
+  { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp'), category: 'sketch' },
+  { key: 'cozyNaiveFolkArt', id: 23, image: require('@/assets/prompt/23.webp'), category: 'paint' },
+  { key: 'narrativeEditorialFolk', id: 24, image: require('@/assets/prompt/24.webp'), category: 'paint' }
 ]

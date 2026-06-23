@@ -180,7 +180,9 @@ export default {
                 { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') },
                 { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp') },
                 { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp') },
-                { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp') }
+                { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp') },
+                { key: 'cozyNaiveFolkArt', id: 23, image: require('@/assets/prompt/23.webp') },
+                { key: 'narrativeEditorialFolk', id: 24, image: require('@/assets/prompt/24.webp') }
             ]
         };
     },

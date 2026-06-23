@@ -743,6 +743,14 @@
         "artStyle": "Nordic Whimsical",
         "elementDetails": "A playful hand-drawn illustration full of childlike wonder, with clean line art using only black, white, and light blue for a fresh, design-forward look. Quiet, cozy, and fairy-tale in mood, with a touch of surreal whimsy."
       },
+      "cozyNaiveFolkArt": {
+        "artStyle": "Cozy Naive Folk Art",
+        "elementDetails": "Cozy everyday scene, hand-drawn illustration, Naive Art and Folk Art style, simple geometric shapes, children's picture-book texture, cute and soft, visible handmade texture and brushstrokes, decorative patterns, flat color blocks, limited palette (mainly red, light blue, white, gray), warm and healing, slice-of-life narrative, vintage craft atmosphere, clean minimalist composition, refined design sense, storytelling mood."
+      },
+      "narrativeEditorialFolk": {
+        "artStyle": "Narrative Editorial Folk",
+        "elementDetails": "Narrative illustration, vintage editorial illustration style, modern folk art, naive art aesthetic, hand-drawn texture, visible grain, geometric simplified forms, warm color palette, clean composition, healing everyday life, story-rich mood, cute characters, soft natural light, refined minimalist beauty, picture-book quality, magazine illustration style, warm calm atmosphere, gallery-grade illustration quality."
+      },
       "blackWhiteDoodle": {
         "artStyle": "Black and White Doodle",
         "elementDetails": "A dense doodle illustration filled with various cartoon-style black line-drawn images. These elements are arranged randomly and repetitively, creating a chaotic yet vibrant atmosphere. Characters have simple lines, rounded outlines, and various expressions, showing innocence and humor. The composition is compact with no obvious white space. The entire image uses only black and white, with sharp contrast, consistent line thickness, and unified style. Lighting is even with no shadows, presenting a flat visual effect. The overall style is cartoon, doodle, with childlike fun and creativity, creating a casual yet imaginative feeling."

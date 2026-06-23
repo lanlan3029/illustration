@@ -238,6 +238,8 @@ const STYLE_NAME_TO_KEY = {
   '欧洲漫画风格': 'europeanComic',
   '水粉童书绘本': 'gouacheChildrenBook',
   '北欧奇趣风格': 'nordicWhimsical',
+  '温馨民艺手绘': 'cozyNaiveFolkArt',
+  '叙事编辑民艺': 'narrativeEditorialFolk',
   '黑白涂鸦风': 'blackWhiteDoodle',
   '质朴手绘风格': 'rusticHandDrawn',
   '极繁铜版印刷': 'maximalistCopperplate',
@@ -267,7 +269,9 @@ const STYLE_KEY_TO_NUM = {
   oilPainting: 19,
   europeanComic: 20,
   gouacheChildrenBook: 21,
-  nordicWhimsical: 22
+  nordicWhimsical: 22,
+  cozyNaiveFolkArt: 23,
+  narrativeEditorialFolk: 24
 };
 
 export default {
@@ -815,6 +819,8 @@ export default {
         'europeanComic': '欧洲漫画风格',
         'gouacheChildrenBook': '水粉童书绘本',
         'nordicWhimsical': '北欧奇趣风格',
+        'cozyNaiveFolkArt': '温馨民艺手绘',
+        'narrativeEditorialFolk': '叙事编辑民艺',
         'blackWhiteDoodle': '黑白涂鸦风',
         'rusticHandDrawn': '质朴手绘风格',
         'maximalistCopperplate': '极繁铜版印刷',
