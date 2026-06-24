@@ -167,7 +167,10 @@
           <el-image class="contact-qr" :src="wechatQr" fit="contain" />
           <h3>{{ $t('guides.contact.wechatTitle') }}</h3>
           <p>{{ $t('guides.contact.wechatDesc') }}</p>
-          <p class="contact-email">{{ $t('guides.contact.email') }}</p>
+          <p class="contact-email">
+            <span>{{ $t('guides.contact.emailLabel') }}</span>
+            <a href="mailto:support@kidstory.cc">support@kidstory.cc</a>
+          </p>
         </div>
         <div class="contact-right">
           <h3>{{ $t('guides.contact.inspirationTitle') }}</h3>
@@ -712,7 +715,16 @@ function openUrl(url) {
 .contact-email {
   margin-top: 12px;
   font-size: 13px;
+  color: #667;
+}
+
+.contact-email a {
   color: #8167a9;
+  text-decoration: none;
+}
+
+.contact-email a:hover {
+  text-decoration: underline;
 }
 
 .inspiration-list {
