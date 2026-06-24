@@ -175,6 +175,112 @@
     "noMore": "没有更多了",
     "loginRequired": "请先登录"
   },
+  "pictureBookTemplates": {
+    "sectionTitle": "绘本版式",
+    "sectionHint": "每套风格含封面、扉页、单页、对话、跨页与留白，含渐变纸纹与笔触装饰。应用将替换当前画布。",
+    "replaceConfirm": "应用版式将清空当前画布内容，是否继续？",
+    "pagesUnit": "页",
+    "kinds": {
+      "cover": "封面",
+      "titlePage": "扉页",
+      "single": "单页",
+      "dialogue": "对话",
+      "spread": "跨页",
+      "blank": "留白"
+    },
+    "styles": {
+      "inkWash": "水墨晕染",
+      "warmDiary": "暖灯手账",
+      "crayonForest": "蜡笔森林",
+      "starryLullaby": "星夜童谣",
+      "softPencil": "淡彩铅绘",
+      "coralSunset": "珊瑚落日",
+      "oceanBreeze": "海风信笺",
+      "snowFairy": "雪原童话",
+      "candyPop": "糖果POP",
+      "vintagePrint": "复古印刷"
+    },
+    "inkWash": {
+      "cover": "潮声书衣",
+      "titlePage": "雾开扉页",
+      "single": "留白叙事",
+      "dialogue": "浅湾对话",
+      "spread": "双澜跨页",
+      "blank": "静水收页"
+    },
+    "warmDiary": {
+      "cover": "灯芯封面",
+      "titlePage": "扉页问候",
+      "single": "炭笔单页",
+      "dialogue": "茶话双气泡",
+      "spread": "横展暖跨",
+      "blank": "余温空白"
+    },
+    "crayonForest": {
+      "cover": "绿野书衣",
+      "titlePage": "林间序页",
+      "single": "小径叙页",
+      "dialogue": "叶声问答",
+      "spread": "双树跨页",
+      "blank": "苔痕留白"
+    },
+    "starryLullaby": {
+      "cover": "月光书封",
+      "titlePage": "星尘扉语",
+      "single": "夜航单页",
+      "dialogue": "低语气泡",
+      "spread": "银河跨页",
+      "blank": "梦岸空白"
+    },
+    "softPencil": {
+      "cover": "粉彩封面",
+      "titlePage": "轻启扉页",
+      "single": "絮语单页",
+      "dialogue": "绵言对话",
+      "spread": "双幅跨页",
+      "blank": "素页余白"
+    },
+    "coralSunset": {
+      "cover": "赤霞书衣",
+      "titlePage": "暮光扉页",
+      "single": "余晖叙页",
+      "dialogue": "夕照问答",
+      "spread": "长天跨页",
+      "blank": "晚风留白"
+    },
+    "oceanBreeze": {
+      "cover": "潮汐封面",
+      "titlePage": "海风扉信",
+      "single": "浪尖单页",
+      "dialogue": "贝壳对话",
+      "spread": "双湾跨页",
+      "blank": "沙痕空白"
+    },
+    "snowFairy": {
+      "cover": "初雪书封",
+      "titlePage": "晶扉序页",
+      "single": "飘絮单页",
+      "dialogue": "雪团气泡",
+      "spread": "银白跨页",
+      "blank": "静雪留白"
+    },
+    "candyPop": {
+      "cover": "彩虹封面",
+      "titlePage": "跳跳扉页",
+      "single": "糖纸单页",
+      "dialogue": "泡泡问答",
+      "spread": "缤纷跨页",
+      "blank": "甜梦空白"
+    },
+    "vintagePrint": {
+      "cover": "线装封面",
+      "titlePage": "泛黄扉页",
+      "single": "铅印单页",
+      "dialogue": "旧话双栏",
+      "spread": "对开跨页",
+      "blank": "纸边留白"
+    }
+  },
   "filters": {
     "simple": "简单滤镜",
     "complex": "复杂滤镜",

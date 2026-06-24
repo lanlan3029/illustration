@@ -1,18 +1,23 @@
 <template>
-<div id="app" :class="{ 'has-tabbar': isMobile }">
-  <top-bar/>
-  <login-register v-if="isMask" />
-  <main class="app-main">
-    <router-view />
-  </main>
-  <the-footer v-if="!isMobile" :class="{ 'fixed-footer': route.path==='/' }"/>
-  <mobile-tab-bar v-if="isMobile" />
-  </div>
+  <el-config-provider :locale="elementPlusLocale">
+    <div id="app" :class="{ 'has-tabbar': isMobile }">
+      <top-bar/>
+      <login-register v-if="isMask" />
+      <main class="app-main">
+        <router-view />
+      </main>
+      <the-footer v-if="!isMobile" :class="{ 'fixed-footer': route.path==='/' }"/>
+      <mobile-tab-bar v-if="isMobile" />
+    </div>
+  </el-config-provider>
 </template>
 <script>
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { ElConfigProvider } from 'element-plus'
+import { getElementPlusLocale } from '@/i18n/elementPlusLocale'
 import TopBar from './components/TopBar.vue'
 import LoginRegister from "./components/LoginRegister.vue"
 import TheFooter from './components/TheFooter.vue'
@@ -25,6 +30,7 @@ document.oncontextmenu = function () {
 export default {
   name: 'App',
   components: {
+    ElConfigProvider,
     TopBar,
     LoginRegister,
     TheFooter,
@@ -34,10 +40,13 @@ export default {
     const store = useStore()
     const route = useRoute()
     const { isMobile } = useBreakpoint()
+    const { locale } = useI18n()
+    const elementPlusLocale = computed(() => getElementPlusLocale(locale.value))
     
     const isMask = computed(() => store.state.isMask)
     
     return {
+      elementPlusLocale,
       isMask,
       route,
       isMobile
