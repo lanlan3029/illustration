@@ -1,57 +1,99 @@
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
-/** Before / After 案例（图片 + i18n key） */
+/** 站点功能真实截图（src/assets/images/home） */
+export const GUIDE_SCREENSHOTS = {
+  homeOverview: require('@/assets/images/home/截屏2026-06-24 16.22.14.png'),
+  charMy: require('@/assets/images/home/截屏2026-06-24 16.41.46.png'),
+  charGen: require('@/assets/images/home/截屏2026-06-24 16.41.54.png'),
+  charGroup: require('@/assets/images/home/截屏2026-06-24 16.42.01.png'),
+  aiIllustration: require('@/assets/images/home/截屏2026-06-24 16.42.17.png'),
+  myIllustrations: require('@/assets/images/home/截屏2026-06-24 16.42.26.png'),
+  editorPro: require('@/assets/images/home/截屏2026-06-24 16.42.34.png'),
+  aiBook: require('@/assets/images/home/截屏2026-06-24 16.43.20.png'),
+  myBooks: require('@/assets/images/home/截屏2026-06-24 16.43.28.png'),
+  layoutExport: require('@/assets/images/home/截屏2026-06-24 16.43.33.png'),
+  printLayout: require('@/assets/images/home/截屏2026-06-24 16.43.41.png'),
+  publishPdf: require('@/assets/images/home/截屏2026-06-24 16.43.50.png'),
+}
+
+/** 首页四大功能模块 */
+export const FEATURE_MODULES = [
+  {
+    id: 'character',
+    image: GUIDE_SCREENSHOTS.charMy,
+    route: '/creation-studio/character',
+  },
+  {
+    id: 'illustration',
+    image: GUIDE_SCREENSHOTS.aiIllustration,
+    route: '/creation-studio/illustration/ai',
+  },
+  {
+    id: 'book',
+    image: GUIDE_SCREENSHOTS.aiBook,
+    route: '/creation-studio/book/ai',
+  },
+  {
+    id: 'layout',
+    image: GUIDE_SCREENSHOTS.layoutExport,
+    route: '/creation-studio/book/compose',
+  },
+]
+
+/** Before / After 案例（真实截图对比） */
 export const BEFORE_AFTER_CASES = [
   {
-    id: 'editorRefine',
-    beforeImage: require('@/assets/prompt/14.webp'),
-    afterImage: require('@/assets/images/home/showcase-editor.png'),
-    toolKeys: ['guides.cases.editorRefine.tools.editor', 'guides.cases.editorRefine.tools.template'],
+    id: 'aiIllustration',
+    beforeImage: GUIDE_SCREENSHOTS.aiIllustration,
+    afterImage: GUIDE_SCREENSHOTS.myIllustrations,
+    toolKeys: ['guides.cases.aiIllustration.tools.ai', 'guides.cases.aiIllustration.tools.mine'],
   },
   {
-    id: 'lassoSticker',
-    beforeImage: require('@/assets/prompt/5.webp'),
-    afterImage: require('@/assets/images/window.png'),
-    toolKeys: ['guides.cases.lassoSticker.tools.lasso', 'guides.cases.lassoSticker.tools.editor'],
+    id: 'editorLayout',
+    beforeImage: GUIDE_SCREENSHOTS.myIllustrations,
+    afterImage: GUIDE_SCREENSHOTS.editorPro,
+    toolKeys: ['guides.cases.editorLayout.tools.mine', 'guides.cases.editorLayout.tools.editor'],
   },
   {
-    id: 'printLayout',
-    beforeImage: require('@/assets/images/cards/books.png'),
-    afterImage: require('@/assets/images/cards/daily-health-app.png'),
-    toolKeys: ['guides.cases.printLayout.tools.compose', 'guides.cases.printLayout.tools.print'],
+    id: 'bookPrint',
+    beforeImage: GUIDE_SCREENSHOTS.layoutExport,
+    afterImage: GUIDE_SCREENSHOTS.printLayout,
+    toolKeys: ['guides.cases.bookPrint.tools.compose', 'guides.cases.bookPrint.tools.print'],
   },
 ]
 
 /** 工作流教程 */
 export const WORKFLOW_GUIDES = [
   {
-    id: 'lassoStickerBook',
-    icon: '✂️',
-    stepCount: 5,
-    links: [
-      { labelKey: 'guides.workflows.lassoStickerBook.links.lasso', to: '/lasso-crop' },
-      { labelKey: 'guides.workflows.lassoStickerBook.links.editor', to: '/editorpro' },
-      { labelKey: 'guides.workflows.lassoStickerBook.links.compose', to: '/creation-studio/book/compose' },
-    ],
-  },
-  {
-    id: 'printPdf',
-    icon: '📖',
-    stepCount: 6,
-    links: [
-      { labelKey: 'guides.workflows.printPdf.links.studio', to: '/creation-studio/illustration/mine' },
-      { labelKey: 'guides.workflows.printPdf.links.compose', to: '/creation-studio/book/compose' },
-      { labelKey: 'guides.workflows.printPdf.links.print', to: '/print-book-layout' },
-    ],
-  },
-  {
-    id: 'aiToBook',
-    icon: '✨',
+    id: 'characterFlow',
+    icon: '🧑‍🎨',
     stepCount: 4,
+    screenshots: [GUIDE_SCREENSHOTS.charGen, GUIDE_SCREENSHOTS.charMy, GUIDE_SCREENSHOTS.charGroup],
     links: [
-      { labelKey: 'guides.workflows.aiToBook.links.ai', to: '/creation-studio/illustration/ai' },
-      { labelKey: 'guides.workflows.aiToBook.links.editor', to: '/editorpro' },
-      { labelKey: 'guides.workflows.aiToBook.links.books', to: '/creation-studio/book/ai' },
+      { labelKey: 'guides.workflows.characterFlow.links.gen', to: '/creation-studio/character/generate/new' },
+      { labelKey: 'guides.workflows.characterFlow.links.mine', to: '/creation-studio/character' },
+      { labelKey: 'guides.workflows.characterFlow.links.group', to: '/creation-studio/character/groups' },
+    ],
+  },
+  {
+    id: 'aiBookFlow',
+    icon: '📚',
+    stepCount: 5,
+    screenshots: [GUIDE_SCREENSHOTS.aiBook, GUIDE_SCREENSHOTS.myBooks, GUIDE_SCREENSHOTS.layoutExport],
+    links: [
+      { labelKey: 'guides.workflows.aiBookFlow.links.ai', to: '/creation-studio/book/ai' },
+      { labelKey: 'guides.workflows.aiBookFlow.links.mine', to: '/creation-studio/book/mine' },
+      { labelKey: 'guides.workflows.aiBookFlow.links.compose', to: '/creation-studio/book/compose' },
+    ],
+  },
+  {
+    id: 'printPdfFlow',
+    icon: '🖨️',
+    stepCount: 5,
+    screenshots: [GUIDE_SCREENSHOTS.layoutExport, GUIDE_SCREENSHOTS.printLayout, GUIDE_SCREENSHOTS.publishPdf],
+    links: [
+      { labelKey: 'guides.workflows.printPdfFlow.links.compose', to: '/creation-studio/book/compose' },
+      { labelKey: 'guides.workflows.printPdfFlow.links.print', to: '/print-book-layout' },
     ],
   },
 ]
@@ -63,7 +105,7 @@ export const STYLE_CATEGORY_GUIDES = [
   { id: 'toon', category: 'toon', styleKeys: ['minimalPopArt', 'pixarStyle', 'simpleCartoon', 'europeanComic'] },
 ]
 
-/** 精选风格详解（含题材与二次编辑建议） */
+/** 精选风格详解 */
 export const FEATURED_STYLE_GUIDES = [
   'healingWatercolor',
   'minimalPopArt',
@@ -104,7 +146,6 @@ export function getCategoryStylePreviews(categoryId, limit = 4) {
   }))
 }
 
-/** 灵感外链（保留原 Connection 页） */
 export const INSPIRATION_LINKS = [
   { name: 'freepik', url: 'https://www.freepik.com/', src: require('@/assets/logo/freepik.svg') },
   { name: 'blush', url: 'https://blush.design/zh-CN', src: require('@/assets/logo/blush.svg') },

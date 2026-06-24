@@ -1909,105 +1909,127 @@
     "hero": {
       "kicker": "Cases · Workflows · Styles",
       "title": "Creative Guides",
-      "subtitle": "From AI generation to EditorPro refinement, lasso stickers, and print-ready PDFs—see what each tool is for and what to watch when editing."
+      "subtitle": "Every screenshot below is from the real StoryTime UI—from AI art and characters to layout export, follow the actual product workflow."
     },
     "nav": {
+      "features": "Features",
       "cases": "Before / After",
       "workflows": "Workflows",
       "styles": "Style Library",
       "contact": "Contact"
     },
+    "features": {
+      "title": "Creation workbench overview",
+      "subtitle": "The four homepage entry points map to different creative paths—click through to try each one.",
+      "tryIt": "Try it",
+      "character": {
+        "title": "Character studio",
+        "desc": "Generate and manage consistent characters, refine in the editor, or batch variant sheets for books and illustrations."
+      },
+      "illustration": {
+        "title": "AI illustration",
+        "desc": "Browse the style library, generate from a prompt, then collect favorites into My Illustrations for editing."
+      },
+      "book": {
+        "title": "AI picture book",
+        "desc": "Enter a storyboard, batch-generate pages, collect each page, then compose and export."
+      },
+      "layout": {
+        "title": "Layout export",
+        "desc": "Order illustrations, publish as PDF, or switch to print layout for press-ready export."
+      }
+    },
     "cases": {
       "title": "Before / After",
-      "subtitle": "Compare raw AI output with EditorPro-refined pages to see what secondary editing fixes.",
-      "before": "AI original",
-      "after": "After editing",
-      "editorRefine": {
-        "title": "AI illustration → EditorPro refine",
-        "summary": "When composition is good but layout, text areas, and tone need work, apply picture-book templates in EditorPro and tweak layers.",
-        "beforeDesc": "Single AI output; background and character scale not yet planned for page size.",
-        "afterDesc": "Picture-book layout applied with title area, margins, and decoration—ready for compose or export.",
+      "subtitle": "Real UI screenshots at each stage—not stock placeholders.",
+      "before": "Previous step",
+      "after": "Next step",
+      "aiIllustration": {
+        "title": "AI illustration: generate → collect",
+        "summary": "Pick a style and prompt on AI Illustration, then click Collect to save into My Illustrations.",
+        "beforeDesc": "AI Illustration: style browser on the left, live preview on the right.",
+        "afterDesc": "My Illustrations: saved pages ready to edit, download, or open in EditorPro.",
         "tools": {
-          "editor": "Open EditorPro",
-          "template": "Picture-book layouts"
+          "ai": "Open AI illustration",
+          "mine": "My illustrations"
         }
       },
-      "lassoSticker": {
-        "title": "Lasso crop → sticker picture book",
-        "summary": "Cut characters or props into transparent stickers and lay them out in EditorPro—great for dialogue and interactive books.",
-        "beforeDesc": "Busy background; hard to move or reuse characters alone.",
-        "afterDesc": "Lasso-cut stickers can be scaled, rotated, and combined with other assets.",
+      "editorLayout": {
+        "title": "My illustrations → EditorPro layout",
+        "summary": "Open a saved page in EditorPro to set canvas size, apply picture-book layouts, and add text and assets.",
+        "beforeDesc": "Single illustration in your library, not yet laid out for a book page.",
+        "afterDesc": "EditorPro: canvas presets, layers, and picture-book layout templates.",
         "tools": {
-          "lasso": "Lasso crop",
-          "editor": "EditorPro layout"
+          "mine": "My illustrations",
+          "editor": "Open EditorPro"
         }
       },
-      "printLayout": {
-        "title": "Spreads → print PDF",
-        "summary": "Order pages in Compose Book, then use PrintBookLayout to export a print-ready PDF.",
-        "beforeDesc": "Loose page art not yet aligned to trim size or bleed.",
-        "afterDesc": "Unified page order, spreads, and print settings—ready for press or home PDF.",
+      "bookPrint": {
+        "title": "Layout export → print layout PDF",
+        "summary": "After ordering art in Layout Export, switch to Print Layout to fill the 32-page template and export PDF.",
+        "beforeDesc": "Layout Export: choose Compose PDF or Print Layout and order pages.",
+        "afterDesc": "Print Book Layout: fill endpapers, cover spread, and body spreads, then export PDF.",
         "tools": {
-          "compose": "Compose book",
-          "print": "PrintBookLayout"
+          "compose": "Layout export",
+          "print": "Print book layout"
         }
       }
     },
     "workflows": {
       "title": "Workflow guides",
-      "subtitle": "Step-by-step paths you can follow—each links straight to the right tool.",
-      "lassoStickerBook": {
-        "title": "Sticker picture book with lasso crop",
-        "intro": "Best for dialogue and sticker-style books: cut out, lay out, then compose.",
+      "subtitle": "Three common paths with steps matched to real screenshots.",
+      "characterFlow": {
+        "title": "Create and reuse characters",
+        "intro": "For stories that need one consistent cast: define the character, batch variants, then use across books and art.",
         "steps": {
-          "1": "Generate or pick character and prop art in AI Illustration or My Works.",
-          "2": "Open Lasso Crop and cut transparent PNG stickers along outlines (save multiple elements).",
-          "3": "In EditorPro, import stickers and backgrounds; lay out by page type (single, dialogue, spread).",
-          "4": "Apply picture-book layout templates for frames and text areas when you need a unified look.",
-          "5": "Save pages, open Compose Book, order for reading, then export or continue to print."
+          "1": "On Generate Character, enter name and description, pick style and ratio, then generate.",
+          "2": "Saved results appear in My Characters—edit metadata or open in the editor.",
+          "3": "For scene variants, use Character Group Images with a reference upload and variant prompts.",
+          "4": "Collect or download, then reuse in AI Books, AI Illustration, or EditorPro."
         },
         "links": {
-          "lasso": "Lasso crop",
-          "editor": "EditorPro",
-          "compose": "Compose book"
+          "gen": "Generate character",
+          "mine": "My characters",
+          "group": "Character group images"
         }
       },
-      "printPdf": {
-        "title": "Export a print PDF with PrintBookLayout",
-        "intro": "Final step after composing: match trim size, spreads, and bleed, then export.",
+      "aiBookFlow": {
+        "title": "Complete a story with AI Books",
+        "intro": "From storyboard to published book.",
         "steps": {
-          "1": "In My Works, confirm consistent page sizes; unify canvas in EditorPro if needed.",
-          "2": "In Compose Book, order cover → interior → back; mark spreads if any.",
-          "3": "Open PrintBookLayout and choose target format (e.g. landscape A4, square children’s book).",
-          "4": "Check spread gutter, margins, and text inside the safe area.",
-          "5": "Preview the full flip-through for crop risks.",
-          "6": "Export PDF per your printer’s requirements (fonts embedded or outlined)."
-        },
-        "links": {
-          "studio": "My works",
-          "compose": "Compose book",
-          "print": "PrintBookLayout"
-        }
-      },
-      "aiToBook": {
-        "title": "From AI storyboard to finished book",
-        "intro": "Full path: AI book workflow, refine, then compose.",
-        "steps": {
-          "1": "Enter a story synopsis in AI Books, generate and edit storyboard prompts.",
-          "2": "After batch generation, refine weak pages in EditorPro or swap layouts.",
-          "3": "Collect art into Compose Book; adjust order and cover.",
-          "4": "For print, export via PrintBookLayout."
+          "1": "Enter your story prompt in AI Books and batch-generate pages with a chosen style.",
+          "2": "Collect each page; regenerate weak pages or refine in EditorPro.",
+          "3": "Manage collected books in My Picture Books—read, edit, or delete.",
+          "4": "Open Layout Export and order pages for reading.",
+          "5": "Choose Compose PDF to publish, or Print Layout for PrintBookLayout."
         },
         "links": {
           "ai": "AI books",
-          "editor": "EditorPro",
-          "books": "AI books home"
+          "mine": "My picture books",
+          "compose": "Layout export"
+        }
+      },
+      "printPdfFlow": {
+        "title": "Export a print PDF with PrintBookLayout",
+        "intro": "For physical printing: 32-page template, cover spread, and body spreads.",
+        "steps": {
+          "1": "In Layout Export, order illustrations and switch to Print Layout mode.",
+          "2": "Pick art from My Illustrations on the left, click page blocks on the right to fill.",
+          "3": "Set page ratio (1:1 / 3:4 / 2:1); spread blocks fill left and right together.",
+          "4": "Check endpapers, copyright, and body spreads; remove blank spreads if needed.",
+          "5": "Export PDF, or return to compose mode to download PDF / publish."
+        },
+        "links": {
+          "compose": "Layout export",
+          "print": "Print book layout"
         }
       }
     },
     "styles": {
       "title": "AI style library",
-      "subtitle": "Each style suits certain topics—and has editing habits worth knowing.",
+      "subtitle": "The homepage style gallery shows one theme in many art styles—pick wisely to save editing time.",
+      "styleDemoAlt": "Homepage style gallery: one fox theme in multiple AI styles",
+      "styleDemoCaption": "Same prompt across styles (screenshot from the homepage gallery).",
       "topicsLabel": "Good for: ",
       "editTipsLabel": "When editing: ",
       "featuredTitle": "Featured styles",
@@ -2080,6 +2102,7 @@
       "wechatTitle": "Follow us on WeChat",
       "wechatDesc": "Submit children’s stories · Read original picture books · Parenting tips",
       "inspirationTitle": "More inspiration on these sites",
+      "email": "Support: support@kidstory.cc",
       "statement1": "Notice: Some assets on this site are derivative works. Original images are from (https://www.freepik.com/ ; https://fresh-folk.com/ ) and used under their license terms. Respect copyright and source agreements when reusing.",
       "statement2": "Picture books and related content belong to their original authors and are for non-commercial use only. Republishing, copying, quoting, or excerpting requires permission from the author or this site with attribution. Unauthorized use may incur legal liability."
     }

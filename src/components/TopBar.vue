@@ -291,7 +291,7 @@ export default {
         }
 
         const contactUs = () => {
-            $message.info('请联系客服：support@kidstory.cc')
+            router.push('/connection')
         }
 
         const toggleMobileMenu = () => {

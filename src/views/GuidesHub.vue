@@ -9,10 +9,35 @@
           {{ $t(item.labelKey) }}
         </a>
       </nav>
+      <div class="hero-shot">
+        <img :src="overviewImage" :alt="$t('guides.features.title')" loading="lazy" />
+      </div>
     </header>
 
+    <!-- 功能模块 -->
+    <section id="features" class="guides-section">
+      <div class="section-head">
+        <h2>{{ $t('guides.features.title') }}</h2>
+        <p>{{ $t('guides.features.subtitle') }}</p>
+      </div>
+      <div class="feature-grid">
+        <article v-for="mod in featureModules" :key="mod.id" class="feature-card">
+          <div class="feature-shot">
+            <img :src="mod.image" :alt="$t(`guides.features.${mod.id}.title`)" loading="lazy" />
+          </div>
+          <div class="feature-body">
+            <h3>{{ $t(`guides.features.${mod.id}.title`) }}</h3>
+            <p>{{ $t(`guides.features.${mod.id}.desc`) }}</p>
+            <router-link :to="mod.route" class="feature-link">
+              {{ $t('guides.features.tryIt') }} →
+            </router-link>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <!-- Before / After -->
-    <section id="cases" class="guides-section">
+    <section id="cases" class="guides-section guides-section--alt">
       <div class="section-head">
         <h2>{{ $t('guides.cases.title') }}</h2>
         <p>{{ $t('guides.cases.subtitle') }}</p>
@@ -24,7 +49,7 @@
           <div class="compare">
             <div class="compare-col">
               <span class="compare-label">{{ $t('guides.cases.before') }}</span>
-              <div class="compare-frame compare-frame--before">
+              <div class="compare-frame compare-frame--ui">
                 <img :src="item.beforeImage" :alt="$t('guides.cases.before')" loading="lazy" />
               </div>
               <p>{{ $t(`guides.cases.${item.id}.beforeDesc`) }}</p>
@@ -32,7 +57,7 @@
             <div class="compare-arrow" aria-hidden="true">→</div>
             <div class="compare-col">
               <span class="compare-label compare-label--after">{{ $t('guides.cases.after') }}</span>
-              <div class="compare-frame compare-frame--after">
+              <div class="compare-frame compare-frame--ui compare-frame--after">
                 <img :src="item.afterImage" :alt="$t('guides.cases.after')" loading="lazy" />
               </div>
               <p>{{ $t(`guides.cases.${item.id}.afterDesc`) }}</p>
@@ -53,7 +78,7 @@
     </section>
 
     <!-- 工作流教程 -->
-    <section id="workflows" class="guides-section guides-section--alt">
+    <section id="workflows" class="guides-section">
       <div class="section-head">
         <h2>{{ $t('guides.workflows.title') }}</h2>
         <p>{{ $t('guides.workflows.subtitle') }}</p>
@@ -63,6 +88,15 @@
           <div class="workflow-icon">{{ flow.icon }}</div>
           <h3>{{ $t(`guides.workflows.${flow.id}.title`) }}</h3>
           <p class="workflow-intro">{{ $t(`guides.workflows.${flow.id}.intro`) }}</p>
+          <div v-if="flow.screenshots?.length" class="workflow-shots">
+            <img
+              v-for="(shot, idx) in flow.screenshots"
+              :key="idx"
+              :src="shot"
+              :alt="$t(`guides.workflows.${flow.id}.title`)"
+              loading="lazy"
+            />
+          </div>
           <ol class="workflow-steps">
             <li v-for="n in flow.stepCount" :key="n">
               {{ $t(`guides.workflows.${flow.id}.steps.${n}`) }}
@@ -78,10 +112,14 @@
     </section>
 
     <!-- 风格库说明 -->
-    <section id="styles" class="guides-section">
+    <section id="styles" class="guides-section guides-section--alt">
       <div class="section-head">
         <h2>{{ $t('guides.styles.title') }}</h2>
         <p>{{ $t('guides.styles.subtitle') }}</p>
+      </div>
+      <div class="style-demo-shot">
+        <img :src="overviewImage" :alt="$t('guides.styles.styleDemoAlt')" loading="lazy" />
+        <p class="style-demo-caption">{{ $t('guides.styles.styleDemoCaption') }}</p>
       </div>
 
       <div class="category-grid">
@@ -119,7 +157,7 @@
       </div>
     </section>
 
-    <!-- 联系我们（保留原 Connection 内容） -->
+    <!-- 联系我们 -->
     <section id="contact" class="guides-section guides-section--contact">
       <div class="section-head">
         <h2>{{ $t('guides.contact.title') }}</h2>
@@ -129,6 +167,7 @@
           <el-image class="contact-qr" :src="wechatQr" fit="contain" />
           <h3>{{ $t('guides.contact.wechatTitle') }}</h3>
           <p>{{ $t('guides.contact.wechatDesc') }}</p>
+          <p class="contact-email">{{ $t('guides.contact.email') }}</p>
         </div>
         <div class="contact-right">
           <h3>{{ $t('guides.contact.inspirationTitle') }}</h3>
@@ -151,6 +190,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  GUIDE_SCREENSHOTS,
+  FEATURE_MODULES,
   BEFORE_AFTER_CASES,
   WORKFLOW_GUIDES,
   STYLE_CATEGORY_GUIDES,
@@ -163,12 +204,15 @@ import {
 const { t } = useI18n()
 
 const navItems = [
+  { id: 'features', labelKey: 'guides.nav.features' },
   { id: 'cases', labelKey: 'guides.nav.cases' },
   { id: 'workflows', labelKey: 'guides.nav.workflows' },
   { id: 'styles', labelKey: 'guides.nav.styles' },
   { id: 'contact', labelKey: 'guides.nav.contact' },
 ]
 
+const overviewImage = GUIDE_SCREENSHOTS.homeOverview
+const featureModules = FEATURE_MODULES
 const beforeAfterCases = BEFORE_AFTER_CASES
 const workflowGuides = WORKFLOW_GUIDES
 const styleCategoryGuides = STYLE_CATEGORY_GUIDES
@@ -183,9 +227,9 @@ function categoryPreviews(categoryId) {
 
 function toolRoute(caseId, idx) {
   const map = {
-    editorRefine: ['/editorpro', '/editorpro'],
-    lassoSticker: ['/lasso-crop', '/editorpro'],
-    printLayout: ['/creation-studio/book/compose', '/print-book-layout'],
+    aiIllustration: ['/creation-studio/illustration/ai', '/creation-studio/illustration/mine'],
+    editorLayout: ['/creation-studio/illustration/mine', '/editorpro'],
+    bookPrint: ['/creation-studio/book/compose', '/print-book-layout'],
   }
   return map[caseId]?.[idx] || '/editorpro'
 }
@@ -205,7 +249,7 @@ function openUrl(url) {
 
 .guides-hero {
   text-align: center;
-  padding: 32px 12px 40px;
+  padding: 32px 12px 24px;
 }
 
 .guides-kicker {
@@ -224,7 +268,7 @@ function openUrl(url) {
 
 .guides-lead {
   color: #5a6578;
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto 24px;
   line-height: 1.65;
 }
@@ -234,6 +278,7 @@ function openUrl(url) {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
+  margin-bottom: 28px;
 }
 
 .guides-nav-link {
@@ -248,6 +293,18 @@ function openUrl(url) {
 .guides-nav-link:hover {
   background: #e3edf9;
   color: #2d8cf0;
+}
+
+.hero-shot {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e8eef5;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.hero-shot img {
+  width: 100%;
+  display: block;
 }
 
 .guides-section {
@@ -276,6 +333,53 @@ function openUrl(url) {
 .section-head p {
   color: #667;
   line-height: 1.6;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.feature-card {
+  background: #fff;
+  border: 1px solid #eef2f8;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.feature-shot {
+  background: #f5f6fa;
+  border-bottom: 1px solid #eef2f8;
+}
+
+.feature-shot img {
+  width: 100%;
+  display: block;
+}
+
+.feature-body {
+  padding: 18px 20px 20px;
+}
+
+.feature-body h3 {
+  font-size: 1.05rem;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.feature-body p {
+  font-size: 14px;
+  color: #667;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+.feature-link {
+  font-size: 13px;
+  color: #2d8cf0;
+  text-decoration: none;
 }
 
 .cases-grid {
@@ -327,20 +431,24 @@ function openUrl(url) {
   border-radius: 12px;
   overflow: hidden;
   background: #f5f6fa;
-  aspect-ratio: 4/3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 1px solid #e8eef5;
+}
+
+.compare-frame--ui {
+  aspect-ratio: 16 / 10;
 }
 
 .compare-frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
+  display: block;
 }
 
 .compare-frame--after {
-  border: 2px solid rgba(129, 103, 169, 0.25);
+  border-color: rgba(129, 103, 169, 0.35);
+  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.08);
 }
 
 .compare-col p {
@@ -375,7 +483,7 @@ function openUrl(url) {
 
 .workflow-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
@@ -404,6 +512,22 @@ function openUrl(url) {
   line-height: 1.55;
 }
 
+.workflow-shots {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.workflow-shots img {
+  height: 72px;
+  width: auto;
+  border-radius: 8px;
+  border: 1px solid #e8eef5;
+  flex-shrink: 0;
+}
+
 .workflow-steps {
   margin: 0 0 16px;
   padding-left: 20px;
@@ -426,6 +550,27 @@ function openUrl(url) {
   font-size: 13px;
   color: #2d8cf0;
   text-decoration: none;
+}
+
+.style-demo-shot {
+  margin-bottom: 28px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e8eef5;
+}
+
+.style-demo-shot img {
+  width: 100%;
+  display: block;
+}
+
+.style-demo-caption {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #667;
+  background: #fff;
+  margin: 0;
+  line-height: 1.55;
 }
 
 .category-grid {
@@ -562,6 +707,12 @@ function openUrl(url) {
 .contact-left p {
   color: #667;
   font-size: 14px;
+}
+
+.contact-email {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #8167a9;
 }
 
 .inspiration-list {
