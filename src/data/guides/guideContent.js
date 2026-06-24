@@ -1,19 +1,19 @@
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 
-/** 站点功能真实截图（src/assets/images/home） */
+/** 站点功能截图（已压缩为 guides/*.webp，宽约 1200px） */
 export const GUIDE_SCREENSHOTS = {
-  homeOverview: require('@/assets/images/home/截屏2026-06-24 16.22.14.png'),
-  charMy: require('@/assets/images/home/截屏2026-06-24 16.41.46.png'),
-  charGen: require('@/assets/images/home/截屏2026-06-24 16.41.54.png'),
-  charGroup: require('@/assets/images/home/截屏2026-06-24 16.42.01.png'),
-  aiIllustration: require('@/assets/images/home/截屏2026-06-24 16.42.17.png'),
-  myIllustrations: require('@/assets/images/home/截屏2026-06-24 16.42.26.png'),
-  editorPro: require('@/assets/images/home/截屏2026-06-24 16.42.34.png'),
-  aiBook: require('@/assets/images/home/截屏2026-06-24 16.43.20.png'),
-  myBooks: require('@/assets/images/home/截屏2026-06-24 16.43.28.png'),
-  layoutExport: require('@/assets/images/home/截屏2026-06-24 16.43.33.png'),
-  printLayout: require('@/assets/images/home/截屏2026-06-24 16.43.41.png'),
-  publishPdf: require('@/assets/images/home/截屏2026-06-24 16.43.50.png'),
+  homeOverview: require('@/assets/images/home/guides/home-overview.webp'),
+  charMy: require('@/assets/images/home/guides/char-my.webp'),
+  charGen: require('@/assets/images/home/guides/char-gen.webp'),
+  charGroup: require('@/assets/images/home/guides/char-group.webp'),
+  aiIllustration: require('@/assets/images/home/guides/ai-illustration.webp'),
+  myIllustrations: require('@/assets/images/home/guides/my-illustrations.webp'),
+  editorPro: require('@/assets/images/home/guides/editor-pro.webp'),
+  aiBook: require('@/assets/images/home/guides/ai-book.webp'),
+  myBooks: require('@/assets/images/home/guides/my-books.webp'),
+  layoutExport: require('@/assets/images/home/guides/layout-export.webp'),
+  printLayout: require('@/assets/images/home/guides/print-layout.webp'),
+  publishPdf: require('@/assets/images/home/guides/publish-pdf.webp'),
 }
 
 /** 首页四大功能模块 */
