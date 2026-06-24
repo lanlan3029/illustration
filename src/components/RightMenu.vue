@@ -6,7 +6,7 @@
          <router-link to="/user/upload"><li><i class="el-icon-document-add" :size="30"/><span>上传作品</span></li></router-link>
          <router-link to="/illustration"><li><i class="el-icon-picture-outline" :size="30"/><span>原创插画</span></li></router-link> 
         <router-link to="/books"><li><i class="el-icon-reading" :size="30"/><span>原创绘本</span></li></router-link> 
-        <router-link to="/connection"><li><i class="el-icon-service" :size="20"/><span>联系我们</span></li></router-link>
+        <router-link to="/connection"><li><i class="el-icon-service" :size="20"/><span>{{ $t('nav.connection') }}</span></li></router-link>
        
     </ul>
 

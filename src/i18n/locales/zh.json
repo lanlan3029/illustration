@@ -339,7 +339,7 @@
     "myWorks": "我的创作",
     "accountSettings": "账户设置",
     "subscription": "订阅管理",
-    "connection": "联系我们",
+    "connection": "创作指南",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
     "my": "我的"
@@ -1923,6 +1923,185 @@
     "step2Desc": "编辑提示词",
     "step3": "生成绘本",
     "step3Desc": "生成绘本"
+  },
+  "guides": {
+    "hero": {
+      "kicker": "案例 · 教程 · 风格",
+      "title": "创作指南",
+      "subtitle": "从 AI 生图到 EditorPro 精修、套索贴纸与印刷导出——用真实工作流了解每种工具适合做什么，以及二次编辑时要注意什么。"
+    },
+    "nav": {
+      "cases": "Before / After",
+      "workflows": "工作流教程",
+      "styles": "风格库说明",
+      "contact": "联系我们"
+    },
+    "cases": {
+      "title": "Before / After 案例",
+      "subtitle": "对比 AI 原图与 EditorPro 精修后的成稿，看看二次编辑能补哪些短板。",
+      "before": "AI 原图",
+      "after": "精修后",
+      "editorRefine": {
+        "title": "AI 插画 → EditorPro 精修",
+        "summary": "生图构图不错但缺版式、文字位和统一色调时，在 EditorPro 里套绘本版式并微调图层即可成页。",
+        "beforeDesc": "单张 AI 输出，背景与角色比例尚未按页尺寸规划。",
+        "afterDesc": "套用「绘本版式」模板，补标题区、留白与装饰，可直接进入合成或导出。",
+        "tools": {
+          "editor": "打开 EditorPro",
+          "template": "套用绘本版式"
+        }
+      },
+      "lassoSticker": {
+        "title": "套索裁剪 → 贴纸拼贴绘本",
+        "summary": "把 AI 角色或物件抠成透明贴纸，在 EditorPro 里自由排版，适合对话页与互动绘本。",
+        "beforeDesc": "整图背景复杂，角色难以单独移动或复用。",
+        "afterDesc": "套索抠图后作为贴纸叠放，可缩放、旋转并与其他素材组合。",
+        "tools": {
+          "lasso": "套索裁剪",
+          "editor": "EditorPro 排版"
+        }
+      },
+      "printLayout": {
+        "title": "分镜成册 → 印刷 PDF",
+        "summary": "在合成绘本里排好顺序与跨页，再用 PrintBookLayout 按印刷尺寸导出 PDF。",
+        "beforeDesc": "多张散页插画，尚未对齐开本与出血。",
+        "afterDesc": "统一页序、跨页与打印参数，可交付印刷或自制 PDF 绘本。",
+        "tools": {
+          "compose": "合成绘本",
+          "print": "PrintBookLayout"
+        }
+      }
+    },
+    "workflows": {
+      "title": "工作流教程",
+      "subtitle": "按步骤走完常见创作路径，每篇都可直接跳转到对应工具。",
+      "lassoStickerBook": {
+        "title": "如何用套索裁剪做贴纸绘本",
+        "intro": "适合角色对话、贴纸互动类绘本：先抠图，再排版，最后合成成册。",
+        "steps": {
+          "1": "在 AI 插画或「我的创作」里生成/挑选角色与道具图。",
+          "2": "打开套索裁剪，沿轮廓抠出透明 PNG 贴纸（可多次保存不同元素）。",
+          "3": "进入 EditorPro，导入贴纸与背景，按页型（单页/对话/跨页）排版。",
+          "4": "需要统一风格时，套用「绘本版式」模板补边框与文字区。",
+          "5": "保存页面后进入合成绘本，按阅读顺序排列并导出或继续印刷流程。"
+        },
+        "links": {
+          "lasso": "套索裁剪",
+          "editor": "EditorPro",
+          "compose": "合成绘本"
+        }
+      },
+      "printPdf": {
+        "title": "如何用 PrintBookLayout 导出印刷 PDF",
+        "intro": "成册后的最后一步：对齐开本、跨页与出血，导出可印刷 PDF。",
+        "steps": {
+          "1": "在「我的创作」确认各页插画尺寸一致，必要时在 EditorPro 统一画布。",
+          "2": "进入合成绘本，按封面 → 内页 → 封底排好顺序，标记跨页（如有）。",
+          "3": "打开 PrintBookLayout，选择目标开本（如 A4 横版、方形童书等）。",
+          "4": "检查跨页中线、页边距与文字是否落在安全区内。",
+          "5": "预览整册翻页效果，确认无裁切风险。",
+          "6": "导出 PDF，按印刷厂要求提交（通常需嵌入字体或转曲说明）。"
+        },
+        "links": {
+          "studio": "我的创作",
+          "compose": "合成绘本",
+          "print": "PrintBookLayout"
+        }
+      },
+      "aiToBook": {
+        "title": "从 AI 分镜到完整绘本",
+        "intro": "用 AI 绘本工作流生成分镜，再精修与成册的完整路径。",
+        "steps": {
+          "1": "在 AI 绘本输入故事梗概，生成并编辑分镜提示词。",
+          "2": "批量生图后，对不满意的单页在 EditorPro 里微调或换版式。",
+          "3": "收集插画到合成绘本，调整页序与封面。",
+          "4": "需要纸质版时，用 PrintBookLayout 导出印刷 PDF。"
+        },
+        "links": {
+          "ai": "AI 绘本",
+          "editor": "EditorPro",
+          "books": "AI 绘本入口"
+        }
+      }
+    },
+    "styles": {
+      "title": "AI 风格库说明",
+      "subtitle": "每种风格有适合的题材与二次编辑习惯——选对风格能少改一半。",
+      "topicsLabel": "适合题材：",
+      "editTipsLabel": "二次编辑注意：",
+      "featuredTitle": "精选风格详解",
+      "tryStyle": "去试这个风格"
+    },
+    "styleCategories": {
+      "sketch": {
+        "name": "线稿 / 素描",
+        "summary": "线条与质感为主，留白多，适合叙事、日记、科普与复古童书。",
+        "topics": "成长故事、手账风日记、黑白或淡彩科普、复古绘本复刻。",
+        "editTips": "勿大面积覆盖线稿；补文字用细线框或手写字体；套索抠图时注意保留笔触边缘。"
+      },
+      "paint": {
+        "name": "彩绘 / 水彩 / 质感",
+        "summary": "色块与氛围感强，适合治愈、睡前故事与情感类题材。",
+        "topics": "睡前故事、亲情友情、自然科普（柔和版）、节日贺卡。",
+        "editTips": "避免强对比滤镜破坏水彩晕染；加字选浅色半透明底；跨页时注意色温左右一致。"
+      },
+      "toon": {
+        "name": "卡通 / 3D / 波普",
+        "summary": "造型清晰、色彩饱和，适合低龄互动、角色 IP 与系列绘本。",
+        "topics": "角色系列、搞笑日常、幼儿园教材、品牌 IP 延展。",
+        "editTips": "适合套索做贴纸；EditorPro 里可加对话气泡；保持描边粗细一致，勿过度锐化。"
+      }
+    },
+    "featuredStyles": {
+      "healingWatercolor": {
+        "topics": "睡前安抚、自然小物、情绪治愈类短篇。",
+        "editTips": "保留留白与淡色边缘；文字区用浅米色底，避免纯白块贴上去太「数码」。"
+      },
+      "minimalPopArt": {
+        "topics": "极简寓言、情绪表达、现代感儿童杂志插图。",
+        "editTips": "色块边界清晰，适合直接加粗体标题；勿叠太多纹理以免破坏平面感。"
+      },
+      "vintageSketch": {
+        "topics": "复古童话、经典文学童书改版、怀旧家庭相册风。",
+        "editTips": "背景纸色已是风格一部分；修图时勿漂成纯白，文字用衬线或手写体更搭。"
+      },
+      "pixarStyle": {
+        "topics": "冒险、友情、家庭喜剧类 3D 角色故事。",
+        "editTips": "光影已较完整，二次编辑以排版和气泡为主；缩放时注意别拉糊 3D 材质细节。"
+      },
+      "crayonNoiseHandDrawn": {
+        "topics": "幼儿园日常、涂鸦感日记、手工课记录。",
+        "editTips": "颗粒感是特色，勿过度降噪；贴纸拼贴时保留 crayon 边缘不规则感。"
+      },
+      "gouacheChildrenBook": {
+        "topics": "经典童书叙事、分章节长篇、出版社向样张。",
+        "editTips": "水粉块面明确，适合 EditorPro 版式框；跨页拼接时对齐色块交界线。"
+      },
+      "penLineArt": {
+        "topics": "细节叙事、科普剖面、建筑与器物说明。",
+        "editTips": "线稿极细，放大编辑；套索路径宜贴线外缘，避免切掉排线细节。"
+      },
+      "feltCollage": {
+        "topics": "低幼认知、手工主题、节日装饰页。",
+        "editTips": "毛毡纹理勿锐化；可加实物风阴影但保持手工感，勿用硬边投影。"
+      },
+      "nordicWhimsical": {
+        "topics": "北欧风童话、极简角色、蓝白配色系列。",
+        "editTips": "色板有限，新增元素请沿用黑/白/浅蓝；文字宜细 sans 或几何手写。"
+      },
+      "cozyNaiveFolkArt": {
+        "topics": "家庭日常、民俗节日、温馨民艺风故事。",
+        "editTips": "装饰图案可重复用于页眉页脚；保持平涂与有限配色，避免渐变贴图。"
+      }
+    },
+    "contact": {
+      "title": "联系我们",
+      "wechatTitle": "关注公众号",
+      "wechatDesc": "投稿儿童故事 · 阅读原创绘本 · 获取育儿干货",
+      "inspirationTitle": "您还可在这些网站寻找灵感",
+      "statement1": "声明：本站所用图元部分为二次创作。原图片来自 (https://www.freepik.com/ ; https://fresh-folk.com/ )，并遵循其版权规定。任何对该图片的使用需要尊重其版权，并遵守原图片的使用协议。",
+      "statement2": "本站所用绘本及其相关内容均为原作者所有，仅用于非商业目的。任何对本站所刊载内容的转载、复制、引用、摘编等行为均需获得原作者或本站授权，并注明出处。任何未经授权使用本站内容的行为均属于侵权，本站将依法追究法律责任。"
+    }
   },
   "notFound": {
     "title": "页面未找到",

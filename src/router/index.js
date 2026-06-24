@@ -73,8 +73,12 @@ const routes = [{
         path: '/connection',
         name: 'connection',
         component: () =>
-            import ( /* webpackChunkName: "connection" */ '../views/Connection.vue'),
-        meta: { seoTitle: '联系我们' }
+            import ( /* webpackChunkName: "guides" */ '../views/GuidesHub.vue'),
+        meta: { seoTitle: '创作指南' }
+    },
+    {
+        path: '/guides',
+        redirect: '/connection',
     },
     {
         path: '/prompt-fill',

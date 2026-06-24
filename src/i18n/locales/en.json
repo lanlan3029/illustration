@@ -324,7 +324,7 @@
     "myWorks": "My Works",
     "accountSettings": "Account Settings",
     "subscription": "Subscription",
-    "connection": "Connection",
+    "connection": "Guides",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
     "my": "Mine"
@@ -1904,6 +1904,185 @@
     "step2Desc": "Upload Files",
     "step3": "Step 3",
     "step3Desc": "Complete"
+  },
+  "guides": {
+    "hero": {
+      "kicker": "Cases · Workflows · Styles",
+      "title": "Creative Guides",
+      "subtitle": "From AI generation to EditorPro refinement, lasso stickers, and print-ready PDFs—see what each tool is for and what to watch when editing."
+    },
+    "nav": {
+      "cases": "Before / After",
+      "workflows": "Workflows",
+      "styles": "Style Library",
+      "contact": "Contact"
+    },
+    "cases": {
+      "title": "Before / After",
+      "subtitle": "Compare raw AI output with EditorPro-refined pages to see what secondary editing fixes.",
+      "before": "AI original",
+      "after": "After editing",
+      "editorRefine": {
+        "title": "AI illustration → EditorPro refine",
+        "summary": "When composition is good but layout, text areas, and tone need work, apply picture-book templates in EditorPro and tweak layers.",
+        "beforeDesc": "Single AI output; background and character scale not yet planned for page size.",
+        "afterDesc": "Picture-book layout applied with title area, margins, and decoration—ready for compose or export.",
+        "tools": {
+          "editor": "Open EditorPro",
+          "template": "Picture-book layouts"
+        }
+      },
+      "lassoSticker": {
+        "title": "Lasso crop → sticker picture book",
+        "summary": "Cut characters or props into transparent stickers and lay them out in EditorPro—great for dialogue and interactive books.",
+        "beforeDesc": "Busy background; hard to move or reuse characters alone.",
+        "afterDesc": "Lasso-cut stickers can be scaled, rotated, and combined with other assets.",
+        "tools": {
+          "lasso": "Lasso crop",
+          "editor": "EditorPro layout"
+        }
+      },
+      "printLayout": {
+        "title": "Spreads → print PDF",
+        "summary": "Order pages in Compose Book, then use PrintBookLayout to export a print-ready PDF.",
+        "beforeDesc": "Loose page art not yet aligned to trim size or bleed.",
+        "afterDesc": "Unified page order, spreads, and print settings—ready for press or home PDF.",
+        "tools": {
+          "compose": "Compose book",
+          "print": "PrintBookLayout"
+        }
+      }
+    },
+    "workflows": {
+      "title": "Workflow guides",
+      "subtitle": "Step-by-step paths you can follow—each links straight to the right tool.",
+      "lassoStickerBook": {
+        "title": "Sticker picture book with lasso crop",
+        "intro": "Best for dialogue and sticker-style books: cut out, lay out, then compose.",
+        "steps": {
+          "1": "Generate or pick character and prop art in AI Illustration or My Works.",
+          "2": "Open Lasso Crop and cut transparent PNG stickers along outlines (save multiple elements).",
+          "3": "In EditorPro, import stickers and backgrounds; lay out by page type (single, dialogue, spread).",
+          "4": "Apply picture-book layout templates for frames and text areas when you need a unified look.",
+          "5": "Save pages, open Compose Book, order for reading, then export or continue to print."
+        },
+        "links": {
+          "lasso": "Lasso crop",
+          "editor": "EditorPro",
+          "compose": "Compose book"
+        }
+      },
+      "printPdf": {
+        "title": "Export a print PDF with PrintBookLayout",
+        "intro": "Final step after composing: match trim size, spreads, and bleed, then export.",
+        "steps": {
+          "1": "In My Works, confirm consistent page sizes; unify canvas in EditorPro if needed.",
+          "2": "In Compose Book, order cover → interior → back; mark spreads if any.",
+          "3": "Open PrintBookLayout and choose target format (e.g. landscape A4, square children’s book).",
+          "4": "Check spread gutter, margins, and text inside the safe area.",
+          "5": "Preview the full flip-through for crop risks.",
+          "6": "Export PDF per your printer’s requirements (fonts embedded or outlined)."
+        },
+        "links": {
+          "studio": "My works",
+          "compose": "Compose book",
+          "print": "PrintBookLayout"
+        }
+      },
+      "aiToBook": {
+        "title": "From AI storyboard to finished book",
+        "intro": "Full path: AI book workflow, refine, then compose.",
+        "steps": {
+          "1": "Enter a story synopsis in AI Books, generate and edit storyboard prompts.",
+          "2": "After batch generation, refine weak pages in EditorPro or swap layouts.",
+          "3": "Collect art into Compose Book; adjust order and cover.",
+          "4": "For print, export via PrintBookLayout."
+        },
+        "links": {
+          "ai": "AI books",
+          "editor": "EditorPro",
+          "books": "AI books home"
+        }
+      }
+    },
+    "styles": {
+      "title": "AI style library",
+      "subtitle": "Each style suits certain topics—and has editing habits worth knowing.",
+      "topicsLabel": "Good for: ",
+      "editTipsLabel": "When editing: ",
+      "featuredTitle": "Featured styles",
+      "tryStyle": "Try this style"
+    },
+    "styleCategories": {
+      "sketch": {
+        "name": "Line / sketch",
+        "summary": "Line and texture led, lots of whitespace—narrative, journals, science, vintage kids’ books.",
+        "topics": "Coming-of-age stories, journal-style diaries, B&W or muted science, vintage picture books.",
+        "editTips": "Avoid covering linework in large blocks; use thin frames or handwritten type; lasso close to stroke edges."
+      },
+      "paint": {
+        "name": "Paint / watercolor / texture",
+        "summary": "Strong color and mood—bedtime, emotional, and gentle nature stories.",
+        "topics": "Bedtime, family and friendship, soft nature science, holiday cards.",
+        "editTips": "Skip harsh filters that break watercolor washes; light translucent text backgrounds; match color temperature on spreads."
+      },
+      "toon": {
+        "name": "Cartoon / 3D / pop",
+        "summary": "Clear shapes and saturated color—young kids, character IP, series books.",
+        "topics": "Character series, funny daily life, preschool materials, brand IP extensions.",
+        "editTips": "Great for lasso stickers; add speech bubbles in EditorPro; keep outline weight consistent; don’t over-sharpen."
+      }
+    },
+    "featuredStyles": {
+      "healingWatercolor": {
+        "topics": "Bedtime calm, small nature moments, emotional healing shorts.",
+        "editTips": "Keep whitespace and soft edges; use warm off-white text blocks, not flat pure white."
+      },
+      "minimalPopArt": {
+        "topics": "Minimal fables, mood pieces, modern kids’ magazine art.",
+        "editTips": "Clean color edges suit bold titles; avoid heavy textures that fight the flat look."
+      },
+      "vintageSketch": {
+        "topics": "Vintage fairy tales, classic literature for kids, nostalgic family albums.",
+        "editTips": "Paper tone is part of the style; don’t bleach to pure white; serif or script type fits best."
+      },
+      "pixarStyle": {
+        "topics": "Adventure, friendship, family comedy with 3D characters.",
+        "editTips": "Lighting is already rich—focus edits on layout and bubbles; scaling can blur 3D material detail."
+      },
+      "crayonNoiseHandDrawn": {
+        "topics": "Preschool daily life, doodle journals, craft-class records.",
+        "editTips": "Grain is intentional—don’t over-denoise; keep irregular crayon edges when collaging stickers."
+      },
+      "gouacheChildrenBook": {
+        "topics": "Classic narrative kids’ books, chapter stories, publisher samples.",
+        "editTips": "Clear gouache blocks pair well with layout frames; align color block edges on spreads."
+      },
+      "penLineArt": {
+        "topics": "Detailed narrative, science cross-sections, objects and architecture.",
+        "editTips": "Fine lines need zoomed editing; lasso just outside strokes so hatching isn’t clipped."
+      },
+      "feltCollage": {
+        "topics": "Toddler learning, craft themes, holiday decorative pages.",
+        "editTips": "Don’t sharpen felt texture; soft shadows OK—avoid hard drop shadows."
+      },
+      "nordicWhimsical": {
+        "topics": "Nordic fairy tales, minimal characters, blue-white series.",
+        "editTips": "Limited palette—new elements in black, white, light blue; thin sans or geometric script for type."
+      },
+      "cozyNaiveFolkArt": {
+        "topics": "Family daily life, folk holidays, cozy naive-art stories.",
+        "editTips": "Repeat decorative motifs in headers/footers; keep flat color and limited palette—skip gradient overlays."
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "wechatTitle": "Follow us on WeChat",
+      "wechatDesc": "Submit children’s stories · Read original picture books · Parenting tips",
+      "inspirationTitle": "More inspiration on these sites",
+      "statement1": "Notice: Some assets on this site are derivative works. Original images are from (https://www.freepik.com/ ; https://fresh-folk.com/ ) and used under their license terms. Respect copyright and source agreements when reusing.",
+      "statement2": "Picture books and related content belong to their original authors and are for non-commercial use only. Republishing, copying, quoting, or excerpting requires permission from the author or this site with attribution. Unauthorized use may incur legal liability."
+    }
   },
   "notFound": {
     "title": "Page Not Found",
