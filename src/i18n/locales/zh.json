@@ -887,6 +887,8 @@
     "loadBookDataFailedRetry": "加载绘本数据失败，请稍后重试"
   },
   "books": {
+    "sortLabel": "排序",
+    "categoryLabel": "分类",
     "sortDefault": "默认",
     "sortHot": "热度",
     "sortTime": "时间",
@@ -1928,7 +1930,7 @@
     "hero": {
       "kicker": "案例 · 教程 · 风格",
       "title": "创作指南",
-      "subtitle": "以下截图均来自 StoryTime 真实界面——从 AI 生图、角色创作到排版导出，按实际工作流了解每个功能怎么用。"
+      "subtitle": "不会画也能做绘本——跟着真实界面截图，从 AI 生图到印刷成册，几步走通全流程。"
     },
     "nav": {
       "features": "功能一览",

@@ -2,24 +2,34 @@
   <div>
     <div class="content">
       <div class="content-left">
-        <div class="el-select">
-          <el-radio-group v-model="sortType" size="small" @change="handleSortChange">
-            <el-radio-button
-              v-for="item in sortList"
-              :key="item.value"
-              :label="item.value"
-            >
-              {{ item.label }}
-            </el-radio-button>
-          </el-radio-group>
-          <el-radio-group v-model="button2"  size="small" @change="handleCategoryChange">
-            <el-radio-button 
-              v-for="option in categoryOptions" 
-              :key="option.value"
-              :label="option.value">
-              {{ option.label }}
-            </el-radio-button>
-          </el-radio-group>
+        <div class="books-toolbar">
+          <div class="toolbar-row toolbar-row--sort">
+            <span class="toolbar-label">{{ $t('books.sortLabel') }}</span>
+            <el-radio-group v-model="sortType" size="small" @change="handleSortChange">
+              <el-radio-button
+                v-for="item in sortList"
+                :key="item.value"
+                :label="item.value"
+              >
+                {{ item.label }}
+              </el-radio-button>
+            </el-radio-group>
+          </div>
+          <div class="toolbar-row toolbar-row--cats">
+            <span class="toolbar-label">{{ $t('books.categoryLabel') }}</span>
+            <div class="category-scroll">
+              <button
+                v-for="option in categoryOptions"
+                :key="option.value || 'all'"
+                type="button"
+                class="category-chip"
+                :class="{ active: button2 === option.value }"
+                @click="selectCategory(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="box">
@@ -42,7 +52,8 @@
             >
               <div class="book-cover">
                 <el-image
-                  :src="(`https://static.kidstory.cc/`+item.cover)"
+                  v-if="item.cover"
+                  :src="coverUrl(item.cover)"
                   class="book-image"
                   fit="cover"
                   :lazy="true"
@@ -60,19 +71,28 @@
                     </div>
                   </template>
                 </el-image>
-                <span class="cover-chip">{{ getCategoryLabel(item.type) }}</span>
-                <button
-                  class="cover-fab"
-                  :class="{ active: collectBookArr.includes(item._id), pulse: collectingIds.includes(item._id) }"
-                  type="button"
-                  :aria-label="collectBookArr.includes(item._id) ? $t('books.cancelCollect') || 'uncollect' : $t('books.collect') || 'collect'"
-                  @click.stop="handleCollectClick(item._id)"
-                >
-                  <span
-                    class="iconfont"
-                    :class="collectBookArr.includes(item._id) ? 'icon-shoucang1' : 'icon-shoucang'"
-                  />
-                </button>
+                <div v-else class="img-placeholder">
+                  <div class="shimmer" />
+                </div>
+                <div class="cover-overlay">
+                  <span class="cover-chip">{{ getCategoryLabel(item.type) }}</span>
+                  <button
+                    class="cover-fab"
+                    :class="{
+                      active: collectBookArr.includes(item._id),
+                      pulse: collectingIds.includes(item._id),
+                      visible: collectBookArr.includes(item._id),
+                    }"
+                    type="button"
+                    :aria-label="collectBookArr.includes(item._id) ? $t('books.cancelCollect') || 'uncollect' : $t('books.collect') || 'collect'"
+                    @click.stop="handleCollectClick(item._id)"
+                  >
+                    <span
+                      class="iconfont"
+                      :class="collectBookArr.includes(item._id) ? 'icon-shoucang1' : 'icon-shoucang'"
+                    />
+                  </button>
+                </div>
               </div>
               <div class="book-meta">
                 <h3 class="book-title">{{ item.title }}</h3>
@@ -148,6 +168,16 @@ export default {
         others: this.$t('upload.categoryOthers')
       }
       return map[type] || this.$t('upload.categoryOthers')
+    },
+    coverUrl(path) {
+      if (!path) return ''
+      if (/^https?:\/\//i.test(path)) return path
+      return `https://static.kidstory.cc/${path}`
+    },
+    selectCategory(value) {
+      if (this.button2 === value) return
+      this.button2 = value
+      this.handleCategoryChange()
     },
     toDetail(id) {
       this.$router.push({ name: 'bookdetails', params: { bookId: id } })
@@ -452,12 +482,12 @@ export default {
 
 .items {
   width: 100%;
-  margin-top: 2vh;
+  margin-top: 8px;
   padding: 0 4px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
-  gap: 22px 20px;
-  align-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 24px 18px;
+  align-items: stretch;
   justify-items: stretch;
 }
 
@@ -466,57 +496,41 @@ export default {
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%;
   background: #ffffff;
-  border-radius: 22px;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  isolation: isolate;
-  box-shadow:
-    0 1px 2px rgba(24, 24, 40, 0.04),
-    0 12px 28px -12px rgba(24, 24, 40, 0.10);
+  border: 1px solid rgba(24, 24, 40, 0.06);
+  box-shadow: 0 8px 24px -16px rgba(24, 24, 40, 0.18);
   transition:
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-
-.book-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(129, 103, 169, 0), rgba(129, 103, 169, 0.25));
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-          mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-  z-index: 2;
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .book-card:hover {
-  transform: translateY(-6px);
-  box-shadow:
-    0 2px 4px rgba(24, 24, 40, 0.05),
-    0 30px 44px -18px rgba(49, 35, 82, 0.22);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -14px rgba(49, 35, 82, 0.2);
 }
 
-.book-card:hover::before { opacity: 1; }
-
-/* ---------- Cover ---------- */
+/* ---------- Cover：竖版 3:4，第一页居中裁剪 ---------- */
 .book-cover {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
-  background: linear-gradient(140deg, #f3eefb, #eaf0ff);
+  background: #f0ebe3;
+  flex-shrink: 0;
+}
+
+.book-cover::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  z-index: 1;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
+  pointer-events: none;
 }
 
 .book-image {
@@ -534,70 +548,81 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.45s ease;
+  object-position: center center;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .book-card:hover .book-image :deep(.el-image__inner) {
-  transform: scale(1.06);
-  filter: saturate(1.05);
+  transform: scale(1.04);
 }
 
-/* soft gradient wash for legibility of the chip without covering the image */
-.book-cover::after {
-  content: "";
+.cover-overlay {
   position: absolute;
-  inset: auto 0 0 0;
-  height: 38%;
-  background: linear-gradient(to top, rgba(24, 18, 44, 0.18), transparent);
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-}
-
-.book-card:hover .book-cover::after { opacity: 1; }
-
-/* ---------- Floating chip (category) ---------- */
-.cover-chip {
-  position: absolute;
-  top: 10px;
-  left: 10px;
+  inset: 0;
   z-index: 2;
-  padding: 5px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.28) 0%,
+    transparent 32%,
+    transparent 68%,
+    rgba(0, 0, 0, 0.12) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.book-card:hover .cover-overlay,
+.book-card:focus-within .cover-overlay {
+  opacity: 1;
+}
+
+/* ---------- Floating chip (category, hover) ---------- */
+.cover-chip {
+  align-self: flex-start;
+  padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #2d2640;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.42);
   border-radius: 999px;
-  -webkit-backdrop-filter: blur(10px) saturate(160%);
-          backdrop-filter: blur(10px) saturate(160%);
-  box-shadow: 0 4px 12px rgba(24, 24, 40, 0.08);
+  backdrop-filter: blur(6px);
 }
 
-/* ---------- Floating FAB (collect) ---------- */
+/* ---------- Floating FAB (collect, hover) ---------- */
 .cover-fab {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 3;
+  align-self: flex-end;
+  margin-left: auto;
+  pointer-events: auto;
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.72);
-  -webkit-backdrop-filter: blur(10px) saturate(160%);
-          backdrop-filter: blur(10px) saturate(160%);
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
   color: #8a8a9a;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(24, 24, 40, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  transform: translateY(4px);
   transition:
-    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease,
+    transform 0.2s ease,
     color 0.2s ease,
     background 0.2s ease;
+}
+
+.book-card:hover .cover-fab,
+.book-card:focus-within .cover-fab,
+.cover-fab.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .cover-fab .iconfont {
@@ -606,15 +631,14 @@ export default {
 }
 
 .cover-fab:hover {
-  transform: scale(1.08);
   color: #8167a9;
-  background: rgba(255, 255, 255, 0.9);
 }
 
 .cover-fab.active {
   color: #f7b500;
-  background: rgba(255, 248, 224, 0.92);
-  border-color: rgba(255, 211, 1, 0.45);
+  background: #fff8e0;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .cover-fab.pulse {
@@ -630,27 +654,27 @@ export default {
 
 /* ---------- Meta ---------- */
 .book-meta {
-  padding: 12px 14px 14px;
+  flex: 1;
+  padding: 12px 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: flex-start;
   background: #fff;
+  min-height: 68px;
 }
 
 .book-title {
   margin: 0;
-  text-align: left;
-  font-size: 14px;
+  text-align: center;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
-  color: #1c1b29;
-  letter-spacing: -0.005em;
+  line-height: 1.45;
+  color: #2c2a38;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: calc(14px * 1.4 * 2);
 }
 
 /* ---------- Placeholders ---------- */
@@ -662,7 +686,7 @@ export default {
   align-items: center;
   justify-content: center;
   color: #c0c4cc;
-  background: linear-gradient(140deg, #f3eefb, #eaf0ff);
+  background: #f0ebe3;
 }
 
 .img-placeholder {
@@ -693,23 +717,87 @@ export default {
 }
 
 /* ---------- Filters / top bar ---------- */
-.el-select {
+.books-toolbar {
   margin-top: 16px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  height: 30px;
   padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.toolbar-label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b6578;
+  min-width: 36px;
+}
+
+.toolbar-row--cats {
+  align-items: flex-start;
+}
+
+.category-scroll {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.category-scroll::-webkit-scrollbar-thumb {
+  background: rgba(129, 103, 169, 0.25);
+  border-radius: 4px;
+}
+
+.category-chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border: 1px solid #e4e0ec;
+  border-radius: 999px;
+  background: #fff;
+  color: #5a5568;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.category-chip:hover {
+  border-color: #8167a9;
+  color: #8167a9;
+}
+
+.category-chip.active {
+  background: #8167a9;
+  border-color: #8167a9;
+  color: #fff;
 }
 
 .box {
+  position: relative;
   margin-bottom: 32px;
+  min-height: 200px;
 }
 
 .loading {
-  position: absolute;
-  top: 50%;
-  left: 40%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 240px;
   color: #c0c4cc;
   font-size: 18px;
 }
@@ -733,28 +821,30 @@ export default {
 /* ---------- Responsive ---------- */
 @media (max-width: 1024px) {
   .content-left { width: 92vw; }
-  .items { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .items { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
 }
 
 @media (max-width: 640px) {
   .content-left { width: 100%; padding: 0 10px 24px; box-sizing: border-box; }
+  .books-toolbar { padding: 0 4px; }
+  .toolbar-label { display: none; }
   .items {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 12px;
+    gap: 16px 12px;
   }
-  .book-card { border-radius: 18px; }
-  .cover-chip { font-size: 10px; padding: 4px 8px; }
-  .cover-fab { width: 30px; height: 30px; }
-  .cover-fab .iconfont { font-size: 14px; }
-  .book-meta { padding: 10px 12px 12px; }
-  .book-title { font-size: 13px; min-height: calc(13px * 1.4 * 2); }
+  .book-card { border-radius: 14px; }
+  .book-meta { padding: 10px 8px 12px; min-height: 60px; }
+  .book-title { font-size: 12px; }
+  .cover-overlay { opacity: 1; }
+  .cover-fab { opacity: 1; transform: none; }
 }
 
 /* Respect users who dislike motion */
 @media (prefers-reduced-motion: reduce) {
   .book-card,
   .book-image :deep(.el-image__inner),
-  .cover-fab { transition: none; }
+  .cover-fab,
+  .cover-overlay { transition: none; }
   .cover-fab.pulse { animation: none; }
   .img-placeholder .shimmer { animation: none; }
 }

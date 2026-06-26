@@ -872,6 +872,8 @@
     "loadBookDataFailedRetry": "Failed to load book data, please try again later"
   },
   "books": {
+    "sortLabel": "Sort",
+    "categoryLabel": "Category",
     "sortDefault": "Default",
     "sortHot": "Hot",
     "sortTime": "Time",
@@ -1909,7 +1911,7 @@
     "hero": {
       "kicker": "Cases · Workflows · Styles",
       "title": "Creative Guides",
-      "subtitle": "Every screenshot below is from the real StoryTime UI—from AI art and characters to layout export, follow the actual product workflow."
+      "subtitle": "No art skills? No problem—follow real screenshots from AI art to print-ready books in a few clear steps."
     },
     "nav": {
       "features": "Features",
