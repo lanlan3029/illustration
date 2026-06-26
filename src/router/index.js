@@ -81,6 +81,13 @@ const routes = [{
         redirect: '/connection',
     },
     {
+        path: '/creator-program',
+        name: 'creator-program',
+        component: () =>
+            import ( /* webpackChunkName: "creator-program" */ '../views/CreatorProgram.vue'),
+        meta: { seoTitle: '创作者计划' }
+    },
+    {
         path: '/prompt-fill',
         name: 'prompt-fill',
         component: () =>

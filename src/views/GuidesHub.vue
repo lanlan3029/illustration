@@ -8,6 +8,9 @@
         <a v-for="item in navItems" :key="item.id" :href="`#${item.id}`" class="guides-nav-link">
           {{ $t(item.labelKey) }}
         </a>
+        <router-link :to="creatorProgramPath" class="guides-nav-link guides-nav-link--accent">
+          {{ $t('guides.nav.creatorProgram') }}
+        </router-link>
       </nav>
       <div class="hero-shot">
         <img :src="overviewImage" :alt="$t('guides.features.title')" loading="lazy" />
@@ -214,6 +217,8 @@ const navItems = [
   { id: 'contact', labelKey: 'guides.nav.contact' },
 ]
 
+const creatorProgramPath = '/creator-program'
+
 const overviewImage = GUIDE_SCREENSHOTS.homeOverview
 const featureModules = FEATURE_MODULES
 const beforeAfterCases = BEFORE_AFTER_CASES
@@ -296,6 +301,16 @@ function openUrl(url) {
 .guides-nav-link:hover {
   background: #e3edf9;
   color: #2d8cf0;
+}
+
+.guides-nav-link--accent {
+  background: linear-gradient(135deg, #5b4b8a, #8167a9);
+  color: #fff;
+}
+
+.guides-nav-link--accent:hover {
+  background: linear-gradient(135deg, #4a3d72, #7058a0);
+  color: #fff;
 }
 
 .hero-shot {

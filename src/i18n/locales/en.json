@@ -625,7 +625,11 @@
     "showcaseEditorDesc": "Preset canvas sizes, drag assets and text, AI polish, then download.",
     "showcaseEditorCta": "Open DIY Editor",
     "stylesTitle": "Rich Illustration Styles",
-    "stylesSubtitle": "Switch between art styles in one click — make every story unique"
+    "stylesSubtitle": "Switch between art styles in one click — make every story unique",
+    "creatorProgramKicker": "Long-term brand program",
+    "creatorProgramTitle": "AI Children's Book Creator Program",
+    "creatorProgramDesc": "Every child deserves a book of their own—become a young author, not just enter a one-off contest.",
+    "creatorProgramCta": "Learn about the program"
   },
   "aibooks": {
     "title": "Create Picture Book",
@@ -1918,7 +1922,8 @@
       "cases": "Before / After",
       "workflows": "Workflows",
       "styles": "Style Library",
-      "contact": "Contact"
+      "contact": "Contact",
+      "creatorProgram": "Creator Program"
     },
     "features": {
       "title": "Creation workbench overview",
@@ -2126,5 +2131,308 @@
     "serverError": "Server error, please try again later",
     "timeout": "Request timeout, please check your network connection",
     "networkError": "Network error, please check your network connection"
+  },
+  "creatorProgram": {
+    "hero": {
+      "kicker": "Long-term brand program",
+      "title": "AI Children's Book Creator Program",
+      "slogan": "Every child deserves a picture book of their own.",
+      "lead": "More than a contest—a long-term program combining AI tools, a creator community, a picture book library, and brand IP. Help kids become young authors and families keep one-of-a-kind co-created memories.",
+      "ctaCreate": "Start creating",
+      "ctaBrowse": "Browse library"
+    },
+    "ecosystem": {
+      "tool": "AI creation tools",
+      "community": "Creator community",
+      "library": "Picture book library",
+      "ip": "Brand IP"
+    },
+    "nav": {
+      "vision": "Vision",
+      "join": "Who can join",
+      "submit": "How to submit",
+      "rewards": "Rewards",
+      "themes": "Themes",
+      "criteria": "Criteria",
+      "rights": "Rights",
+      "agreement": "Agreement",
+      "roadmap": "Roadmap",
+      "growth": "Growth"
+    },
+    "background": {
+      "title": "Background",
+      "p1": "More families are using AI to co-create picture books with their children. Making your own book together is more meaningful and memorable than buying one off the shelf.",
+      "p2": "We are building an open creator community where every family, teacher, and child can become a real picture book author."
+    },
+    "vision": {
+      "tag": "Positioning",
+      "title": "China's leading AI children's picture book creator community",
+      "subtitle": "AI lowers the barrier; community helps great work reach more readers.",
+      "quote": "AI tools + Creator community + Book library + Brand IP",
+      "imageCaption": "StoryTime workbench: from AI art to published book"
+    },
+    "values": {
+      "kids": {
+        "title": "For children",
+        "desc": "Become young authors; grow expression, imagination, and love of reading."
+      },
+      "parents": {
+        "title": "For parents",
+        "desc": "Keep precious co-creation memories and witness your child's stories."
+      },
+      "platform": {
+        "title": "For the platform",
+        "desc": "Build original content, a quality community, and long-term brand value."
+      }
+    },
+    "join": {
+      "tag": "Open to all",
+      "title": "Who can participate?",
+      "subtitle": "All picture book creators welcome—any profession, any region.",
+      "note": "Minors must submit through a guardian account with confirmed consent."
+    },
+    "audience": {
+      "parents": "Parents",
+      "children": "Children (via guardian)",
+      "teachers": "Teachers",
+      "fans": "Picture book fans",
+      "aiCreators": "AI creators",
+      "institutions": "Educational institutions"
+    },
+    "submit": {
+      "tag": "Submission flow",
+      "title": "How to join the program",
+      "subtitle": "Create on the platform, pass review, then showcase and enter monthly selection.",
+      "steps": {
+        "create": {
+          "title": "Create on the platform",
+          "desc": "Use AI Books for storyboards and art, or refine layouts in EditorPro.",
+          "link": "Open AI Books"
+        },
+        "upload": {
+          "title": "Organize and submit",
+          "desc": "Manage your book in My Picture Books, add a synopsis, and submit for review.",
+          "link": "My picture books"
+        },
+        "review": {
+          "title": "Editorial review",
+          "desc": "Three layers: AI screening, human review, and editor picks for quality and safety.",
+          "link": "Layout export"
+        },
+        "publish": {
+          "title": "Public showcase",
+          "desc": "Approved works join the official library and themed collections.",
+          "link": "Browse library"
+        },
+        "contest": {
+          "title": "Monthly selection",
+          "desc": "Three Young Authors each month—hardcover print, homepage feature, and more.",
+          "link": "Popular books"
+        }
+      }
+    },
+    "rewards": {
+      "tag": "Recognition",
+      "title": "Rewards and exposure",
+      "monthly": {
+        "title": "Monthly · Young Author (3 winners)",
+        "intro": "Each month we select three Young Authors. Winners receive:",
+        "items": {
+          "print": "One free hardcover print",
+          "homepage": "Homepage feature",
+          "wechat": "Official WeChat feature",
+          "badge": "Creator badge",
+          "certificate": "Monthly e-certificate"
+        }
+      },
+      "honors": {
+        "title": "Long-term honors",
+        "editorPick": "Editor's pick",
+        "weeklyHot": "Weekly hot",
+        "monthlyBest": "Best of the month",
+        "yearlyBest": "Best of the year",
+        "bestStory": "Best story",
+        "bestArt": "Best illustration",
+        "familyCoCreate": "Best family co-creation",
+        "education": "Best educational value",
+        "mostPopular": "Most popular"
+      },
+      "showcase": {
+        "title": "Multi-channel homepage exposure",
+        "subtitle": "Great work gets seen even without winning—we reward steady creation, not one-off luck.",
+        "columns": {
+          "editorPick": "Editor's pick",
+          "weeklyHot": "Weekly hot",
+          "youngAuthor": "Young Author",
+          "newcomer": "Newcomer highlight",
+          "artPick": "Art picks",
+          "themeHall": "Theme gallery",
+          "mostLoved": "Most loved"
+        }
+      }
+    },
+    "themes": {
+      "tag": "Ongoing",
+      "title": "Themed calls",
+      "subtitle": "We launch themed campaigns regularly; standout works become curated collections.",
+      "items": {
+        "myFirstBook": "My First Picture Book",
+        "animalFriends": "Animal Friends",
+        "family": "Me and My Parents",
+        "festivals": "Chinese Festivals",
+        "spring": "Spring Is Here",
+        "summerTrip": "Summer Trip",
+        "ecoGuard": "Eco Guardians",
+        "braveKid": "Brave Kids",
+        "myDream": "My Dream",
+        "bedtime": "Bedtime Stories",
+        "growingUp": "Growing Up",
+        "futureWorld": "Future World"
+      }
+    },
+    "criteria": {
+      "tag": "Fair and open",
+      "title": "Selection criteria",
+      "subtitle": "Editorial review plus holistic quality assessment—fair, transparent, and consistent.",
+      "fairness": "We may decline works that violate rules, lack quality, or infringe rights.",
+      "items": {
+        "story": {
+          "label": "Story completeness",
+          "desc": "Clear structure and pacing suited to young readers."
+        },
+        "creativity": {
+          "label": "Creativity and originality",
+          "desc": "Fresh ideas; no copying famous IP or others' work."
+        },
+        "illustration": {
+          "label": "Illustration quality",
+          "desc": "Art matches text; consistent style and appeal."
+        },
+        "reading": {
+          "label": "Reading experience",
+          "desc": "Age-appropriate language, length, and engagement."
+        },
+        "education": {
+          "label": "Educational value",
+          "desc": "Positive values and meaningful learning or emotional growth."
+        }
+      }
+    },
+    "rights": {
+      "tag": "Your rights",
+      "title": "Creator rights",
+      "subtitle": "You keep credit and copyright; the platform receives display and promotion license only.",
+      "items": {
+        "credit": "Credit remains with the creator",
+        "recommend": "Official recommendation opportunities",
+        "feature": "Theme and homepage features",
+        "profile": "Creator profile (rolling out)",
+        "archive": "Long-term archive (unless you request removal)",
+        "exposure": "Official promotion opportunities"
+      }
+    },
+    "agreement": {
+      "tag": "Before you submit",
+      "title": "Submission agreement",
+      "subtitle": "By submitting, you confirm you have read and agree to:",
+      "items": {
+        "1": "You own the work or have legal authorization.",
+        "2": "You grant the platform license to display and promote on official channels.",
+        "3": "Copyright stays with you; we only hold display/promotion rights.",
+        "4": "Submission does not guarantee selection or awards.",
+        "5": "You may request takedown; we will process within a reasonable time.",
+        "6": "Minors must submit with guardian consent.",
+        "7": "Do not upload content that infringes copyright, likeness, trademarks, or other rights.",
+        "8": "We may reject violating, low-quality, illegal, or infringing works."
+      }
+    },
+    "checklist": {
+      "title": "Launch checklist (operations)",
+      "items": {
+        "1": "Publish monthly deadline and winner announcement dates",
+        "2": "Specify print format, page limits, and shipping scope",
+        "3": "Guardian accounts for minors; no public real-name data",
+        "4": "Ban famous IP and unauthorized assets; keep submission records",
+        "5": "AI screening + human review + editor picks",
+        "6": "Multi-column homepage exposure beyond monthly winners"
+      }
+    },
+    "roadmap": {
+      "tag": "Three phases",
+      "title": "Platform roadmap",
+      "imageCaption": "From creation to publish—every book is a young author's work",
+      "phases": {
+        "phase1": {
+          "title": "Phase 1 · Content",
+          "goal": "Goal: 100 outstanding books",
+          "items": {
+            "1": "Build the official library",
+            "2": "Homepage recommendation system",
+            "3": "Launch creator program recruitment"
+          }
+        },
+        "phase2": {
+          "title": "Phase 2 · Community",
+          "goal": "Goal: creator engagement",
+          "items": {
+            "1": "Likes, saves, comments, follows",
+            "2": "Creator profiles and levels",
+            "3": "Theme halls and collections"
+          }
+        },
+        "phase3": {
+          "title": "Phase 3 · Brand",
+          "goal": "Goal: platform brand IP",
+          "items": {
+            "1": "Annual contest and family challenges",
+            "2": "School partnerships and reading programs",
+            "3": "Published anthologies of top works"
+          }
+        }
+      }
+    },
+    "growth": {
+      "tag": "Long-term growth",
+      "title": "Creator level system",
+      "subtitle": "Stay for the craft—not a one-time prize.",
+      "table": {
+        "level": "Level",
+        "condition": "Requirement",
+        "benefit": "Benefits"
+      },
+      "tiers": {
+        "rookie": {
+          "name": "Rising creator",
+          "condition": "Publish 1 book",
+          "benefit": "Creator profile"
+        },
+        "excellent": {
+          "name": "Excellent creator",
+          "condition": "Publish 5 books",
+          "benefit": "Creator badge"
+        },
+        "star": {
+          "name": "Star author",
+          "condition": "100 total likes",
+          "benefit": "Homepage priority"
+        },
+        "gold": {
+          "name": "Gold creator",
+          "condition": "Multiple monthly picks",
+          "benefit": "Interview and annual eligibility"
+        },
+        "master": {
+          "name": "Annual master",
+          "condition": "Annual grand prize",
+          "benefit": "Certificate and anthology inclusion"
+        }
+      }
+    },
+    "cta": {
+      "title": "Every family deserves an original picture book",
+      "subtitle": "Start today—your child could be the next Young Author.",
+      "create": "Start creating now",
+      "guides": "Creative guides"
+    }
   }
 }
