@@ -2196,29 +2196,23 @@
       }
     },
     "rewards": {
-      "title": "What can you get?",
-      "subtitle": "We reward steady, quality creation—not a one-off lottery.",
-      "monthly": {
-        "badge": "3 Young Authors every month",
-        "items": {
-          "print": "One free hardcover print",
-          "homepage": "Homepage and WeChat feature",
-          "badge": "Creator badge"
-        }
-      },
-      "note": "Approved books join the official library even without a monthly pick; strong work can still earn editor features and WeChat exposure.",
-      "perks": {
-        "youngAuthor": {
-          "title": "Monthly picks",
-          "desc": "3 featured books each month"
-        },
-        "editorPick": {
-          "title": "Editor's pick",
-          "desc": "Homepage and WeChat spot"
-        },
+      "title": "What you can get",
+      "subtitle": "Approved books join the official library; each month we feature 3 with extra rewards and exposure.",
+      "tiers": {
         "library": {
-          "title": "Official library",
-          "desc": "Public after review"
+          "label": "All approved books",
+          "title": "Official library · always on display",
+          "desc": "Your book stays available for families to read—it is not removed after monthly picks."
+        },
+        "featured": {
+          "label": "3 featured picks per month",
+          "title": "Extra rewards & spotlight",
+          "desc": "Chosen from that month's approved books:",
+          "items": {
+            "print": "One free hardcover print",
+            "homepage": "Homepage and WeChat feature"
+          },
+          "footnote": "Books not selected as monthly picks still remain in the library long-term."
         }
       },
       "imageCaption": "Your book could appear here"

@@ -93,30 +93,34 @@
       </div>
     </section>
 
-    <!-- 你能获得什么 -->
+    <!-- 投稿奖励 -->
     <section id="rewards" class="cp-section">
-      <div class="cp-split-reward">
-        <div>
-          <div class="cp-section-head">
-            <h2>{{ $t('creatorProgram.rewards.title') }}</h2>
-            <p>{{ $t('creatorProgram.rewards.subtitle') }}</p>
-          </div>
-         
+      <div class="cp-section-head cp-section-head--center">
+        <h2>{{ $t('creatorProgram.rewards.title') }}</h2>
+        <p>{{ $t('creatorProgram.rewards.subtitle') }}</p>
+      </div>
+
+      <div class="cp-reward-tiers">
+        <article class="cp-reward-tier cp-reward-tier--library">
+          <span class="cp-reward-label">{{ $t('creatorProgram.rewards.tiers.library.label') }}</span>
+          <h3>{{ $t('creatorProgram.rewards.tiers.library.title') }}</h3>
+          <p>{{ $t('creatorProgram.rewards.tiers.library.desc') }}</p>
+        </article>
+
+        <article class="cp-reward-tier cp-reward-tier--featured">
+          <span class="cp-reward-label">{{ $t('creatorProgram.rewards.tiers.featured.label') }}</span>
+          <h3>{{ $t('creatorProgram.rewards.tiers.featured.title') }}</h3>
+          <p class="cp-reward-tier-lead">{{ $t('creatorProgram.rewards.tiers.featured.desc') }}</p>
           <ul class="cp-reward-list">
-            <li v-for="key in monthlyRewardKeys" :key="key">
+            <li v-for="key in featuredRewardKeys" :key="key">
               <span class="cp-check">✓</span>
-              {{ $t(`creatorProgram.rewards.monthly.items.${key}`) }}
+              {{ $t(`creatorProgram.rewards.tiers.featured.items.${key}`) }}
             </li>
           </ul>
-          <p class="cp-reward-note">{{ $t('creatorProgram.rewards.note') }}</p>
-        </div>
-        <div class="cp-perk-grid">
-          <div v-for="key in perkKeys" :key="key" class="cp-perk-card">
-            <strong>{{ $t(`creatorProgram.rewards.perks.${key}.title`) }}</strong>
-            <span>{{ $t(`creatorProgram.rewards.perks.${key}.desc`) }}</span>
-          </div>
-        </div>
+          <p class="cp-reward-footnote">{{ $t('creatorProgram.rewards.tiers.featured.footnote') }}</p>
+        </article>
       </div>
+
       <div class="cp-visual-card">
         <img :src="galleryImage" :alt="$t('creatorProgram.rewards.title')" loading="lazy" />
         <p>{{ $t('creatorProgram.rewards.imageCaption') }}</p>
@@ -150,8 +154,7 @@ import {
   SECTION_NAV,
   WHY_KEYS,
   SUBMIT_STEPS,
-  MONTHLY_REWARD_KEYS,
-  PERK_KEYS,
+  FEATURED_REWARD_KEYS,
   RULE_KEYS,
   PROGRAM_HERO_IMAGE,
   PROGRAM_GALLERY_IMAGE,
@@ -160,8 +163,7 @@ import {
 const sectionNav = SECTION_NAV
 const whyKeys = WHY_KEYS
 const submitSteps = SUBMIT_STEPS
-const monthlyRewardKeys = MONTHLY_REWARD_KEYS
-const perkKeys = PERK_KEYS
+const featuredRewardKeys = FEATURED_REWARD_KEYS
 const ruleKeys = RULE_KEYS
 const heroImage = PROGRAM_HERO_IMAGE
 const galleryImage = PROGRAM_GALLERY_IMAGE
@@ -549,77 +551,92 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
   display: block;
 }
 
-.cp-split-reward {
+.cp-reward-tiers {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
-  align-items: start;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
 }
 
-.cp-monthly-badge {
+.cp-reward-tier {
+  padding: 24px 26px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #ece8f4;
+  box-shadow: 0 8px 28px -20px rgba(61, 47, 98, 0.18);
+}
+
+.cp-reward-tier--library {
+  background: linear-gradient(145deg, #fff 0%, #faf9fc 100%);
+}
+
+.cp-reward-tier--featured {
+  background: linear-gradient(145deg, #faf7ff 0%, #fff 100%);
+  border-color: rgba(129, 103, 169, 0.18);
+}
+
+.cp-reward-label {
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  margin-bottom: 12px;
+  border-radius: 999px;
   background: #f5f0fa;
   color: var(--cp-accent);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+}
+
+.cp-reward-tier h3 {
+  font-size: 1.05rem;
+  color: var(--cp-purple-deep);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.cp-reward-tier > p {
+  font-size: 14px;
+  color: var(--cp-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.cp-reward-tier-lead {
+  margin-bottom: 14px !important;
 }
 
 .cp-reward-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 
 .cp-reward-list li {
   display: flex;
   gap: 10px;
-  padding: 10px 0;
+  padding: 9px 0;
   border-bottom: 1px solid #f0ecf6;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.cp-reward-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .cp-check {
   color: #52a86a;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
-.cp-reward-note {
+.cp-reward-footnote {
   font-size: 13px;
   color: var(--cp-muted);
+  line-height: 1.6;
   margin: 0;
-  line-height: 1.55;
-}
-
-.cp-perk-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.cp-perk-card {
-  padding: 16px;
-  border-radius: 12px;
-  background: #f8f5fc;
-  border: 1px solid #ece8f4;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.cp-perk-card strong {
-  font-size: 14px;
-  color: var(--cp-purple-deep);
-}
-
-.cp-perk-card span {
-  font-size: 12px;
-  color: var(--cp-muted);
-  line-height: 1.45;
+  padding-top: 4px;
 }
 
 .cp-visual-card {
@@ -699,7 +716,7 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
 @media (max-width: 860px) {
   .cp-hero-inner,
   .cp-why-grid,
-  .cp-split-reward {
+  .cp-reward-tiers {
     grid-template-columns: 1fr;
   }
 
@@ -730,8 +747,9 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
 }
 
 @media (max-width: 640px) {
-  .cp-perk-grid {
-    grid-template-columns: 1fr;
+  .cp-path-card,
+  .cp-path-card--reverse {
+    padding: 20px 18px;
   }
 }
 </style>

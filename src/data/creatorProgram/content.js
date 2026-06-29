@@ -40,8 +40,6 @@ export const SUBMIT_STEPS = [
 
 export const WHY_KEYS = ['kid', 'family', 'memory']
 
-export const MONTHLY_REWARD_KEYS = ['print', 'homepage', 'badge']
-
-export const PERK_KEYS = ['youngAuthor', 'editorPick', 'library']
+export const FEATURED_REWARD_KEYS = ['print', 'homepage']
 
 export const RULE_KEYS = ['original', 'guardian', 'copyright', 'takedown']
