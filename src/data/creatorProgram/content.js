@@ -7,7 +7,6 @@ export const SECTION_NAV = [
   { id: 'why', labelKey: 'creatorProgram.nav.why' },
   { id: 'how', labelKey: 'creatorProgram.nav.how' },
   { id: 'rewards', labelKey: 'creatorProgram.nav.rewards' },
-  { id: 'themes', labelKey: 'creatorProgram.nav.themes' },
 ]
 
 /** 投稿方式（按创作进度分情况） */
@@ -41,20 +40,8 @@ export const SUBMIT_STEPS = [
 
 export const WHY_KEYS = ['kid', 'family', 'memory']
 
-export const MONTHLY_REWARD_KEYS = ['print', 'homepage', 'badge', 'certificate']
+export const MONTHLY_REWARD_KEYS = ['print', 'homepage', 'badge']
 
-export const PERK_KEYS = ['youngAuthor', 'editorPick', 'themeHall', 'growth']
-
-/** 灵感主题（展示部分） */
-export const THEME_KEYS = [
-  'myFirstBook',
-  'family',
-  'animalFriends',
-  'myDream',
-  'bedtime',
-  'festivals',
-  'braveKid',
-  'growingUp',
-]
+export const PERK_KEYS = ['youngAuthor', 'editorPick', 'library']
 
 export const RULE_KEYS = ['original', 'guardian', 'copyright', 'takedown']

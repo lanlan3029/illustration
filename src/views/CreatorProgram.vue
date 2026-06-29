@@ -109,20 +109,6 @@
       </div>
     </section>
 
-    <!-- 主题灵感 -->
-    <section id="themes" class="cp-section cp-section--alt">
-      <div class="cp-section-head cp-section-head--center">
-        <h2>{{ $t('creatorProgram.themes.title') }}</h2>
-        <p>{{ $t('creatorProgram.themes.subtitle') }}</p>
-      </div>
-      <div class="cp-theme-grid">
-        <div v-for="key in themeKeys" :key="key" class="cp-theme-chip">
-          {{ $t(`creatorProgram.themes.items.${key}`) }}
-        </div>
-      </div>
-      <p class="cp-theme-more">{{ $t('creatorProgram.themes.more') }}</p>
-    </section>
-
     <!-- 投稿须知（精简） -->
     <section class="cp-section cp-rules">
       <div class="cp-rules-box">
@@ -152,7 +138,6 @@ import {
   SUBMIT_STEPS,
   MONTHLY_REWARD_KEYS,
   PERK_KEYS,
-  THEME_KEYS,
   RULE_KEYS,
   PROGRAM_HERO_IMAGE,
   PROGRAM_GALLERY_IMAGE,
@@ -163,7 +148,6 @@ const whyKeys = WHY_KEYS
 const submitSteps = SUBMIT_STEPS
 const monthlyRewardKeys = MONTHLY_REWARD_KEYS
 const perkKeys = PERK_KEYS
-const themeKeys = THEME_KEYS
 const ruleKeys = RULE_KEYS
 const heroImage = PROGRAM_HERO_IMAGE
 const galleryImage = PROGRAM_GALLERY_IMAGE
@@ -559,29 +543,6 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
   margin: 0;
   font-size: 13px;
   color: var(--cp-muted);
-}
-
-.cp-theme-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.cp-theme-chip {
-  padding: 10px 16px;
-  border-radius: 999px;
-  background: #fff;
-  border: 1px solid #e0d8ec;
-  font-size: 14px;
-}
-
-.cp-theme-more {
-  text-align: center;
-  font-size: 13px;
-  color: var(--cp-muted);
-  margin: 0;
 }
 
 .cp-rules {

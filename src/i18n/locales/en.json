@@ -2145,8 +2145,7 @@
     "nav": {
       "why": "Why join",
       "how": "How to submit",
-      "rewards": "What you get",
-      "themes": "Themes"
+      "rewards": "What you get"
     },
     "why": {
       "title": "Why make a book, not just read one?",
@@ -2203,46 +2202,26 @@
         "badge": "3 Young Authors every month",
         "items": {
           "print": "One free hardcover print",
-          "homepage": "Homepage feature",
-          "badge": "Creator badge",
-          "certificate": "Monthly e-certificate"
+          "homepage": "Homepage and WeChat feature",
+          "badge": "Creator badge"
         }
       },
-      "note": "Strong work can still get editor picks and theme gallery exposure without winning.",
+      "note": "Approved books join the official library even without a monthly pick; strong work can still earn editor features and WeChat exposure.",
       "perks": {
         "youngAuthor": {
-          "title": "Young Author",
-          "desc": "Monthly honor"
+          "title": "Monthly picks",
+          "desc": "3 featured books each month"
         },
         "editorPick": {
           "title": "Editor's pick",
-          "desc": "Homepage slot"
+          "desc": "Homepage and WeChat spot"
         },
-        "themeHall": {
-          "title": "Theme gallery",
-          "desc": "Curated collections"
-        },
-        "growth": {
-          "title": "Growth levels",
-          "desc": "More perks as you create"
+        "library": {
+          "title": "Official library",
+          "desc": "Public after review"
         }
       },
       "imageCaption": "Your book could appear here"
-    },
-    "themes": {
-      "title": "Need inspiration? Try a theme",
-      "subtitle": "Pick one to start—or submit your own original idea.",
-      "more": "More themes coming soon…",
-      "items": {
-        "myFirstBook": "My first picture book",
-        "family": "Me and my parents",
-        "animalFriends": "Animal friends",
-        "myDream": "My dream",
-        "bedtime": "Bedtime story",
-        "festivals": "Chinese festivals",
-        "braveKid": "Brave kids",
-        "growingUp": "Growing up"
-      }
     },
     "rules": {
       "title": "Before you submit",

@@ -331,7 +331,7 @@
     "createCharacterLegacy": "创作角色（经典页）",
     "createGroupImages": "创作组图",
     "createLayoutIllustration": "布局编辑器创作",
-    "createIllustration": "DIY插画",
+    "createIllustration": "图片编辑器",
     "lassoCrop": "自由裁剪贴纸",
     "composeBook": "合成绘本",
     "printBookLayout": "打印排版",
@@ -635,10 +635,10 @@
     "showcaseWorkbenchTitle": "管理角色，保持形象一致",
     "showcaseWorkbenchDesc": "创建并保存角色库，用于绘本、插画与组图创作。",
     "showcaseWorkbenchCta": "进入创作工作台",
-    "showcaseEditorKicker": "DIY 插画",
+    "showcaseEditorKicker": "图片编辑器",
     "showcaseEditorTitle": "画布自由排版，素材随心组合",
     "showcaseEditorDesc": "多种画布尺寸，拖拽素材与文字，AI 优化后一键下载。",
-    "showcaseEditorCta": "打开 DIY 编辑器",
+    "showcaseEditorCta": "打开 图片编辑器",
     "stylesTitle": "丰富的插画风格",
     "stylesSubtitle": "一键切换多种艺术风格，让每个故事都独一无二",
     "creatorProgramKicker": "长期品牌项目",
@@ -2160,8 +2160,7 @@
     "nav": {
       "why": "为什么参与",
       "how": "如何投稿",
-      "rewards": "你能获得",
-      "themes": "主题灵感"
+      "rewards": "你能获得"
     },
     "why": {
       "title": "为什么不只「看绘本」，而要「做绘本」？",
@@ -2197,11 +2196,11 @@
         "existingArt": {
           "title": "已有插画，排版后投稿",
           "desc": "若只有插画素材，可在网站二次编辑：添加文字、调整版式，完成后提交审核。",
-          "link": "进入 EditorPro"
+          "link": "进入图片编辑器"
         },
         "createOnSite": {
           "title": "在 KidStory 从零创作",
-          "desc": "在网站生成插画、撰写故事并完成排版，完成后直接投稿。",
+          "desc": "在网站生成插画或绘本，完成后直接投稿。",
           "link": "开始创作"
         },
         "email": {
@@ -2212,52 +2211,32 @@
       }
     },
     "rewards": {
-      "title": "你能获得什么？",
-      "subtitle": "我们关注持续创作与优质内容，而不只是「中一次奖」。",
+      "title": "月度精选",
+      "subtitle": "",
       "monthly": {
-        "badge": "每月 3 位「绘本小作家」",
+        "badge": "每月选出3本绘本",
         "items": {
           "print": "精装绘本免费打印 1 本",
-          "homepage": "首页专题推荐",
-          "badge": "创作者认证徽章",
-          "certificate": "月度电子证书"
+          "homepage": "网站首页、官方公众号专题推荐",
+          "badge": ""
         }
       },
-      "note": "未获奖的优秀作品也有机会获得编辑推荐、主题馆展示等曝光。",
+      "note": "编辑推荐与公众号曝光。",
       "perks": {
         "youngAuthor": {
-          "title": "绘本小作家",
-          "desc": "月度荣誉榜"
+          "title": "月度精选",
+          "desc": "每月 3 本重点推荐"
         },
         "editorPick": {
           "title": "编辑推荐",
-          "desc": "首页精选位"
+          "desc": "首页与公众号曝光"
         },
-        "themeHall": {
-          "title": "主题作品馆",
-          "desc": "专题合集收录"
-        },
-        "growth": {
-          "title": "成长体系",
-          "desc": "持续创作解锁更多权益"
+        "library": {
+          "title": "官方绘本馆",
+          "desc": "审核通过后长期展示"
         }
       },
       "imageCaption": "你的作品，可能出现在这里"
-    },
-    "themes": {
-      "title": "不知道写什么？试试这些主题",
-      "subtitle": "任选灵感开始创作，也欢迎提交你的原创题材。",
-      "more": "更多主题持续更新中…",
-      "items": {
-        "myFirstBook": "我的第一本绘本",
-        "family": "我和爸爸妈妈",
-        "animalFriends": "动物朋友",
-        "myDream": "我的梦想",
-        "bedtime": "睡前故事",
-        "festivals": "中国传统节日",
-        "braveKid": "勇敢的小朋友",
-        "growingUp": "成长故事"
-      }
     },
     "rules": {
       "title": "投稿前请知悉",
@@ -2269,8 +2248,8 @@
       }
     },
     "cta": {
-      "title": "今天就开始，写属于你们的故事",
-      "subtitle": "几分钟完成第一页，离「小作家」只差一次点击。",
+      "title": "从此刻开始，创作属于你的故事",
+      "subtitle": "将感受、经验、回忆和灵感，用更有创意的方式记录下来。",
       "create": "立即创作并投稿",
       "foot": "需要帮助？前往创作指南查看详细教程"
     }
