@@ -2171,28 +2171,28 @@
       }
     },
     "submit": {
-      "title": "Submit in four steps",
-      "subtitle": "Create → submit → showcase → monthly selection—all on the platform.",
+      "title": "Four ways to submit",
+      "subtitle": "Pick the path that matches where you are in the creative process.",
       "steps": {
-        "create": {
-          "title": "Create your book",
-          "desc": "Use AI Books or EditorPro to finish your story and pages.",
+        "localBook": {
+          "title": "Already have a finished book",
+          "desc": "Upload your PDF or image pages directly on the platform for review.",
+          "link": "Upload local book"
+        },
+        "existingArt": {
+          "title": "Have illustrations only",
+          "desc": "Add text and layout in EditorPro on the site, then submit for review.",
+          "link": "Open EditorPro"
+        },
+        "createOnSite": {
+          "title": "Create on KidStory",
+          "desc": "Generate art, write your story, and lay out pages on the site—then submit.",
           "link": "Start creating"
         },
-        "submit": {
-          "title": "Submit for review",
-          "desc": "Organize in My Picture Books, add a synopsis, and submit.",
-          "link": "My picture books"
-        },
-        "showcase": {
-          "title": "Go public",
-          "desc": "Approved works join the official library for families to read.",
-          "link": "Browse library"
-        },
-        "contest": {
-          "title": "Enter monthly picks",
-          "desc": "Three Young Authors each month—hardcover print and homepage features.",
-          "link": "Popular books"
+        "email": {
+          "title": "Submit by email",
+          "desc": "Send your book files to our official inbox. Use “Picture book submission” as the subject.",
+          "link": "Send email"
         }
       }
     },

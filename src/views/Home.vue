@@ -7,11 +7,17 @@
                     {{ $t('home.welcomeTitle') || '让想象变成美丽的故事' }}
                 </h1>
                 <p class="hero-subtitle">{{ $t('home.welcomeSubtitle') || '选择您想要使用的创作功能' }}</p>
-                <button class="hero-cta" type="button" @click="go('/creation-studio')">
-                    {{ $t('home.startCreating') || '开始创作' }}
-                    <span class="hero-cta-arrow">↗</span>
-                </button>
             </header>
+
+            <!-- 创作者计划 -->
+            <router-link to="/creator-program" class="creator-program-banner">
+                <div class="creator-program-banner-text">
+                    <span class="creator-program-banner-kicker">{{ $t('home.creatorProgramKicker') }}</span>
+                    <strong>{{ $t('home.creatorProgramTitle') }}</strong>
+                    <p>{{ $t('home.creatorProgramDesc') }}</p>
+                </div>
+                <span class="creator-program-banner-cta">{{ $t('home.creatorProgramCta') }} →</span>
+            </router-link>
 
             <!-- 顶部四个功能卡片 -->
             <section class="feature-cards">
@@ -33,16 +39,6 @@
                     </span>
                 </button>
             </section>
-
-            <!-- 创作者计划 -->
-            <router-link to="/creator-program" class="creator-program-banner">
-                <div class="creator-program-banner-text">
-                    <span class="creator-program-banner-kicker">{{ $t('home.creatorProgramKicker') }}</span>
-                    <strong>{{ $t('home.creatorProgramTitle') }}</strong>
-                    <p>{{ $t('home.creatorProgramDesc') }}</p>
-                </div>
-                <span class="creator-program-banner-cta">{{ $t('home.creatorProgramCta') }} →</span>
-            </router-link>
 
             <!-- 风格轮播展示 -->
             <section class="styles-section">
@@ -244,52 +240,19 @@ export default {
     font-size: 16px;
     line-height: 1.6;
     color: #7a7a94;
-    margin: 0 0 22px;
+    margin: 0 0 20px;
     max-width: 420px;
     margin-left: auto;
     margin-right: auto;
 }
 
-.hero-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: none;
-    cursor: pointer;
-    padding: 11px 24px;
-    border-radius: 999px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #fff;
-    background: linear-gradient(135deg, #8b7cf0, #a99bf5);
-    box-shadow: 0 12px 28px -14px rgba(124, 108, 240, 0.65);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hero-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 32px -12px rgba(124, 108, 240, 0.7);
-}
-
-.hero-cta-arrow {
-    font-size: 14px;
-    opacity: 0.95;
-}
-
-/* ===== 四个功能卡片 ===== */
-.feature-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 32px;
-}
-
+/* ===== 创作者计划横幅 ===== */
 .creator-program-banner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     padding: 22px 28px;
     border-radius: 20px;
     text-decoration: none;
@@ -338,6 +301,14 @@ export default {
     color: #3d2f62;
     font-size: 14px;
     font-weight: 600;
+}
+
+/* ===== 四个功能卡片 ===== */
+.feature-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
 }
 
 .feature-card {

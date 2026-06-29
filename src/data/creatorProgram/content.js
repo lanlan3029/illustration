@@ -10,31 +10,32 @@ export const SECTION_NAV = [
   { id: 'themes', labelKey: 'creatorProgram.nav.themes' },
 ]
 
-/** 投稿 4 步 */
+/** 投稿方式（按创作进度分情况） */
 export const SUBMIT_STEPS = [
   {
-    id: 'create',
+    id: 'localBook',
+    image: GUIDE_SCREENSHOTS.uploadLocalBook,
+    route: '/user/upload/upload-local-book',
+    linkKey: 'creatorProgram.submit.steps.localBook.link',
+  },
+  {
+    id: 'existingArt',
+    image: GUIDE_SCREENSHOTS.editorPro,
+    route: '/editorpro',
+    linkKey: 'creatorProgram.submit.steps.existingArt.link',
+  },
+  {
+    id: 'createOnSite',
     image: GUIDE_SCREENSHOTS.aiBook,
     route: '/creation-studio/book/ai',
-    linkKey: 'creatorProgram.submit.steps.create.link',
+    linkKey: 'creatorProgram.submit.steps.createOnSite.link',
   },
   {
-    id: 'submit',
+    id: 'email',
     image: GUIDE_SCREENSHOTS.publishPdf,
-    route: '/creation-studio/book/mine',
-    linkKey: 'creatorProgram.submit.steps.submit.link',
-  },
-  {
-    id: 'showcase',
-    image: GUIDE_SCREENSHOTS.myBooks,
-    route: '/books/',
-    linkKey: 'creatorProgram.submit.steps.showcase.link',
-  },
-  {
-    id: 'contest',
-    image: GUIDE_SCREENSHOTS.homeOverview,
-    route: '/books/',
-    linkKey: 'creatorProgram.submit.steps.contest.link',
+    mailto: 'dailystorytime2026@163.com',
+    mailSubject: '绘本投稿',
+    linkKey: 'creatorProgram.submit.steps.email.link',
   },
 ]
 

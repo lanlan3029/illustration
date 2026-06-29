@@ -61,9 +61,19 @@
           <div class="cp-step-body">
             <h3>{{ $t(`creatorProgram.submit.steps.${step.id}.title`) }}</h3>
             <p>{{ $t(`creatorProgram.submit.steps.${step.id}.desc`) }}</p>
-            <router-link :to="step.route" class="cp-step-btn">
+            <p v-if="step.mailto" class="cp-step-email">
+              <a :href="`mailto:${step.mailto}`">{{ step.mailto }}</a>
+            </p>
+            <router-link v-if="step.route" :to="step.route" class="cp-step-btn">
               {{ $t(step.linkKey) }} →
             </router-link>
+            <a
+              v-else-if="step.mailto"
+              :href="`mailto:${step.mailto}?subject=${encodeURIComponent(step.mailSubject || '')}`"
+              class="cp-step-btn"
+            >
+              {{ $t(step.linkKey) }} →
+            </a>
           </div>
         </article>
       </div>
@@ -432,6 +442,20 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
   color: var(--cp-muted);
   line-height: 1.55;
   margin: 0 0 12px;
+}
+
+.cp-step-email {
+  margin: -4px 0 12px;
+}
+
+.cp-step-email a {
+  color: var(--cp-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cp-step-email a:hover {
+  text-decoration: underline;
 }
 
 .cp-step-btn {

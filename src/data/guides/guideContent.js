@@ -14,6 +14,7 @@ export const GUIDE_SCREENSHOTS = {
   layoutExport: require('@/assets/images/home/guides/layout-export.webp'),
   printLayout: require('@/assets/images/home/guides/print-layout.webp'),
   publishPdf: require('@/assets/images/home/guides/publish-pdf.webp'),
+  uploadLocalBook: require('@/assets/images/home/guides/upload.png'),
 }
 
 /** 首页四大功能模块 */
