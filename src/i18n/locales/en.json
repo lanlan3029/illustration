@@ -2148,24 +2148,24 @@
       "rewards": "What you get"
     },
     "why": {
-      "title": "Why make a book, not just read one?",
-      "subtitle": "A story you made together beats any prize for lasting meaning.",
+      "title": "Why create a picture book?",
+      "subtitle": "Start from what you feel—use AI to make it simpler and more creative, and turn your story into a book together.",
       "audience": "Open to parents, children (via guardians), teachers, and fans—anywhere.",
       "items": {
         "kid": {
-          "icon": "✍️",
-          "title": "Your child as author",
-          "desc": "Build expression, imagination, and pride in something truly theirs."
+          "icon": "💭",
+          "title": "Turn feelings into stories",
+          "desc": "Start from a child's everyday life, moods, and little wishes—put what matters to them into a book that's truly theirs."
         },
         "family": {
-          "icon": "❤️",
-          "title": "Family memories",
-          "desc": "Write and illustrate together—keep a one-of-a-kind keepsake."
+          "icon": "✨",
+          "title": "AI makes it easier",
+          "desc": "No drawing skills needed—AI helps with art and layout, so ideas become pages with less effort."
         },
         "memory": {
-          "icon": "📚",
-          "title": "Get discovered",
-          "desc": "Great books join our library with chances for features and monthly honors."
+          "icon": "❤️",
+          "title": "Create together as a family",
+          "desc": "Shape the plot, pick images, and refine words side by side—a warm keepsake and time spent together."
         }
       }
     },
