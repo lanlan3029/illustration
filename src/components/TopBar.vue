@@ -189,6 +189,7 @@ export default {
         const creationItems = [
             { to: '/creation-studio', label: 'nav.characterStudio' },
             { to: '/editorpro', label: 'nav.createIllustration' },
+            { to: '/image-segmentation', label: 'nav.imageSegmentation' },
             { to: '/lasso-crop', label: 'nav.lassoCrop' },
             { to: '/creation-studio/book/compose', label: 'nav.layoutExport' },
         ]
@@ -206,6 +207,7 @@ export default {
                 p.startsWith('/creation-studio') ||
                 p.startsWith('/character-studio') ||
                 p.startsWith('/editorpro') ||
+                p.startsWith('/image-segmentation') ||
                 p.startsWith('/lasso-crop') ||
                 p.startsWith('/user/upload/compose-illustration') ||
                 p.startsWith('/print-book-layout')

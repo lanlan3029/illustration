@@ -376,6 +376,16 @@ const routes = [{
         }
     },
     {
+        path: '/image-segmentation',
+        name: 'image-segmentation',
+        component: () =>
+            import(/* webpackChunkName: "image-segmentation" */ '../views/ImageSegmentationPage.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '图像分割',
+        },
+    },
+    {
         path: '/newyear',
         name: 'newyear',
         component: () =>
