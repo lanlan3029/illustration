@@ -46,7 +46,13 @@
                     <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
                     <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
                 </div>
-                <div class="styles-carousel-outer">
+                <div
+                    ref="stylesCarousel"
+                    class="styles-carousel-outer"
+                    :class="{ 'is-active': carouselActive }"
+                    @mouseenter="carouselHovered = true"
+                    @mouseleave="carouselHovered = false"
+                >
                     <div class="styles-carousel-track">
                         <button
                             v-for="(style, idx) in carouselStyles"
@@ -153,9 +159,18 @@ export default {
         carouselStyles() {
             return [...this.styleImages, ...this.styleImages];
         },
+        carouselActive() {
+            if (this.prefersReducedMotion) return false;
+            return this.carouselInView || this.carouselHovered;
+        },
     },
     data() {
         return {
+            carouselInView: false,
+            carouselHovered: false,
+            prefersReducedMotion: false,
+            carouselMotionObserver: null,
+            reducedMotionMedia: null,
             editorScreenshot: require('@/assets/images/home/showcase-editor.png'),
             featureCards: [
                 { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book', img: require('@/assets/images/cards/books.png') },
@@ -191,6 +206,36 @@ export default {
                 { key: 'narrativeEditorialFolk', id: 24, image: require('@/assets/prompt/24.webp') }
             ]
         };
+    },
+    mounted() {
+        if (typeof window === 'undefined') return;
+
+        this.reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
+        this.prefersReducedMotion = this.reducedMotionMedia.matches;
+        this.onReducedMotionChange = (event) => {
+            this.prefersReducedMotion = event.matches;
+        };
+        this.reducedMotionMedia.addEventListener('change', this.onReducedMotionChange);
+
+        const el = this.$refs.stylesCarousel;
+        if (el && typeof IntersectionObserver !== 'undefined') {
+            this.carouselMotionObserver = new IntersectionObserver(
+                ([entry]) => {
+                    this.carouselInView = Boolean(entry?.isIntersecting);
+                },
+                { threshold: 0.12, rootMargin: '40px 0px' }
+            );
+            this.carouselMotionObserver.observe(el);
+        } else {
+            this.carouselInView = true;
+        }
+    },
+    beforeUnmount() {
+        this.carouselMotionObserver?.disconnect();
+        this.carouselMotionObserver = null;
+        if (this.reducedMotionMedia && this.onReducedMotionChange) {
+            this.reducedMotionMedia.removeEventListener('change', this.onReducedMotionChange);
+        }
     },
     methods: {
         go(to) {
@@ -779,11 +824,12 @@ export default {
     gap: 18px;
     width: max-content;
     padding: 0 24px;
-    animation: styles-carousel-scroll 55s linear infinite;
+    animation: none;
 }
 
-.styles-carousel-track:hover {
-    animation-play-state: paused;
+.styles-carousel-outer.is-active .styles-carousel-track {
+    animation: styles-carousel-scroll 55s linear infinite;
+    will-change: transform;
 }
 
 @keyframes styles-carousel-scroll {
@@ -959,10 +1005,13 @@ export default {
         );
     }
 
+    .styles-carousel-outer.is-active .styles-carousel-track {
+        animation-duration: 45s;
+    }
+
     .styles-carousel-track {
         gap: 12px;
         padding: 0 14px;
-        animation-duration: 45s;
     }
 
     .style-carousel-card {
@@ -972,8 +1021,12 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .styles-carousel-track {
+    .styles-carousel-outer.is-active .styles-carousel-track {
         animation: none;
+        will-change: auto;
+    }
+
+    .styles-carousel-track {
         overflow-x: auto;
         max-width: 100%;
         scrollbar-width: none;
