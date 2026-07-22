@@ -38,6 +38,10 @@ export const getTmplTypes = () => instance.get('/api/templ-types');
 // 获取模板列表
 export const getTmplList = (data) => instance.get('/api/templs?' + data);
 
+// 按分类获取模板
+export const getTmplListByType = (data) =>
+  instance.get('/api/templs?' + qs.stringify(data));
+
 // 新版 API
 export const templsApi = new ApiClass('/api/templs');
 export const customDynamicsApi = new ApiClass('/api/custom/dynamics');

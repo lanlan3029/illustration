@@ -6,6 +6,7 @@ import myMaterial from '@/components/editorPro/editor-components/myMaterial/inde
 import tools from '@/components/editorPro/editor-components/tools.vue';
 import material from '@/components/editorPro/editor-components/material.vue';
 import layer from '@/components/editorPro/editor-components/layer.vue';
+import pageTemplate from '@/components/editorPro/editor-components/pageTemplate.vue';
 import { useI18n } from 'vue-i18n';
 // 路由
 import { useRoute } from 'vue-router';
@@ -20,6 +21,7 @@ const state = reactive({
 const menuActive = ref('importTmpl');
 const leftBarComponent = {
   importTmpl,
+  pageTemplate,
   tools,
   material,
   layer,
@@ -33,6 +35,11 @@ const leftBar = reactive([
     key: 'importTmpl',
     name: computed(() => t('editorProLeft.canvas')),
     icon: 'md-square-outline',
+  },
+  {
+    key: 'pageTemplate',
+    name: computed(() => t('editorProLeft.pageTemplates')),
+    icon: 'md-copy',
   },
   {
     key: 'tools',
