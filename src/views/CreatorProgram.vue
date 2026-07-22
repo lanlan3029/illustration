@@ -24,12 +24,6 @@
       </div>
     </header>
 
-    <nav class="cp-nav" aria-label="section navigation">
-      <a v-for="item in sectionNav" :key="item.id" :href="`#${item.id}`" class="cp-nav-link">
-        {{ $t(item.labelKey) }}
-      </a>
-    </nav>
-
     <!-- 为什么参与 -->
     <section id="why" class="cp-section">
       <div class="cp-section-head cp-section-head--center">
@@ -144,14 +138,17 @@
       <router-link to="/creation-studio/book/ai" class="cp-btn cp-btn--primary cp-btn--lg">
         {{ $t('creatorProgram.cta.create') }} →
       </router-link>
-      <p class="cp-cta-foot">{{ $t('creatorProgram.cta.foot') }}</p>
+      <p class="cp-cta-foot">
+        {{ $t('creatorProgram.cta.footBefore') }}
+        <router-link to="/connection">{{ $t('creatorProgram.cta.footLink') }}</router-link>
+        {{ $t('creatorProgram.cta.footAfter') }}
+      </p>
     </section>
   </div>
 </template>
 
 <script setup>
 import {
-  SECTION_NAV,
   WHY_KEYS,
   SUBMIT_STEPS,
   FEATURED_REWARD_KEYS,
@@ -160,7 +157,6 @@ import {
   PROGRAM_GALLERY_IMAGE,
 } from '@/data/creatorProgram/content'
 
-const sectionNav = SECTION_NAV
 const whyKeys = WHY_KEYS
 const submitSteps = SUBMIT_STEPS
 const featuredRewardKeys = FEATURED_REWARD_KEYS
@@ -283,38 +279,10 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
   display: block;
 }
 
-.cp-nav {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.cp-nav-link {
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-size: 13px;
-  color: var(--cp-muted);
-  text-decoration: none;
-}
-
-.cp-nav-link:hover {
-  background: #f0ebf8;
-  color: var(--cp-accent);
-}
-
 .cp-section {
   max-width: 1060px;
   margin: 0 auto;
   padding: 52px 20px;
-  scroll-margin-top: 52px;
 }
 
 .cp-section--alt {
@@ -711,6 +679,16 @@ const galleryImage = PROGRAM_GALLERY_IMAGE
   margin-top: 16px !important;
   margin-bottom: 0 !important;
   font-size: 13px !important;
+}
+
+.cp-cta-foot a {
+  color: var(--cp-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cp-cta-foot a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 860px) {

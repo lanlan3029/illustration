@@ -3,12 +3,6 @@ import { GUIDE_SCREENSHOTS } from '@/data/guides/guideContent'
 export const PROGRAM_HERO_IMAGE = GUIDE_SCREENSHOTS.aiBook
 export const PROGRAM_GALLERY_IMAGE = GUIDE_SCREENSHOTS.myBooks
 
-export const SECTION_NAV = [
-  { id: 'why', labelKey: 'creatorProgram.nav.why' },
-  { id: 'how', labelKey: 'creatorProgram.nav.how' },
-  { id: 'rewards', labelKey: 'creatorProgram.nav.rewards' },
-]
-
 /** 投稿方式（按创作进度分情况） */
 export const SUBMIT_STEPS = [
   {

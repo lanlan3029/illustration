@@ -207,7 +207,7 @@ import {
   INSPIRE_PROMPTS,
 } from '@/utils/characterStudioPrompt';
 import { takePromptFillPending } from '@/utils/promptFillHandoff';
-import { matCharacterImageUrl } from '@/utils/canvasMatting';
+import { rembgFromImageSource } from '@/utils/imageSegmentation';
 
 export default {
   name: 'CharacterStudioWorkbench',
@@ -431,9 +431,12 @@ export default {
         if (!imageUrl) throw new Error(this.$t('characterStudio.noImageUrl'));
 
         try {
-          imageUrl = await matCharacterImageUrl(imageUrl);
+          const seg = await rembgFromImageSource(this.$http, imageUrl, {
+            apiBaseUrl: this.apiBaseUrl,
+          });
+          imageUrl = seg.imageURL;
         } catch (matErr) {
-          console.warn('前端抠图失败，使用原图:', matErr);
+          console.warn('rembg 抠图失败，使用原图:', matErr);
         }
 
         if (result.points !== undefined && this.$store?.state) {

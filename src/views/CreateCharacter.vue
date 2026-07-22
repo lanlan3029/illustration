@@ -179,6 +179,7 @@ import {
 } from '@/utils/createCharacterTask';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 import { segmentCharacterImageClient } from '@/utils/canvasMatting';
+import { rembgFromFile } from '@/utils/imageSegmentation';
 
 export default {
     name: 'CreateCharacter',
@@ -318,60 +319,13 @@ export default {
             this.segmentedImageData = null;
             
             try {
-                // 构建FormData
-                const formData = new FormData();
-                formData.append('photo', this.photoFile);
-                
-                // 调用抠图API
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/create-character/segment`
-                    : '/create-character/segment';
-                
-                const response = await this.$http.post(apiUrl, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
-                    },
-                    timeout: 120000 // 2分钟超时
+                const result = await rembgFromFile(this.$http, this.photoFile, {
+                    apiBaseUrl: this.apiBaseUrl,
                 });
-                
-                // 处理响应
-                const responseData = response.data;
-                let imageUrl = null;
-                
-                if (responseData.code === 0 || responseData.desc === 'success') {
-                    const result = responseData.message || responseData.data || responseData;
-                    
-                    // 优先使用OSS链接，其次使用本地URL，最后使用base64
-                    if (result.segmented_image_oss_url) {
-                        imageUrl = result.segmented_image_oss_url;
-                    } else if (result.segmented_image_url) {
-                        imageUrl = result.segmented_image_url;
-                    } else if (result.segmented_image_base64) {
-                        // 处理base64格式：检查是否已经包含data URI前缀
-                        let base64Str = result.segmented_image_base64.trim();
-                        if (base64Str.startsWith('data:')) {
-                            // 已经包含data URI前缀，直接使用
-                            imageUrl = base64Str;
-                        } else {
-                            // 纯base64字符串，添加前缀
-                            // 清理base64字符串（去除空格、换行符等）
-                            base64Str = base64Str.replace(/\s/g, '');
-                            imageUrl = `data:image/jpeg;base64,${base64Str}`;
-                        }
-                    }
-                    
-                    if (imageUrl) {
-                        this.segmentedImageUrl = imageUrl;
-                        this.segmentedImageData = result;
-                        ElMessage.success(this.$t('createCharacter.segmentSuccess'));
-                    } else {
-                        throw new Error('未找到抠图结果');
-                    }
-                } else {
-                    const errorMsg = responseData.message || responseData.desc || '抠图失败，请重试';
-                    throw new Error(errorMsg);
-                }
+
+                this.segmentedImageUrl = result.imageURL;
+                this.segmentedImageData = result;
+                ElMessage.success(this.$t('createCharacter.segmentSuccess'));
             } catch (error) {
                 let errorMessage = '抠图失败，请重试';
                 
@@ -752,9 +706,12 @@ export default {
                 return new File([byteArray], filename, { type: mimeType });
         },
         
-        // 图像分割：前端 Canvas 白底抠图（不走阿里云）
+        // 图像分割：rembg API
         async segmentImage(imageUrl, characterParams = {}, options = {}) {
-            return segmentCharacterImageClient(this.$http, imageUrl, characterParams, options);
+            return segmentCharacterImageClient(this.$http, imageUrl, characterParams, {
+                ...options,
+                apiBaseUrl: this.apiBaseUrl,
+            });
         },
         
         // 收集角色：跳转到上传页面确认信息后保存

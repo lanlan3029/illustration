@@ -152,33 +152,37 @@ export async function matCharacterImageUrl(imageUrl, options = {}) {
   return canvasToDataUrl(canvas);
 }
 
+import { rembgFromImageSource } from '@/utils/imageSegmentation'
+
 /**
- * 前端抠图并可选更新已有角色（替代 /image-segmentation/general）
- * @returns {{ imageURL: string, localPath: string, filename: string } | string}
+ * rembg 抠图并可选更新已有角色
+ * @returns {{ imageURL: string, localPath: string, filename: string, provider?: string } | string}
  */
 export async function segmentCharacterImageClient(http, imageUrl, characterParams = {}, options = {}) {
-  const dataUrl = await matCharacterImageUrl(imageUrl, options.mattingOptions);
-  const meta = { imageURL: dataUrl, localPath: '', filename: '' };
+  const meta = await rembgFromImageSource(http, imageUrl, {
+    apiBaseUrl: options.apiBaseUrl,
+    timeout: options.timeout,
+  })
 
   if (characterParams.character_id && http) {
-    const token = localStorage.getItem('token') || '';
+    const token = localStorage.getItem('token') || ''
     const payload = {
       character_id: characterParams.character_id,
-      image_url: dataUrl,
-    };
-    if (characterParams.character_type) payload.character_type = characterParams.character_type;
-    if (characterParams.description) payload.description = characterParams.description;
-    if (characterParams.is_public !== undefined) payload.is_public = characterParams.is_public;
+      image_url: meta.imageURL,
+    }
+    if (characterParams.character_type) payload.character_type = characterParams.character_type
+    if (characterParams.description) payload.description = characterParams.description
+    if (characterParams.is_public !== undefined) payload.is_public = characterParams.is_public
     await http.post('/character', payload, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-    });
+    })
   }
 
-  if (options.returnMeta) return meta;
-  return dataUrl;
+  if (options.returnMeta) return meta
+  return meta.imageURL
 }
 
 export function canvasToDataUrl(canvas) {

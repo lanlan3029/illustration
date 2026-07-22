@@ -2142,11 +2142,6 @@
       "ctaSecondary": "Browse the library",
       "hint": "Parents, teachers, and fans welcome · Minors submit via guardian account"
     },
-    "nav": {
-      "why": "Why join",
-      "how": "How to submit",
-      "rewards": "What you get"
-    },
     "why": {
       "title": "Why create a picture book?",
       "subtitle": "Start from what you feel—use AI to make it simpler and more creative, and turn your story into a book together.",
@@ -2230,7 +2225,9 @@
       "title": "Start your story today",
       "subtitle": "Your first page is one click away.",
       "create": "Create and submit now",
-      "foot": "Need help? See our creative guides"
+      "footBefore": "Need help? See the ",
+      "footLink": "creation guide",
+      "footAfter": " for step-by-step tutorials."
     }
   }
 }
