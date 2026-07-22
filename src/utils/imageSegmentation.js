@@ -10,7 +10,6 @@ export function resolveImageSourceUrl(url) {
   if (url.startsWith('/')) return `https://static.kidstory.cc${url}`
   return `https://static.kidstory.cc/${String(url).replace(/^\/+/, '')}`
 }
-export const REMBG_DEFAULT_TIMEOUT_MS = 120000
 
 export function getRembgApiUrl(apiBaseUrl) {
   return `${resolveApiOrigin(apiBaseUrl)}${REMBG_PATH}`
