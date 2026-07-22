@@ -2,30 +2,22 @@
   <div class="page-template-panel">
     <p class="page-template-hint">{{ $t('editorProLeft.pageTemplateHint') }}</p>
 
-    <searchType
-      ref="selectTypeRef"
-      :typeListApi="getTmplTypes"
-      @change="searchChange"
-    />
-
-    <typeList
-      v-show="!filters.name.$contains && !filters.templ_type.$contains"
-      :typeApi="getTmplTypes"
-      :typeListApi="getTmplListByType"
-      typeKey="templ_type"
-      :formatData="formatData"
-      @selectType="selectType"
-      @click="applyTemplate"
-    />
-
-    <pageList
-      v-if="filters.templ_type.$contains || filters.name.$contains"
-      DOMId="pageTemplateList"
-      :pageListApi="getTmplList"
-      :filters="filters"
-      :formatData="formatData"
-      @click="applyTemplate"
-    />
+    <div v-for="group in templateGroups" :key="group.id" class="template-group">
+      <Divider plain orientation="left">{{ group.name }}</Divider>
+      <div class="template-grid">
+        <button
+          v-for="item in group.templates"
+          :key="item.id"
+          type="button"
+          class="template-card"
+          :title="item.name"
+          @click="applyTemplate(item)"
+        >
+          <img :src="item.preview" :alt="item.name" loading="lazy" />
+          <span class="template-card-name">{{ item.name }}</span>
+        </button>
+      </div>
+    </div>
 
     <div v-if="activePhotoSlot" class="photo-slot-fill">
       <p class="photo-slot-fill-title">{{ $t('editorProLeft.photoSlotSelected') }}</p>
@@ -63,15 +55,11 @@
 </template>
 
 <script setup name="PageTemplate">
-import { ref, reactive, nextTick, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Button, Modal, Spin, Message } from 'view-ui-plus'
-import searchType from '@/components/editorPro/editor-components/common/searchType.vue'
-import typeList from '@/components/editorPro/editor-components/common/typeList.vue'
-import pageList from '@/components/editorPro/editor-components/common/pageList.vue'
+import { Button, Modal, Spin, Message, Divider } from 'view-ui-plus'
 import useSelect from '@/components/editorPro/hooks/select'
-import { getMaterialInfoUrl, getMaterialPreviewUrl } from '@/components/editorPro/hooks/usePageList'
-import { getTmplTypes, getTmplList, getTmplListByType } from '@/components/editorPro/api/material'
+import { getLocalPageTemplateGroups } from '@/data/editorPageTemplates'
 import {
   applyPageTemplateBehavior,
   fillPhotoSlotObject,
@@ -83,41 +71,14 @@ const { t } = useI18n()
 const { canvasEditor } = useSelect()
 const { proxy } = getCurrentInstance()
 
-const selectTypeRef = ref()
+const templateGroups = computed(() => getLocalPageTemplateGroups(t))
+
 const activePhotoSlot = ref(null)
 const showIllPicker = ref(false)
 const illArr = ref([])
 const loadingIll = ref(false)
 
-const filters = reactive({
-  templ_type: { $contains: '' },
-  name: { $contains: '' },
-})
-
-const formatData = (data) =>
-  data.map((item) => ({
-    id: item.id,
-    name: item.attributes.name,
-    desc: item.attributes.desc,
-    json: item.attributes.json,
-    src: getMaterialInfoUrl(item.attributes.img),
-    previewSrc: getMaterialPreviewUrl(item.attributes.img),
-  }))
-
-const selectType = (id) => {
-  filters.name.$contains = ''
-  filters.templ_type.$contains = String(id)
-}
-
-const searchChange = async ({ searchKeyWord, typeValue }) => {
-  filters.name.$contains = ''
-  filters.templ_type.$contains = ''
-  await nextTick()
-  filters.name.$contains = searchKeyWord
-  filters.templ_type.$contains = typeValue
-}
-
-const applyTemplate = async ({ info: item }) => {
+const applyTemplate = async (item) => {
   if (!item?.json || !canvasEditor) return
 
   Modal.confirm({
@@ -162,7 +123,7 @@ const fillActiveSlot = async (imageSrc) => {
     await fillPhotoSlotObject(activePhotoSlot.value, imageSrc, canvasEditor.canvas)
     Message.success(t('editorProLeft.photoSlotFilled'))
     showIllPicker.value = false
-  } catch (e) {
+  } catch {
     Message.error(t('editorProLeft.photoSlotFillFailed'))
   }
 }
@@ -230,6 +191,50 @@ onBeforeUnmount(() => {
   padding: 8px 10px;
   background: #f5f0fa;
   border-radius: 8px;
+}
+
+.template-group {
+  margin-bottom: 4px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.template-card {
+  border: none;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f1f2f4;
+  text-align: center;
+  transition: background 0.15s;
+}
+
+.template-card:hover {
+  background: #e0dce8;
+}
+
+.template-card img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: contain;
+  display: block;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.template-card-name {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .photo-slot-fill {
