@@ -1,13 +1,12 @@
 const PLACEHOLDER_W = 400
-const PLACEHOLDER_H = 300
 
-/** 照片槽占位图（SVG data URL） */
-export function photoPlaceholder(label = '照片') {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PLACEHOLDER_W}" height="${PLACEHOLDER_H}"><rect fill="#e8e0f4" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#8167a9" font-size="24" font-family="sans-serif">${label}</text></svg>`
+/** 照片槽占位图（SVG data URL），宽高比与槽位一致 */
+export function photoPlaceholder(label = '照片', slotW = PLACEHOLDER_W, slotH = PLACEHOLDER_W) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${slotW}" height="${slotH}"><rect fill="#e8e0f4" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#8167a9" font-size="24" font-family="sans-serif">${label}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
-export { PLACEHOLDER_W, PLACEHOLDER_H }
+export { PLACEHOLDER_W }
 
 export const CANVAS_W = 900
 export const CANVAS_H = 1200
@@ -51,6 +50,10 @@ export function workspaceObject(width = CANVAS_W, height = CANVAS_H) {
 }
 
 export function photoSlot({ left, top, width, height, label = '照片' }) {
+  const baseW = PLACEHOLDER_W
+  const baseH = Math.max(1, Math.round(PLACEHOLDER_W * (height / width)))
+  const uniformScale = width / baseW
+
   return {
     type: 'image',
     version: '5.3.0',
@@ -58,16 +61,16 @@ export function photoSlot({ left, top, width, height, label = '照片' }) {
     originY: 'top',
     left,
     top,
-    width: PLACEHOLDER_W,
-    height: PLACEHOLDER_H,
-    scaleX: width / PLACEHOLDER_W,
-    scaleY: height / PLACEHOLDER_H,
+    width: baseW,
+    height: baseH,
+    scaleX: uniformScale,
+    scaleY: uniformScale,
     angle: 0,
     flipX: false,
     flipY: false,
     opacity: 1,
     visible: true,
-    src: photoPlaceholder(label),
+    src: photoPlaceholder(label, baseW, baseH),
     crossOrigin: null,
     kidstoryRole: 'photoSlot',
     kidstorySlotLeft: left,

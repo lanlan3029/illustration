@@ -1,20 +1,32 @@
 
-
 <template>
   <div v-if="isOne && type === 'image'" class="attr-item-box">
     <div class="bg-item">
       <Button @click="repleace" type="text" long>{{ $t('repleaceImg') }}</Button>
     </div>
+    <p v-if="isPhotoSlot" class="replace-slot-hint">{{ $t('editorProLeft.photoSlotDragHint') }}</p>
   </div>
 </template>
 
 <script setup name="ReplaceImg">
 import useSelect from '@/components/editorPro/hooks/select.js';
-import { getCurrentInstance, onMounted, onBeforeUnmount, ref } from 'vue';
+import { getCurrentInstance, onMounted, onBeforeUnmount, ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Message } from 'view-ui-plus';
+import {
+  fillPhotoSlotObject,
+  isPhotoSlotObject,
+  preparePhotoSlotForFill,
+} from '@/utils/editorPro/pageTemplate';
+import { syncActivePhotoSlotFromCanvas } from '@/utils/editorPro/photoSlotContext';
 
+const { t } = useI18n();
 const update = getCurrentInstance();
 const { canvasEditor, isOne } = useSelect() || {};
 const type = ref('');
+const activeObject = ref(null);
+
+const isPhotoSlot = computed(() => isPhotoSlotObject(activeObject.value));
 
 function selectFiles({ accept, multiple = false } = {}) {
   return new Promise((resolve) => {
@@ -45,34 +57,45 @@ function insertImgFile(file) {
   });
 }
 
-// 替换图片
 const repleace = async () => {
-  const activeObject = canvasEditor?.canvas?.getActiveObjects()[0];
-  if (activeObject && activeObject.type === 'image') {
-    // 图片
-    const [file] = await selectFiles({ accept: 'image/*', multiple: false });
-    // 转字符串
+  const target = canvasEditor?.canvas?.getActiveObjects()[0];
+  if (!target || target.type !== 'image') return;
+
+  const [file] = await selectFiles({ accept: 'image/*', multiple: false });
+  if (!file) return;
+
+  try {
     const fileStr = await getImgStr(file);
-    // 字符串转El
+
+    if (isPhotoSlotObject(target)) {
+      preparePhotoSlotForFill(target);
+      await fillPhotoSlotObject(target, fileStr, canvasEditor.canvas);
+      syncActivePhotoSlotFromCanvas(canvasEditor.canvas);
+      Message.success(t('editorProLeft.photoSlotFilled'));
+      return;
+    }
+
     const imgEl = await insertImgFile(fileStr);
-    const width = activeObject.get('width');
-    const height = activeObject.get('height');
-    const scaleX = activeObject.get('scaleX');
-    const scaleY = activeObject.get('scaleY');
-    activeObject.setSrc(imgEl.src, () => {
-      activeObject.set('scaleX', (width * scaleX) / imgEl.width);
-      activeObject.set('scaleY', (height * scaleY) / imgEl.height);
-      activeObject.set('originSrc', imgEl.src);
+    const width = target.get('width');
+    const height = target.get('height');
+    const scaleX = target.get('scaleX');
+    const scaleY = target.get('scaleY');
+    target.setSrc(imgEl.src, () => {
+      target.set('scaleX', (width * scaleX) / imgEl.width);
+      target.set('scaleY', (height * scaleY) / imgEl.height);
+      target.set('originSrc', imgEl.src);
       canvasEditor.canvas.renderAll();
     });
     imgEl.remove();
+  } catch {
+    Message.error(t('editorProLeft.photoSlotFillFailed'));
   }
 };
 
 const init = () => {
-  const activeObject = canvasEditor?.canvas?.getActiveObjects()[0];
-  if (activeObject) {
-    type.value = activeObject.type;
+  activeObject.value = canvasEditor?.canvas?.getActiveObjects()[0] || null;
+  if (activeObject.value) {
+    type.value = activeObject.value.type;
     update?.proxy?.$forceUpdate();
   }
 };
@@ -80,15 +103,24 @@ const init = () => {
 onMounted(() => {
   if (!canvasEditor || !canvasEditor.on) return;
   canvasEditor.on('selectOne', init);
+  canvasEditor.on('selectCancel', init);
 });
 
 onBeforeUnmount(() => {
   if (!canvasEditor || !canvasEditor.off) return;
   canvasEditor.off('selectOne', init);
+  canvasEditor.off('selectCancel', init);
 });
 </script>
-<style   scoped>
+<style scoped>
 .attr-item-box {
   margin-top: 8px;
+}
+
+.replace-slot-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #8167a9;
 }
 </style>

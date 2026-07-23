@@ -21,13 +21,33 @@ export function isEditableTextObject(obj) {
 
 export function isPhotoSlotObject(obj) {
   if (!obj || isWorkspaceObject(obj)) return false
+  if (obj.type !== 'image') return false
   if (obj.kidstoryRole === KIDSTORY_ROLE.PHOTO_SLOT) return true
-  if (obj.type === 'image') return true
+  if (obj.kidstorySlotW || obj.kidstorySlotH || obj.kidstoryPhotoFilled) return true
+  if (Array.isArray(obj.strokeDashArray) && obj.strokeDashArray.length > 0) return true
   return false
+}
+
+/** 替换/填入前补全照片槽外框信息（兼容旧模版或元数据缺失） */
+export function preparePhotoSlotForFill(obj) {
+  if (!obj || obj.type !== 'image') return
+
+  if (!obj.kidstorySlotW || !obj.kidstorySlotH) {
+    const w = obj.width * (obj.scaleX || 1)
+    const h = obj.height * (obj.scaleY || 1)
+    obj.kidstorySlotLeft = obj.left
+    obj.kidstorySlotTop = obj.top
+    obj.kidstorySlotW = w
+    obj.kidstorySlotH = h
+  }
+
+  ensurePhotoSlotFrameMeta(obj)
+  obj.kidstoryRole = KIDSTORY_ROLE.PHOTO_SLOT
 }
 
 export function isFilledPhotoSlot(obj) {
   if (!obj || obj.type !== 'image') return false
+  if (obj.kidstoryPhotoFilled) return true
   const src = obj.originSrc || obj.src
   if (!src || typeof src !== 'string') return false
   return !src.startsWith('data:image/svg+xml')
@@ -35,13 +55,11 @@ export function isFilledPhotoSlot(obj) {
 
 /** 照片槽固定外框（画布坐标） */
 export function getPhotoSlotFrame(obj) {
-  const width = obj.kidstorySlotW ?? obj.width * (obj.scaleX || 1)
-  const height = obj.kidstorySlotH ?? obj.height * (obj.scaleY || 1)
   return {
     left: obj.kidstorySlotLeft ?? obj.left ?? 0,
     top: obj.kidstorySlotTop ?? obj.top ?? 0,
-    width,
-    height,
+    width: obj.kidstorySlotW ?? obj.width * (obj.scaleX || 1),
+    height: obj.kidstorySlotH ?? obj.height * (obj.scaleY || 1),
   }
 }
 
@@ -75,6 +93,48 @@ export function computeCoverFit(frame, imgW, imgH) {
   }
 }
 
+function getImageNaturalSize(obj) {
+  const el = typeof obj.getElement === 'function' ? obj.getElement() : obj._element
+  return {
+    width: el?.naturalWidth || obj.width,
+    height: el?.naturalHeight || obj.height,
+  }
+}
+
+/** 空槽位：对齐到模版框位置，占位图等比缩放铺满 */
+export function syncEmptyPhotoSlotPosition(obj) {
+  if (!obj?.kidstorySlotW || !obj?.kidstorySlotH) return
+  ensurePhotoSlotFrameMeta(obj)
+  obj.set({
+    left: obj.kidstorySlotLeft,
+    top: obj.kidstorySlotTop,
+  })
+  obj.setCoords?.()
+}
+
+export function normalizePhotoSlotPlaceholder(obj) {
+  if (!obj || obj.type !== 'image' || isFilledPhotoSlot(obj)) return
+
+  const slotW = obj.kidstorySlotW
+  const slotH = obj.kidstorySlotH
+  if (!slotW || !slotH) return
+
+  syncEmptyPhotoSlotPosition(obj)
+
+  const { width: naturalW, height: naturalH } = getImageNaturalSize(obj)
+  if (!naturalW || !naturalH) return
+
+  const scale = Math.max(slotW / naturalW, slotH / naturalH)
+
+  obj.set({
+    scaleX: scale,
+    scaleY: scale,
+    clipPath: undefined,
+    objectCaching: false,
+  })
+  clampPhotoSlotPan(obj)
+}
+
 /** 拖动时限制在槽位内，保证始终 cover 住外框 */
 export function clampPhotoSlotPan(obj) {
   if (!obj) return
@@ -103,41 +163,13 @@ export function clampPhotoSlotPan(obj) {
   }
 }
 
-function getImageNaturalSize(obj) {
-  const el = typeof obj.getElement === 'function' ? obj.getElement() : obj._element
-  return {
-    width: el?.naturalWidth || obj.width,
-    height: el?.naturalHeight || obj.height,
-  }
-}
-
-/** 占位图拉伸铺满虚线框 */
-export function normalizePhotoSlotPlaceholder(obj) {
-  if (!obj || obj.type !== 'image' || isFilledPhotoSlot(obj)) return
-
-  const slotW = obj.kidstorySlotW ?? obj.width * (obj.scaleX || 1)
-  const slotH = obj.kidstorySlotH ?? obj.height * (obj.scaleY || 1)
-  if (!slotW || !slotH) return
-
-  const { width: naturalW, height: naturalH } = getImageNaturalSize(obj)
-  if (!naturalW || !naturalH) return
-
-  const nextScaleX = slotW / naturalW
-  const nextScaleY = slotH / naturalH
-  if (
-    Math.abs((obj.scaleX || 1) - nextScaleX) < 0.001 &&
-    Math.abs((obj.scaleY || 1) - nextScaleY) < 0.001
-  ) {
-    return
-  }
-
-  obj.set({
-    left: obj.kidstorySlotLeft ?? obj.left,
-    top: obj.kidstorySlotTop ?? obj.top,
-    scaleX: nextScaleX,
-    scaleY: nextScaleY,
-  })
-  obj.setCoords?.()
+function enforceUniformPhotoScale(obj) {
+  if (!obj || obj.type !== 'image') return
+  const sx = obj.scaleX || 1
+  const sy = obj.scaleY || 1
+  if (Math.abs(sx - sy) < 0.001) return
+  const scale = Math.max(sx, sy)
+  obj.set({ scaleX: scale, scaleY: scale })
 }
 
 /** 已填图：等比 cover + 裁剪 + 可拖动 */
@@ -152,6 +184,7 @@ export function applyFilledPhotoSlotLayout(obj, imgW, imgH) {
     scaleX: fit.scale,
     scaleY: fit.scale,
     clipPath: createPhotoSlotClipPath(frame),
+    objectCaching: false,
     lockMovementX: false,
     lockMovementY: false,
     hasControls: false,
@@ -161,16 +194,45 @@ export function applyFilledPhotoSlotLayout(obj, imgW, imgH) {
     stroke: null,
     strokeWidth: 0,
     strokeDashArray: null,
+    hoverCursor: 'move',
+    moveCursor: 'move',
   })
   clampPhotoSlotPan(obj)
 }
 
-function applyPhotoSlotCommonBehavior(obj) {
+function applyPhotoSlotCommonBehavior(obj, { filled = false } = {}) {
   obj.set({
     kidstoryRole: KIDSTORY_ROLE.PHOTO_SLOT,
     selectable: true,
     evented: true,
+    lockMovementX: filled ? false : true,
+    lockMovementY: filled ? false : true,
+    hasControls: false,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
   })
+}
+
+function applyFilledPhotoSlotFromObject(obj) {
+  const { width: iw, height: ih } = getImageNaturalSize(obj)
+  if (!iw || !ih) return false
+  applyFilledPhotoSlotLayout(obj, iw, ih)
+  applyPhotoSlotCommonBehavior(obj, { filled: true })
+  return true
+}
+
+function applyEmptyPhotoSlotFromObject(obj) {
+  syncEmptyPhotoSlotPosition(obj)
+  normalizePhotoSlotPlaceholder(obj)
+  obj.set({
+    clipPath: undefined,
+    stroke: '#8167a9',
+    strokeWidth: 2,
+    strokeDashArray: [6, 4],
+    kidstoryPhotoFilled: false,
+  })
+  applyPhotoSlotCommonBehavior(obj, { filled: false })
 }
 
 /** 限制照片槽拖动范围（EditorPro 初始化时挂载） */
@@ -180,6 +242,7 @@ export function installPhotoSlotPanConstraint(canvas) {
   const onMoving = (e) => {
     const obj = e.target
     if (obj?.kidstoryRole === KIDSTORY_ROLE.PHOTO_SLOT && isFilledPhotoSlot(obj)) {
+      enforceUniformPhotoScale(obj)
       clampPhotoSlotPan(obj)
     }
   }
@@ -187,17 +250,28 @@ export function installPhotoSlotPanConstraint(canvas) {
   const onModified = (e) => {
     const obj = e.target
     if (obj?.kidstoryRole === KIDSTORY_ROLE.PHOTO_SLOT && isFilledPhotoSlot(obj)) {
+      enforceUniformPhotoScale(obj)
       clampPhotoSlotPan(obj)
       canvas.requestRenderAll()
     }
   }
 
+  const onScaling = (e) => {
+    const obj = e.target
+    if (obj?.kidstoryRole === KIDSTORY_ROLE.PHOTO_SLOT && isFilledPhotoSlot(obj)) {
+      enforceUniformPhotoScale(obj)
+      clampPhotoSlotPan(obj)
+    }
+  }
+
   canvas.on('object:moving', onMoving)
   canvas.on('object:modified', onModified)
+  canvas.on('object:scaling', onScaling)
 
   return () => {
     canvas.off('object:moving', onMoving)
     canvas.off('object:modified', onModified)
+    canvas.off('object:scaling', onScaling)
   }
 }
 
@@ -221,29 +295,25 @@ export function applyPageTemplateBehavior(canvas) {
       return
     }
 
-    if (obj.type === 'image') {
+    if (obj.type === 'image' && (obj.kidstoryRole === KIDSTORY_ROLE.PHOTO_SLOT || obj.kidstorySlotW)) {
       ensurePhotoSlotFrameMeta(obj)
-
       if (isFilledPhotoSlot(obj)) {
-        const { width: iw, height: ih } = getImageNaturalSize(obj)
-        applyFilledPhotoSlotLayout(obj, iw, ih)
+        applyFilledPhotoSlotFromObject(obj)
       } else {
-        normalizePhotoSlotPlaceholder(obj)
-        obj.set({
-          clipPath: undefined,
-          lockMovementX: true,
-          lockMovementY: true,
-          hasControls: false,
-          lockScalingX: true,
-          lockScalingY: true,
-          lockRotation: true,
-          stroke: '#8167a9',
-          strokeWidth: 2,
-          strokeDashArray: [6, 4],
-        })
+        applyEmptyPhotoSlotFromObject(obj)
       }
+      return
+    }
 
-      applyPhotoSlotCommonBehavior(obj)
+    if (obj.type === 'image') {
+      obj.set({
+        kidstoryRole: KIDSTORY_ROLE.PHOTO_SLOT,
+        selectable: true,
+        evented: true,
+        hasControls: false,
+        lockMovementX: true,
+        lockMovementY: true,
+      })
       return
     }
 
@@ -263,19 +333,18 @@ export function applyPageTemplateBehavior(canvas) {
 
   const recheckSlots = () => {
     canvas.getObjects().forEach((obj) => {
-      if (obj.type !== 'image') return
+      if (obj.type !== 'image' || !obj.kidstorySlotW) return
       ensurePhotoSlotFrameMeta(obj)
       if (isFilledPhotoSlot(obj)) {
-        const { width: iw, height: ih } = getImageNaturalSize(obj)
-        applyFilledPhotoSlotLayout(obj, iw, ih)
-      } else {
-        normalizePhotoSlotPlaceholder(obj)
+        applyFilledPhotoSlotFromObject(obj)
+      } else if (!obj.kidstoryPhotoFilled) {
+        applyEmptyPhotoSlotFromObject(obj)
       }
     })
     canvas.requestRenderAll()
   }
   requestAnimationFrame(recheckSlots)
-  setTimeout(recheckSlots, 80)
+  setTimeout(recheckSlots, 120)
 }
 
 export function pickLocalImageFile() {
@@ -316,26 +385,30 @@ export async function fillPhotoSlotObject(activeObject, imageSrc, canvas) {
     throw new Error('invalid photo slot')
   }
 
-  const img = await loadImageElement(imageSrc)
   ensurePhotoSlotFrameMeta(activeObject)
-
+  preparePhotoSlotForFill(activeObject)
   const frame = getPhotoSlotFrame(activeObject)
+  activeObject.kidstoryPhotoFilled = true
+
+  const img = await loadImageElement(imageSrc)
 
   await new Promise((resolve, reject) => {
     activeObject.setSrc(
       img.src,
       () => {
         activeObject.set({
-          width: img.width,
-          height: img.height,
+          width: img.naturalWidth || img.width,
+          height: img.naturalHeight || img.height,
           originSrc: img.src,
+          kidstoryPhotoFilled: true,
           kidstorySlotLeft: frame.left,
           kidstorySlotTop: frame.top,
           kidstorySlotW: frame.width,
           kidstorySlotH: frame.height,
         })
-        applyFilledPhotoSlotLayout(activeObject, img.width, img.height)
-        applyPhotoSlotCommonBehavior(activeObject)
+        applyFilledPhotoSlotLayout(activeObject, img.naturalWidth || img.width, img.naturalHeight || img.height)
+        applyPhotoSlotCommonBehavior(activeObject, { filled: true })
+        canvas.setActiveObject(activeObject)
         canvas.requestRenderAll()
         resolve()
       },
