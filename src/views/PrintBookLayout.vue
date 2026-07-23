@@ -29,6 +29,9 @@
         </el-button>
         <el-button :disabled="!hasAnyImage || exporting" @click="exportPdf">{{ $t('printBookLayout.exportPdf') }}</el-button>
         <el-button :disabled="!hasAnyImage || exporting" @click="exportImages">{{ $t('printBookLayout.exportImages') }}</el-button>
+        <el-button type="primary" :disabled="!hasAnyImage || publishing" @click="showPublish = true">
+          {{ $t('printBookLayout.publish') }}
+        </el-button>
       </div>
     </header>
 
@@ -178,12 +181,16 @@
               {{ $t('printBookLayout.deleteSpread') }}
             </button>
           </div>
-          <div class="pbl-editor-canvas" :class="editorCanvasClass">
+          <div class="pbl-editor-canvas" :class="editorCanvasClass" :style="matrixStyle">
             <div
               v-for="pg in editingBlock.pages"
               :key="pg.id"
               class="pbl-editor-page"
-              :class="{ 'is-active': activePageId === pg.id, 'has-image': !!pg.illustration }"
+              :class="{
+                'is-active': activePageId === pg.id,
+                'has-image': !!pg.illustration,
+                'pbl-editor-page--bleed': bookFormat.bleed,
+              }"
               :style="faceStyle"
               @click="assignToPage(pg)"
               @dragover.prevent
@@ -191,8 +198,16 @@
             >
               <span v-if="pg.pageNum" class="pbl-pg-num">{{ pg.pageNum }}</span>
               <span class="pbl-pg-kind">{{ $t(pg.labelKey) }}</span>
-              <img v-if="pg.illustration" :src="illUrl(pg.illustration)" alt="" class="pbl-pg-img" />
-              <div v-else class="pbl-pg-empty">{{ $t('printBookLayout.clickToAssign') }}</div>
+              <div class="pbl-editor-page-art" :style="pageArtInsetStyle">
+                <img
+                  v-if="pg.illustration"
+                  :src="illUrl(pg.illustration)"
+                  alt=""
+                  class="pbl-pg-img"
+                  :class="{ 'pbl-pg-img--cover': bookFormat.bleed }"
+                />
+                <div v-else class="pbl-pg-empty">{{ $t('printBookLayout.clickToAssign') }}</div>
+              </div>
               <div v-if="pg.illustration" class="pbl-pg-actions" @click.stop>
                 <button type="button" @click="zoomPage(pg)">{{ $t('printBookLayout.zoom') }}</button>
                 <button type="button" @click="clearPage(pg)">{{ $t('printBookLayout.clearPage') }}</button>
@@ -204,6 +219,55 @@
     </div>
 
     <el-image-viewer v-if="zoomVisible && zoomUrl" :url-list="[zoomUrl]" teleported @close="zoomVisible = false" />
+
+    <el-dialog
+      v-model="showPublish"
+      :title="$t('printBookLayout.publishTitle')"
+      width="420px"
+      destroy-on-close
+    >
+      <el-form label-position="top" class="pbl-publish-form">
+        <el-form-item :label="$t('toPdf.bookTitle')">
+          <el-input
+            v-model="publishForm.title"
+            maxlength="24"
+            show-word-limit
+            :placeholder="$t('toPdf.bookTitlePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="$t('toPdf.bookCategory')">
+          <el-select v-model="publishForm.category" :placeholder="$t('toPdf.categoryPlaceholder')" style="width:100%">
+            <el-option :label="$t('toPdf.catReading')" value="reading" />
+            <el-option :label="$t('toPdf.catHabit')" value="habit" />
+            <el-option :label="$t('toPdf.catEnglish')" value="english" />
+            <el-option :label="$t('toPdf.catMath')" value="math" />
+            <el-option :label="$t('toPdf.catKnowledge')" value="knowledge" />
+            <el-option :label="$t('toPdf.catOthers')" value="others" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('toPdf.bookDesc')">
+          <el-input
+            v-model="publishForm.desc"
+            type="textarea"
+            :autosize="{ minRows: 3, maxRows: 6 }"
+            maxlength="500"
+            show-word-limit
+            :placeholder="$t('toPdf.descPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-checkbox v-model="publishForm.authorizationConfirmed">
+            {{ $t('toPdf.compliance') }}
+          </el-checkbox>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPublish = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="publishing" @click="submitPublish">
+          {{ $t('printBookLayout.publish') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -218,6 +282,7 @@ import {
   isBlockEmpty,
   migrateRowsToBlocks,
   shiftStoryIllustrationForward,
+  getFilledIllustrationIdsInOrder,
 } from '@/data/pictureBookPrintLayout';
 import {
   BOOK_EXPORT_FORMATS,
@@ -229,10 +294,10 @@ import {
   buildPrintLayoutPdf,
   downloadPrintLayoutPagesAsPng,
 } from '@/utils/bookExport/renderBookPage';
+import { readLayoutExportSession, writeLayoutExportSession } from '@/utils/layoutExportSession';
 
 const STORAGE_KEY = 'print_book_layout_v2';
 const LAYOUT_FROM_PICK_KEY = 'book_layout_from_pick';
-const FORMAT_STORAGE_KEY = 'book_export_format_id';
 
 export default {
   name: 'PrintBookLayout',
@@ -254,6 +319,14 @@ export default {
       zoomVisible: false,
       zoomUrl: '',
       exporting: false,
+      publishing: false,
+      showPublish: false,
+      publishForm: {
+        title: '',
+        category: '',
+        desc: '',
+        authorizationConfirmed: false,
+      },
     };
   },
   computed: {
@@ -275,6 +348,15 @@ export default {
     faceStyle() {
       const f = this.bookFormat;
       return { aspectRatio: `${f.widthIn} / ${f.heightIn}` };
+    },
+    pageArtInsetStyle() {
+      const f = this.bookFormat;
+      if (f.bleed) {
+        return { top: '0', right: '0', bottom: '0', left: '0' };
+      }
+      const top = `${(f.safeMarginIn / f.heightIn) * 100}%`;
+      const side = `${(f.safeMarginIn / f.widthIn) * 100}%`;
+      return { top, right: side, bottom: top, left: side };
     },
     matrixStyle() {
       const f = this.bookFormat;
@@ -353,17 +435,15 @@ export default {
       });
     },
     syncFromStore() {
-      const fromStore = this.$store.state.imgToPDF || [];
       const fromPick = sessionStorage.getItem(LAYOUT_FROM_PICK_KEY);
-      if (!fromStore.length) return;
-      if (fromPick || !this.selectedIlls.length) {
-        this.selectedIlls = fromStore.map((i) => ({
-          _id: i._id,
-          content: i.content,
-          title: i.title,
-        }));
-        this.saveSession();
-      }
+      const fromStore = this.$store.state.imgToPDF || [];
+      if (!fromStore.length || !fromPick) return;
+      this.selectedIlls = fromStore.map((i) => ({
+        _id: i._id,
+        content: i.content,
+        title: i.title,
+      }));
+      this.saveSession();
       this.mergeIllsIntoList(fromStore);
     },
     maybeAutoLayout() {
@@ -536,7 +616,11 @@ export default {
             selectedIlls: this.selectedIlls.map((i) => ({ _id: i._id, content: i.content, title: i.title })),
           })
         );
-        sessionStorage.setItem(FORMAT_STORAGE_KEY, this.bookFormatId);
+        writeLayoutExportSession({
+          formatId: this.bookFormatId,
+          formatConfirmed: true,
+          purpose: 'print',
+        });
       } catch {
         /* quota */
       }
@@ -564,7 +648,7 @@ export default {
           if (migrated) this.layoutBlocks = migrated;
           if (Array.isArray(data.selectedIlls)) this.selectedIlls = data.selectedIlls;
         }
-        const savedFormat = sessionStorage.getItem(FORMAT_STORAGE_KEY);
+        const savedFormat = readLayoutExportSession().formatId;
         if (savedFormat && getBookExportFormat(savedFormat)) {
           this.bookFormatId = savedFormat;
         }
@@ -612,6 +696,52 @@ export default {
         ElMessage.error(this.$t('printBookLayout.exportFailed'));
       } finally {
         this.exporting = false;
+      }
+    },
+    async submitPublish() {
+      if (!this.hasAnyImage) {
+        ElMessage.warning(this.$t('printBookLayout.publishNeedImages'));
+        return;
+      }
+      if (!this.publishForm.authorizationConfirmed) {
+        ElMessage.warning(this.$t('toPdf.complianceRequired'));
+        return;
+      }
+      const content = getFilledIllustrationIdsInOrder(this.layoutBlocks);
+      if (!content.length) {
+        ElMessage.warning(this.$t('printBookLayout.publishNeedImages'));
+        return;
+      }
+
+      this.publishing = true;
+      try {
+        const res = await this.$http.post(
+          '/book/',
+          {
+            content,
+            title: this.publishForm.title,
+            description: this.publishForm.desc,
+            type: this.publishForm.category,
+            compliance_checked: true,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (res.data?.desc === 'success') {
+          ElMessage.success(this.$t('printBookLayout.publishSuccess'));
+          this.showPublish = false;
+          this.$router.push('/user/upload/submit-res/');
+        } else {
+          ElMessage.error(this.$t('printBookLayout.publishFailed'));
+        }
+      } catch (e) {
+        console.error(e);
+        ElMessage.error(this.$t('printBookLayout.publishFailed'));
+      } finally {
+        this.publishing = false;
       }
     },
   },
@@ -692,6 +822,16 @@ export default {
 .pbl-header-actions :deep(.el-button--primary) {
   --el-button-bg-color: #8167a9;
   --el-button-border-color: #8167a9;
+}
+
+.pbl-publish-form :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.pbl-publish-form :deep(.el-checkbox__label) {
+  white-space: normal;
+  line-height: 1.5;
+  font-size: 13px;
 }
 
 .pbl-body {
@@ -939,22 +1079,23 @@ export default {
 
 .pbl-editor-canvas {
   display: flex;
+  align-items: flex-start;
   gap: 16px;
   justify-content: center;
   padding: 24px;
   background: #fff;
   border-radius: 12px;
   border: 2px solid #e8e0f0;
-  min-height: 420px;
 }
 
 .pbl-editor-canvas--single {
-  max-width: 560px;
+  max-width: min(560px, 100%);
   margin: 0 auto;
 }
 
 .pbl-editor-canvas--single .pbl-editor-page {
-  width: 50%;
+  flex: 0 0 auto;
+  width: min(280px, 50%);
   max-width: 280px;
   margin: 0;
 }
@@ -968,7 +1109,7 @@ export default {
 }
 
 .pbl-editor-canvas--spread {
-  max-width: 560px;
+  max-width: min(720px, 100%);
   margin: 0 auto;
   padding: 16px;
   gap: 0;
@@ -976,9 +1117,11 @@ export default {
 }
 
 .pbl-editor-canvas--spread .pbl-editor-page {
-  flex: 1;
-  max-width: none;
+  flex: 0 1 50%;
   width: 50%;
+  min-width: 0;
+  max-width: 50%;
+  height: auto;
   border-radius: 0;
   border: none;
   border-right: 1px solid #999;
@@ -994,8 +1137,28 @@ export default {
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
+  background: #fff;
+  flex-shrink: 0;
+  height: auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.pbl-editor-page--bleed {
+  background: #fff;
+}
+
+.pbl-editor-page-art {
+  position: absolute;
+  z-index: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pbl-editor-page:not(.pbl-editor-page--bleed) .pbl-editor-page-art {
+  outline: 1px dashed rgba(129, 103, 169, 0.35);
+  outline-offset: -1px;
   background: #fafafa;
-  width: 100%;
 }
 
 .pbl-editor-page.has-image {
@@ -1037,22 +1200,30 @@ export default {
 }
 
 .pbl-pg-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
   background: #fff;
   display: block;
-  min-height: 200px;
+}
+
+.pbl-pg-img--cover {
+  object-fit: cover;
 }
 
 .pbl-pg-empty {
-  width: 100%;
-  min-height: 280px;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #c0c4cc;
   font-size: 14px;
+  padding: 8px;
+  text-align: center;
 }
 
 .pbl-pg-actions {
@@ -1060,6 +1231,7 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 3;
   display: flex;
   gap: 8px;
   padding: 10px;

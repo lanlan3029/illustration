@@ -35,19 +35,11 @@
 
       <div class="topdf-format-block">
         <label class="topdf-format-label">{{ $t('bookExport.formatTitle') }}</label>
-        <el-select
-          v-model="selectedFormatId"
-          class="topdf-format-select"
-          @change="onFormatChange"
-        >
-          <el-option
-            v-for="fmt in exportFormats"
-            :key="fmt.id"
-            :label="$t(fmt.nameKey)"
-            :value="fmt.id"
-          />
-        </el-select>
+        <p class="topdf-format-value">{{ $t(activeFormat.nameKey) }}</p>
         <p class="topdf-format-meta">{{ formatMetaLabel }}</p>
+        <button type="button" class="topdf-format-change" @click="goChangeFormat">
+          {{ $t('toPdf.changeFormat') }}
+        </button>
       </div>
 
       <el-form ref="form" :model="form" label-position="top" class="topdf-form">
@@ -104,7 +96,6 @@
 import { mapState } from 'vuex';
 import { ElMessage } from 'element-plus';
 import {
-  BOOK_EXPORT_FORMATS,
   formatSizeLabel,
   getBookExportFormat,
 } from '@/data/bookExportFormats';
@@ -112,14 +103,12 @@ import {
   buildBookPdfFromPages,
   downloadBookPagesAsPng,
 } from '@/utils/bookExport/renderBookPage';
-
-const FORMAT_STORAGE_KEY = 'book_export_format_id';
+import { getLayoutExportFormatId, readLayoutExportSession } from '@/utils/layoutExportSession';
 
 export default {
   data() {
     return {
       exporting: false,
-      selectedFormatId: 'square-safe',
       checkedId: [],
       form: {
         title: '',
@@ -132,11 +121,8 @@ export default {
   },
   computed: {
     ...mapState(['imgToPDF', 'bookExportFormatId']),
-    exportFormats() {
-      return BOOK_EXPORT_FORMATS;
-    },
     activeFormat() {
-      return getBookExportFormat(this.selectedFormatId);
+      return getBookExportFormat(this.bookExportFormatId);
     },
     formatMetaLabel() {
       return formatSizeLabel(this.activeFormat);
@@ -160,25 +146,13 @@ export default {
     },
   },
   mounted() {
-    this.selectedFormatId = this.bookExportFormatId || 'square-safe';
-    try {
-      const saved = sessionStorage.getItem(FORMAT_STORAGE_KEY);
-      if (saved && getBookExportFormat(saved)) {
-        this.selectedFormatId = saved;
-        this.$store.commit('setBookExportFormat', saved);
-      }
-    } catch {
-      /* ignore */
-    }
+    readLayoutExportSession();
+    const formatId = getLayoutExportFormatId();
+    this.$store.commit('setBookExportFormat', formatId);
   },
   methods: {
-    onFormatChange(id) {
-      this.$store.commit('setBookExportFormat', id);
-      try {
-        sessionStorage.setItem(FORMAT_STORAGE_KEY, id);
-      } catch {
-        /* ignore */
-      }
+    goChangeFormat() {
+      this.$router.push({ name: 'compose-illustration', query: { edit: 'format' } });
     },
     exportFileBaseName() {
       const title = (this.form.title || '').trim();
@@ -390,8 +364,28 @@ export default {
   color: #303133;
 }
 
-.topdf-format-select {
-  width: 100%;
+.topdf-format-value {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.4;
+}
+
+.topdf-format-change {
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8167a9;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.topdf-format-change:hover {
+  color: #6e5494;
 }
 
 .topdf-format-meta {

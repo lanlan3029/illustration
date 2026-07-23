@@ -163,6 +163,18 @@ export function countFilledStoryPages(blocks) {
   return getStoryPageSlots(blocks).filter((p) => p.illustration).length;
 }
 
+/** 按书册块顺序收集已填插画 id（用于发布） */
+export function getFilledIllustrationIdsInOrder(blocks) {
+  const ids = [];
+  if (!Array.isArray(blocks)) return ids;
+  blocks.forEach((block) => {
+    (block.pages || []).forEach((pg) => {
+      if (pg.illustration?._id) ids.push(pg.illustration._id);
+    });
+  });
+  return ids;
+}
+
 export function migrateRowsToBlocks(rows) {
   if (!Array.isArray(rows) || !rows.length) return null;
   if (rows[0]?.type && !rows[0].pages?.length && rows[0].pages !== undefined) return null;
