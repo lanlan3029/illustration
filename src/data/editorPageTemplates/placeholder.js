@@ -6,8 +6,19 @@ export function photoPlaceholder(label = '照片') {
 
 export const CANVAS_W = 900
 export const CANVAS_H = 1200
+export const TEMPLATE_ASPECT_RATIO = '3:4'
 
-export function workspaceObject() {
+/** 8×8 相册跨页（双页）设计基准：2:1 */
+export const SPREAD_W = 2400
+export const SPREAD_H = 1200
+export const SPREAD_ASPECT_RATIO = '2:1'
+
+/** 8×8 相册单页设计基准：1:1 */
+export const PAGE_W = 1200
+export const PAGE_H = 1200
+export const PAGE_ASPECT_RATIO = '1:1'
+
+export function workspaceObject(width = CANVAS_W, height = CANVAS_H) {
   return {
     type: 'rect',
     version: '5.3.0',
@@ -15,8 +26,8 @@ export function workspaceObject() {
     originY: 'top',
     left: 0,
     top: 0,
-    width: CANVAS_W,
-    height: CANVAS_H,
+    width,
+    height,
     fill: 'rgba(255,255,255,1)',
     stroke: null,
     strokeWidth: 0,
@@ -104,9 +115,17 @@ export function decorationRect({ left, top, width, height, fill = '#8167a9' }) {
   }
 }
 
-export function buildTemplate(objects) {
+export function buildTemplate(objects, options = {}) {
+  const width = options.width ?? CANVAS_W
+  const height = options.height ?? CANVAS_H
+  const aspectRatio = options.aspectRatio ?? TEMPLATE_ASPECT_RATIO
   return {
     version: '5.3.0',
-    objects: [workspaceObject(), ...objects],
+    kidstoryTemplateBase: {
+      width,
+      height,
+      aspectRatio,
+    },
+    objects: [workspaceObject(width, height), ...objects],
   }
 }

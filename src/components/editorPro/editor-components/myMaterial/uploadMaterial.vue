@@ -38,6 +38,11 @@
 const APP_APIHOST = process.env.VUE_APP_APP_APIHOST || process.env.VUE_APP_API_BASE_URL || '';
 import { getFileList, uploadImg, createdMaterial, removeMaterial } from '@/components/editorPro/api/user';
 import { inject, ref } from 'vue';
+import { Message } from 'view-ui-plus';
+import { useI18n } from 'vue-i18n';
+import { tryFillActivePhotoSlot } from '@/utils/editorPro/photoSlotContext';
+
+const { t } = useI18n();
 
 function selectFiles({ accept, multiple = false } = {}) {
   return new Promise((resolve) => {
@@ -104,6 +109,11 @@ const createdH = (id, fileName) => {
 };
 // 添加素材到画布
 const addImgByElement = async (e) => {
+  const src = e?.target?.src || e?.target?.currentSrc;
+  if (src && (await tryFillActivePhotoSlot(src, canvasEditor))) {
+    Message.success(t('editorProLeft.photoSlotFilled'));
+    return;
+  }
   const imgItem = await canvasEditor.createImgByElement(e.target);
   canvasEditor.addBaseType(imgItem, {
     scale: true,

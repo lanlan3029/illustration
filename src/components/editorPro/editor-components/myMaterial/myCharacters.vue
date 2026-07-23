@@ -19,7 +19,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { Message } from 'view-ui-plus';
+import { useI18n } from 'vue-i18n';
 import useSelect from '@/components/editorPro/hooks/select';
+import { insertWorkImageOrAddToCanvas } from '@/utils/editorPro/photoSlotContext';
+
+const { t } = useI18n();
 
 const { canvasEditor } = useSelect();
 const list = ref([]);
@@ -47,12 +52,11 @@ function loadImageEl(url) {
 async function handlePick(item) {
   const url = getImageSrc(item);
   if (!url || !canvasEditor) return;
-  try {
-    const image = await loadImageEl(url);
-    const imgItem = await canvasEditor.createImgByElement(image);
-    canvasEditor.addBaseType(imgItem, { scale: true });
-  } catch (e) {
-    // ignore
+  const result = await insertWorkImageOrAddToCanvas(url, canvasEditor, loadImageEl);
+  if (result === 'filled') {
+    Message.success(t('editorProLeft.photoSlotFilled'));
+  } else if (result === 'failed') {
+    Message.error(t('editorProLeft.photoSlotFillFailed'));
   }
 }
 

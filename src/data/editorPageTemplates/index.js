@@ -1,15 +1,38 @@
 import {
   buildTemplate,
   CANVAS_W,
+  CANVAS_H,
+  TEMPLATE_ASPECT_RATIO,
+  SPREAD_W,
+  SPREAD_H,
+  SPREAD_ASPECT_RATIO,
+  PAGE_W,
+  PAGE_H,
+  PAGE_ASPECT_RATIO,
   decorationRect,
   editableText,
   photoSlot,
 } from './placeholder'
+import { spreadTemplates } from './spreadTemplates'
+import { singlePageTemplates } from './singlePageTemplates'
 
-const templates = [
+export {
+  CANVAS_W,
+  CANVAS_H,
+  TEMPLATE_ASPECT_RATIO,
+  SPREAD_W,
+  SPREAD_H,
+  SPREAD_ASPECT_RATIO,
+  PAGE_W,
+  PAGE_H,
+  PAGE_ASPECT_RATIO,
+}
+
+const portraitTemplates = [
   {
     id: 'single-photo-story',
     category: 'story',
+    aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/single-photo-story.svg',
     json: buildTemplate([
       decorationRect({ left: 0, top: 0, width: CANVAS_W, height: 8, fill: '#8167a9' }),
@@ -35,6 +58,7 @@ const templates = [
   {
     id: 'dual-photo',
     category: 'story',
+    aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/dual-photo.svg',
     json: buildTemplate([
       editableText({
@@ -60,6 +84,7 @@ const templates = [
   {
     id: 'grid-four',
     category: 'album',
+    aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/grid-four.svg',
     json: buildTemplate([
       editableText({
@@ -85,6 +110,7 @@ const templates = [
   {
     id: 'cover-page',
     category: 'cover',
+    aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/cover-page.svg',
     json: buildTemplate([
       photoSlot({ left: 0, top: 0, width: CANVAS_W, height: 780, label: '封面照片' }),
@@ -110,6 +136,7 @@ const templates = [
   {
     id: 'diary-page',
     category: 'story',
+    aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/diary-page.svg',
     json: buildTemplate([
       editableText({
@@ -143,6 +170,7 @@ const templates = [
   {
     id: 'dialogue-page',
     category: 'story',
+    aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/dialogue-page.svg',
     json: buildTemplate([
       photoSlot({ left: 60, top: 80, width: 360, height: 360, label: '角色' }),
@@ -177,10 +205,14 @@ const templates = [
   },
 ]
 
+const templates = [...portraitTemplates, ...singlePageTemplates, ...spreadTemplates]
+
 export const PAGE_TEMPLATE_CATEGORIES = [
   { id: 'story', nameKey: 'editorProLeft.pageTemplateCatStory' },
   { id: 'album', nameKey: 'editorProLeft.pageTemplateCatAlbum' },
+  { id: 'albumPage', nameKey: 'editorProLeft.pageTemplateCatAlbumPage' },
   { id: 'cover', nameKey: 'editorProLeft.pageTemplateCatCover' },
+  { id: 'spread', nameKey: 'editorProLeft.pageTemplateCatSpread' },
 ]
 
 const TEMPLATE_NAME_KEYS = {
@@ -190,22 +222,66 @@ const TEMPLATE_NAME_KEYS = {
   'cover-page': 'editorProLeft.pageTemplateCover',
   'diary-page': 'editorProLeft.pageTemplateDiary',
   'dialogue-page': 'editorProLeft.pageTemplateDialogue',
+  'spread-single-right': 'editorProLeft.pageTemplateSpreadSingleRight',
+  'spread-duo-square': 'editorProLeft.pageTemplateSpreadDuoSquare',
+  'spread-large-grid': 'editorProLeft.pageTemplateSpreadLargeGrid',
+  'spread-asymmetric': 'editorProLeft.pageTemplateSpreadAsymmetric',
+  'spread-four-verticals': 'editorProLeft.pageTemplateSpreadFourVerticals',
+  'spread-2x2-both': 'editorProLeft.pageTemplateSpread2x2Both',
+  'spread-vertical-stack': 'editorProLeft.pageTemplateSpreadVerticalStack',
+  'spread-three-column': 'editorProLeft.pageTemplateSpreadThreeColumn',
+  'spread-twin-columns': 'editorProLeft.pageTemplateSpreadTwinColumns',
+  'spread-grid-3x2': 'editorProLeft.pageTemplateSpreadGrid3x2',
+  'spread-panorama': 'editorProLeft.pageTemplateSpreadPanorama',
+  'page-single-center': 'editorProLeft.pageTemplatePageSingleCenter',
+  'page-full-bleed': 'editorProLeft.pageTemplatePageFullBleed',
+  'page-grid-2x2': 'editorProLeft.pageTemplatePageGrid2x2',
+  'page-asymmetric': 'editorProLeft.pageTemplatePageAsymmetric',
+  'page-duo-horizontal': 'editorProLeft.pageTemplatePageDuoHorizontal',
+  'page-duo-vertical': 'editorProLeft.pageTemplatePageDuoVertical',
+  'page-trio': 'editorProLeft.pageTemplatePageTrio',
+  'page-one-two': 'editorProLeft.pageTemplatePageOneTwo',
+  'page-three-rows': 'editorProLeft.pageTemplatePageThreeRows',
+  'page-vertical-center': 'editorProLeft.pageTemplatePageVerticalCenter',
+  'page-grid-3': 'editorProLeft.pageTemplatePageGrid3',
+  'page-grid-2x3': 'editorProLeft.pageTemplatePageGrid2x3',
 }
 
-/** 按分类分组的本地页面模版（不依赖后端 API） */
-export function getLocalPageTemplateGroups(t) {
+/** 按分类分组的本地页面模版（可按当前画布比例过滤） */
+export function getLocalPageTemplateGroups(t, canvasSize = null) {
+  const canvasW = canvasSize?.width
+  const canvasH = canvasSize?.height
+
   return PAGE_TEMPLATE_CATEGORIES.map((cat) => ({
     id: cat.id,
     name: t(cat.nameKey),
     templates: templates
       .filter((item) => item.category === cat.id)
+      .filter((item) => {
+        if (!canvasW || !canvasH) return true
+        const baseW = item.json?.kidstoryTemplateBase?.width || CANVAS_W
+        const baseH = item.json?.kidstoryTemplateBase?.height || CANVAS_H
+        const ratioA = baseW / baseH
+        const ratioB = canvasW / canvasH
+        return Math.abs(ratioA - ratioB) < 0.018
+      })
       .map((item) => ({
         id: item.id,
         name: t(TEMPLATE_NAME_KEYS[item.id] || item.id),
         preview: item.preview,
         json: item.json,
+        aspectRatio: item.aspectRatio || TEMPLATE_ASPECT_RATIO,
       })),
   })).filter((group) => group.templates.length > 0)
+}
+
+export function countMatchingTemplates(canvasSize) {
+  return templates.filter((item) => {
+    if (!canvasSize?.width || !canvasSize?.height) return true
+    const baseW = item.json?.kidstoryTemplateBase?.width || CANVAS_W
+    const baseH = item.json?.kidstoryTemplateBase?.height || CANVAS_H
+    return Math.abs(baseW / baseH - canvasSize.width / canvasSize.height) < 0.018
+  }).length
 }
 
 export default templates

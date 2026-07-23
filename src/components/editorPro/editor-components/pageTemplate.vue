@@ -2,6 +2,14 @@
   <div class="page-template-panel">
     <p class="page-template-hint">{{ $t('editorProLeft.pageTemplateHint') }}</p>
 
+    <p v-if="canvasSizeLabel" class="page-template-canvas-meta">
+      {{ canvasSizeLabel }}
+    </p>
+
+    <p v-if="!hasMatchingTemplates" class="page-template-no-match">
+      {{ $t('editorProLeft.pageTemplateNoMatch') }}
+    </p>
+
     <div v-for="group in templateGroups" :key="group.id" class="template-group">
       <Divider plain orientation="left">{{ group.name }}</Divider>
       <div class="template-grid">
@@ -13,7 +21,12 @@
           :title="item.name"
           @click="applyTemplate(item)"
         >
-          <img :src="item.preview" :alt="item.name" loading="lazy" />
+          <img
+            :src="item.preview"
+            :alt="item.name"
+            loading="lazy"
+            :class="previewClass(item.aspectRatio)"
+          />
           <span class="template-card-name">{{ item.name }}</span>
         </button>
       </div>
@@ -59,27 +72,61 @@ import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance } from 'v
 import { useI18n } from 'vue-i18n'
 import { Button, Modal, Spin, Message, Divider } from 'view-ui-plus'
 import useSelect from '@/components/editorPro/hooks/select'
-import { getLocalPageTemplateGroups } from '@/data/editorPageTemplates'
+import {
+  getLocalPageTemplateGroups,
+  countMatchingTemplates,
+} from '@/data/editorPageTemplates'
 import {
   applyPageTemplateBehavior,
   fillPhotoSlotObject,
-  isPhotoSlotObject,
   pickLocalImageFile,
 } from '@/utils/editorPro/pageTemplate'
+import { activePhotoSlot } from '@/utils/editorPro/photoSlotContext'
+import {
+  fitTemplateToCanvas,
+  getCurrentWorkspaceSize,
+  formatAspectRatio,
+} from '@/utils/editorPro/fitTemplateToCanvas'
 
 const { t } = useI18n()
 const { canvasEditor } = useSelect()
 const { proxy } = getCurrentInstance()
 
-const templateGroups = computed(() => getLocalPageTemplateGroups(t))
+const workspaceSize = ref({ width: 0, height: 0 })
 
-const activePhotoSlot = ref(null)
+const refreshWorkspaceSize = () => {
+  workspaceSize.value = getCurrentWorkspaceSize(canvasEditor)
+}
+
+const templateGroups = computed(() => getLocalPageTemplateGroups(t, workspaceSize.value))
+
+const hasMatchingTemplates = computed(() =>
+  countMatchingTemplates(workspaceSize.value) > 0
+)
+
+const canvasSizeLabel = computed(() => {
+  const { width, height } = workspaceSize.value
+  if (!width || !height) return ''
+  const ratio = formatAspectRatio(width, height)
+  return t('editorProLeft.pageTemplateCanvasSize', { width, height, ratio })
+})
+
+function previewClass(aspectRatio) {
+  if (aspectRatio === '2:1') return 'preview-2-1'
+  if (aspectRatio === '1:1') return 'preview-1-1'
+  return 'preview-3-4'
+}
+
 const showIllPicker = ref(false)
 const illArr = ref([])
 const loadingIll = ref(false)
 
 const applyTemplate = async (item) => {
   if (!item?.json || !canvasEditor) return
+  if (!hasMatchingTemplates.value) {
+    Message.warning(t('editorProLeft.pageTemplateNoMatch'))
+    return
+  }
 
   Modal.confirm({
     title: t('tip'),
@@ -89,9 +136,12 @@ const applyTemplate = async (item) => {
     onOk: async () => {
       Spin.show({ render: (h) => h('div', t('alert.loading_data')) })
       try {
-        await canvasEditor.downFontByJSON(JSON.stringify(item.json))
+        refreshWorkspaceSize()
+        const { width, height } = workspaceSize.value
+        const fittedJson = fitTemplateToCanvas(item.json, width, height)
+        await canvasEditor.downFontByJSON(JSON.stringify(fittedJson))
         await new Promise((resolve) => {
-          canvasEditor.loadJSON(JSON.stringify(item.json), () => {
+          canvasEditor.loadJSON(JSON.stringify(fittedJson), () => {
             applyPageTemplateBehavior(canvasEditor.canvas)
             activePhotoSlot.value = null
             resolve()
@@ -105,16 +155,6 @@ const applyTemplate = async (item) => {
       }
     },
   })
-}
-
-const syncPhotoSlotSelection = () => {
-  const canvas = canvasEditor?.canvas
-  if (!canvas) {
-    activePhotoSlot.value = null
-    return
-  }
-  const active = canvas.getActiveObject()
-  activePhotoSlot.value = isPhotoSlotObject(active) ? active : null
 }
 
 const fillActiveSlot = async (imageSrc) => {
@@ -163,17 +203,16 @@ const fillFromIll = async (item) => {
 }
 
 onMounted(() => {
+  refreshWorkspaceSize()
   if (canvasEditor?.on) {
-    canvasEditor.on('selectOne', syncPhotoSlotSelection)
-    canvasEditor.on('selectCancel', syncPhotoSlotSelection)
+    canvasEditor.on('sizeChange', refreshWorkspaceSize)
   }
   loadIllustrations()
 })
 
 onBeforeUnmount(() => {
   if (canvasEditor?.off) {
-    canvasEditor.off('selectOne', syncPhotoSlotSelection)
-    canvasEditor.off('selectCancel', syncPhotoSlotSelection)
+    canvasEditor.off('sizeChange', refreshWorkspaceSize)
   }
 })
 </script>
@@ -191,6 +230,24 @@ onBeforeUnmount(() => {
   padding: 8px 10px;
   background: #f5f0fa;
   border-radius: 8px;
+}
+
+.page-template-canvas-meta {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #8167a9;
+  font-weight: 500;
+}
+
+.page-template-no-match {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff7e6;
+  border: 1px solid #ffe7ba;
+  color: #ad6800;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .template-group {
@@ -217,13 +274,28 @@ onBeforeUnmount(() => {
   background: #e0dce8;
 }
 
+.template-card img.preview-3-4 {
+  aspect-ratio: 3 / 4;
+}
+
+.template-card img.preview-1-1 {
+  aspect-ratio: 1 / 1;
+}
+
+.template-card img.preview-2-1 {
+  aspect-ratio: 2 / 1;
+}
+
 .template-card img {
   width: 100%;
-  aspect-ratio: 3 / 4;
   object-fit: contain;
   display: block;
   border-radius: 4px;
   background: #fff;
+}
+
+.template-card img:not(.preview-2-1):not(.preview-3-4):not(.preview-1-1) {
+  aspect-ratio: 3 / 4;
 }
 
 .template-card-name {

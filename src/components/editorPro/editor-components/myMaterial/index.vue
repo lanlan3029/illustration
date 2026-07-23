@@ -3,6 +3,7 @@
   <div class="my-material" v-if="isLogin">
     <Tabs v-model="type">
       <TabPane :label="$t('editorProLeft.myIllustrations')" name="ill">
+        <p v-if="activePhotoSlot" class="slot-fill-tip">{{ $t('editorProLeft.clickWorkToFillSlot') }}</p>
         <div
           v-if="type === 'ill'"
           class="ill-wrap"
@@ -26,9 +27,11 @@
         </div>
       </TabPane>
       <TabPane :label="$t('editorProLeft.myCharacters')" name="char">
+        <p v-if="activePhotoSlot" class="slot-fill-tip">{{ $t('editorProLeft.clickWorkToFillSlot') }}</p>
         <myCharacters v-if="type === 'char'" />
       </TabPane>
       <TabPane :label="$t('editorProLeft.myImages')" name="img">
+        <p v-if="activePhotoSlot" class="slot-fill-tip">{{ $t('editorProLeft.clickWorkToFillSlot') }}</p>
         <uploadMaterial v-if="type === 'img'"></uploadMaterial>
       </TabPane>
       <TabPane :label="$t('editorProLeft.myTemplates')" name="templ">
@@ -44,7 +47,16 @@ import uploadMaterial from './uploadMaterial';
 import myTempl from './myTempl';
 import myCharacters from './myCharacters.vue';
 import { ref, getCurrentInstance, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Message } from 'view-ui-plus';
 import useSelect from '@/components/editorPro/hooks/select';
+import {
+  activePhotoSlot,
+  resolveIllustrationUrl,
+  insertWorkImageOrAddToCanvas,
+} from '@/utils/editorPro/photoSlotContext';
+
+const { t } = useI18n();
 const type = ref('ill');
 const isLogin = ref(!!localStorage.getItem('token'));
 const illArr = ref([]);
@@ -66,15 +78,13 @@ function loadImageEl(url) {
 }
 
 const handlePickIll = async (item) => {
-  const content = item?.content;
-  if (!content || !canvasEditor) return;
-  const url = `https://static.kidstory.cc/${content}`;
-  try {
-    const image = await loadImageEl(url);
-    const imgItem = await canvasEditor.createImgByElement(image);
-    canvasEditor.addBaseType(imgItem, { scale: true });
-  } catch (e) {
-    // ignore load error
+  const url = resolveIllustrationUrl(item?.content);
+  if (!url || !canvasEditor) return;
+  const result = await insertWorkImageOrAddToCanvas(url, canvasEditor, loadImageEl);
+  if (result === 'filled') {
+    Message.success(t('editorProLeft.photoSlotFilled'));
+  } else if (result === 'failed') {
+    Message.error(t('editorProLeft.photoSlotFillFailed'));
   }
 };
 
@@ -203,5 +213,15 @@ watch(
   color: #999;
   font-size: 12px;
   padding: 8px 0 4px;
+}
+
+.slot-fill-tip {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #8167a9;
+  background: #f5f0fa;
+  border-radius: 8px;
 }
 </style>
