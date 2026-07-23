@@ -255,7 +255,9 @@ export default {
       const formatName = format ? this.$t(format.nameKey) : '';
       const purposeName = session.purpose === 'print'
         ? this.$t('layoutExport.purposePrintTitle')
-        : this.$t('layoutExport.purposeDigitalTitle');
+        : session.purpose === 'digital'
+          ? this.$t('layoutExport.purposeDigitalTitle')
+          : '';
       return this.$t('layoutExport.resumeLastDesc', { format: formatName, purpose: purposeName });
     },
     activeFormat() {
@@ -293,8 +295,10 @@ export default {
       if (index < current) return 'is-done';
       return 'is-pending';
     },
-    stepMarker(id, index) {
+    stepMarker(id) {
       const current = this.stepOrder.indexOf(this.step);
+      const index = this.stepOrder.indexOf(id);
+      if (index < 0) return '•';
       if (index < current) return '✓';
       return String(index + 1);
     },

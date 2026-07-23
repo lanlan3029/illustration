@@ -28,6 +28,55 @@ function normalizeCheckedImages(items) {
     }))
 }
 
+function normalizeSession(data) {
+  if (!data || typeof data !== 'object') return emptySession()
+  return {
+    ...emptySession(),
+    ...data,
+    checkedImages: normalizeCheckedImages(data.checkedImages),
+  }
+}
+
+function syncLegacyKeys(session) {
+  try {
+    if (session.formatId) {
+      sessionStorage.setItem(LEGACY_FORMAT_KEY, session.formatId)
+    }
+    if (session.formatConfirmed) {
+      sessionStorage.setItem(LEGACY_CONFIRMED_KEY, '1')
+    } else {
+      sessionStorage.removeItem(LEGACY_CONFIRMED_KEY)
+    }
+    if (session.purpose) {
+      sessionStorage.setItem(LEGACY_PURPOSE_KEY, session.purpose)
+    } else {
+      sessionStorage.removeItem(LEGACY_PURPOSE_KEY)
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function persistSessionObject(session) {
+  try {
+    sessionStorage.setItem(LAYOUT_EXPORT_SESSION_KEY, JSON.stringify(session))
+    syncLegacyKeys(session)
+  } catch {
+    /* quota */
+  }
+}
+
+/** 仅读 storage，不触发迁移（供 write 合并用） */
+function readStoredSessionOnly() {
+  try {
+    const raw = sessionStorage.getItem(LAYOUT_EXPORT_SESSION_KEY)
+    if (!raw) return null
+    return normalizeSession(JSON.parse(raw))
+  } catch {
+    return null
+  }
+}
+
 function migrateLegacySession() {
   const session = emptySession()
   let migrated = false
@@ -52,65 +101,30 @@ function migrateLegacySession() {
   }
 
   if (migrated) {
-    writeLayoutExportSession(session)
+    session.updatedAt = Date.now()
+    persistSessionObject(session)
   }
   return session
 }
 
 export function readLayoutExportSession() {
-  try {
-    const raw = sessionStorage.getItem(LAYOUT_EXPORT_SESSION_KEY)
-    if (raw) {
-      const data = JSON.parse(raw)
-      return {
-        ...emptySession(),
-        ...data,
-        checkedImages: normalizeCheckedImages(data.checkedImages),
-      }
-    }
-  } catch {
-    /* ignore */
-  }
+  const stored = readStoredSessionOnly()
+  if (stored) return stored
   return migrateLegacySession()
 }
 
 export function writeLayoutExportSession(patch) {
-  const current = readLayoutExportSession()
-  const next = {
+  const current = readStoredSessionOnly() || emptySession()
+  const next = normalizeSession({
     ...current,
     ...patch,
     updatedAt: Date.now(),
-  }
-  if (patch.checkedImages !== undefined) {
+  })
+  if (patch?.checkedImages !== undefined) {
     next.checkedImages = normalizeCheckedImages(patch.checkedImages)
   }
-  try {
-    sessionStorage.setItem(LAYOUT_EXPORT_SESSION_KEY, JSON.stringify(next))
-    syncLegacyKeys(next)
-  } catch {
-    /* quota */
-  }
+  persistSessionObject(next)
   return next
-}
-
-function syncLegacyKeys(session) {
-  try {
-    if (session.formatId) {
-      sessionStorage.setItem(LEGACY_FORMAT_KEY, session.formatId)
-    }
-    if (session.formatConfirmed) {
-      sessionStorage.setItem(LEGACY_CONFIRMED_KEY, '1')
-    } else {
-      sessionStorage.removeItem(LEGACY_CONFIRMED_KEY)
-    }
-    if (session.purpose) {
-      sessionStorage.setItem(LEGACY_PURPOSE_KEY, session.purpose)
-    } else {
-      sessionStorage.removeItem(LEGACY_PURPOSE_KEY)
-    }
-  } catch {
-    /* ignore */
-  }
 }
 
 export function canResumeLayoutExport(session = readLayoutExportSession()) {
