@@ -15,6 +15,7 @@ import {
 } from './placeholder'
 import { spreadTemplates } from './spreadTemplates'
 import { singlePageTemplates } from './singlePageTemplates'
+import { portraitCollageTemplates } from './portraitCollageTemplates'
 
 export {
   CANVAS_W,
@@ -35,20 +36,19 @@ const portraitTemplates = [
     aspectRatio: TEMPLATE_ASPECT_RATIO,
     preview: '/editor-page-templates/single-photo-story.svg',
     json: buildTemplate([
-      decorationRect({ left: 0, top: 0, width: CANVAS_W, height: 8, fill: '#8167a9' }),
-      photoSlot({ left: 50, top: 80, width: 800, height: 560, label: '照片' }),
+      photoSlot({ left: 50, top: 72, width: 800, height: 560, label: '照片' }),
       editableText({
         left: 50,
         top: 680,
         width: 800,
-        text: '故事标题',
+        text: '标题',
         fontSize: 44,
       }),
       editableText({
         left: 80,
         top: 760,
         width: 740,
-        text: '在这里写下这一页的故事…',
+        text: '请输入文本…',
         fontSize: 26,
         textAlign: 'left',
       }),
@@ -65,7 +65,7 @@ const portraitTemplates = [
         left: 50,
         top: 48,
         width: 800,
-        text: '对比与变化',
+        text: '双图',
         fontSize: 40,
       }),
       photoSlot({ left: 50, top: 130, width: 390, height: 390, label: '照片 A' }),
@@ -74,7 +74,7 @@ const portraitTemplates = [
         left: 50,
         top: 560,
         width: 800,
-        text: '说明文字：描述两张照片的关系或变化',
+        text: '请输入文本…',
         fontSize: 24,
         textAlign: 'left',
       }),
@@ -102,7 +102,7 @@ const portraitTemplates = [
         left: 50,
         top: 960,
         width: 800,
-        text: '这一页的四张小回忆',
+        text: '请输入文本',
         fontSize: 28,
       }),
     ]),
@@ -151,7 +151,7 @@ const portraitTemplates = [
         left: 60,
         top: 110,
         width: 780,
-        text: '今天的心情',
+        text: '标题',
         fontSize: 40,
         textAlign: 'left',
       }),
@@ -160,7 +160,7 @@ const portraitTemplates = [
         left: 60,
         top: 720,
         width: 780,
-        text: '记录今天发生的一件小事，以及你的感受…',
+        text: '请输入文本',
         fontSize: 24,
         textAlign: 'left',
       }),
@@ -205,11 +205,12 @@ const portraitTemplates = [
   },
 ]
 
-const templates = [...portraitTemplates, ...singlePageTemplates, ...spreadTemplates]
+const templates = [...portraitTemplates, ...portraitCollageTemplates, ...singlePageTemplates, ...spreadTemplates]
 
 export const PAGE_TEMPLATE_CATEGORIES = [
   { id: 'story', nameKey: 'editorProLeft.pageTemplateCatStory' },
   { id: 'album', nameKey: 'editorProLeft.pageTemplateCatAlbum' },
+  { id: 'collage', nameKey: 'editorProLeft.pageTemplateCatCollage' },
   { id: 'albumPage', nameKey: 'editorProLeft.pageTemplateCatAlbumPage' },
   { id: 'cover', nameKey: 'editorProLeft.pageTemplateCatCover' },
   { id: 'spread', nameKey: 'editorProLeft.pageTemplateCatSpread' },
@@ -222,6 +223,25 @@ const TEMPLATE_NAME_KEYS = {
   'cover-page': 'editorProLeft.pageTemplateCover',
   'diary-page': 'editorProLeft.pageTemplateDiary',
   'dialogue-page': 'editorProLeft.pageTemplateDialogue',
+  'portrait-col-1': 'editorProLeft.pageTemplatePortraitCol1',
+  'portrait-col-2': 'editorProLeft.pageTemplatePortraitCol2',
+  'portrait-col-3': 'editorProLeft.pageTemplatePortraitCol3',
+  'portrait-col-4': 'editorProLeft.pageTemplatePortraitCol4',
+  'portrait-row-2': 'editorProLeft.pageTemplatePortraitRow2',
+  'portrait-row-3': 'editorProLeft.pageTemplatePortraitRow3',
+  'portrait-row-4': 'editorProLeft.pageTemplatePortraitRow4',
+  'portrait-row-5': 'editorProLeft.pageTemplatePortraitRow5',
+  'portrait-row-6': 'editorProLeft.pageTemplatePortraitRow6',
+  'portrait-grid-2x3': 'editorProLeft.pageTemplatePortraitGrid2x3',
+  'portrait-grid-4x6': 'editorProLeft.pageTemplatePortraitGrid4x6',
+  'portrait-mosaic-1': 'editorProLeft.pageTemplatePortraitMosaic1',
+  'portrait-mosaic-2': 'editorProLeft.pageTemplatePortraitMosaic2',
+  'portrait-mosaic-3': 'editorProLeft.pageTemplatePortraitMosaic3',
+  'portrait-mosaic-4': 'editorProLeft.pageTemplatePortraitMosaic4',
+  'portrait-mosaic-5': 'editorProLeft.pageTemplatePortraitMosaic5',
+  'portrait-mosaic-6': 'editorProLeft.pageTemplatePortraitMosaic6',
+  'portrait-mosaic-7': 'editorProLeft.pageTemplatePortraitMosaic7',
+  'portrait-mosaic-8': 'editorProLeft.pageTemplatePortraitMosaic8',
   'spread-single-right': 'editorProLeft.pageTemplateSpreadSingleRight',
   'spread-duo-square': 'editorProLeft.pageTemplateSpreadDuoSquare',
   'spread-large-grid': 'editorProLeft.pageTemplateSpreadLargeGrid',
