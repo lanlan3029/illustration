@@ -787,9 +787,8 @@ export default {
 
 .format-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    max-width: 880px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
 }
 
 .format-card {
@@ -797,7 +796,7 @@ export default {
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
-    padding: 16px 16px 14px;
+    padding: 14px 12px 12px;
     border: 2px solid #ebeef5;
     border-radius: 10px;
     background: #fafafa;
@@ -848,20 +847,20 @@ export default {
 }
 
 .format-card-title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #303133;
     line-height: 1.35;
 }
 
 .format-card-desc {
-    font-size: 12px;
+    font-size: 11px;
     color: #909399;
     line-height: 1.4;
 }
 
 .format-card-meta {
-    font-size: 11px;
+    font-size: 10px;
     color: #a8abb2;
     font-variant-numeric: tabular-nums;
 }
@@ -1064,6 +1063,12 @@ export default {
 
 .mode-actions {
     display: none;
+}
+
+@media (max-width: 1100px) {
+    .format-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 768px) {
