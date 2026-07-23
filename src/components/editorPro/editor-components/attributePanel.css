@@ -1,0 +1,73 @@
+.attr-panel-section :deep(.ivu-divider) {
+  margin: 14px 0 10px;
+}
+
+.attr-panel-section :deep(.ivu-divider-inner-text) h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.attr-form :deep(.ivu-form-item) {
+  background: #f6f7f9;
+  border-radius: 5px;
+  padding: 2px 8px 2px 0;
+  margin-bottom: 10px;
+}
+
+.attr-form :deep(.ivu-form-item-label) {
+  color: #666;
+  font-size: 12px;
+  padding-right: 6px;
+}
+
+.attr-form :deep(.ivu-form-item-content) {
+  line-height: 32px;
+}
+
+.attr-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.attr-field-row :deep(.ivu-input-number),
+.attr-field-row :deep(.custom-input-number) {
+  width: 100%;
+  display: block;
+}
+
+.attr-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f6f7f9;
+  border-radius: 5px;
+  padding: 4px 8px;
+  margin-bottom: 10px;
+  min-height: 40px;
+}
+
+.attr-inline-field .label {
+  flex-shrink: 0;
+  width: 40px;
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+}
+
+.attr-inline-field .content {
+  flex: 1;
+  min-width: 0;
+}
+
+.attr-inline-field :deep(.ivu-color-picker),
+.attr-inline-field :deep(.ivu-select) {
+  width: 100%;
+}
+
+.attr-inline-field :deep(.ivu-color-picker-color) {
+  width: 100%;
+}

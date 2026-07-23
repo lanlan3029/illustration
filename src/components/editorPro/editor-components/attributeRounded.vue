@@ -1,38 +1,30 @@
 
 <template>
-  <div class="box attr-item-box" v-if="isOne && isMatchType">
-    <!-- <h3>圆角</h3> -->
+  <div class="box attr-item-box attr-panel-section" v-if="isOne && isMatchType">
     <Divider plain orientation="left"><h4>圆角</h4></Divider>
-    <!-- 通用属性 -->
-    <div>
-      <Row :gutter="10">
-        <Col :span="18" flex="1">
-          <Form :label-width="40" class="form-wrap">
-            <FormItem :label="$t('attributes.rx_ry')">
-              <Slider
-                v-model="baseAttr.roundValue"
-                :max="300"
-                @on-input="(value) => changeCommon(value)"
-              ></Slider>
-            </FormItem>
-          </Form>
-        </Col>
-        <Col :span="6" flex="1">
+    <Form :label-width="40" class="attr-form form-wrap">
+      <FormItem :label="$t('attributes.rx_ry')">
+        <div class="rounded-control">
+          <Slider
+            v-model="baseAttr.roundValue"
+            :max="300"
+            @on-input="(value) => changeCommon(value)"
+          />
           <InputNumber
             v-model="baseAttr.roundValue"
             :min="0"
             :max="300"
             @on-change="(value) => changeCommon(value)"
-          ></InputNumber>
-        </Col>
-      </Row>
-    </div>
-    <!-- <Divider plain></Divider> -->
+          />
+        </div>
+      </FormItem>
+    </Form>
   </div>
 </template>
 
 <script setup name="AttrBute">
 import useSelect from '@/components/editorPro/hooks/select';
+import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue';
 import { getCurrentInstance, onMounted, onBeforeUnmount,reactive} from 'vue';
 const update = getCurrentInstance();
 const { canvasEditor, isOne, isMatchType } = useSelect(['rect']);
@@ -82,45 +74,18 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped  >
-::deep(.ivu-input-number) {
-  display: block;
-  width: 100%;
-}
+<style scoped>
+@import './attributePanel.css';
 
-::deep(.ivu-color-picker) {
-  display: block;
-}
-
-/* 行布局 */
-.ivu-row {
-  margin-bottom: 8px;
-}
-
-.ivu-row .ivu-col {
-  position: inherit;
-}
-
-.ivu-row .ivu-col__box {
-  display: flex;
+.rounded-control {
+  display: grid;
+  grid-template-columns: 1fr 72px;
+  gap: 10px;
   align-items: center;
-  background: #f8f8f8;
-  border-radius: 4px;
-  gap: 8px;
 }
 
-.ivu-row .label {
-  padding-left: 8px;
-}
-
-.ivu-row .content {
-  flex: 1;
-}
-
-.ivu-row .content :deep(.--input),
-.ivu-row .content :deep(.ivu-select-selection) {
-  background-color: transparent;
-  border: none !important;
-  box-shadow: none !important;
+.rounded-control :deep(.ivu-input-number),
+.rounded-control :deep(.custom-input-number) {
+  width: 100%;
 }
 </style>

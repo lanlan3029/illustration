@@ -1,53 +1,55 @@
 
 <template>
-  <div class="box attr-item-box" v-if="isOne">
-    <!-- <h3>位置信息</h3> -->
+  <div class="box attr-item-box attr-panel-section" v-if="isOne">
     <Divider plain orientation="left"><h4>位置信息</h4></Divider>
-    <!-- 通用属性 -->
     <div v-show="isMatchType">
-      <Row :gutter="10">
-        <Col flex="1">
-          <InputNumber
-            v-model="baseAttr.left"
-            @on-change="(value) => changeCommon('left', value)"
-            :append="$t('attributes.left')"
-          ></InputNumber>
-        </Col>
-        <Col flex="1">
-          <InputNumber
-            v-model="baseAttr.top"
-            @on-change="(value) => changeCommon('top', value)"
-            :append="$t('attributes.top')"
-          ></InputNumber>
-        </Col>
-      </Row>
-      <Form :label-width="40" class="form-wrap">
+      <div class="attr-field-row">
+        <InputNumber
+          v-model="baseAttr.left"
+          @on-change="(value) => changeCommon('left', value)"
+          :append="$t('attributes.left')"
+        />
+        <InputNumber
+          v-model="baseAttr.top"
+          @on-change="(value) => changeCommon('top', value)"
+          :append="$t('attributes.top')"
+        />
+      </div>
+      <Form :label-width="40" class="attr-form form-wrap">
+        <FormItem :label="$t('attributes.scale')">
+          <Slider
+            v-model="baseAttr.scale"
+            :min="10"
+            :max="300"
+            @on-input="(value) => changeCommon('scale', value)"
+          />
+        </FormItem>
         <FormItem :label="$t('attributes.angle')">
           <Slider
             v-model="baseAttr.angle"
             :max="360"
             @on-input="(value) => changeCommon('angle', value)"
-          ></Slider>
+          />
         </FormItem>
         <FormItem :label="$t('attributes.opacity')">
           <Slider
             v-model="baseAttr.opacity"
             @on-input="(value) => changeCommon('opacity', value)"
-          ></Slider>
+          />
         </FormItem>
       </Form>
     </div>
-    <!-- <Divider plain></Divider> -->
   </div>
 </template>
 
 <script setup name="AttrBute">
-import useSelect from '@/components/editorPro/hooks/select.js';
-import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue';
-import { getCurrentInstance, onMounted, onBeforeUnmount,reactive} from 'vue';
-const update = getCurrentInstance();
+import useSelect from '@/components/editorPro/hooks/select.js'
+import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue'
+import { getCurrentInstance, onMounted, onBeforeUnmount, reactive } from 'vue'
+import { clampPhotoSlotPan, isFilledPhotoSlot } from '@/utils/editorPro/pageTemplate'
 
-// 可修改的元素
+const update = getCurrentInstance()
+
 const baseType = [
   'text',
   'i-text',
@@ -61,86 +63,86 @@ const baseType = [
   'line',
   'arrow',
   'thinTailArrow',
-];
-const { isMatchType, canvasEditor, isOne } = useSelect(baseType);
+]
+const { isMatchType, canvasEditor, isOne } = useSelect(baseType)
 
-// 属性值
 const baseAttr = reactive({
   opacity: 0,
   angle: 0,
+  scale: 100,
   left: 0,
   top: 0,
-  rx: 0,
-  ry: 0,
-});
+})
 
-// 属性获取
+function readDisplayScale(activeObject) {
+  const sx = activeObject?.scaleX || 1
+  const sy = activeObject?.scaleY || 1
+  return Math.round(((sx + sy) / 2) * 100)
+}
+
 const getObjectAttr = (e) => {
-  const activeObject = canvasEditor.canvas.getActiveObject();
-  // 不是当前obj，跳过
-  if (e && e.target && e.target !== activeObject) return;
+  const activeObject = canvasEditor.canvas.getActiveObject()
+  if (e && e.target && e.target !== activeObject) return
   if (activeObject && isMatchType.value) {
-    baseAttr.opacity = activeObject.get('opacity') * 100;
-    baseAttr.left = activeObject.get('left');
-    baseAttr.top = activeObject.get('top');
-    baseAttr.angle = activeObject.get('angle') || 0;
+    baseAttr.opacity = activeObject.get('opacity') * 100
+    baseAttr.left = activeObject.get('left')
+    baseAttr.top = activeObject.get('top')
+    baseAttr.angle = activeObject.get('angle') || 0
+    baseAttr.scale = readDisplayScale(activeObject)
   }
-};
+}
 
-// 通用属性改变
 const changeCommon = (key, value) => {
-  const activeObject = canvasEditor.canvas.getActiveObjects()[0];
-  if (activeObject) {
-    // 透明度特殊转换
-    if (key === 'opacity') {
-      activeObject && activeObject.set(key, value / 100);
-      canvasEditor.canvas.renderAll();
-      return;
-    }
-    // 旋转角度适配
-    if (key === 'angle') {
-      activeObject.rotate(value);
-      canvasEditor.canvas.renderAll();
-      return;
-    }
-    activeObject && activeObject.set(key, value);
-    canvasEditor.canvas.renderAll();
+  const activeObject = canvasEditor.canvas.getActiveObjects()[0]
+  if (!activeObject) return
+
+  if (key === 'opacity') {
+    activeObject.set('opacity', value / 100)
+    canvasEditor.canvas.renderAll()
+    return
   }
-};
+
+  if (key === 'angle') {
+    activeObject.rotate(value)
+    canvasEditor.canvas.renderAll()
+    return
+  }
+
+  if (key === 'scale') {
+    const ratio = value / 100
+    activeObject.set({ scaleX: ratio, scaleY: ratio })
+    if (isFilledPhotoSlot(activeObject)) {
+      clampPhotoSlotPan(activeObject)
+    }
+    activeObject.setCoords?.()
+    canvasEditor.canvas.renderAll()
+    return
+  }
+
+  activeObject.set(key, value)
+  canvasEditor.canvas.renderAll()
+}
 
 const selectCancel = () => {
-  update?.proxy?.$forceUpdate();
-};
+  update?.proxy?.$forceUpdate()
+}
 
 onMounted(() => {
-  // 获取字体数据
-  getObjectAttr();
-  canvasEditor.on('selectCancel', selectCancel);
-  canvasEditor.on('selectOne', getObjectAttr);
-  canvasEditor.canvas.on('object:modified', getObjectAttr);
-});
+  getObjectAttr()
+  canvasEditor.on('selectCancel', selectCancel)
+  canvasEditor.on('selectOne', getObjectAttr)
+  canvasEditor.canvas.on('object:modified', getObjectAttr)
+  canvasEditor.canvas.on('object:scaling', getObjectAttr)
+})
 
 onBeforeUnmount(() => {
-  canvasEditor.off('selectCancel', selectCancel);
-  canvasEditor.off('selectOne', getObjectAttr);
-  canvasEditor.canvas.off('object:modified', getObjectAttr);
-});
+  canvasEditor.off('selectCancel', selectCancel)
+  canvasEditor.off('selectOne', getObjectAttr)
+  canvasEditor.canvas.off('object:modified', getObjectAttr)
+  canvasEditor.canvas.off('object:scaling', getObjectAttr)
+})
 </script>
 
-<style scoped  >
-:deep(.ivu-input-number) {
-  display: block;
-  width: 100%;
-}
-
-.ivu-form-item {
-  background: #f6f7f9;
-  border-radius: 5px;
-  padding: 0 5px;
-  margin-bottom: 10px;
-}
-
-.ivu-row {
-  margin-bottom: 10px;
-}
+<style scoped>
+@import './attributePanel.css';
 </style>

@@ -1,149 +1,99 @@
 
-
 <template>
-  <div class="box attr-item-box" v-if="isOne">
-    <!-- <h3>阴影</h3> -->
+  <div class="box attr-item-box attr-panel-section" v-if="isOne">
     <Divider plain orientation="left"><h4>阴影</h4></Divider>
-    <!-- 通用属性 -->
-    <div>
-      <Row :gutter="10">
-        <Col flex="1">
-          <div class="ivu-col__box">
-            <span class="label">{{ $t('color') }}</span>
-            <div class="content">
-              <ColorPicker v-model="baseAttr.shadow.color" @on-change="changeCommon" alpha />
-            </div>
-          </div>
-        </Col>
-        <Col flex="1">
-          <InputNumber
-            v-model="baseAttr.shadow.blur"
-            :defaultValue="0"
-            @on-change="changeCommon"
-            :append="$t('attributes.blur')"
-            :min="0"
-          ></InputNumber>
-        </Col>
-      </Row>
-      <div>
-        <Row :gutter="10">
-          <Col flex="1">
-            <InputNumber
-              v-model="baseAttr.shadow.offsetX"
-              :defaultValue="0"
-              @on-change="changeCommon"
-              :append="$t('attributes.offset_x')"
-            ></InputNumber>
-          </Col>
-          <Col flex="1">
-            <InputNumber
-              v-model="baseAttr.shadow.offsetY"
-              :defaultValue="0"
-              @on-change="changeCommon"
-              :append="$t('attributes.offset_y')"
-            ></InputNumber>
-          </Col>
-        </Row>
-      </div>
+    <Form :label-width="40" class="attr-form form-wrap">
+      <FormItem :label="$t('color')">
+        <ColorPicker v-model="baseAttr.shadow.color" @on-change="changeCommon" alpha />
+      </FormItem>
+      <FormItem :label="$t('attributes.blur')">
+        <InputNumber
+          v-model="baseAttr.shadow.blur"
+          :defaultValue="0"
+          @on-change="changeCommon"
+          :min="0"
+        />
+      </FormItem>
+    </Form>
+    <div class="attr-field-row">
+      <InputNumber
+        v-model="baseAttr.shadow.offsetX"
+        :defaultValue="0"
+        @on-change="changeCommon"
+        :append="$t('attributes.offset_x')"
+      />
+      <InputNumber
+        v-model="baseAttr.shadow.offsetY"
+        :defaultValue="0"
+        @on-change="changeCommon"
+        :append="$t('attributes.offset_y')"
+      />
     </div>
-    <!-- <Divider plain></Divider> -->
   </div>
 </template>
 
 <script setup name="AttrBute">
-import useSelect from '@/components/editorPro/hooks/select.js';
-import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue';
-import { getCurrentInstance, onMounted, onBeforeUnmount,reactive} from 'vue';
-const update = getCurrentInstance();
-const { fabric, isOne, canvasEditor } = useSelect();
+import useSelect from '@/components/editorPro/hooks/select.js'
+import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue'
+import { getCurrentInstance, onMounted, onBeforeUnmount, reactive } from 'vue'
 
-// 属性值
+const update = getCurrentInstance()
+const { fabric, isOne, canvasEditor } = useSelect()
+
 const baseAttr = reactive({
-  shadow: {},
-});
+  shadow: {
+    color: 'rgba(0,0,0,0.3)',
+    blur: 0,
+    offsetX: 0,
+    offsetY: 0,
+  },
+})
 
-// 属性获取
 const getObjectAttr = (e) => {
-  const activeObject = canvasEditor.canvas.getActiveObject();
-  // 不是当前obj，跳过
-  if (e && e.target && e.target !== activeObject) return;
+  const activeObject = canvasEditor.canvas.getActiveObject()
+  if (e && e.target && e.target !== activeObject) return
   if (activeObject) {
-    baseAttr.shadow = activeObject.get('shadow') || {};
+    const shadow = activeObject.get('shadow') || {}
+    baseAttr.shadow = {
+      color: shadow.color || 'rgba(0,0,0,0.3)',
+      blur: shadow.blur || 0,
+      offsetX: shadow.offsetX || 0,
+      offsetY: shadow.offsetY || 0,
+    }
   }
-};
+}
 
-// 通用属性改变
 const changeCommon = () => {
-  const activeObject = canvasEditor.canvas.getActiveObjects()[0];
+  const activeObject = canvasEditor.canvas.getActiveObjects()[0]
   if (activeObject) {
-    activeObject.set('shadow', new fabric.Shadow(baseAttr.shadow));
-    canvasEditor.canvas.renderAll();
+    activeObject.set('shadow', new fabric.Shadow(baseAttr.shadow))
+    canvasEditor.canvas.renderAll()
   }
-};
+}
 
 const selectCancel = () => {
-  update?.proxy?.$forceUpdate();
-};
+  update?.proxy?.$forceUpdate()
+}
 
 onMounted(() => {
-  // 获取字体数据
-  getObjectAttr();
-  canvasEditor.on('selectCancel', selectCancel);
-  canvasEditor.on('selectOne', getObjectAttr);
-  canvasEditor.canvas.on('object:modified', getObjectAttr);
-});
+  getObjectAttr()
+  canvasEditor.on('selectCancel', selectCancel)
+  canvasEditor.on('selectOne', getObjectAttr)
+  canvasEditor.canvas.on('object:modified', getObjectAttr)
+})
 
 onBeforeUnmount(() => {
-  canvasEditor.off('selectCancel', selectCancel);
-  canvasEditor.off('selectOne', getObjectAttr);
-  canvasEditor.canvas.off('object:modified', getObjectAttr);
-});
+  canvasEditor.off('selectCancel', selectCancel)
+  canvasEditor.off('selectOne', getObjectAttr)
+  canvasEditor.canvas.off('object:modified', getObjectAttr)
+})
 </script>
 
-<style scoped  >
-::deep(.ivu-input-number) {
+<style scoped>
+@import './attributePanel.css';
+
+:deep(.ivu-color-picker) {
   display: block;
   width: 100%;
-}
-
-::deep(.ivu-color-picker) {
-  display: block;
-}
-
-.box {
-  width: 100%;
-}
-
-.ivu-row {
-  margin-bottom: 8px;
-}
-
-.ivu-row .ivu-col {
-  position: inherit;
-}
-
-.ivu-row .ivu-col__box {
-  display: flex;
-  align-items: center;
-  background: #f8f8f8;
-  border-radius: 4px;
-  gap: 8px;
-}
-
-.ivu-row .label {
-  padding-left: 8px;
-}
-
-.ivu-row .content {
-  display: flex;
-  align-items: center;
-  vertical-align: middle;
-}
-
-.ivu-row .content :deep(.--input),
-.ivu-row .content :deep(.ivu-select-selection) {
-  background-color: transparent;
-  border: none !important;
-  box-shadow: none !important;
 }
 </style>
