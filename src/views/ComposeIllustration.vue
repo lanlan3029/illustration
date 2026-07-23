@@ -51,6 +51,29 @@
                 </span>
             </div>
 
+            <div class="format-section">
+                <h3 class="format-section-title">{{ $t('bookExport.formatTitle') }}</h3>
+                <p class="format-section-hint">{{ $t('bookExport.formatHint') }}</p>
+                <div class="format-grid">
+                    <button
+                        v-for="fmt in exportFormats"
+                        :key="fmt.id"
+                        type="button"
+                        class="format-card"
+                        :class="{ 'is-active': bookExportFormatId === fmt.id }"
+                        @click="selectFormat(fmt.id)"
+                    >
+                        <span class="format-preview" :style="{ aspectRatio: fmt.aspectRatioCss }">
+                            <span v-if="fmt.bleed" class="format-preview-fill"></span>
+                            <span v-else class="format-preview-safe"></span>
+                        </span>
+                        <span class="format-card-title">{{ $t(fmt.nameKey) }}</span>
+                        <span class="format-card-desc">{{ $t(fmt.descKey) }}</span>
+                        <span class="format-card-meta">{{ formatMeta(fmt) }}</span>
+                    </button>
+                </div>
+            </div>
+
             <div class="mode-actions" :class="{ 'is-disabled': checkedImage.length === 0 }">
                 <button
                     type="button"
@@ -97,8 +120,14 @@
 
 <script>
 import { mapState } from 'vuex';
+import {
+  BOOK_EXPORT_FORMATS,
+  formatSizeLabel,
+  getBookExportFormat,
+} from '@/data/bookExportFormats';
 
 const LAYOUT_FROM_PICK_KEY = 'book_layout_from_pick';
+const FORMAT_STORAGE_KEY = 'book_export_format_id';
 
 export default {
   data() {
@@ -111,8 +140,34 @@ export default {
       dragOverIndex: null,
     };
   },
-  computed: mapState(['imgToPDF']),
+  computed: {
+    ...mapState(['imgToPDF', 'bookExportFormatId']),
+    exportFormats() {
+      return BOOK_EXPORT_FORMATS;
+    },
+  },
   methods: {
+    formatMeta(fmt) {
+      return formatSizeLabel(fmt);
+    },
+    selectFormat(id) {
+      this.$store.commit('setBookExportFormat', id);
+      try {
+        sessionStorage.setItem(FORMAT_STORAGE_KEY, id);
+      } catch {
+        /* ignore */
+      }
+    },
+    restoreFormat() {
+      try {
+        const saved = sessionStorage.getItem(FORMAT_STORAGE_KEY);
+        if (saved && getBookExportFormat(saved)) {
+          this.$store.commit('setBookExportFormat', saved);
+        }
+      } catch {
+        /* ignore */
+      }
+    },
     async getIll() {
       try {
         const res = await this.$http.get(`/ill/?sort_param=createdAt&sort_num=desc&ownerid=${this.userid}&page=1`);
@@ -209,6 +264,7 @@ export default {
     },
   },
   async mounted() {
+    this.restoreFormat();
     this.restoreFromStore();
     await this.getIll();
   },
@@ -351,6 +407,105 @@ export default {
     opacity: 1;
 }
 
+.format-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ebeef5;
+}
+
+.format-section-title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.format-section-hint {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: #909399;
+    line-height: 1.45;
+}
+
+.format-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.format-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 2px solid #ebeef5;
+    border-radius: 10px;
+    background: #fafafa;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.format-card:hover {
+    border-color: #b7a6d6;
+    background: #f9f8fc;
+}
+
+.format-card.is-active {
+    border-color: #8167a9;
+    background: #f3f0f8;
+    box-shadow: 0 0 0 1px rgba(129, 103, 169, 0.25);
+}
+
+.format-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 72px;
+    margin: 0 auto 4px;
+    background: #fff;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    overflow: hidden;
+    min-height: 48px;
+}
+
+.format-preview-fill {
+    width: 100%;
+    height: 100%;
+    min-height: 48px;
+    background: linear-gradient(135deg, #b7d4f0 0%, #9ec5eb 100%);
+}
+
+.format-preview-safe {
+    width: 72%;
+    height: 72%;
+    min-height: 36px;
+    background: linear-gradient(135deg, #b7d4f0 0%, #9ec5eb 100%);
+    border-radius: 2px;
+}
+
+.format-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #303133;
+    line-height: 1.35;
+}
+
+.format-card-desc {
+    font-size: 12px;
+    color: #909399;
+    line-height: 1.4;
+}
+
+.format-card-meta {
+    font-size: 11px;
+    color: #a8abb2;
+    font-variant-numeric: tabular-nums;
+}
+
 .mode-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -471,6 +626,10 @@ export default {
 }
 
 @media (max-width: 768px) {
+    .format-grid {
+        grid-template-columns: 1fr;
+    }
+
     .mode-actions {
         grid-template-columns: 1fr;
     }

@@ -8,13 +8,16 @@
         <span class="pbl-stat">{{ $t('printBookLayout.pageStat', { filled: filledStoryCount, total: 28 }) }}</span>
       </div>
       <div class="pbl-header-actions">
-        <div class="pbl-ratio">
-          <span>{{ $t('printBookLayout.pageRatio') }}</span>
-          <el-radio-group v-model="pageRatio" size="small" @change="saveSession">
-            <el-radio-button label="1:1">1:1</el-radio-button>
-            <el-radio-button label="3:4">3:4</el-radio-button>
-            <el-radio-button label="2:1">2:1</el-radio-button>
-          </el-radio-group>
+        <div class="pbl-format">
+          <span>{{ $t('bookExport.formatTitle') }}</span>
+          <el-select v-model="bookFormatId" size="small" class="pbl-format-select" @change="saveSession">
+            <el-option
+              v-for="fmt in exportFormats"
+              :key="fmt.id"
+              :label="$t(fmt.nameKey)"
+              :value="fmt.id"
+            />
+          </el-select>
         </div>
         <el-button type="primary" :disabled="!selectedIlls.length" @click="generateLayout">
           {{ $t('printBookLayout.generateLayout') }}
@@ -24,7 +27,8 @@
         <el-button v-if="viewMode === 'edit'" @click="viewMode = 'overview'">
           {{ $t('printBookLayout.backOverview') }}
         </el-button>
-        <el-button :disabled="!hasAnyImage" @click="exportPdf">{{ $t('printBookLayout.exportPdf') }}</el-button>
+        <el-button :disabled="!hasAnyImage || exporting" @click="exportPdf">{{ $t('printBookLayout.exportPdf') }}</el-button>
+        <el-button :disabled="!hasAnyImage || exporting" @click="exportImages">{{ $t('printBookLayout.exportImages') }}</el-button>
       </div>
     </header>
 
@@ -205,8 +209,6 @@
 
 <script>
 import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus';
-import html2canvas from 'html2canvas';
-import JsPDF from 'jspdf';
 import {
   createDefaultPrintLayout,
   getIllustrationUrl,
@@ -217,9 +219,20 @@ import {
   migrateRowsToBlocks,
   shiftStoryIllustrationForward,
 } from '@/data/pictureBookPrintLayout';
+import {
+  BOOK_EXPORT_FORMATS,
+  DEFAULT_BOOK_EXPORT_FORMAT_ID,
+  getBookExportFormat,
+  migrateLegacyPageRatio,
+} from '@/data/bookExportFormats';
+import {
+  buildPrintLayoutPdf,
+  downloadPrintLayoutPagesAsPng,
+} from '@/utils/bookExport/renderBookPage';
 
 const STORAGE_KEY = 'print_book_layout_v2';
 const LAYOUT_FROM_PICK_KEY = 'book_layout_from_pick';
+const FORMAT_STORAGE_KEY = 'book_export_format_id';
 
 export default {
   name: 'PrintBookLayout',
@@ -227,7 +240,7 @@ export default {
   data() {
     return {
       layoutBlocks: createDefaultPrintLayout(),
-      pageRatio: '3:4',
+      bookFormatId: DEFAULT_BOOK_EXPORT_FORMAT_ID,
       viewMode: 'overview',
       editingBlockId: null,
       activePageId: null,
@@ -253,13 +266,19 @@ export default {
     editingBlock() {
       return this.layoutBlocks.find((b) => b.id === this.editingBlockId) || null;
     },
+    exportFormats() {
+      return BOOK_EXPORT_FORMATS;
+    },
+    bookFormat() {
+      return getBookExportFormat(this.bookFormatId);
+    },
     faceStyle() {
-      const [w, h] = this.pageRatio.split(':').map(Number);
-      return { aspectRatio: `${w} / ${h}` };
+      const f = this.bookFormat;
+      return { aspectRatio: `${f.widthIn} / ${f.heightIn}` };
     },
     matrixStyle() {
-      const [w, h] = this.pageRatio.split(':').map(Number);
-      return { '--page-ar': `${w} / ${h}` };
+      const f = this.bookFormat;
+      return { '--page-ar': `${f.widthIn} / ${f.heightIn}` };
     },
     activeIll() {
       if (!this.activeIllId) return null;
@@ -513,10 +532,11 @@ export default {
           STORAGE_KEY,
           JSON.stringify({
             layoutBlocks: this.layoutBlocks,
-            pageRatio: this.pageRatio,
+            bookFormatId: this.bookFormatId,
             selectedIlls: this.selectedIlls.map((i) => ({ _id: i._id, content: i.content, title: i.title })),
           })
         );
+        sessionStorage.setItem(FORMAT_STORAGE_KEY, this.bookFormatId);
       } catch {
         /* quota */
       }
@@ -529,7 +549,11 @@ export default {
           if (Array.isArray(data.layoutBlocks) && data.layoutBlocks.length) {
             this.layoutBlocks = data.layoutBlocks;
           }
-          if (data.pageRatio) this.pageRatio = data.pageRatio;
+          if (data.bookFormatId) {
+            this.bookFormatId = data.bookFormatId;
+          } else if (data.pageRatio) {
+            this.bookFormatId = migrateLegacyPageRatio(data.pageRatio);
+          }
           if (Array.isArray(data.selectedIlls)) this.selectedIlls = data.selectedIlls;
           return;
         }
@@ -540,6 +564,10 @@ export default {
           if (migrated) this.layoutBlocks = migrated;
           if (Array.isArray(data.selectedIlls)) this.selectedIlls = data.selectedIlls;
         }
+        const savedFormat = sessionStorage.getItem(FORMAT_STORAGE_KEY);
+        if (savedFormat && getBookExportFormat(savedFormat)) {
+          this.bookFormatId = savedFormat;
+        }
       } catch {
         /* ignore */
       }
@@ -549,60 +577,14 @@ export default {
       this.exporting = true;
       ElMessage.info(this.$t('printBookLayout.exporting'));
 
-      const [rw, rh] = this.pageRatio.split(':').map(Number);
-      const singleW = 595;
-      const singleH = Math.round((singleW * rh) / rw);
-
       try {
-        let pdf = null;
-
-        for (const block of this.layoutBlocks) {
-          if (!block.pages.some((p) => p.illustration)) continue;
-
-          if (block.type === 'single') {
-            const pg = block.pages[0];
-            if (!pg?.illustration) continue;
-            if (!pdf) {
-              pdf = new JsPDF('p', 'pt', [singleW, singleH]);
-            } else {
-              pdf.addPage([singleW, singleH], 'p');
-            }
-            // eslint-disable-next-line no-await-in-loop
-            await this.renderPageImage(pdf, singleW, singleH, pg);
-          } else {
-            const spreadW = singleW * 2;
-            const spreadH = singleH;
-            if (!pdf) {
-              pdf = new JsPDF('l', 'pt', [spreadW, spreadH]);
-            } else {
-              pdf.addPage([spreadW, spreadH], 'l');
-            }
-            const el = document.createElement('div');
-            el.style.cssText = `position:fixed;left:-9999px;top:0;width:${spreadW}px;height:${spreadH}px;display:flex;background:#fff;`;
-            block.pages.forEach((page) => {
-              const cell = document.createElement('div');
-              cell.style.cssText = 'flex:1;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;';
-              if (page.illustration) {
-                const img = document.createElement('img');
-                img.src = this.illUrl(page.illustration);
-                img.crossOrigin = 'anonymous';
-                img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
-                cell.appendChild(img);
-              }
-              el.appendChild(cell);
-            });
-            document.body.appendChild(el);
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise((r) => setTimeout(r, 200));
-            // eslint-disable-next-line no-await-in-loop
-            const canvas = await html2canvas(el, { useCORS: true, scale: 2, backgroundColor: '#fff' });
-            document.body.removeChild(el);
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, spreadW, spreadH);
-          }
-        }
-
+        const pdf = await buildPrintLayoutPdf(
+          this.layoutBlocks,
+          this.bookFormat,
+          (item) => this.illUrl(item)
+        );
         if (pdf) {
-          pdf.save(`picture-book-layout-${Date.now()}.pdf`);
+          pdf.save(`print-layout-300dpi-${Date.now()}.pdf`);
           ElMessage.success(this.$t('printBookLayout.exportDone'));
         }
       } catch (e) {
@@ -612,21 +594,25 @@ export default {
         this.exporting = false;
       }
     },
-    async renderPageImage(pdf, pageW, pageH, pg) {
-      const el = document.createElement('div');
-      el.style.cssText = `position:fixed;left:-9999px;top:0;width:${pageW}px;height:${pageH}px;display:flex;align-items:center;justify-content:center;background:#fff;`;
-      if (pg?.illustration) {
-        const img = document.createElement('img');
-        img.src = this.illUrl(pg.illustration);
-        img.crossOrigin = 'anonymous';
-        img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
-        el.appendChild(img);
+    async exportImages() {
+      if (this.exporting || !this.hasAnyImage) return;
+      this.exporting = true;
+      ElMessage.info(this.$t('printBookLayout.exportingImages'));
+
+      try {
+        await downloadPrintLayoutPagesAsPng(
+          this.layoutBlocks,
+          this.bookFormat,
+          (item) => this.illUrl(item),
+          `print-layout-${Date.now()}`
+        );
+        ElMessage.success(this.$t('printBookLayout.exportImagesDone'));
+      } catch (e) {
+        console.error(e);
+        ElMessage.error(this.$t('printBookLayout.exportFailed'));
+      } finally {
+        this.exporting = false;
       }
-      document.body.appendChild(el);
-      await new Promise((r) => setTimeout(r, 200));
-      const canvas = await html2canvas(el, { useCORS: true, scale: 2, backgroundColor: '#fff' });
-      document.body.removeChild(el);
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageW, pageH);
     },
   },
 };
@@ -690,13 +676,17 @@ export default {
   gap: 8px;
 }
 
-.pbl-ratio {
+.pbl-format {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
   color: #606266;
   margin-right: 4px;
+}
+
+.pbl-format-select {
+  width: 220px;
 }
 
 .pbl-header-actions :deep(.el-button--primary) {

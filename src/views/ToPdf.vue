@@ -21,6 +21,7 @@
           v-for="(page, index) in previewPages"
           :key="page.id || `code-${index}`"
           class="topdf-page-card"
+          :style="pageCardStyle"
         >
           <span class="topdf-page-label">{{ $t('toPdf.pageLabel', { n: index + 1 }) }}</span>
           <el-image :src="page.src" fit="contain" class="topdf-page-img" />
@@ -31,6 +32,24 @@
     <!-- 右侧：表单 -->
     <aside class="topdf-sidebar">
       <h2 class="topdf-sidebar-title">{{ $t('toPdf.publishTitle') }}</h2>
+
+      <div class="topdf-format-block">
+        <label class="topdf-format-label">{{ $t('bookExport.formatTitle') }}</label>
+        <el-select
+          v-model="selectedFormatId"
+          class="topdf-format-select"
+          @change="onFormatChange"
+        >
+          <el-option
+            v-for="fmt in exportFormats"
+            :key="fmt.id"
+            :label="$t(fmt.nameKey)"
+            :value="fmt.id"
+          />
+        </el-select>
+        <p class="topdf-format-meta">{{ formatMetaLabel }}</p>
+      </div>
+
       <el-form ref="form" :model="form" label-position="top" class="topdf-form">
         <el-form-item :label="$t('toPdf.bookTitle')">
           <el-input
@@ -66,8 +85,11 @@
           </el-checkbox>
         </el-form-item>
         <div class="topdf-actions">
-          <el-button :disabled="disabled || !totalPages" @click="downPDF">
+          <el-button :disabled="exporting || !totalPages" @click="downPDF">
             {{ $t('toPdf.downloadPdf') }}
+          </el-button>
+          <el-button :disabled="exporting || !totalPages" @click="downImages">
+            {{ $t('toPdf.downloadImages') }}
           </el-button>
           <el-button type="primary" :disabled="!totalPages" @click="submit">
             {{ $t('toPdf.publish') }}
@@ -79,18 +101,25 @@
 </template>
 
 <script>
-import JsPDF from 'jspdf';
 import { mapState } from 'vuex';
 import { ElMessage } from 'element-plus';
+import {
+  BOOK_EXPORT_FORMATS,
+  formatSizeLabel,
+  getBookExportFormat,
+} from '@/data/bookExportFormats';
+import {
+  buildBookPdfFromPages,
+  downloadBookPagesAsPng,
+} from '@/utils/bookExport/renderBookPage';
 
-const PDF_W = 984.3;
-const PDF_H = 699;
-const PDF_RENDER_SCALE = 2;
+const FORMAT_STORAGE_KEY = 'book_export_format_id';
 
 export default {
   data() {
     return {
-      disabled: false,
+      exporting: false,
+      selectedFormatId: 'square-safe',
       checkedId: [],
       form: {
         title: '',
@@ -99,11 +128,22 @@ export default {
         authorizationConfirmed: false,
       },
       codeImg: require('../assets/images/pdfCode.webp'),
-      pdfBase64: '',
     };
   },
   computed: {
-    ...mapState(['imgToPDF']),
+    ...mapState(['imgToPDF', 'bookExportFormatId']),
+    exportFormats() {
+      return BOOK_EXPORT_FORMATS;
+    },
+    activeFormat() {
+      return getBookExportFormat(this.selectedFormatId);
+    },
+    formatMetaLabel() {
+      return formatSizeLabel(this.activeFormat);
+    },
+    pageCardStyle() {
+      return { aspectRatio: this.activeFormat.aspectRatioCss };
+    },
     previewPages() {
       const pages = this.imgToPDF.map((item) => ({
         type: 'ill',
@@ -119,7 +159,32 @@ export default {
       return this.previewPages.length;
     },
   },
+  mounted() {
+    this.selectedFormatId = this.bookExportFormatId || 'square-safe';
+    try {
+      const saved = sessionStorage.getItem(FORMAT_STORAGE_KEY);
+      if (saved && getBookExportFormat(saved)) {
+        this.selectedFormatId = saved;
+        this.$store.commit('setBookExportFormat', saved);
+      }
+    } catch {
+      /* ignore */
+    }
+  },
   methods: {
+    onFormatChange(id) {
+      this.$store.commit('setBookExportFormat', id);
+      try {
+        sessionStorage.setItem(FORMAT_STORAGE_KEY, id);
+      } catch {
+        /* ignore */
+      }
+    },
+    exportFileBaseName() {
+      const title = (this.form.title || '').trim();
+      const safe = title.replace(/[^\w\u4e00-\u9fa5-]+/g, '-').replace(/^-+|-+$/g, '');
+      return safe || 'StoryTime';
+    },
     handleBack() {
       this.$router.push({ name: 'compose-illustration' });
     },
@@ -169,81 +234,40 @@ export default {
       if (!this.validateCompliance()) return;
       if (!this.previewPages.length) return;
 
-      this.disabled = true;
-      ElMessage(this.$t('toPdf.downloading'));
+      this.exporting = true;
+      ElMessage.info(this.$t('toPdf.downloading'));
 
-      this.buildPdfFromPages()
+      buildBookPdfFromPages(this.previewPages, this.activeFormat)
         .then((pdf) => {
-          pdf.save('StoryTime.pdf');
-          this.pdfBase64 = pdf.output('dataurlstring');
+          pdf.save(`${this.exportFileBaseName()}-300dpi.pdf`);
+          ElMessage.success(this.$t('toPdf.downloadDone'));
         })
         .catch((err) => {
           console.error(err);
           ElMessage.error(this.$t('toPdf.downloadFailed'));
         })
         .finally(() => {
-          this.disabled = false;
+          this.exporting = false;
         });
     },
-    loadImageElement(src) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        const isLocal = src.startsWith('data:')
-          || src.startsWith('blob:')
-          || src.startsWith('/')
-          || src.startsWith(window.location.origin);
-        if (!isLocal) {
-          img.crossOrigin = 'anonymous';
-        }
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error(`image load failed: ${src}`));
-        img.src = src;
-      });
-    },
-    findPreviewImage(src) {
-      const imgs = document.querySelectorAll('.topdf-scroll img');
-      for (let i = 0; i < imgs.length; i += 1) {
-        const el = imgs[i];
-        if (el.src === src || el.currentSrc === src) {
-          return el;
-        }
-      }
-      return null;
-    },
-    async pageToDataUrl(src) {
-      let img;
-      try {
-        img = await this.loadImageElement(src);
-      } catch (firstErr) {
-        const previewImg = this.findPreviewImage(src);
-        if (previewImg?.complete && previewImg.naturalWidth > 0) {
-          img = previewImg;
-        } else {
-          throw firstErr;
-        }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = PDF_W * PDF_RENDER_SCALE;
-      canvas.height = PDF_H * PDF_RENDER_SCALE;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const fit = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-      const w = img.naturalWidth * fit;
-      const h = img.naturalHeight * fit;
-      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
-      return canvas.toDataURL('image/jpeg', 0.92);
-    },
-    async buildPdfFromPages() {
-      const pdf = new JsPDF({ orientation: 'landscape', unit: 'pt', format: [PDF_W, PDF_H] });
-      for (let i = 0; i < this.previewPages.length; i += 1) {
-        const dataUrl = await this.pageToDataUrl(this.previewPages[i].src);
-        if (i > 0) {
-          pdf.addPage([PDF_W, PDF_H], 'l');
-        }
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, PDF_W, PDF_H);
-      }
-      return pdf;
+    downImages() {
+      if (!this.validateCompliance()) return;
+      if (!this.previewPages.length) return;
+
+      this.exporting = true;
+      ElMessage.info(this.$t('toPdf.downloadingImages'));
+
+      downloadBookPagesAsPng(this.previewPages, this.activeFormat, this.exportFileBaseName())
+        .then(() => {
+          ElMessage.success(this.$t('toPdf.downloadImagesDone'));
+        })
+        .catch((err) => {
+          console.error(err);
+          ElMessage.error(this.$t('toPdf.downloadImagesFailed'));
+        })
+        .finally(() => {
+          this.exporting = false;
+        });
     },
   },
 };
@@ -345,12 +369,36 @@ export default {
   position: relative;
   width: 100%;
   max-width: min(720px, 100%);
-  aspect-ratio: 4 / 3;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.topdf-format-block {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.topdf-format-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.topdf-format-select {
+  width: 100%;
+}
+
+.topdf-format-meta {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.45;
 }
 
 .topdf-page-label {

@@ -1318,7 +1318,7 @@
   },
   "layoutExport": {
     "title": "Layout & Export",
-    "subtitle": "Select illustrations and order them, then choose a mode to edit and export",
+    "subtitle": "Pick a print size and illustration order, then export 300 DPI PDF or PNG pages",
     "quickCompose": "Compose PDF",
     "quickComposeDesc": "Stack in order, publish or download PDF",
     "printLayout": "Print Layout",
@@ -1328,6 +1328,18 @@
     "goSelect": "Select illustrations",
     "selectedIlls": "Selected",
     "brushFromSelected": "Click an illustration below to use as brush, then click a page slot"
+  },
+  "bookExport": {
+    "formatTitle": "Print size",
+    "formatHint": "PDF and PNG exports are rendered at 300 DPI at final trim size",
+    "formatSquareBleed": "8.5×8.5 Picture book · Full bleed",
+    "formatSquareBleedDesc": "Full-page art edge to edge",
+    "formatSquareSafe": "8.5×8.5 Picture book · No bleed",
+    "formatSquareSafeDesc": "Partial art with safe margins",
+    "formatChapter": "5.5×8.5 Chapter book",
+    "formatChapterDesc": "Mid-grade vertical trim",
+    "formatLetterWorkbook": "8.5×11 Workbook / coloring",
+    "formatLetterWorkbookDesc": "Letter portrait for activity books"
   },
   "toPdf": {
     "backToSelect": "Change selection",
@@ -1349,10 +1361,15 @@
     "descPlaceholder": "Briefly describe this picture book…",
     "compliance": "I confirm this work is original or properly licensed, suitable for children, and I am responsible for its content",
     "complianceRequired": "Please confirm the compliance statement",
-    "downloadPdf": "Download PDF",
+    "downloadPdf": "Download PDF (300 DPI)",
+    "downloadImages": "Download PNG pages (300 DPI)",
     "publish": "Publish",
-    "downloading": "Downloading, please do not click again",
-    "downloadFailed": "PDF download failed, please try again"
+    "downloading": "Exporting PDF, please wait…",
+    "downloadingImages": "Exporting PNG pages, please keep this tab open…",
+    "downloadDone": "PDF downloaded",
+    "downloadImagesDone": "PNG downloads started",
+    "downloadFailed": "PDF export failed, please try again",
+    "downloadImagesFailed": "PNG export failed, please try again"
   },
   "printBookLayout": {
     "title": "Picture Book Print Layout",
@@ -1375,7 +1392,8 @@
     "generateLayout": "Generate Layout",
     "trimEmpty": "Remove Empty Spreads",
     "spreadPreview": "Spread Preview",
-    "exportPdf": "Export PDF",
+    "exportPdf": "Export PDF (300 DPI)",
+    "exportImages": "Export PNG (300 DPI)",
     "pageStat": "{filled} / {total} story pages filled",
     "clickToAssign": "Click to assign",
     "zoom": "Zoom",
@@ -1388,7 +1406,9 @@
     "nothingToTrim": "No empty spreads to remove",
     "loadIllFailed": "Failed to load illustrations",
     "exporting": "Exporting PDF…",
+    "exportingImages": "Exporting PNG pages…",
     "exportDone": "PDF downloaded",
+    "exportImagesDone": "PNG downloads started",
     "exportFailed": "Export failed",
     "pastedownFront": "Pastedown → Front Cover",
     "pastedownBack": "Back Cover → Pastedown",

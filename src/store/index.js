@@ -30,6 +30,8 @@ export default createStore({
         ifCropper: false,
         //合成PDF
         imgToPDF: [],
+        /** 排版导出印刷尺寸模版 id（见 bookExportFormats.js） */
+        bookExportFormatId: 'square-safe',
         //是否登陆
         isLogin: false,
         isMask: false,
@@ -127,6 +129,9 @@ export default createStore({
         },
         setBookIllustrations(state, items) {
             state.imgToPDF = Array.isArray(items) ? [...items] : []
+        },
+        setBookExportFormat(state, formatId) {
+            state.bookExportFormatId = formatId || 'square-safe'
         },
         removeImages(state) {
             state.imgToPDF = [];
