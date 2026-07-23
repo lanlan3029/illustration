@@ -6,6 +6,39 @@
     </div>
 
     <el-card class="segment-card" shadow="hover">
+      <section class="mode-section">
+        <p class="section-title">{{ $t('imageSegmentation.modeTitle') }}</p>
+        <el-radio-group v-model="selectedMode" class="mode-radio-group" @change="onModeChange">
+          <label
+            v-for="item in modeOptions"
+            :key="item.value"
+            class="mode-card"
+            :class="{ active: selectedMode === item.value }"
+          >
+            <el-radio :label="item.value" class="mode-radio">
+              <span class="mode-label">{{ item.label }}</span>
+              <span v-if="item.desc" class="mode-desc">{{ item.desc }}</span>
+            </el-radio>
+          </label>
+        </el-radio-group>
+      </section>
+
+      <el-alert
+        v-if="modeHint && photoPreviewUrl && selectedMode !== modeHint.suggestMode"
+        type="info"
+        :closable="true"
+        show-icon
+        class="mode-hint-alert"
+        @close="dismissModeHint"
+      >
+        <template #title>
+          {{ $t(`imageSegmentation.hint.${modeHint.reason}`) }}
+        </template>
+        <el-button link type="primary" @click="applyModeHint">
+          {{ $t('imageSegmentation.applyHint', { mode: modeLabelByValue(modeHint.suggestMode) }) }}
+        </el-button>
+      </el-alert>
+
       <div v-if="!photoPreviewUrl" class="upload-zone">
         <el-upload
           drag
@@ -31,7 +64,12 @@
             </div>
           </div>
           <div class="compare-panel">
-            <p class="compare-label">{{ $t('imageSegmentation.result') }}</p>
+            <p class="compare-label">
+              {{ $t('imageSegmentation.result') }}
+              <span v-if="resultModeLabel" class="result-mode-tag">
+                {{ $t('imageSegmentation.currentMode', { mode: resultModeLabel }) }}
+              </span>
+            </p>
             <div class="image-frame checker-bg">
               <div v-if="segmenting" class="result-loading">
                 <el-icon class="is-loading"><Loading /></el-icon>
@@ -47,9 +85,27 @@
           </div>
         </div>
 
+        <div v-if="resultUrl && otherModes.length" class="retry-modes">
+          <span class="retry-label">{{ $t('imageSegmentation.retryWithMode') }}</span>
+          <el-button
+            v-for="item in otherModes"
+            :key="item.value"
+            size="small"
+            :disabled="segmenting"
+            @click="retryWithMode(item.value)"
+          >
+            {{ item.label }}
+          </el-button>
+        </div>
+
         <div class="segment-page-actions">
           <el-button @click="resetImage">{{ $t('imageSegmentation.changeImage') }}</el-button>
-          <el-button type="primary" :loading="segmenting" @click="handleSegment">
+          <el-button
+            type="primary"
+            :loading="segmenting"
+            :disabled="!canSegment"
+            @click="handleSegment"
+          >
             {{ $t('imageSegmentation.startSegment') }}
           </el-button>
           <el-button :disabled="!resultUrl || segmenting" @click="handleDownload">
@@ -111,7 +167,15 @@
 import { UploadFilled, Loading } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { readFileAsDataUrl, downloadDataUrl } from '@/utils/lassoCrop';
-import { rembgFromFile } from '@/utils/imageSegmentation';
+import {
+  rembgFromFile,
+  fetchRembgModes,
+  readStoredRembgMode,
+  storeRembgMode,
+  formatRembgRequestError,
+  DEFAULT_REMBG_MODES,
+} from '@/utils/imageSegmentation';
+import { suggestRembgMode } from '@/utils/imageSegmentationHint';
 import { saveCroppedCharacter, CHARACTER_CATEGORIES } from '@/utils/saveCroppedAsset';
 
 export default {
@@ -122,9 +186,14 @@ export default {
       photoFile: null,
       photoPreviewUrl: '',
       resultUrl: '',
+      resultModeLabel: '',
       segmenting: false,
       showCharacterForm: false,
       saving: false,
+      modeOptions: DEFAULT_REMBG_MODES.slice(),
+      selectedMode: readStoredRembgMode(),
+      modeHint: null,
+      modeHintDismissed: false,
       characterCategories: CHARACTER_CATEGORIES,
       characterForm: {
         name: '',
@@ -134,7 +203,45 @@ export default {
       },
     };
   },
+  computed: {
+    canSegment() {
+      return Boolean(this.photoFile && this.selectedMode && !this.segmenting);
+    },
+    otherModes() {
+      return this.modeOptions.filter((item) => item.value !== this.selectedMode);
+    },
+  },
+  mounted() {
+    this.loadModeOptions();
+  },
   methods: {
+    async loadModeOptions() {
+      const modes = await fetchRembgModes(this.$http);
+      this.modeOptions = modes;
+      const values = modes.map((m) => m.value);
+      if (!values.includes(this.selectedMode)) {
+        this.selectedMode = values.includes('subject') ? 'subject' : values[0];
+        storeRembgMode(this.selectedMode);
+      }
+    },
+    modeLabelByValue(value) {
+      const hit = this.modeOptions.find((m) => m.value === value);
+      return hit?.label || value;
+    },
+    onModeChange(value) {
+      storeRembgMode(value);
+    },
+    applyModeHint() {
+      if (!this.modeHint) return;
+      this.selectedMode = this.modeHint.suggestMode;
+      storeRembgMode(this.selectedMode);
+      this.modeHintDismissed = true;
+      this.modeHint = null;
+    },
+    dismissModeHint() {
+      this.modeHintDismissed = true;
+      this.modeHint = null;
+    },
     async onFileChange(file) {
       const raw = file.raw;
       if (!raw || !raw.type.startsWith('image/')) {
@@ -145,6 +252,14 @@ export default {
         this.photoFile = raw;
         this.photoPreviewUrl = await readFileAsDataUrl(raw);
         this.resultUrl = '';
+        this.resultModeLabel = '';
+        this.modeHintDismissed = false;
+        if (!this.modeHintDismissed) {
+          this.modeHint = await suggestRembgMode(this.photoPreviewUrl, {
+            mimeType: raw.type,
+            fileName: raw.name,
+          });
+        }
       } catch {
         ElMessage.error(this.$t('imageSegmentation.loadFailed'));
       }
@@ -153,29 +268,38 @@ export default {
       this.photoFile = null;
       this.photoPreviewUrl = '';
       this.resultUrl = '';
+      this.resultModeLabel = '';
+      this.modeHint = null;
+      this.modeHintDismissed = false;
     },
     async handleSegment() {
-      if (!this.photoFile) {
-        ElMessage.warning(this.$t('imageSegmentation.noImage'));
+      if (!this.canSegment) {
+        if (!this.photoFile) ElMessage.warning(this.$t('imageSegmentation.noImage'));
+        else if (!this.selectedMode) ElMessage.warning(this.$t('imageSegmentation.noMode'));
         return;
       }
       this.segmenting = true;
       this.resultUrl = '';
+      this.resultModeLabel = '';
       try {
-        const result = await rembgFromFile(this.$http, this.photoFile);
+        const result = await rembgFromFile(this.$http, this.photoFile, {
+          mode: this.selectedMode,
+        });
         this.resultUrl = result.imageURL;
+        this.resultModeLabel =
+          result.modeLabel || this.modeLabelByValue(result.mode || this.selectedMode);
         ElMessage.success(this.$t('imageSegmentation.segmentSuccess'));
       } catch (error) {
-        let message = this.$t('imageSegmentation.segmentFailed');
-        if (error?.response?.data?.message) {
-          message = error.response.data.message;
-        } else if (error?.message) {
-          message = error.message;
-        }
-        ElMessage.error(message);
+        ElMessage.error(formatRembgRequestError(error, this.$t('imageSegmentation.segmentFailed')));
       } finally {
         this.segmenting = false;
       }
+    },
+    async retryWithMode(mode) {
+      if (this.segmenting || !this.photoFile) return;
+      this.selectedMode = mode;
+      storeRembgMode(mode);
+      await this.handleSegment();
     },
     handleDownload() {
       if (!this.resultUrl) return;
@@ -245,8 +369,76 @@ export default {
   border-radius: 12px;
 }
 
+.section-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mode-section {
+  margin-bottom: 16px;
+}
+
+.mode-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.mode-card {
+  display: block;
+  border: 1px solid #e8e0f4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #faf8fc;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mode-card:hover {
+  border-color: #c4b3dc;
+}
+
+.mode-card.active {
+  border-color: #8167a9;
+  background: #f5f0fa;
+}
+
+.mode-radio {
+  width: 100%;
+  height: auto;
+  white-space: normal;
+  align-items: flex-start;
+}
+
+.mode-radio :deep(.el-radio__label) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 8px;
+  line-height: 1.4;
+}
+
+.mode-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mode-desc {
+  font-size: 12px;
+  color: #888;
+  font-weight: 400;
+}
+
+.mode-hint-alert {
+  margin-bottom: 16px;
+}
+
 .upload-zone {
-  padding: 24px 0;
+  padding: 8px 0 0;
 }
 
 .upload-icon {
@@ -266,6 +458,13 @@ export default {
   font-size: 13px;
   color: #666;
   font-weight: 500;
+}
+
+.result-mode-tag {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #8167a9;
 }
 
 .image-frame {
@@ -315,6 +514,19 @@ export default {
   color: #8167a9;
 }
 
+.retry-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.retry-label {
+  font-size: 13px;
+  color: #666;
+}
+
 .segment-page-actions {
   display: flex;
   flex-wrap: wrap;
@@ -328,6 +540,10 @@ export default {
 @media (max-width: 768px) {
   .segment-page {
     padding: 16px 12px 32px;
+  }
+
+  .mode-radio-group {
+    grid-template-columns: 1fr;
   }
 
   .compare-grid {
