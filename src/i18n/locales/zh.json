@@ -238,6 +238,7 @@
     "pageTemplatePageGrid3": "三列横排",
     "pageTemplatePageGrid2x3": "六宫格",
     "photoSlotSelected": "已选中照片位",
+    "photoSlotDragHint": "填入后可拖动照片，调整显示区域（保持原比例）",
     "fillFromLocal": "本地上传",
     "fillFromWorks": "从我的创作",
     "photoSlotFilled": "照片已替换",

@@ -1,8 +1,13 @@
+const PLACEHOLDER_W = 400
+const PLACEHOLDER_H = 300
+
 /** 照片槽占位图（SVG data URL） */
 export function photoPlaceholder(label = '照片') {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="#e8e0f4" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#8167a9" font-size="24" font-family="sans-serif">${label}</text></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PLACEHOLDER_W}" height="${PLACEHOLDER_H}"><rect fill="#e8e0f4" width="100%" height="100%"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#8167a9" font-size="24" font-family="sans-serif">${label}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
+
+export { PLACEHOLDER_W, PLACEHOLDER_H }
 
 export const CANVAS_W = 900
 export const CANVAS_H = 1200
@@ -53,10 +58,10 @@ export function photoSlot({ left, top, width, height, label = '照片' }) {
     originY: 'top',
     left,
     top,
-    width,
-    height,
-    scaleX: 1,
-    scaleY: 1,
+    width: PLACEHOLDER_W,
+    height: PLACEHOLDER_H,
+    scaleX: width / PLACEHOLDER_W,
+    scaleY: height / PLACEHOLDER_H,
     angle: 0,
     flipX: false,
     flipY: false,
@@ -65,6 +70,10 @@ export function photoSlot({ left, top, width, height, label = '照片' }) {
     src: photoPlaceholder(label),
     crossOrigin: null,
     kidstoryRole: 'photoSlot',
+    kidstorySlotLeft: left,
+    kidstorySlotTop: top,
+    kidstorySlotW: width,
+    kidstorySlotH: height,
   }
 }
 

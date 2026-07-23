@@ -34,6 +34,7 @@
 
     <div v-if="activePhotoSlot" class="photo-slot-fill">
       <p class="photo-slot-fill-title">{{ $t('editorProLeft.photoSlotSelected') }}</p>
+      <p v-if="activeSlotFilled" class="photo-slot-drag-hint">{{ $t('editorProLeft.photoSlotDragHint') }}</p>
       <Button type="primary" long size="small" @click="fillFromLocal">
         {{ $t('editorProLeft.fillFromLocal') }}
       </Button>
@@ -79,6 +80,7 @@ import {
 import {
   applyPageTemplateBehavior,
   fillPhotoSlotObject,
+  isFilledPhotoSlot,
   pickLocalImageFile,
 } from '@/utils/editorPro/pageTemplate'
 import { activePhotoSlot } from '@/utils/editorPro/photoSlotContext'
@@ -120,6 +122,10 @@ function previewClass(aspectRatio) {
 const showIllPicker = ref(false)
 const illArr = ref([])
 const loadingIll = ref(false)
+
+const activeSlotFilled = computed(() =>
+  activePhotoSlot.value ? isFilledPhotoSlot(activePhotoSlot.value) : false
+)
 
 const applyTemplate = async (item) => {
   if (!item?.json || !canvasEditor) return
@@ -321,6 +327,13 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: #555;
   margin: 0 0 10px;
+}
+
+.photo-slot-drag-hint {
+  font-size: 11px;
+  color: #8167a9;
+  margin: -6px 0 10px;
+  line-height: 1.4;
 }
 
 .photo-slot-fill-secondary {

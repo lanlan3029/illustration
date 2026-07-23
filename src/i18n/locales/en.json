@@ -238,6 +238,7 @@
     "pageTemplatePageGrid3": "Three columns",
     "pageTemplatePageGrid2x3": "2×3 grid",
     "photoSlotSelected": "Photo slot selected",
+    "photoSlotDragHint": "After filling, drag the photo to adjust framing (aspect ratio preserved)",
     "fillFromLocal": "Upload from device",
     "fillFromWorks": "From my creations",
     "photoSlotFilled": "Photo updated",

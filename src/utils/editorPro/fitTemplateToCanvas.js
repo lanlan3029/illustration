@@ -15,6 +15,10 @@ const SCALAR_PROPS = [
   'ry',
   'padding',
   'charSpacing',
+  'kidstorySlotW',
+  'kidstorySlotH',
+  'kidstorySlotLeft',
+  'kidstorySlotTop',
 ]
 
 function cloneJson(input) {

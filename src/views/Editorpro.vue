@@ -70,6 +70,7 @@ import Editor, {
 
 import localFonts from '@/assets/editorpro/fonts/font.js';
 import { installPhotoSlotSelectionSync } from '@/utils/editorPro/photoSlotContext';
+import { installPhotoSlotPanConstraint } from '@/utils/editorPro/pageTemplate';
 
 const state = reactive({
   show: false,
@@ -80,6 +81,7 @@ const state = reactive({
 let canvas = null;
 const canvasEditor = new Editor();
 let uninstallPhotoSlotSync = null;
+let uninstallPhotoSlotPan = null;
 
 
 onMounted(() => {
@@ -142,6 +144,7 @@ onMounted(() => {
 
   state.show = true;
   uninstallPhotoSlotSync = installPhotoSlotSelectionSync(canvasEditor);
+  uninstallPhotoSlotPan = installPhotoSlotPanConstraint(canvas);
 
   // 「我的插画」编辑入口：带入图片到画布
   nextTick(() => {
@@ -175,6 +178,8 @@ async function loadPendingIllustrationImage() {
 onUnmounted(() => {
   uninstallPhotoSlotSync?.();
   uninstallPhotoSlotSync = null;
+  uninstallPhotoSlotPan?.();
+  uninstallPhotoSlotPan = null;
   if (canvas) {
     canvas.dispose();
   }
