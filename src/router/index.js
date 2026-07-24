@@ -285,7 +285,7 @@ const routes = [{
             },
             {
                 path: 'book/print-layout',
-                redirect: '/print-book-layout',
+                redirect: '/creation-studio/book/topdf',
             },
             {
                 path: 'book/mine',
@@ -349,12 +349,7 @@ const routes = [{
     {
         path: '/print-book-layout',
         name: 'print-book-layout',
-        component: () =>
-            import(/* webpackChunkName: "print-book-layout" */ '../views/PrintBookLayout.vue'),
-        meta: {
-            requiresAuth: true,
-            seoTitle: '绘本打印排版',
-        },
+        redirect: '/creation-studio/book/topdf',
     },
     {
         path: '/editorpro',

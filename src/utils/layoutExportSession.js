@@ -1,4 +1,4 @@
-import { DEFAULT_BOOK_EXPORT_FORMAT_ID, getBookExportFormat } from '@/data/bookExportFormats'
+import { DEFAULT_BOOK_EXPORT_FORMAT_ID, getBookExportFormat, normalizeBookExportFormatId } from '@/data/bookExportFormats'
 
 export const LAYOUT_EXPORT_SESSION_KEY = 'layout_export_session'
 
@@ -20,19 +20,35 @@ function emptySession() {
 function normalizeCheckedImages(items) {
   if (!Array.isArray(items)) return []
   return items
-    .filter((item) => item?._id)
-    .map((item) => ({
-      _id: item._id,
-      content: item.content,
-      title: item.title,
-    }))
+    .filter((item) => item && (item._id || item.blank))
+    .map((item) => {
+      if (item.blank) {
+        return {
+          blank: true,
+          _id: item._id || `blank-${item.updatedAt || Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          content: null,
+          title: item.title || '',
+        }
+      }
+      return {
+        _id: item._id,
+        content: item.content,
+        title: item.title,
+      }
+    })
 }
 
 function normalizeSession(data) {
   if (!data || typeof data !== 'object') return emptySession()
+  const formatId = normalizeBookExportFormatId(data.formatId)
+  // 旧「实体印刷」用途不再作为流程步骤
+  let purpose = data.purpose
+  if (purpose === 'print') purpose = 'digital'
   return {
     ...emptySession(),
     ...data,
+    formatId,
+    purpose: purpose === 'digital' ? 'digital' : null,
     checkedImages: normalizeCheckedImages(data.checkedImages),
   }
 }
@@ -83,8 +99,9 @@ function migrateLegacySession() {
 
   try {
     const legacyFormat = sessionStorage.getItem(LEGACY_FORMAT_KEY)
-    if (legacyFormat && getBookExportFormat(legacyFormat)) {
-      session.formatId = legacyFormat
+    const normalized = normalizeBookExportFormatId(legacyFormat)
+    if (legacyFormat && getBookExportFormat(normalized)) {
+      session.formatId = normalized
       migrated = true
     }
     if (sessionStorage.getItem(LEGACY_CONFIRMED_KEY) === '1') {
@@ -93,7 +110,7 @@ function migrateLegacySession() {
     }
     const legacyPurpose = sessionStorage.getItem(LEGACY_PURPOSE_KEY)
     if (legacyPurpose === 'digital' || legacyPurpose === 'print') {
-      session.purpose = legacyPurpose
+      session.purpose = 'digital'
       migrated = true
     }
   } catch {
@@ -123,6 +140,9 @@ export function writeLayoutExportSession(patch) {
   if (patch?.checkedImages !== undefined) {
     next.checkedImages = normalizeCheckedImages(patch.checkedImages)
   }
+  if (patch?.formatId !== undefined) {
+    next.formatId = normalizeBookExportFormatId(patch.formatId)
+  }
   persistSessionObject(next)
   return next
 }
@@ -130,13 +150,12 @@ export function writeLayoutExportSession(patch) {
 export function canResumeLayoutExport(session = readLayoutExportSession()) {
   return Boolean(
     session?.formatConfirmed
-    && (session.purpose === 'digital' || session.purpose === 'print')
     && session.formatId
     && getBookExportFormat(session.formatId)
   )
 }
 
 export function getLayoutExportFormatId(session = readLayoutExportSession()) {
-  const id = session?.formatId
+  const id = normalizeBookExportFormatId(session?.formatId)
   return getBookExportFormat(id) ? id : DEFAULT_BOOK_EXPORT_FORMAT_ID
 }

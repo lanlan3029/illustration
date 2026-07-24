@@ -237,7 +237,7 @@ function toolRoute(caseId, idx) {
   const map = {
     aiIllustration: ['/creation-studio/illustration/ai', '/creation-studio/illustration/mine'],
     editorLayout: ['/creation-studio/illustration/mine', '/editorpro'],
-    bookPrint: ['/creation-studio/book/compose', '/print-book-layout'],
+    bookPrint: ['/creation-studio/book/compose', '/creation-studio/book/topdf'],
   }
   return map[caseId]?.[idx] || '/editorpro'
 }

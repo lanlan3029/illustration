@@ -210,7 +210,7 @@ export default {
                 p.startsWith('/image-segmentation') ||
                 p.startsWith('/lasso-crop') ||
                 p.startsWith('/user/upload/compose-illustration') ||
-                p.startsWith('/print-book-layout')
+                p.startsWith('/creation-studio/book/topdf')
             )
         })
 

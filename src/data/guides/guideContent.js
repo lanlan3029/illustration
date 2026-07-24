@@ -94,7 +94,7 @@ export const WORKFLOW_GUIDES = [
     screenshots: [GUIDE_SCREENSHOTS.layoutExport, GUIDE_SCREENSHOTS.printLayout, GUIDE_SCREENSHOTS.publishPdf],
     links: [
       { labelKey: 'guides.workflows.printPdfFlow.links.compose', to: '/creation-studio/book/compose' },
-      { labelKey: 'guides.workflows.printPdfFlow.links.print', to: '/print-book-layout' },
+      { labelKey: 'guides.workflows.printPdfFlow.links.print', to: '/creation-studio/book/topdf' },
     ],
   },
 ]

@@ -31,7 +31,7 @@ export default createStore({
         //合成PDF
         imgToPDF: [],
         /** 排版导出印刷尺寸模版 id（见 bookExportFormats.js） */
-        bookExportFormatId: 'square-safe',
+        bookExportFormatId: 'square-kids',
         //是否登陆
         isLogin: false,
         isMask: false,
@@ -131,7 +131,11 @@ export default createStore({
             state.imgToPDF = Array.isArray(items) ? [...items] : []
         },
         setBookExportFormat(state, formatId) {
-            state.bookExportFormatId = formatId || 'square-safe'
+            const id = formatId || 'square-kids'
+            // 兼容旧 square-bleed / square-safe
+            state.bookExportFormatId = (id === 'square-bleed' || id === 'square-safe')
+              ? 'square-kids'
+              : id
         },
         removeImages(state) {
             state.imgToPDF = [];

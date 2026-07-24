@@ -10,9 +10,9 @@
                 v-for="(item, index) in stepItems"
                 :key="item.id"
                 class="step-bar-item"
-                :class="stepBarItemClass(item.id, index)"
+                :class="stepBarItemClass(item.id)"
             >
-                <span class="step-bar-marker">{{ stepMarker(item.id, index) }}</span>
+                <span class="step-bar-marker">{{ stepMarker(item.id) }}</span>
                 <span class="step-bar-label">{{ $t(item.labelKey) }}</span>
             </div>
         </nav>
@@ -41,8 +41,8 @@
                         @click="confirmFormat(fmt.id)"
                     >
                         <span class="format-preview" :style="{ aspectRatio: fmt.aspectRatioCss }">
-                            <span v-if="fmt.bleed" class="format-preview-fill"></span>
-                            <span v-else class="format-preview-safe"></span>
+                            <span class="format-preview-fill"></span>
+                            <span class="format-preview-safe-ring"></span>
                         </span>
                         <span class="format-card-title">{{ $t(fmt.nameKey) }}</span>
                         <span class="format-card-desc">{{ $t(fmt.descKey) }}</span>
@@ -52,52 +52,7 @@
             </div>
         </div>
 
-        <!-- 第二步：选用途 -->
-        <div v-else-if="step === 'purpose'" class="purpose-step">
-            <div class="purpose-toolbar">
-                <span class="purpose-toolbar-label">{{ $t('bookExport.formatTitle') }}</span>
-                <span class="purpose-toolbar-value">{{ $t(activeFormat.nameKey) }}</span>
-                <el-button size="small" link type="primary" @click="backToFormat">
-                    {{ $t('layoutExport.changeFormat') }}
-                </el-button>
-            </div>
-            <div class="purpose-section">
-                <h3 class="purpose-section-title">{{ $t('layoutExport.purposeTitle') }}</h3>
-                <p class="purpose-section-hint">{{ $t('layoutExport.purposeHint') }}</p>
-                <div class="purpose-grid">
-                    <button
-                        type="button"
-                        class="purpose-card"
-                        @click="confirmPurpose('digital')"
-                    >
-                        <span class="purpose-card-icon purpose-card-icon--digital">📱</span>
-                        <span class="purpose-card-title">{{ $t('layoutExport.purposeDigitalTitle') }}</span>
-                        <span class="purpose-card-desc">{{ $t('layoutExport.purposeDigitalDesc') }}</span>
-                        <ul class="purpose-card-list">
-                            <li>{{ $t('layoutExport.purposeDigitalPoint1') }}</li>
-                            <li>{{ $t('layoutExport.purposeDigitalPoint2') }}</li>
-                            <li>{{ $t('layoutExport.purposeDigitalPoint3') }}</li>
-                        </ul>
-                    </button>
-                    <button
-                        type="button"
-                        class="purpose-card"
-                        @click="confirmPurpose('print')"
-                    >
-                        <span class="purpose-card-icon purpose-card-icon--print">🖨</span>
-                        <span class="purpose-card-title">{{ $t('layoutExport.purposePrintTitle') }}</span>
-                        <span class="purpose-card-desc">{{ $t('layoutExport.purposePrintDesc') }}</span>
-                        <ul class="purpose-card-list">
-                            <li>{{ $t('layoutExport.purposePrintPoint1') }}</li>
-                            <li>{{ $t('layoutExport.purposePrintPoint2') }}</li>
-                            <li>{{ $t('layoutExport.purposePrintPoint3') }}</li>
-                        </ul>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 第三步：选插画（仅数字绘本） -->
+        <!-- 第二步：选插画 -->
         <div v-else-if="step === 'pick'" class="pick-step">
             <div class="selected-section">
                 <div class="pick-toolbar">
@@ -106,23 +61,15 @@
                             <span class="pick-crumb-label">{{ $t('bookExport.formatTitle') }}</span>
                             <span class="pick-crumb-value">{{ $t(activeFormat.nameKey) }}</span>
                         </span>
-                        <span class="pick-crumb-sep">·</span>
-                        <span class="pick-crumb-item">
-                            <span class="pick-crumb-label">{{ $t('layoutExport.purposeShort') }}</span>
-                            <span class="pick-crumb-value">{{ purposeLabel }}</span>
-                        </span>
                     </div>
                     <div class="pick-crumb-actions">
-                        <el-button size="small" link type="primary" @click="backToPurpose">
-                            {{ $t('layoutExport.changePurpose') }}
-                        </el-button>
                         <el-button size="small" link type="primary" @click="backToFormat">
                             {{ $t('layoutExport.changeFormat') }}
                         </el-button>
                     </div>
                 </div>
 
-                <p class="pick-purpose-hint">{{ pickHint }}</p>
+                <p class="pick-purpose-hint">{{ $t('layoutExport.pickHint') }}</p>
 
                 <div v-if="checkedImage.length > 0">
                     <div class="selected-header">
@@ -185,7 +132,11 @@
 
             <footer class="pick-sticky-bar">
                 <p class="pick-sticky-status">
-                    {{ checkedImage.length > 0 ? pickSelectedInfo : pickPleaseSelect }}
+                    {{
+                        checkedImage.length > 0
+                            ? $t('layoutExport.pickSelectedInfo', { count: checkedImage.length })
+                            : $t('layoutExport.pickPleaseSelect')
+                    }}
                 </p>
                 <el-button
                     type="primary"
@@ -194,7 +145,7 @@
                     :disabled="checkedImage.length === 0"
                     @click="enterFlow"
                 >
-                    {{ continueLabel }}
+                    {{ $t('layoutExport.continueToExport') }}
                 </el-button>
             </footer>
         </div>
@@ -207,6 +158,7 @@ import {
   BOOK_EXPORT_FORMATS,
   formatSizeLabel,
   getBookExportFormat,
+  normalizeBookExportFormatId,
 } from '@/data/bookExportFormats';
 import {
   canResumeLayoutExport,
@@ -216,7 +168,6 @@ import {
 
 const STEP_ITEMS = [
   { id: 'format', labelKey: 'layoutExport.stepFormat' },
-  { id: 'purpose', labelKey: 'layoutExport.stepPurpose' },
   { id: 'pick', labelKey: 'layoutExport.stepPick' },
 ];
 
@@ -224,7 +175,6 @@ export default {
   data() {
     return {
       step: 'format',
-      exportPurpose: null,
       illusArr: [],
       illusPage: 1,
       hasMoreIlls: true,
@@ -253,37 +203,15 @@ export default {
       const session = readLayoutExportSession();
       const format = getBookExportFormat(session.formatId);
       const formatName = format ? this.$t(format.nameKey) : '';
-      const purposeName = session.purpose === 'print'
-        ? this.$t('layoutExport.purposePrintTitle')
-        : session.purpose === 'digital'
-          ? this.$t('layoutExport.purposeDigitalTitle')
-          : '';
-      return this.$t('layoutExport.resumeLastDesc', { format: formatName, purpose: purposeName });
+      const count = session.checkedImages?.length || 0;
+      return this.$t('layoutExport.resumeLastDesc', { format: formatName, count });
     },
     activeFormat() {
       return getBookExportFormat(this.bookExportFormatId);
     },
     pageSubtitle() {
       if (this.step === 'format') return this.$t('layoutExport.subtitleStepFormat');
-      if (this.step === 'purpose') return this.$t('layoutExport.subtitleStepPurpose');
-      return this.$t('layoutExport.subtitleStepPickDigital');
-    },
-    purposeLabel() {
-      if (this.exportPurpose === 'print') return this.$t('layoutExport.purposePrintTitle');
-      if (this.exportPurpose === 'digital') return this.$t('layoutExport.purposeDigitalTitle');
-      return '';
-    },
-    pickHint() {
-      return this.$t('layoutExport.pickHintDigital');
-    },
-    pickPleaseSelect() {
-      return this.$t('layoutExport.pickPleaseSelectDigital');
-    },
-    continueLabel() {
-      return this.$t('layoutExport.continueDigital');
-    },
-    pickSelectedInfo() {
-      return this.$t('layoutExport.pickSelectedInfo', { count: this.checkedImage.length });
+      return this.$t('layoutExport.subtitleStepPick');
     },
   },
   methods: {
@@ -303,14 +231,12 @@ export default {
       return String(index + 1);
     },
     applySessionToState(session = readLayoutExportSession()) {
-      if (session.formatId && getBookExportFormat(session.formatId)) {
-        this.$store.commit('setBookExportFormat', session.formatId);
-      }
-      if (session.purpose === 'digital' || session.purpose === 'print') {
-        this.exportPurpose = session.purpose;
+      const formatId = normalizeBookExportFormatId(session.formatId);
+      if (formatId && getBookExportFormat(formatId)) {
+        this.$store.commit('setBookExportFormat', formatId);
       }
       if (session.checkedImages?.length) {
-        this.checkedImage = [...session.checkedImages];
+        this.checkedImage = session.checkedImages.filter((i) => i && !i.blank && i._id);
       }
     },
     persistSession(patch) {
@@ -329,46 +255,29 @@ export default {
       return formatSizeLabel(fmt);
     },
     persistFormat(id) {
-      this.$store.commit('setBookExportFormat', id);
-      this.persistSession({ formatId: id });
+      const formatId = normalizeBookExportFormatId(id);
+      this.$store.commit('setBookExportFormat', formatId);
+      this.persistSession({ formatId });
     },
     confirmFormat(id) {
       this.persistFormat(id);
-      this.persistSession({ formatConfirmed: true });
-      this.step = 'purpose';
-    },
-    confirmPurpose(purpose) {
-      this.exportPurpose = purpose;
-      this.persistSession({ purpose });
-      if (purpose === 'print') {
-        this.goPrintLayout();
-        return;
-      }
+      this.persistSession({ formatConfirmed: true, purpose: 'digital' });
       this.step = 'pick';
       this.fetchIllustrations(true);
     },
     backToFormat() {
       this.step = 'format';
     },
-    backToPurpose() {
-      this.step = 'purpose';
-    },
     resumeLastSettings() {
       const session = readLayoutExportSession();
       if (!canResumeLayoutExport(session)) return;
       this.applySessionToState(session);
-      if (session.purpose === 'print') {
-        this.goPrintLayout();
-        return;
-      }
       this.step = 'pick';
       this.fetchIllustrations(true);
     },
     enterFlow() {
-      this.toQuickCompose();
-    },
-    restoreFromSession() {
-      this.applySessionToState();
+      if (!this.commitSelected()) return;
+      this.$router.push({ name: 'topdf' });
     },
     async fetchIllustrations(reset = false) {
       if (this.loadingIll) return;
@@ -478,16 +387,9 @@ export default {
       this.$store.commit('setBookIllustrations', [...this.checkedImage]);
       return true;
     },
-    toQuickCompose() {
-      if (!this.commitSelected()) return;
-      this.$router.push({ name: 'topdf' });
-    },
-    goPrintLayout() {
-      this.$router.push({ name: 'print-book-layout' });
-    },
     restoreFromStore() {
       if (this.imgToPDF?.length) {
-        this.checkedImage = [...this.imgToPDF];
+        this.checkedImage = this.imgToPDF.filter((i) => i && !i.blank);
       }
     },
     resolveInitialStep() {
@@ -497,26 +399,20 @@ export default {
         this.step = 'format';
         return false;
       }
-      if (edit === 'purpose') {
-        this.restoreFromSession();
-        this.step = 'purpose';
-        return false;
-      }
 
       this.restoreFromStore();
       const session = readLayoutExportSession();
       this.applySessionToState(session);
 
-      if (session.formatConfirmed && session.purpose === 'digital') {
+      if (session.formatConfirmed) {
         this.step = 'pick';
         return true;
       }
-      if (session.formatConfirmed) {
-        this.step = 'purpose';
-        return false;
-      }
       this.step = 'format';
       return false;
+    },
+    restoreFromSession() {
+      this.applySessionToState();
     },
   },
   mounted() {
@@ -530,26 +426,20 @@ export default {
 
 <style scoped>
 .container {
-    width: 100%;
-    min-height: 100%;
     padding: 0 24px 32px;
-    background-color: #f5f5f5;
-    overflow-y: visible;
-    overflow-x: hidden;
-    position: relative;
-    box-sizing: border-box;
     text-align: left;
+    box-sizing: border-box;
 }
 
 .page-head {
     margin: 1vw 1vw 0;
-    padding: 8px 4px 16px;
+    padding-top: 8px;
 }
 
 .page-head h2 {
     margin: 0 0 8px;
     font-size: 22px;
-    font-weight: 600;
+    font-weight: 700;
     color: #303133;
 }
 
@@ -562,219 +452,86 @@ export default {
 
 .step-bar {
     display: flex;
-    align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
     margin: 0 1vw 16px;
-    padding: 14px 18px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    padding: 12px 0 4px;
 }
 
 .step-bar-item {
-    flex: 1;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    min-width: 0;
-    color: #a8abb2;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #f0f2f5;
+    color: #909399;
     font-size: 13px;
 }
 
 .step-bar-item.is-active {
+    background: #efeaf8;
     color: #8167a9;
     font-weight: 600;
 }
 
 .step-bar-item.is-done {
+    background: #e8f5e9;
     color: #67c23a;
 }
 
 .step-bar-marker {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
     font-size: 12px;
     font-weight: 700;
-    background: #f0f2f5;
-    color: inherit;
-}
-
-.step-bar-item.is-active .step-bar-marker {
-    background: #8167a9;
-    color: #fff;
-}
-
-.step-bar-item.is-done .step-bar-marker {
-    background: #e8f7e8;
-    color: #67c23a;
-}
-
-.step-bar-label {
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .resume-banner {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px 16px;
+    gap: 12px;
     margin-bottom: 14px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     border-radius: 10px;
-    background: linear-gradient(90deg, #f3f0f8 0%, #faf8fd 100%);
-    border: 1px solid #e8e0f0;
+    background: #f7f5fb;
+    border: 1px solid #e4dcf3;
 }
 
 .resume-banner-text {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-width: 0;
+    gap: 2px;
+    font-size: 13px;
+    color: #606266;
 }
 
 .resume-banner-text strong {
-    font-size: 14px;
-    color: #303133;
-}
-
-.resume-banner-text span {
-    font-size: 13px;
-    color: #606266;
-    line-height: 1.45;
+    color: #8167a9;
 }
 
 .format-step {
     margin: 0 1vw 1vw;
 }
 
-.purpose-step {
-    margin: 0 1vw 1vw;
-}
-
-.purpose-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-    margin-bottom: 12px;
-    padding: 12px 16px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-}
-
-.purpose-toolbar-label {
-    font-size: 13px;
-    color: #909399;
-}
-
-.purpose-toolbar-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: #8167a9;
-}
-
-.purpose-section {
-    padding: 28px 24px 32px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.purpose-section-title {
-    margin: 0 0 6px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-}
-
-.purpose-section-hint {
-    margin: 0 0 20px;
-    font-size: 13px;
-    color: #909399;
-    line-height: 1.45;
-}
-
-.purpose-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    max-width: 920px;
-}
-
-.purpose-card {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 22px 20px 18px;
-    border: 2px solid #ebeef5;
-    border-radius: 12px;
-    background: #fafafa;
-    cursor: pointer;
-    text-align: left;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.15s;
-}
-
-.purpose-card:hover {
-    border-color: #8167a9;
-    background: #f9f8fc;
-    box-shadow: 0 6px 20px rgba(129, 103, 169, 0.12);
-    transform: translateY(-2px);
-}
-
-.purpose-card-icon {
-    font-size: 28px;
-    line-height: 1;
-    margin-bottom: 4px;
-}
-
-.purpose-card-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: #303133;
-    line-height: 1.3;
-}
-
-.purpose-card-desc {
-    font-size: 13px;
-    color: #606266;
-    line-height: 1.5;
-}
-
-.purpose-card-list {
-    margin: 8px 0 0;
-    padding-left: 18px;
-    font-size: 12px;
-    color: #909399;
-    line-height: 1.6;
-}
-
-.purpose-card-list li {
-    margin-bottom: 2px;
-}
-
 .format-section--solo {
     margin: 0;
     padding: 28px 24px 32px;
-    background-color: #fff;
+    background: #fff;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .format-section-title {
     margin: 0 0 6px;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: #303133;
 }
 
@@ -782,157 +539,258 @@ export default {
     margin: 0 0 20px;
     font-size: 13px;
     color: #909399;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 .format-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
 }
 
 .format-card {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
     gap: 6px;
-    padding: 14px 12px 12px;
+    padding: 14px;
     border: 2px solid #ebeef5;
-    border-radius: 10px;
-    background: #fafafa;
+    border-radius: 12px;
+    background: #fafbfc;
     cursor: pointer;
     text-align: left;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
 .format-card:hover {
-    border-color: #b7a6d6;
-    background: #f9f8fc;
-    transform: translateY(-1px);
+    border-color: #c5b6df;
+    background: #fff;
 }
 
 .format-card.is-active {
     border-color: #8167a9;
-    background: #f3f0f8;
-    box-shadow: 0 0 0 1px rgba(129, 103, 169, 0.25);
+    background: #f9f7fc;
+    box-shadow: 0 0 0 1px #8167a9;
 }
 
 .format-preview {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    max-width: 72px;
+    position: relative;
+    width: 72%;
     margin: 0 auto 6px;
-    background: #fff;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
+    border-radius: 6px;
+    background: #eef0f4;
     overflow: hidden;
-    min-height: 48px;
 }
 
 .format-preview-fill {
-    width: 100%;
-    height: 100%;
-    min-height: 48px;
-    background: linear-gradient(135deg, #b7d4f0 0%, #9ec5eb 100%);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #c5b6df, #8167a9);
+    opacity: 0.55;
 }
 
-.format-preview-safe {
-    width: 72%;
-    height: 72%;
-    min-height: 36px;
-    background: linear-gradient(135deg, #b7d4f0 0%, #9ec5eb 100%);
-    border-radius: 2px;
+.format-preview-safe-ring {
+    position: absolute;
+    inset: 12%;
+    border: 1.5px dashed rgba(255, 255, 255, 0.9);
+    border-radius: 3px;
+    pointer-events: none;
 }
 
 .format-card-title {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     color: #303133;
-    line-height: 1.35;
 }
 
 .format-card-desc {
-    font-size: 11px;
-    color: #909399;
+    font-size: 12px;
+    color: #606266;
     line-height: 1.4;
 }
 
 .format-card-meta {
-    font-size: 10px;
-    color: #a8abb2;
-    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    color: #909399;
+    line-height: 1.35;
+}
+
+.pick-step {
+    margin: 0 1vw 1vw;
+    padding-bottom: 88px;
 }
 
 .selected-section {
-    margin: 0 1vw 1vw;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 12px;
+    padding: 16px 18px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .pick-toolbar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 10px 16px;
-    margin-bottom: 12px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid #ebeef5;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
 }
 
 .pick-crumb {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 6px 10px;
-}
-
-.pick-crumb-item {
-    display: inline-flex;
+    gap: 8px;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px;
+    font-size: 13px;
 }
 
 .pick-crumb-label {
-    font-size: 12px;
     color: #909399;
 }
 
 .pick-crumb-value {
-    font-size: 14px;
+    color: #303133;
+    font-weight: 600;
+}
+
+.pick-purpose-hint {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #606266;
+    line-height: 1.5;
+}
+
+.selected-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.selected-count {
+    font-size: 13px;
     font-weight: 600;
     color: #8167a9;
 }
 
-.pick-crumb-sep {
-    color: #dcdfe6;
-    user-select: none;
-}
-
-.pick-crumb-actions {
+.selected-preview {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px 12px;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
 }
 
-.pick-purpose-hint {
-    margin: 0 0 16px;
-    padding: 10px 14px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #606266;
-    background: #f9f8fc;
+.selected-item {
+    position: relative;
+    flex: 0 0 88px;
+    width: 88px;
+    height: 88px;
     border-radius: 8px;
-    border-left: 3px solid #8167a9;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background: #f0f2f5;
+    cursor: grab;
 }
 
-.pick-step {
-    padding-bottom: 88px;
+.selected-item.dragging {
+    opacity: 0.5;
+}
+
+.selected-item.drag-over {
+    border-color: #8167a9;
+}
+
+.selected-order {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selected-remove {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(245, 108, 108, 0.95);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.images-section {
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.items li {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: #f5f7fa;
+}
+
+.items li.selected {
+    border-color: #8167a9;
+}
+
+.illus-thumb {
+    width: 100%;
+    height: 100%;
+}
+
+.check-mark {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #8167a9;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.illus-load-tip {
+    margin: 16px 0 0;
+    text-align: center;
+    color: #909399;
+    font-size: 13px;
+}
+
+.illus-load-tip--muted {
+    opacity: 0.75;
 }
 
 .pick-sticky-bar {
@@ -940,7 +798,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 30;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -948,144 +806,22 @@ export default {
     padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
     background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid #ebeef5;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(8px);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .pick-sticky-status {
     margin: 0;
-    flex: 1;
-    min-width: 0;
     font-size: 14px;
     color: #606266;
-    line-height: 1.4;
 }
 
 .pick-sticky-btn {
     flex-shrink: 0;
-    min-width: 200px;
-    height: 44px;
-    font-size: 15px;
-    font-weight: 600;
-    --el-button-bg-color: #8167a9;
-    --el-button-border-color: #8167a9;
-    --el-button-hover-bg-color: #6e5494;
-    --el-button-hover-border-color: #6e5494;
+    min-width: 180px;
 }
 
-.selected-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ebeef5;
-}
-
-.selected-count {
-    font-size: 16px;
-    font-weight: 600;
-    color: #8167a9;
-}
-
-.selected-preview {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 5px 0;
-}
-
-.selected-item {
-    position: relative;
-    width: 120px;
-    height: 90px;
-    flex-shrink: 0;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid #8167a9;
-    cursor: move;
-    transition: all 0.3s;
-    user-select: none;
-}
-
-.selected-item:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(129, 103, 169, 0.3);
-}
-
-.selected-item.dragging {
-    opacity: 0.5;
-    cursor: grabbing;
-}
-
-.selected-item.drag-over {
-    border-color: #67c23a;
-    box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.3);
-    transform: scale(1.1);
-}
-
-.selected-order {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 24px;
-    height: 24px;
-    background-color: #8167a9;
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.selected-remove {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 24px;
-    height: 24px;
-    background-color: rgba(245, 108, 108, 0.9);
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.selected-item:hover .selected-remove {
-    opacity: 1;
-}
-
-.mode-actions {
-    display: none;
-}
-
-@media (max-width: 1100px) {
+@media (max-width: 720px) {
     .format-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .step-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .step-bar-item {
-        flex: none;
-    }
-
-    .format-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .purpose-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1096,83 +832,6 @@ export default {
 
     .pick-sticky-btn {
         width: 100%;
-        min-width: 0;
     }
-
-    .container .items li {
-        width: 31%;
-    }
-}
-
-.images-section {
-    margin: 0 1vw 1vw;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.container .items {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5%;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.container .items li {
-    width: 18%;
-    position: relative;
-    padding: 0.5vw;
-    border-radius: 4px;
-    background-color: #fff;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: 2px solid transparent;
-}
-
-.container .items li:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.container .items li.selected {
-    border-color: #8167a9;
-    box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.2);
-}
-
-.check-mark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(129, 103, 169, 0.75);
-    border-radius: 4px;
-    color: #fff;
-    font-size: 40px;
-}
-
-.illus-thumb {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    display: block;
-    border-radius: 4px;
-}
-
-.illus-load-tip {
-    text-align: center;
-    padding: 16px 0 4px;
-    font-size: 13px;
-    color: #606266;
-}
-
-.illus-load-tip--muted {
-    color: #a8abb2;
 }
 </style>
