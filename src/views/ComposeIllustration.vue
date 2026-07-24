@@ -7,7 +7,7 @@
 
         <nav class="step-bar" :aria-label="$t('layoutExport.stepBarAria')">
             <div
-                v-for="(item, index) in stepItems"
+                v-for="item in stepItems"
                 :key="item.id"
                 class="step-bar-item"
                 :class="stepBarItemClass(item.id)"
