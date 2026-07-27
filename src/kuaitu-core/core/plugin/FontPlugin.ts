@@ -112,7 +112,7 @@ class FontPlugin implements IPluginTempl {
 
     const fontFamiliesAll = fontFamilies.map((fontName) => {
       const font = new FontFaceObserver(fontName);
-      return font.load(null, 150000);
+      return font.load('汉字Aa', 15000);
     });
     return Promise.all(fontFamiliesAll);
   }
@@ -132,14 +132,28 @@ class FontPlugin implements IPluginTempl {
   }
 
   loadFont(fontName: string) {
-    const font = new FontFaceObserver(fontName);
-    return font.load(null, 150000).then(() => {
+    const apply = () => {
       const activeObject = this.canvas.getActiveObjects()[0];
       if (activeObject) {
         activeObject.set('fontFamily', fontName);
-        this.canvas.renderAll();
+        this.canvas.requestRenderAll();
       }
-    });
+    };
+
+    // 先立刻切换，避免等大字体下载 / FontFaceObserver 超时才改字
+    apply();
+
+    // 中文字体需用中文测试串；默认拉丁 "BESbwy" 会导致检测失败并空等到超时
+    const font = new FontFaceObserver(fontName);
+    return font
+      .load('汉字Aa', 8000)
+      .then(() => {
+        apply();
+      })
+      .catch(() => {
+        // 超时后仍保持已设置的 fontFamily，浏览器后续加载完会自然生效
+        apply();
+      });
   }
 
   createFontCSS(arr: any[]) {

@@ -119,7 +119,6 @@
 
 <script setup name="AttrBute">
 import useSelect from '@/components/editorPro/hooks/select.js';
-import { Spin } from 'view-ui-plus';
 import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue';
 import { onMounted, onBeforeUnmount, reactive, ref } from 'vue';
 
@@ -209,9 +208,13 @@ const changeCommon = (key, value) => {
 };
 
 const changeFontFamily = async (fontName) => {
-  if (!fontName) return;
-  Spin.show();
-  canvasEditor.loadFont(fontName).finally(() => Spin.hide());
+  if (!fontName || !canvasEditor || typeof canvasEditor.loadFont !== 'function') return;
+  // 不再使用全屏 Spin：字体加载时遮罩会把整页盖成半透明白，看起来像「页面变白」
+  try {
+    await canvasEditor.loadFont(fontName);
+  } catch (e) {
+    // loadFont 内部已兜底应用 fontFamily
+  }
 };
 const changeFontWeight = (key, value) => {
   const nValue = value === 'normal' ? 'bold' : 'normal';
