@@ -925,6 +925,8 @@
     "download": "下载到本地",
     "downloading": "下载中…",
     "clear": "清除",
+    "emptyResultTitle": "插画预览",
+    "emptyResultHint": "生成的插画将显示在这里",
     "modelGptImage2": "GPT Image 2",
     "modelGptImage15": "GPT Image 1.5",
     "modelGptImage1": "GPT Image 1",

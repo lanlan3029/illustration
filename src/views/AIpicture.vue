@@ -282,10 +282,10 @@
                 </div>
             </div>
 
-            <!-- 生成进度 / 结果 -->
-            <div v-if="generating || generatedImageUrl" class="result-section">
+            <!-- 生成进度 / 结果 / 空占位 -->
+            <div class="result-section">
                 <div v-if="generating" class="result-card">
-                    <div class="result-skeleton">
+                    <div class="result-skeleton" :style="resultFrameStyle">
                         <div class="result-skeleton-shimmer"></div>
                         <div class="result-loading">
                             <span class="result-spinner"></span>
@@ -294,7 +294,7 @@
                     </div>
                 </div>
 
-                <div v-else class="result-card">
+                <div v-else-if="generatedImageUrl" class="result-card">
                     <img
                         :src="generatedImageUrl"
                         alt="generated"
@@ -326,6 +326,20 @@
                             </svg>
                             <span>{{ $t('aiPicture.clear') || '清除' }}</span>
                         </button>
+                    </div>
+                </div>
+
+                <div v-else class="result-card result-card--empty">
+                    <div class="result-placeholder" :style="resultFrameStyle">
+                        <div class="result-placeholder-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="3" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <path d="M21 15l-5-5L5 21" />
+                            </svg>
+                        </div>
+                        <p class="result-placeholder-title">{{ $t('aiPicture.emptyResultTitle') || '插画预览' }}</p>
+                        <p class="result-placeholder-hint">{{ $t('aiPicture.emptyResultHint') || '生成的插画将显示在这里' }}</p>
                     </div>
                 </div>
             </div>
@@ -510,6 +524,15 @@ export default {
                 if (hit) return hit.compactLabel || hit.label
             }
             return this.selectedSize || '4:3'
+        },
+        /** 结果占位框比例，跟随当前所选尺寸（如 1280x960 → 4/3） */
+        resultFrameStyle() {
+            const size = String(this.selectedSize || '')
+            const m = size.match(/^(\d+)\s*[x×]\s*(\d+)$/i)
+            if (m) {
+                return { aspectRatio: `${Number(m[1])} / ${Number(m[2])}` }
+            }
+            return { aspectRatio: '4 / 3' }
         },
         isDallE() {
             return typeof this.selectedModel === 'string' && this.selectedModel.startsWith('dall-e')
@@ -1946,8 +1969,7 @@ export default {
 .result-skeleton {
     position: relative;
     width: 100%;
-    min-height: 320px;
-    aspect-ratio: 3 / 4;
+    min-height: 240px;
     max-height: 60vh;
     border-radius: 14px;
     overflow: hidden;
@@ -1955,6 +1977,58 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.result-placeholder {
+    position: relative;
+    width: 100%;
+    min-height: 240px;
+    max-height: 60vh;
+    border-radius: 14px;
+    border: 1.5px dashed #d7dbe3;
+    background:
+        linear-gradient(180deg, #fafbfc 0%, #f3f5f8 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 16px;
+    box-sizing: border-box;
+    text-align: center;
+    color: #8b93a7;
+}
+
+.result-placeholder-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    background: #fff;
+    border: 1px solid #e8ebf0;
+    color: #a0a8b8;
+    margin-bottom: 4px;
+}
+
+.result-placeholder-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #5f6678;
+}
+
+.result-placeholder-hint {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #9aa3b5;
+    max-width: 280px;
+}
+
+.result-card--empty {
+    background: #fcfcfd;
 }
 
 .result-skeleton-shimmer {
@@ -2138,6 +2212,12 @@ export default {
 
     .result-image {
         max-height: 50vh;
+    }
+
+    .result-skeleton,
+    .result-placeholder {
+        max-height: 50vh;
+        min-height: 200px;
     }
 }
 

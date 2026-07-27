@@ -910,6 +910,8 @@
     "download": "Download",
     "downloading": "Downloading…",
     "clear": "Clear",
+    "emptyResultTitle": "Illustration preview",
+    "emptyResultHint": "Generated illustrations will appear here",
     "modelGptImage2": "GPT Image 2",
     "modelGptImage15": "GPT Image 1.5",
     "modelGptImage1": "GPT Image 1",
