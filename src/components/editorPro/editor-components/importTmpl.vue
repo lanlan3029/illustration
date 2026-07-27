@@ -2,20 +2,26 @@
 <template>
   <div class="tmpl-root">
     <Divider plain orientation="left">{{ $t('editorProLeft.canvasSizes') }}</Divider>
-   
 
     <div class="grid">
       <div
         v-for="item in templateOptions"
         :key="item.key"
         class="card"
+        :class="{ 'card--picture-book': item.badge === 'picture-book' }"
         @click="applyTemplate(item)"
       >
+        <span v-if="item.badge === 'picture-book'" class="card-badge">
+          {{ $t('editorProLeft.canvasBadgePictureBook') }}
+        </span>
         <div class="title">{{ item.label }}</div>
         <div class="meta">
-          {{ item.displayWidth ?? item.width }} × {{ item.displayHeight ?? item.height }}{{
-            item.displayUnit || item.unit ? ` ${item.displayUnit ?? item.unit}` : ''
-          }}
+          <template v-if="item.metaText">{{ item.metaText }}</template>
+          <template v-else>
+            {{ item.displayWidth ?? item.width }} × {{ item.displayHeight ?? item.height }}{{
+              item.displayUnit || item.unit ? ` ${item.displayUnit ?? item.unit}` : ''
+            }}
+          </template>
         </div>
       </div>
     </div>
@@ -24,8 +30,15 @@
 
 <script setup name="ImportTmpl">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import useSelect from '@/components/editorPro/hooks/select.js';
+import {
+  BOOK_EXPORT_DPI,
+  BOOK_EXPORT_FORMATS,
+  getFormatPixelSize,
+} from '@/data/bookExportFormats.js';
 
+const { t } = useI18n();
 const { canvasEditor } = useSelect() || {};
 
 const FIXED_HEIGHT = 1080;
@@ -72,9 +85,20 @@ function byFixedHeightTemplate({ key, label, ratioW, ratioH, displayWidth, displ
   };
 }
 
+/** 绘本印刷 trim 尺寸：画布按 300 DPI 像素，与排版导出一致 */
+function byPictureBookFormat(format) {
+  const px = getFormatPixelSize(format, BOOK_EXPORT_DPI, 'digital');
+  return {
+    key: `picture-book-${format.id}`,
+    label: t(format.nameKey),
+    width: px.width,
+    height: px.height,
+    badge: 'picture-book',
+    metaText: `${format.trimWidthIn} × ${format.trimHeightIn} in · ${px.width}×${px.height}@${BOOK_EXPORT_DPI}`,
+  };
+}
+
 const platformTemplates = [
-
-
   byFixedHeightTemplate({
     key: 'a3-paper',
     label: 'A3纸',
@@ -134,6 +158,8 @@ const templateOptions = computed(() => {
     displayUnit: item.unit,
   }));
 
+  const pictureBooks = BOOK_EXPORT_FORMATS.map((format) => byPictureBookFormat(format));
+
   const base = [
     byRatio('1:1', 1, 1),
     byRatio('3:4', 3, 4),
@@ -149,7 +175,7 @@ const templateOptions = computed(() => {
   const earlyPlatform = platformTemplates.filter((t) => !lateKeys.has(t.key));
   const latePlatform = platformTemplates.filter((t) => lateKeys.has(t.key));
 
-  return [...sys, ...earlyPlatform, ...base, ...latePlatform];
+  return [...sys, ...pictureBooks, ...earlyPlatform, ...base, ...latePlatform];
 });
 
 onMounted(async () => {
@@ -170,8 +196,6 @@ const applyTemplate = (item) => {
   padding: 10px 0;
 }
 
-
-
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -179,6 +203,7 @@ const applyTemplate = (item) => {
 }
 
 .card {
+  position: relative;
   cursor: pointer;
   padding: 12px;
   border-radius: 10px;
@@ -192,14 +217,46 @@ const applyTemplate = (item) => {
   border-color: #cdeeff;
 }
 
+.card--picture-book {
+  padding-top: 18px;
+  background: #f8f5ff;
+  border-color: #e8e0f8;
+}
+
+.card--picture-book:hover {
+  background: #f3edff;
+  border-color: #d4c4f5;
+}
+
+.card-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #6b4db8;
+  background: #ebe4f8;
+}
+
 .title {
   font-weight: 600;
   color: #111;
   margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.card--picture-book .title {
+  padding-right: 36px;
 }
 
 .meta {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
+  line-height: 1.4;
+  word-break: break-word;
 }
 </style>

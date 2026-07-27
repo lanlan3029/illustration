@@ -268,6 +268,7 @@
     "materialLibrary": "素材库",
     "myWorks": "我的作品",
     "canvasSizes": "画布尺寸",
+    "canvasBadgePictureBook": "绘本",
     "searchMaterial": "搜索素材",
     "myIllustrations": "插画",
     "myCharacters": "角色",
@@ -1333,8 +1334,8 @@
   },
   "layoutExport": {
     "title": "排版导出",
-    "subtitle": "选择印刷尺寸与插画顺序，在导出页按数字版或 KDP 印刷版下载",
-    "subtitleStepFormat": "第一步：选择成品书的裁切尺寸（Trim）",
+    "subtitle": "选择印刷尺寸与插画顺序，再按选定尺寸导出 PDF / PNG",
+    "subtitleStepFormat": "第一步：选择成品书的印刷尺寸",
     "subtitleStepPick": "第二步：按阅读顺序选图，进入预览与导出",
     "stepBarAria": "排版导出步骤",
     "stepFormat": "选择尺寸",
@@ -1342,7 +1343,7 @@
     "resumeLast": "使用上次设置",
     "resumeLastAction": "继续上次流程",
     "resumeLastDesc": "上次：{format} · 已选 {count} 张",
-    "pickHint": "从下方点选插画，拖拽上方条带可调顺序。完成后进入预览：可增删页，并分别导出数字 PDF 或 KDP 印刷 PDF。",
+    "pickHint": "从下方点选插画，拖拽上方条带可调顺序。完成后进入预览：可增删页，并按选定尺寸导出。",
     "pickSelectedInfo": "已选 {count} 张，可继续进入导出",
     "pickPleaseSelect": "请从下方选择至少一张插画",
     "continueToExport": "进入预览与导出 →",
@@ -1356,11 +1357,11 @@
   },
   "bookExport": {
     "formatTitle": "印刷尺寸",
-    "formatHint": "先选裁切尺寸。数字 PDF 按 trim 导出；KDP PDF 按 trim+出血（宽+0.125″，高+0.25″）导出，并带安全区预览",
+    "formatHint": "先选择印刷尺寸，导出将按该尺寸生成 300 DPI 的 PDF / PNG",
     "formatSquareKids": "8.5×8.5 儿童书",
-    "formatSquareKidsDesc": "满版插图 + 安全区；KDP 画布 8.625×8.75 in",
+    "formatSquareKidsDesc": "方形儿童书常用尺寸，适合满版插图",
     "formatChapter": "5.5×8.5 章节书",
-    "formatChapterDesc": "中级章节书常用竖版 trim",
+    "formatChapterDesc": "中级章节书常用竖版",
     "formatLetterWorkbook": "8.5×11 涂色/练习册",
     "formatLetterWorkbookDesc": "Letter 竖版，适合练习册与涂色书"
   },
@@ -1372,8 +1373,6 @@
     "exportTitle": "预览与导出",
     "publishTitle": "发布绘本",
     "changeFormat": "更改印刷尺寸",
-    "kdpGuideTip": "红虚线 = 裁切线；灰虚线 = 安全区（约 0.375″）。重要文字请留在灰线内。",
-    "kdpMinPagesWarn": "KDP 平装内页建议至少 {min} 页（当前 {current} 页），可添加空白页凑齐偶数页。",
     "firstPageHint": "（右侧首页）",
     "blankPage": "空白页",
     "deletePage": "删除",
@@ -1393,12 +1392,10 @@
     "catOthers": "其他",
     "bookDesc": "绘本介绍",
     "descPlaceholder": "简单介绍一下这本绘本…",
-    "includeQr": "数字 PDF 末尾附加平台二维码页（KDP 印刷版不附加）",
     "compliance": "我确认本作品内容为原创或已获得合法授权，适合儿童阅读，对作品内容负责",
     "complianceRequired": "请确认审核与合规声明",
-    "downloadDigitalPdf": "下载数字 PDF（2550px·300 DPI）",
-    "downloadKdpPdf": "下载 KDP PDF（含出血·300 DPI）",
-    "downloadImages": "下载 PNG（含 300 DPI 元数据）",
+    "downloadPdf": "下载 PDF（300 DPI）",
+    "downloadImages": "下载 PNG（300 DPI）",
     "publish": "发布作品",
     "publishNeedImages": "请至少保留一页插画后再发布",
     "publishFailed": "发布失败，请稍后重试",
@@ -1411,7 +1408,6 @@
     "viewBook": "书册预览",
     "viewPages": "页面编辑",
     "openBookPreview": "打开书册预览",
-    "showKdpGuides": "显示 KDP 裁切/安全线",
     "roleCover": "封面",
     "roleBack": "封底",
     "roleTitle": "扉页",
@@ -1425,9 +1421,11 @@
     "prevPage": "上一页",
     "nextPage": "下一页",
     "sheetProgress": "第 {current} / {total} 屏",
-    "dualPageSize": "数字 {dw}×{dh} in · KDP 含出血 {kw}×{kh} in",
+    "pageSize": "{w}×{h} in",
     "bookStructureHint": "预览结构：第 1 张=封面，第 2 张=扉页，之后每两张组成一个跨页。",
-    "dpiHint": "导出像素按英寸×300：如 8.5″→2550px。用 Photoshop 打开 PNG 应显示 300 像素/英寸。"
+    "dpiHint": "导出像素按英寸×300：如 8.5″→2550px。用 Photoshop 打开 PNG 应显示 300 像素/英寸。",
+    "bookRatioSingle": "单页比例 {w}×{h} in（与印刷尺寸一致）",
+    "bookRatioSpread": "跨页：左右各 {w}×{h} in，整体约 {sw}×{h} in"
   },
   "printBookLayout": {
     "title": "绘本打印排版",
@@ -2134,7 +2132,7 @@
       },
       "layout": {
         "title": "排版导出",
-        "desc": "选图排序后进入预览页：可增删页，并分别下载数字 PDF 或 KDP 含出血印刷 PDF。"
+        "desc": "选图排序后进入预览页：可增删页，并按选定尺寸下载 PDF / PNG。"
       }
     },
     "cases": {
@@ -2163,10 +2161,10 @@
         }
       },
       "bookPrint": {
-        "title": "排版导出 → KDP / 数字 PDF",
-        "summary": "在「排版导出」选好插画顺序后，进入预览页：用 KDP 参考线检查，再导出含出血单页 PDF。",
-        "beforeDesc": "排版导出：选择裁切尺寸与插画顺序。",
-        "afterDesc": "预览与导出：增删页面，切换数字/KDP 预览，下载对应 PDF。",
+        "title": "排版导出 → PDF / PNG",
+        "summary": "在「排版导出」选好尺寸与插画顺序后，进入预览页增删页面，再按选定尺寸导出。",
+        "beforeDesc": "排版导出：选择印刷尺寸与插画顺序。",
+        "afterDesc": "预览与导出：增删页面，下载 PDF / PNG。",
         "tools": {
           "compose": "排版导出",
           "print": "绘本打印排版"
@@ -2199,7 +2197,7 @@
           "2": "逐页点击「收集插画」，不满意的页可重新生成或进 EditorPro 修改。",
           "3": "进入「我的绘本」管理已收集的成册项目，可阅读、编辑或删除。",
           "4": "打开「排版导出」，按阅读顺序排列页面。",
-          "5": "进入预览与导出：发布作品，或下载数字 / KDP PDF。"
+          "5": "进入预览与导出：发布作品，或按选定尺寸下载 PDF / PNG。"
         },
         "links": {
           "ai": "AI 绘本",
@@ -2208,14 +2206,14 @@
         }
       },
       "printPdfFlow": {
-        "title": "如何导出 KDP 印刷 PDF",
-        "intro": "面向 KDP：含出血单页序列、裁切/安全区预览、可增删页。",
+        "title": "如何按印刷尺寸导出 PDF",
+        "intro": "选好尺寸与插画顺序后，在预览页增删页面，再导出 300 DPI 的 PDF / PNG。",
         "steps": {
-          "1": "在「排版导出」选好裁切尺寸与插画顺序，进入预览与导出。",
-          "2": "左侧「我的插画」选图作为笔刷，点击右侧页块填入对应位置。",
-          "3": "切换「KDP 预览」，确认页序为单页序列（首页为右侧页）。",
-          "4": "下载「KDP PDF（含出血 · 300 DPI）」，勿把封面放进内页手稿。",
-          "5": "确认无误后点击「导出 PDF」，或返回合成模式「下载 PDF / 发布作品」。"
+          "1": "在「排版导出」选好印刷尺寸与插画顺序，进入预览与导出。",
+          "2": "在「页面编辑」中增删、拖拽调序；可用书册预览翻看成品。",
+          "3": "确认页序与内容无误。",
+          "4": "下载「PDF（300 DPI）」或「PNG（300 DPI）」。",
+          "5": "也可填写信息后「发布作品」。"
         },
         "links": {
           "compose": "排版导出",

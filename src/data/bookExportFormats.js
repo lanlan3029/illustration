@@ -1,8 +1,6 @@
 /** 常见儿童/章节书印刷尺寸（英寸），导出基准 300 DPI
  *
- * KDP 含出血单页（内页手稿）：
- * - 高 = trim 高 + 0.125 × 2
- * - 宽 = trim 宽 + 0.125（仅外口出血，书脊侧不加）
+ * 导出默认按 trim（成品裁切尺寸）输出：宽×高 × 300。
  */
 
 export const BOOK_EXPORT_DPI = 300
@@ -120,8 +118,7 @@ export function formatSizeLabel(format, dpi = BOOK_EXPORT_DPI) {
     width: Math.round(format.trimWidthIn * dpi),
     height: Math.round(format.trimHeightIn * dpi),
   }
-  const kdp = getFormatPageInches(format, 'kdp')
-  return `${format.trimWidthIn}×${format.trimHeightIn} in trim · KDP ${kdp.widthIn}×${kdp.heightIn} in · ${trimPx.width}×${trimPx.height}px@${dpi}`
+  return `${format.trimWidthIn}×${format.trimHeightIn} in · ${trimPx.width}×${trimPx.height}px@${dpi}`
 }
 
 /** 预览用：相对画布的裁切/安全区百分比（KDP 含出血画布） */

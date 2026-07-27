@@ -24,60 +24,13 @@
       <!-- 书册预览：封面 / 扉页 / 双页内页，点击翻页 -->
       <div v-else-if="viewMode === 'book'" class="book-stage">
         <p class="book-stage-hint">{{ sheetHint }}</p>
+        <p class="book-stage-ratio">{{ bookRatioLabel }}</p>
 
-        <div class="book-viewer" :class="{ 'is-flipping': isFlipping }" @click="onBookClick">
-          <!-- 封面 / 封底：单页合上 -->
-          <div
-            v-if="currentSheet.type === 'cover' || currentSheet.type === 'back'"
-            class="book-face book-face--single"
-            :style="singleFaceStyle"
-          >
-            <div class="book-face-spine" aria-hidden="true" />
-            <div class="book-face-art">
-              <template v-if="currentSheet.page && !currentSheet.page.blank && currentSheet.page.src">
-                <img :src="currentSheet.page.src" alt="" />
-              </template>
-              <div v-else class="book-placeholder">
-                <strong>{{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}</strong>
-                <span v-if="form.title">{{ form.title }}</span>
-              </div>
-            </div>
-            <span class="book-face-badge">
-              {{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}
-            </span>
-          </div>
-
-          <!-- 扉页 / 内页：双页展开 -->
-          <div v-else class="book-face book-face--spread" :style="spreadFaceStyle">
-            <div class="book-half book-half--left">
-              <div class="book-face-art">
-                <template v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src">
-                  <img :src="currentSheet.left.src" alt="" />
-                </template>
-                <div v-else class="book-placeholder book-placeholder--muted">
-                  <span>{{ currentSheet.leftLabel || $t('toPdf.blankPage') }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="book-gutter" aria-hidden="true" />
-            <div class="book-half book-half--right">
-              <div class="book-face-art">
-                <template v-if="currentSheet.right && !currentSheet.right.blank && currentSheet.right.src">
-                  <img :src="currentSheet.right.src" alt="" />
-                </template>
-                <div v-else-if="currentSheet.type === 'title'" class="book-placeholder book-placeholder--title">
-                  <em>{{ $t('toPdf.roleTitle') }}</em>
-                  <strong>{{ form.title || $t('toPdf.bookTitlePlaceholder') }}</strong>
-                  <span v-if="form.desc" class="book-title-desc">{{ form.desc }}</span>
-                </div>
-                <div v-else class="book-placeholder book-placeholder--muted">
-                  <span>{{ $t('toPdf.blankPage') }}</span>
-                </div>
-              </div>
-            </div>
-            <span class="book-face-badge">{{ sheetBadge }}</span>
-          </div>
-
+        <div
+          class="book-viewer"
+          :class="{ 'is-spread': currentSheet.type === 'title' || currentSheet.type === 'spread' }"
+          @click="onBookClick"
+        >
           <button
             type="button"
             class="book-nav book-nav--prev"
@@ -86,6 +39,72 @@
           >
             ‹
           </button>
+
+          <div class="book-stage-frame" :style="bookFrameStyle">
+            <transition :name="flipTransition" mode="out-in">
+              <!-- 封面 / 封底：单页 -->
+              <div
+                v-if="currentSheet.type === 'cover' || currentSheet.type === 'back'"
+                :key="`sheet-${sheetIndex}-single`"
+                class="book-face book-face--single"
+              >
+                <div class="book-face-spine" aria-hidden="true" />
+                <div class="book-face-art">
+                  <img
+                    v-if="currentSheet.page && !currentSheet.page.blank && currentSheet.page.src"
+                    :src="currentSheet.page.src"
+                    alt=""
+                  />
+                  <div v-else class="book-placeholder">
+                    <strong>{{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}</strong>
+                    <span v-if="form.title">{{ form.title }}</span>
+                  </div>
+                </div>
+                <span class="book-face-badge">
+                  {{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}
+                </span>
+              </div>
+
+              <!-- 扉页 / 内页：双页展开（每半页保持 trim 比例） -->
+              <div
+                v-else
+                :key="`sheet-${sheetIndex}-spread`"
+                class="book-face book-face--spread"
+              >
+                <div class="book-half book-half--left">
+                  <div class="book-face-art">
+                    <img
+                      v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src"
+                      :src="currentSheet.left.src"
+                      alt=""
+                    />
+                    <div v-else class="book-placeholder book-placeholder--muted">
+                      <span>{{ currentSheet.leftLabel || $t('toPdf.blankPage') }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="book-half book-half--right">
+                  <div class="book-face-art">
+                    <img
+                      v-if="currentSheet.right && !currentSheet.right.blank && currentSheet.right.src"
+                      :src="currentSheet.right.src"
+                      alt=""
+                    />
+                    <div v-else-if="currentSheet.type === 'title'" class="book-placeholder book-placeholder--title">
+                      <em>{{ $t('toPdf.roleTitle') }}</em>
+                      <strong>{{ form.title || $t('toPdf.bookTitlePlaceholder') }}</strong>
+                      <span v-if="form.desc" class="book-title-desc">{{ form.desc }}</span>
+                    </div>
+                    <div v-else class="book-placeholder book-placeholder--muted">
+                      <span>{{ $t('toPdf.blankPage') }}</span>
+                    </div>
+                  </div>
+                </div>
+                <span class="book-face-badge">{{ sheetBadge }}</span>
+              </div>
+            </transition>
+          </div>
+
           <button
             type="button"
             class="book-nav book-nav--next"
@@ -109,7 +128,7 @@
         <div class="book-thumbs" v-if="sheets.length">
           <button
             v-for="(sheet, idx) in sheets"
-            :key="`sheet-${idx}`"
+            :key="`sheet-thumb-${idx}`"
             type="button"
             class="book-thumb"
             :class="{ 'is-active': idx === sheetIndex }"
@@ -120,16 +139,8 @@
         </div>
       </div>
 
-      <!-- 页面编辑：排序 / 增删 / KDP 参考线 -->
+      <!-- 页面编辑：排序 / 增删 -->
       <div v-else class="topdf-scroll">
-        <div class="pages-toolbar">
-          <el-checkbox v-model="showKdpGuides">{{ $t('toPdf.showKdpGuides') }}</el-checkbox>
-          <span v-if="showKdpGuides && totalPages < kdpMinPages" class="pages-warn">
-            {{ $t('toPdf.kdpMinPagesWarn', { min: kdpMinPages, current: totalPages }) }}
-          </span>
-        </div>
-        <p v-if="showKdpGuides" class="pages-kdp-tip">{{ $t('toPdf.kdpGuideTip') }}</p>
-
         <div
           v-for="(page, index) in editablePages"
           :key="page.key"
@@ -161,27 +172,6 @@
           <div class="topdf-page-stage" :style="pageStageStyle">
             <div v-if="page.blank" class="topdf-page-blank">{{ $t('toPdf.blankPage') }}</div>
             <el-image v-else :src="page.src" fit="cover" class="topdf-page-img" />
-
-            <template v-if="showKdpGuides && kdpGuides">
-              <div
-                class="topdf-guide topdf-guide--trim"
-                :style="{
-                  top: kdpGuides.trim.top + '%',
-                  right: kdpGuides.trim.right + '%',
-                  bottom: kdpGuides.trim.bottom + '%',
-                  left: kdpGuides.trim.left + '%',
-                }"
-              />
-              <div
-                class="topdf-guide topdf-guide--safe"
-                :style="{
-                  top: kdpGuides.safe.top + '%',
-                  right: kdpGuides.safe.right + '%',
-                  bottom: kdpGuides.safe.bottom + '%',
-                  left: kdpGuides.safe.left + '%',
-                }"
-              />
-            </template>
           </div>
         </div>
       </div>
@@ -194,7 +184,6 @@
         <label class="topdf-format-label">{{ $t('bookExport.formatTitle') }}</label>
         <p class="topdf-format-value">{{ $t(activeFormat.nameKey) }}</p>
         <p class="topdf-format-meta">{{ formatMetaLabel }}</p>
-        <p class="topdf-format-meta">{{ pageSizeHint }}</p>
         <button type="button" class="topdf-format-change" @click="goChangeFormat">
           {{ $t('toPdf.changeFormat') }}
         </button>
@@ -243,22 +232,14 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-checkbox v-model="form.includeQr">
-            {{ $t('toPdf.includeQr') }}
-          </el-checkbox>
-        </el-form-item>
-        <el-form-item>
           <el-checkbox v-model="form.authorizationConfirmed">
             {{ $t('toPdf.compliance') }}
           </el-checkbox>
         </el-form-item>
 
         <div class="topdf-actions">
-          <el-button :disabled="exporting || !totalPages" @click="downPDF('digital')">
-            {{ $t('toPdf.downloadDigitalPdf') }}
-          </el-button>
-          <el-button type="primary" plain :disabled="exporting || !totalPages" @click="downPDF('kdp')">
-            {{ $t('toPdf.downloadKdpPdf') }}
+          <el-button type="primary" plain :disabled="exporting || !totalPages" @click="downPDF">
+            {{ $t('toPdf.downloadPdf') }}
           </el-button>
           <el-button :disabled="exporting || !totalPages" @click="downImages">
             {{ $t('toPdf.downloadImages') }}
@@ -279,9 +260,6 @@ import { ElMessage } from 'element-plus';
 import {
   formatSizeLabel,
   getBookExportFormat,
-  getFormatPageInches,
-  getKdpGuidePercents,
-  KDP_MIN_INTERIOR_PAGES,
   normalizeBookExportFormatId,
 } from '@/data/bookExportFormats';
 import {
@@ -316,19 +294,18 @@ export default {
     return {
       exporting: false,
       viewMode: 'book',
-      showKdpGuides: false,
       sheetIndex: 0,
       isFlipping: false,
+      flipDirection: 'next',
+      flipTimer: null,
       dragIndex: null,
       dragOverIndex: null,
       form: {
         title: '',
         category: '',
         desc: '',
-        includeQr: true,
         authorizationConfirmed: false,
       },
-      codeImg: require('../assets/images/pdfCode.webp'),
       editablePages: [],
     };
   },
@@ -340,40 +317,41 @@ export default {
     formatMetaLabel() {
       return formatSizeLabel(this.activeFormat);
     },
-    pageSizeHint() {
-      const digital = getFormatPageInches(this.activeFormat, 'digital');
-      const kdp = getFormatPageInches(this.activeFormat, 'kdp');
-      return this.$t('toPdf.dualPageSize', {
-        dw: digital.widthIn,
-        dh: digital.heightIn,
-        kw: kdp.widthIn,
-        kh: kdp.heightIn,
-      });
-    },
-    kdpGuides() {
-      return getKdpGuidePercents(this.activeFormat);
-    },
-    kdpMinPages() {
-      return KDP_MIN_INTERIOR_PAGES;
-    },
     pageCardStyle() {
-      if (this.showKdpGuides && this.kdpGuides?.pageAspect) {
-        return { aspectRatio: this.kdpGuides.pageAspect };
-      }
       return { aspectRatio: this.activeFormat.aspectRatioCss };
     },
     pageStageStyle() {
       return { aspectRatio: this.pageCardStyle.aspectRatio };
     },
-    singleFaceStyle() {
-      return { aspectRatio: this.activeFormat.aspectRatioCss };
+    /** 单页 trim 比例，来自印刷尺寸而非 CSS 预览字符串 */
+    pageAspectValue() {
+      const w = this.activeFormat.trimWidthIn || 1;
+      const h = this.activeFormat.trimHeightIn || 1;
+      return w / h;
     },
-    spreadFaceStyle() {
-      const [w, h] = String(this.activeFormat.aspectRatioCss || '1 / 1').split('/').map((s) => parseFloat(s.trim()));
-      if (w > 0 && h > 0) {
-        return { aspectRatio: `${w * 2} / ${h}` };
+    bookRatioLabel() {
+      const f = this.activeFormat;
+      const isSpread = this.currentSheet.type === 'title' || this.currentSheet.type === 'spread';
+      if (isSpread) {
+        return this.$t('toPdf.bookRatioSpread', {
+          w: f.trimWidthIn,
+          h: f.trimHeightIn,
+          sw: f.trimWidthIn * 2,
+        });
       }
-      return { aspectRatio: '2 / 1' };
+      return this.$t('toPdf.bookRatioSingle', { w: f.trimWidthIn, h: f.trimHeightIn });
+    },
+    /** 外框按高度锁定，宽度由单页/双页比例推导，避免被撑扁 */
+    bookFrameStyle() {
+      const isSpread = this.currentSheet.type === 'title' || this.currentSheet.type === 'spread';
+      const pageAr = this.pageAspectValue;
+      const frameAr = isSpread ? pageAr * 2 : pageAr;
+      return {
+        '--frame-ar': String(frameAr),
+      };
+    },
+    flipTransition() {
+      return this.flipDirection === 'prev' ? 'book-flip-prev' : 'book-flip-next';
     },
     totalPages() {
       return this.editablePages.length;
@@ -454,6 +432,7 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.onKeydown);
+    if (this.flipTimer) clearTimeout(this.flipTimer);
   },
   methods: {
     hydratePages(list) {
@@ -523,14 +502,10 @@ export default {
       }
       return true;
     },
-    buildExportPages(mode) {
-      const pages = this.editablePages.map((p) => (
+    buildExportPages() {
+      return this.editablePages.map((p) => (
         p.blank ? { blank: true } : { src: p.src }
       ));
-      if (mode === 'digital' && this.form.includeQr) {
-        pages.push({ src: this.codeImg });
-      }
-      return pages;
     },
     addBlankPage() {
       const id = `blank-${Date.now()}`;
@@ -592,11 +567,14 @@ export default {
     },
     goSheet(idx) {
       if (idx === this.sheetIndex || this.isFlipping) return;
+      this.flipDirection = idx > this.sheetIndex ? 'next' : 'prev';
       this.isFlipping = true;
       this.sheetIndex = idx;
-      setTimeout(() => {
+      if (this.flipTimer) clearTimeout(this.flipTimer);
+      this.flipTimer = setTimeout(() => {
         this.isFlipping = false;
-      }, 280);
+        this.flipTimer = null;
+      }, 520);
     },
     prevSheet() {
       if (this.sheetIndex <= 0 || this.isFlipping) return;
@@ -607,8 +585,9 @@ export default {
       this.goSheet(this.sheetIndex + 1);
     },
     onBookClick(event) {
-      if (event.target.closest('.book-nav')) return;
-      const rect = event.currentTarget.getBoundingClientRect();
+      if (event.target.closest('.book-nav') || event.target.closest('.book-thumb')) return;
+      const frame = event.currentTarget.querySelector('.book-stage-frame') || event.currentTarget;
+      const rect = frame.getBoundingClientRect();
       const x = event.clientX - rect.left;
       if (x > rect.width / 2) this.nextSheet();
       else this.prevSheet();
@@ -652,24 +631,16 @@ export default {
         ElMessage.error(this.$t('toPdf.publishFailed'));
       }
     },
-    downPDF(mode = 'digital') {
+    downPDF() {
       if (!this.validateCompliance()) return;
       if (!this.editablePages.length) return;
-
-      if (mode === 'kdp' && this.totalPages < this.kdpMinPages) {
-        ElMessage.warning(this.$t('toPdf.kdpMinPagesWarn', {
-          min: this.kdpMinPages,
-          current: this.totalPages,
-        }));
-      }
 
       this.exporting = true;
       ElMessage.info(this.$t('toPdf.downloading'));
 
-      buildBookPdfFromPages(this.buildExportPages(mode), this.activeFormat, mode)
+      buildBookPdfFromPages(this.buildExportPages(), this.activeFormat, 'digital')
         .then((pdf) => {
-          const tag = mode === 'kdp' ? 'kdp-bleed-300dpi' : 'digital-300dpi';
-          pdf.save(`${this.exportFileBaseName()}-${tag}.pdf`);
+          pdf.save(`${this.exportFileBaseName()}-300dpi.pdf`);
           ElMessage.success(this.$t('toPdf.downloadDone'));
         })
         .catch((err) => {
@@ -684,15 +655,14 @@ export default {
       if (!this.validateCompliance()) return;
       if (!this.editablePages.length) return;
 
-      const mode = this.showKdpGuides ? 'kdp' : 'digital';
       this.exporting = true;
       ElMessage.info(this.$t('toPdf.downloadingImages'));
 
       downloadBookPagesAsPng(
-        this.buildExportPages(mode),
+        this.buildExportPages(),
         this.activeFormat,
         this.exportFileBaseName(),
-        mode
+        'digital'
       )
         .then(() => {
           ElMessage.success(this.$t('toPdf.downloadImagesDone'));
@@ -800,45 +770,66 @@ export default {
 }
 
 .book-stage-hint {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 13px;
   color: #606266;
 }
 
+.book-stage-ratio {
+  margin: 4px 0 14px;
+  font-size: 12px;
+  color: #909399;
+}
+
 .book-viewer {
   position: relative;
-  width: min(860px, 100%);
+  width: 100%;
+  max-width: 920px;
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 8px;
   cursor: pointer;
   user-select: none;
+  perspective: 1600px;
 }
 
-.book-viewer.is-flipping .book-face {
-  animation: book-flip 0.28s ease;
+.book-stage-frame {
+  position: relative;
+  /* 同时受视口高度与宽度限制，始终保持 trim / 双页比例 */
+  width: min(
+    860px,
+    calc(100% - 96px),
+    calc(min(58vh, 560px) * var(--frame-ar, 1))
+  );
+  aspect-ratio: var(--frame-ar, 1);
+  height: auto;
+  margin: 0 auto;
 }
 
-@keyframes book-flip {
-  0% { transform: perspective(900px) rotateY(-6deg); opacity: 0.75; }
-  100% { transform: perspective(900px) rotateY(0); opacity: 1; }
+.book-viewer.is-spread .book-stage-frame {
+  width: min(
+    920px,
+    calc(100% - 96px),
+    calc(min(58vh, 560px) * var(--frame-ar, 1))
+  );
 }
 
 .book-face {
-  position: relative;
-  width: 100%;
+  position: absolute;
+  inset: 0;
   background: #fff;
-  border-radius: 4px 10px 10px 4px;
+  border-radius: 6px;
   box-shadow:
     0 18px 48px rgba(40, 30, 60, 0.22),
-    0 2px 0 rgba(255, 255, 255, 0.7) inset;
+    0 1px 0 rgba(255, 255, 255, 0.75) inset;
   overflow: hidden;
+  transform-origin: center center;
+  backface-visibility: hidden;
 }
 
 .book-face--single {
-  position: relative;
-  max-width: 420px;
-  width: 100%;
+  border-radius: 4px 10px 10px 4px;
 }
 
 .book-face--single .book-face-art {
@@ -851,46 +842,59 @@ export default {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 14px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.12), transparent);
+  width: 12px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.14), transparent 70%);
   z-index: 2;
+  pointer-events: none;
 }
 
 .book-face--spread {
-  display: grid;
-  grid-template-columns: 1fr 10px 1fr;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   border-radius: 10px;
-  width: 100%;
-}
-
-.book-gutter {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.12));
+  background: #ebe7f2;
+  box-shadow:
+    0 18px 48px rgba(40, 30, 60, 0.22);
+  overflow: hidden;
+  padding: 0;
 }
 
 .book-half {
   position: relative;
+  flex: 1 1 50%;
+  width: 50%;
   min-width: 0;
   min-height: 0;
+  height: 100%;
   background: #fff;
+  overflow: hidden;
+}
+
+.book-half--left {
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset -10px 0 14px -12px rgba(0, 0, 0, 0.28);
+}
+
+.book-half--right {
+  box-shadow: inset 10px 0 14px -12px rgba(0, 0, 0, 0.28);
 }
 
 .book-face-art {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #f5f7fa;
 }
 
-.book-half .book-face-art {
-  position: absolute;
-  inset: 0;
-}
-
 .book-face-art img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: #fff;
 }
 
 .book-placeholder {
@@ -948,18 +952,52 @@ export default {
   color: #fff;
   font-size: 12px;
   font-weight: 600;
+  pointer-events: none;
+}
+
+.book-face--spread .book-face-badge {
+  left: 52%;
+}
+
+/* 翻页过渡：向后翻（下一页） */
+.book-flip-next-enter-active,
+.book-flip-next-leave-active,
+.book-flip-prev-enter-active,
+.book-flip-prev-leave-active {
+  transition:
+    transform 0.48s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.36s ease;
+}
+
+.book-flip-next-enter-from {
+  transform: perspective(1400px) rotateY(-28deg) translateX(18%) scale(0.96);
+  opacity: 0;
+}
+
+.book-flip-next-leave-to {
+  transform: perspective(1400px) rotateY(22deg) translateX(-14%) scale(0.97);
+  opacity: 0;
+}
+
+.book-flip-prev-enter-from {
+  transform: perspective(1400px) rotateY(28deg) translateX(-18%) scale(0.96);
+  opacity: 0;
+}
+
+.book-flip-prev-leave-to {
+  transform: perspective(1400px) rotateY(-22deg) translateX(14%) scale(0.97);
+  opacity: 0;
 }
 
 .book-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
+  flex: 0 0 auto;
   z-index: 5;
   width: 40px;
   height: 40px;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   color: #8167a9;
   font-size: 28px;
@@ -971,9 +1009,6 @@ export default {
   opacity: 0.35;
   cursor: not-allowed;
 }
-
-.book-nav--prev { left: -8px; }
-.book-nav--next { right: -8px; }
 
 .book-pager {
   display: flex;
@@ -1004,7 +1039,7 @@ export default {
   gap: 8px;
   justify-content: center;
   margin-top: 14px;
-  max-width: 860px;
+  max-width: 920px;
 }
 
 .book-thumb {
@@ -1035,29 +1070,6 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 24px;
-}
-
-.pages-toolbar {
-  width: 100%;
-  max-width: min(720px, 100%);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.pages-warn {
-  font-size: 12px;
-  color: #b88230;
-}
-
-.pages-kdp-tip {
-  width: 100%;
-  max-width: min(720px, 100%);
-  margin: -8px 0 0;
-  font-size: 12px;
-  color: #606266;
-  line-height: 1.5;
 }
 
 .topdf-page-card {
@@ -1151,15 +1163,6 @@ export default {
   font-size: 14px;
   background: repeating-linear-gradient(-45deg, #fff, #fff 8px, #f5f7fa 8px, #f5f7fa 16px);
 }
-
-.topdf-guide {
-  position: absolute;
-  pointer-events: none;
-  box-sizing: border-box;
-}
-
-.topdf-guide--trim { border: 1.5px dashed rgba(245, 108, 108, 0.95); }
-.topdf-guide--safe { border: 1.5px dashed rgba(144, 147, 153, 0.95); }
 
 .topdf-sidebar {
   width: 340px;
@@ -1277,7 +1280,14 @@ export default {
     max-height: none;
   }
 
-  .book-nav--prev { left: 4px; }
-  .book-nav--next { right: 4px; }
+  .book-stage-frame {
+    width: min(100%, calc(100% - 72px));
+    max-height: min(50vh, 420px);
+  }
+
+  .book-nav {
+    width: 36px;
+    height: 36px;
+  }
 }
 </style>
