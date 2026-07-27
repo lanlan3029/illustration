@@ -285,7 +285,7 @@
             <!-- 生成进度 / 结果 / 空占位 -->
             <div class="result-section">
                 <div v-if="generating" class="result-card">
-                    <div class="result-skeleton" :style="resultFrameStyle">
+                    <div class="result-skeleton">
                         <div class="result-skeleton-shimmer"></div>
                         <div class="result-loading">
                             <span class="result-spinner"></span>
@@ -330,7 +330,7 @@
                 </div>
 
                 <div v-else class="result-card result-card--empty">
-                    <div class="result-placeholder" :style="resultFrameStyle">
+                    <div class="result-placeholder">
                         <div class="result-placeholder-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="3" width="18" height="18" rx="3" />
@@ -524,15 +524,6 @@ export default {
                 if (hit) return hit.compactLabel || hit.label
             }
             return this.selectedSize || '4:3'
-        },
-        /** 结果占位框比例，跟随当前所选尺寸（如 1280x960 → 4/3） */
-        resultFrameStyle() {
-            const size = String(this.selectedSize || '')
-            const m = size.match(/^(\d+)\s*[x×]\s*(\d+)$/i)
-            if (m) {
-                return { aspectRatio: `${Number(m[1])} / ${Number(m[2])}` }
-            }
-            return { aspectRatio: '4 / 3' }
         },
         isDallE() {
             return typeof this.selectedModel === 'string' && this.selectedModel.startsWith('dall-e')
@@ -1311,12 +1302,14 @@ export default {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 16px;
     min-height: 0;
+    align-self: stretch;
 }
 
 /* 输入框卡片 */
 .prompt-card {
+    flex-shrink: 0;
     background: #ffffff;
     border: 1px solid #e6e8ec;
     border-radius: 24px;
@@ -1958,19 +1951,21 @@ export default {
     object-fit: contain;
 }
 
-/* 结果区 */
+/* 结果区：撑满右侧剩余高度，底部与左侧风格容器对齐 */
 .result-section {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 16px;
 }
 
 .result-skeleton {
     position: relative;
+    flex: 1;
     width: 100%;
-    min-height: 240px;
-    max-height: 60vh;
+    min-height: 0;
     border-radius: 14px;
     overflow: hidden;
     background: linear-gradient(135deg, #f3f4f8 0%, #eceef4 100%);
@@ -1981,13 +1976,12 @@ export default {
 
 .result-placeholder {
     position: relative;
+    flex: 1;
     width: 100%;
-    min-height: 240px;
-    max-height: 60vh;
+    min-height: 0;
     border-radius: 14px;
     border: 1.5px dashed #d7dbe3;
-    background:
-        linear-gradient(180deg, #fafbfc 0%, #f3f5f8 100%);
+    background: linear-gradient(180deg, #fafbfc 0%, #f3f5f8 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2073,6 +2067,8 @@ export default {
 }
 
 .result-card {
+    flex: 1;
+    min-height: 0;
     width: 100%;
     background: #fff;
     border: 1px solid #ececf0;
@@ -2082,18 +2078,21 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    box-sizing: border-box;
 }
 
 .result-image {
     display: block;
+    flex: 1;
+    min-height: 0;
     width: 100%;
-    max-height: 60vh;
     object-fit: contain;
     border-radius: 14px;
     background: #f5f6f8;
 }
 
 .result-actions {
+    flex-shrink: 0;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -2190,6 +2189,19 @@ export default {
         overflow: visible;
     }
 
+    .editor-column {
+        flex: none;
+        min-height: 0;
+    }
+
+    .result-section {
+        flex: none;
+    }
+
+    .result-card {
+        flex: none;
+    }
+
     /* 风格图改为一行横向滑动展示全部 */
     .style-list {
         display: flex;
@@ -2211,13 +2223,15 @@ export default {
     }
 
     .result-image {
+        flex: none;
         max-height: 50vh;
     }
 
     .result-skeleton,
     .result-placeholder {
-        max-height: 50vh;
-        min-height: 200px;
+        flex: none;
+        min-height: 220px;
+        aspect-ratio: 4 / 3;
     }
 }
 
