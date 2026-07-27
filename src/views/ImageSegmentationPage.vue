@@ -53,6 +53,8 @@
             <div class="el-upload__tip">{{ $t('imageSegmentation.uploadTip') }}</div>
           </template>
         </el-upload>
+        <div class="upload-or">{{ $t('myIllustrationPicker.or') }}</div>
+        <MyIllustrationPicker @select="onPickIllustration" />
       </div>
 
       <template v-else>
@@ -168,7 +170,7 @@ import { UploadFilled, Loading } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { readFileAsDataUrl, downloadDataUrl } from '@/utils/lassoCrop';
 import {
-  rembgFromFile,
+  rembgFromImageSource,
   fetchRembgModes,
   readStoredRembgMode,
   storeRembgMode,
@@ -177,13 +179,15 @@ import {
 } from '@/utils/imageSegmentation';
 import { suggestRembgMode } from '@/utils/imageSegmentationHint';
 import { saveCroppedCharacter, CHARACTER_CATEGORIES } from '@/utils/saveCroppedAsset';
+import MyIllustrationPicker from '@/components/MyIllustrationPicker.vue';
 
 export default {
   name: 'ImageSegmentationPage',
-  components: { UploadFilled, Loading },
+  components: { UploadFilled, Loading, MyIllustrationPicker },
   data() {
     return {
       photoFile: null,
+      photoSourceUrl: '',
       photoPreviewUrl: '',
       resultUrl: '',
       resultModeLabel: '',
@@ -205,7 +209,11 @@ export default {
   },
   computed: {
     canSegment() {
-      return Boolean(this.photoFile && this.selectedMode && !this.segmenting);
+      return Boolean(
+        (this.photoFile || this.photoSourceUrl || this.photoPreviewUrl)
+          && this.selectedMode
+          && !this.segmenting
+      );
     },
     otherModes() {
       return this.modeOptions.filter((item) => item.value !== this.selectedMode);
@@ -242,6 +250,18 @@ export default {
       this.modeHintDismissed = true;
       this.modeHint = null;
     },
+    async applyImageSource({ file = null, url = '', previewUrl = '', mimeType = '', fileName = '' }) {
+      this.photoFile = file;
+      this.photoSourceUrl = url;
+      this.photoPreviewUrl = previewUrl || url;
+      this.resultUrl = '';
+      this.resultModeLabel = '';
+      this.modeHintDismissed = false;
+      this.modeHint = await suggestRembgMode(this.photoPreviewUrl, {
+        mimeType: mimeType || file?.type || '',
+        fileName: fileName || file?.name || '',
+      });
+    },
     async onFileChange(file) {
       const raw = file.raw;
       if (!raw || !raw.type.startsWith('image/')) {
@@ -249,23 +269,39 @@ export default {
         return;
       }
       try {
-        this.photoFile = raw;
-        this.photoPreviewUrl = await readFileAsDataUrl(raw);
-        this.resultUrl = '';
-        this.resultModeLabel = '';
-        this.modeHintDismissed = false;
-        if (!this.modeHintDismissed) {
-          this.modeHint = await suggestRembgMode(this.photoPreviewUrl, {
-            mimeType: raw.type,
-            fileName: raw.name,
-          });
-        }
+        const previewUrl = await readFileAsDataUrl(raw);
+        await this.applyImageSource({ file: raw, previewUrl, mimeType: raw.type, fileName: raw.name });
       } catch {
         ElMessage.error(this.$t('imageSegmentation.loadFailed'));
       }
     },
+    async onPickIllustration({ url, item }) {
+      if (!url) return;
+      try {
+        // 优先拉成 File，便于 rembg multipart；失败则退回 image_url
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = (blob.type || 'image/png').includes('jpeg') ? 'jpg' : 'png';
+        const file = new File(
+          [blob],
+          `${(item?.title || 'illustration').slice(0, 24)}.${ext}`,
+          { type: blob.type || 'image/png' }
+        );
+        await this.applyImageSource({
+          file,
+          url,
+          previewUrl: url,
+          mimeType: file.type,
+          fileName: file.name,
+        });
+      } catch {
+        await this.applyImageSource({ url, previewUrl: url });
+      }
+    },
     resetImage() {
       this.photoFile = null;
+      this.photoSourceUrl = '';
       this.photoPreviewUrl = '';
       this.resultUrl = '';
       this.resultModeLabel = '';
@@ -273,8 +309,9 @@ export default {
       this.modeHintDismissed = false;
     },
     async handleSegment() {
+      const source = this.photoFile || this.photoSourceUrl || this.photoPreviewUrl;
       if (!this.canSegment) {
-        if (!this.photoFile) ElMessage.warning(this.$t('imageSegmentation.noImage'));
+        if (!source) ElMessage.warning(this.$t('imageSegmentation.noImage'));
         else if (!this.selectedMode) ElMessage.warning(this.$t('imageSegmentation.noMode'));
         return;
       }
@@ -282,7 +319,7 @@ export default {
       this.resultUrl = '';
       this.resultModeLabel = '';
       try {
-        const result = await rembgFromFile(this.$http, this.photoFile, {
+        const result = await rembgFromImageSource(this.$http, source, {
           mode: this.selectedMode,
         });
         this.resultUrl = result.imageURL;
@@ -296,7 +333,7 @@ export default {
       }
     },
     async retryWithMode(mode) {
-      if (this.segmenting || !this.photoFile) return;
+      if (this.segmenting || !(this.photoFile || this.photoSourceUrl || this.photoPreviewUrl)) return;
       this.selectedMode = mode;
       storeRembgMode(mode);
       await this.handleSegment();
@@ -439,6 +476,23 @@ export default {
 
 .upload-zone {
   padding: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-zone :deep(.el-upload) {
+  width: 100%;
+}
+
+.upload-zone :deep(.el-upload-dragger) {
+  width: 100%;
+}
+
+.upload-or {
+  margin: 14px 0 10px;
+  font-size: 13px;
+  color: #909399;
 }
 
 .upload-icon {

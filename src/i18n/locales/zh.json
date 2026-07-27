@@ -91,10 +91,19 @@
   "select_json": "选择JSON文件",
   "repleaceImg": "替换图片",
   "cropperImg": "裁剪图片",
+  "myIllustrationPicker": {
+    "pickFromWorks": "从我的创作选择",
+    "dialogTitle": "选择我的创作中的插画",
+    "or": "或",
+    "empty": "暂无插画，请先去创作并收集",
+    "loginRequired": "请先登录后再选择我的创作",
+    "loadFailed": "加载插画失败，请稍后重试",
+    "invalidItem": "该插画无法使用，请换一张"
+  },
   "lassoCrop": {
     "title": "自由裁剪",
     "pageTitle": "自由裁剪贴纸",
-    "pageDesc": "上传本地图片，用鼠标圈出需要的部分，生成透明背景 PNG。可下载到本地，或保存到我的角色。",
+    "pageDesc": "上传本地图片，或从「我的创作」选择插画，用鼠标圈出需要的部分，生成透明背景 PNG。可下载到本地，或保存到我的角色。",
     "hintStart": "按住拖动圈选区域；回到起点可闭合，或点「完成裁剪」。",
     "hintDrawing": "继续拖动圈选，松手后可继续调整或点「完成裁剪」。",
     "hintDone": "裁剪完成，可选择下方操作。",
@@ -128,7 +137,7 @@
   },
   "imageSegmentation": {
     "pageTitle": "图像分割",
-    "pageDesc": "选择抠图模式，上传图片自动去除背景，生成透明 PNG。可下载到本地，或保存到我的角色。",
+    "pageDesc": "选择抠图模式，上传本地图片或从「我的创作」选择插画，自动去除背景，生成透明 PNG。可下载到本地，或保存到我的角色。",
     "modeTitle": "抠图模式",
     "uploadHint": "将图片拖到此处，或点击上传",
     "uploadTip": "支持 JPG、PNG 等常见格式，建议主体清晰、背景简洁",

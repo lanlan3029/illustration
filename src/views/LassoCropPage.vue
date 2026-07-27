@@ -20,6 +20,8 @@
             <div class="el-upload__tip">{{ $t('lassoCrop.uploadTip') }}</div>
           </template>
         </el-upload>
+        <div class="upload-or">{{ $t('myIllustrationPicker.or') }}</div>
+        <MyIllustrationPicker @select="onPickIllustration" />
       </div>
 
       <template v-else>
@@ -87,10 +89,11 @@ import { ElMessage } from 'element-plus';
 import LassoCropCanvas from '@/components/editorPro/editor-components/LassoCropCanvas.vue';
 import { readFileAsDataUrl, downloadDataUrl } from '@/utils/lassoCrop';
 import { saveCroppedCharacter, CHARACTER_CATEGORIES } from '@/utils/saveCroppedAsset';
+import MyIllustrationPicker from '@/components/MyIllustrationPicker.vue';
 
 export default {
   name: 'LassoCropPage',
-  components: { LassoCropCanvas, UploadFilled },
+  components: { LassoCropCanvas, UploadFilled, MyIllustrationPicker },
   data() {
     return {
       imageSrc: '',
@@ -119,6 +122,14 @@ export default {
       } catch (e) {
         ElMessage.error(this.$t('lassoCrop.loadFailed'));
       }
+    },
+    onPickIllustration({ url }) {
+      if (!url) {
+        ElMessage.error(this.$t('lassoCrop.loadFailed'));
+        return;
+      }
+      this.imageSrc = url;
+      this.resultUrl = '';
     },
     onCropped({ dataUrl }) {
       this.resultUrl = dataUrl;
@@ -184,6 +195,23 @@ export default {
 
 .upload-zone {
   padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-zone :deep(.el-upload) {
+  width: 100%;
+}
+
+.upload-zone :deep(.el-upload-dragger) {
+  width: 100%;
+}
+
+.upload-or {
+  margin: 14px 0 10px;
+  font-size: 13px;
+  color: #909399;
 }
 
 .upload-icon {

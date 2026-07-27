@@ -91,10 +91,19 @@
   "select_json": "Select JSON File",
   "repleaceImg": "Replace Image",
   "cropperImg": "Crop Image",
+  "myIllustrationPicker": {
+    "pickFromWorks": "Pick from My Creations",
+    "dialogTitle": "Choose an illustration from My Creations",
+    "or": "or",
+    "empty": "No illustrations yet — create and collect some first",
+    "loginRequired": "Please sign in to pick from My Creations",
+    "loadFailed": "Failed to load illustrations, please try again",
+    "invalidItem": "This illustration can’t be used, try another"
+  },
   "lassoCrop": {
     "title": "Free-form Crop",
     "pageTitle": "Free-form Sticker Crop",
-    "pageDesc": "Upload a local image, draw around the part you need, and export a transparent PNG. Download locally or save to My Characters.",
+    "pageDesc": "Upload a local image or pick one from My Creations, draw around the part you need, and export a transparent PNG. Download locally or save to My Characters.",
     "hintStart": "Drag to outline the area. Return to the start to close, or tap Complete Crop.",
     "hintDrawing": "Keep dragging. Release to pause, then tap Complete Crop when ready.",
     "hintDone": "Crop complete. Choose an action below.",
@@ -128,7 +137,7 @@
   },
   "imageSegmentation": {
     "pageTitle": "Image Segmentation",
-    "pageDesc": "Pick a matting mode, upload an image, and get a transparent PNG. Download locally or save to My Characters.",
+    "pageDesc": "Pick a matting mode, upload a local image or choose one from My Creations, and get a transparent PNG. Download locally or save to My Characters.",
     "modeTitle": "Matting mode",
     "uploadHint": "Drop an image here, or click to upload",
     "uploadTip": "JPG, PNG, and other common formats. A clear subject works best.",
