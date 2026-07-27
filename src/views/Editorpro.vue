@@ -71,6 +71,7 @@ import Editor, {
 import localFonts from '@/assets/editorpro/fonts/font.js';
 import { installPhotoSlotSelectionSync } from '@/utils/editorPro/photoSlotContext';
 import { installPhotoSlotPanConstraint } from '@/utils/editorPro/pageTemplate';
+import { preloadEditorFonts } from '@/utils/editorPro/preloadFonts';
 
 const state = reactive({
   show: false,
@@ -85,6 +86,9 @@ let uninstallPhotoSlotPan = null;
 
 
 onMounted(() => {
+  // 一进编辑器就后台预加载自定义字体，避免点开下拉才开始下几十 MB
+  preloadEditorFonts();
+
   // 初始化fabric
   canvas = new fabric.Canvas('canvas', {
     fireRightClick: true, // 启用右键，button的数字为3

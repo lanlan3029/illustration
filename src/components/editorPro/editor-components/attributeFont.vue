@@ -121,6 +121,7 @@
 import useSelect from '@/components/editorPro/hooks/select.js';
 import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue';
 import { onMounted, onBeforeUnmount, reactive, ref } from 'vue';
+import { preloadEditorFonts } from '@/utils/editorPro/preloadFonts';
 
 // 文字元素
 const textType = ['i-text', 'textbox', 'text'];
@@ -267,6 +268,8 @@ onMounted(() => {
     canvasEditor.getFontList().then((list) => {
       if (isDisposed) return;
       fontsList.value = list || [];
+      // 打开属性面板时再催一次预加载（若尚未完成）
+      preloadEditorFonts();
     });
   }
 
