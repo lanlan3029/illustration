@@ -21,9 +21,6 @@
                     class="font-name"
                     :style="{ fontFamily: quoteFontFamily(item.fontFamily || item.name) }"
                   >{{ item.name }}</span>
-                  <span class="font-sample" :style="{ fontFamily: quoteFontFamily(item.fontFamily || item.name) }">
-                    春暖花开 Aa
-                  </span>
                 </div>
               </Option>
             </Select>
@@ -338,26 +335,16 @@ onBeforeUnmount(() => {
 
 .font-selector .font-item {
   width: 100%;
-  min-height: 40px;
+  min-height: 36px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
+  align-items: center;
   padding: 2px 4px;
 }
 
 .font-selector .font-name {
-  font-size: 14px;
-  line-height: 1.3;
-  color: #111;
-}
-
-.font-selector .font-sample {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.35;
-  color: #444;
-  letter-spacing: 0.02em;
+  color: #111;
 }
 
 /* 通用 flex 卡片 */
