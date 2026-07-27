@@ -97,6 +97,7 @@ export default {
   data() {
     return {
       imageSrc: '',
+      objectUrl: '',
       resultUrl: '',
       showCharacterForm: false,
       saving: false,
@@ -108,6 +109,12 @@ export default {
         is_public: 1,
       },
     };
+  },
+  beforeUnmount() {
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl);
+      this.objectUrl = '';
+    }
   },
   methods: {
     async onFileChange(file) {
@@ -128,13 +135,35 @@ export default {
         ElMessage.error(this.$t('lassoCrop.loadFailed'));
         return;
       }
-      this.imageSrc = url;
-      this.resultUrl = '';
+      this.loadRemoteIllustration(url);
+    },
+    async loadRemoteIllustration(url) {
+      try {
+        // 转成本地 blob URL，避免跨域 canvas 污染导致圈选无法导出预览
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        if (this.objectUrl) {
+          URL.revokeObjectURL(this.objectUrl);
+          this.objectUrl = '';
+        }
+        this.objectUrl = URL.createObjectURL(blob);
+        this.imageSrc = this.objectUrl;
+        this.resultUrl = '';
+      } catch (e) {
+        console.warn('[lasso] fetch illustration as blob failed, fallback to url', e);
+        this.imageSrc = url;
+        this.resultUrl = '';
+      }
     },
     onCropped({ dataUrl }) {
       this.resultUrl = dataUrl;
     },
     resetImage() {
+      if (this.objectUrl) {
+        URL.revokeObjectURL(this.objectUrl);
+        this.objectUrl = '';
+      }
       this.imageSrc = '';
       this.resultUrl = '';
     },

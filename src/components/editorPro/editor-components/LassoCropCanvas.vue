@@ -7,6 +7,7 @@
           class="lasso-image"
           :src="imageSrc"
           alt=""
+          :crossorigin="isRemoteSrc ? 'anonymous' : undefined"
           draggable="false"
           @load="onImageLoad"
         />
@@ -44,6 +45,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { ElMessage } from 'element-plus';
 import {
   MIN_LASSO_POINTS,
   loadImage,
@@ -74,6 +76,8 @@ const rootRef = ref(null);
 const stageRef = ref(null);
 const imgRef = ref(null);
 const drawRef = ref(null);
+
+const isRemoteSrc = computed(() => /^https?:\/\//i.test(props.imageSrc || ''));
 
 let resizeObserver = null;
 
@@ -257,9 +261,12 @@ async function applyCrop() {
     const layout = getImageLayout(imgRef.value);
     if (!layout) return;
 
+    // 远程 http(s) 图用带 CORS 的 Image 再裁；blob/data 可直接用当前 img
+    const src = props.imageSrc || '';
+    const isRemote = /^https?:\/\//i.test(src);
     let img = imgRef.value;
-    if (!img?.complete || !img.naturalWidth) {
-      img = await loadImage(props.imageSrc);
+    if (isRemote || !img?.complete || !img.naturalWidth) {
+      img = await loadImage(src);
     }
 
     const cropOutset = getLassoCropOutset(LASSO_OVERLAY_STROKE_WIDTH);
@@ -278,7 +285,12 @@ async function applyCrop() {
     emit('cropped', { dataUrl, width: canvas.width, height: canvas.height, mode: exportMode.value });
   } catch (e) {
     console.error('[lasso] crop failed:', e);
-    resetDraw();
+    // 保留圈选路径，便于重试；不要清空让用户以为「一松手就没了」
+    closed.value = false;
+    drawing.value = false;
+    previewUrl.value = '';
+    redrawOverlay();
+    ElMessage.error(t('lassoCrop.cropFailed'));
   }
 }
 

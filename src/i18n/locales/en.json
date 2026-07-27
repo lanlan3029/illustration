@@ -131,6 +131,7 @@
     "fillNameAndCategory": "Please enter a name and select a category",
     "invalidImage": "Please select an image file",
     "loadFailed": "Failed to load image",
+    "cropFailed": "Crop export failed. Try redrawing or pick another image.",
     "exportMode": "Export mode",
     "modeSticker": "Sticker",
     "modePlain": "Plain"

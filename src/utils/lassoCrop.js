@@ -37,7 +37,11 @@ export function shouldClosePath(points, cursor, displaySize, closeDistance = CLO
 export function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    const isRemote = /^https?:\/\//i.test(String(src || ''));
+    // 仅对 http(s) 远程图设置 CORS；blob:/data: 设置反而可能加载失败
+    if (isRemote) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('图片加载失败'));
     img.src = src;
