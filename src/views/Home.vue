@@ -40,38 +40,6 @@
                 </button>
             </section>
 
-            <!-- 风格轮播展示 -->
-            <section class="styles-section">
-                <div class="styles-head">
-                    <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
-                    <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
-                </div>
-                <div
-                    ref="stylesCarousel"
-                    class="styles-carousel-outer"
-                    :class="{ 'is-active': carouselActive }"
-                    @mouseenter="carouselHovered = true"
-                    @mouseleave="carouselHovered = false"
-                >
-                    <div class="styles-carousel-track">
-                        <button
-                            v-for="(style, idx) in carouselStyles"
-                            :key="`${style.id}-${idx}`"
-                            type="button"
-                            class="style-carousel-card"
-                            @click="go('/ai-picture')"
-                        >
-                            <img
-                                :src="style.image"
-                                :alt="styleLabel(style)"
-                                class="style-carousel-img"
-                                loading="lazy"
-                            />
-                        </button>
-                    </div>
-                </div>
-            </section>
-
             <!-- 创作工作台介绍 -->
             <section class="showcase showcase--workbench">
                 <div class="showcase-inner">
@@ -145,6 +113,38 @@
                             />
                             <span class="showcase-screenshot-avatar"></span>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 风格轮播：放在首屏之外，滚动后才进入视口并播放动画 -->
+            <section class="styles-section">
+                <div class="styles-head">
+                    <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
+                    <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
+                </div>
+                <div
+                    ref="stylesCarousel"
+                    class="styles-carousel-outer"
+                    :class="{ 'is-active': carouselActive }"
+                    @mouseenter="carouselHovered = true"
+                    @mouseleave="carouselHovered = false"
+                >
+                    <div class="styles-carousel-track">
+                        <button
+                            v-for="(style, idx) in carouselStyles"
+                            :key="`${style.id}-${idx}`"
+                            type="button"
+                            class="style-carousel-card"
+                            @click="go('/ai-picture')"
+                        >
+                            <img
+                                :src="style.image"
+                                :alt="styleLabel(style)"
+                                class="style-carousel-img"
+                                loading="lazy"
+                            />
+                        </button>
                     </div>
                 </div>
             </section>
