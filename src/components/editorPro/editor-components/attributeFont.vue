@@ -9,18 +9,21 @@
       <div class="flex-view">
         <div class="flex-item">
           <div class="left font-selector">
-            <Select v-model="baseAttr.fontFamily" @on-change="changeFontFamily">
+            <Select v-model="baseAttr.fontFamily" @on-change="changeFontFamily" filterable>
               <Option
                 v-for="item in fontsList"
-                :value="item.name"
+                :value="item.fontFamily || item.name"
                 :label="item.name"
                 :key="`font-${item.name}`"
               >
-                <div
-                  class="font-item"
-                  :style="item.img ? `background-image:url('${item.img}');` : ''"
-                >
-                  <span class="font-name">{{ item.name }}</span>
+                <div class="font-item">
+                  <span
+                    class="font-name"
+                    :style="{ fontFamily: quoteFontFamily(item.fontFamily || item.name) }"
+                  >{{ item.name }}</span>
+                  <span class="font-sample" :style="{ fontFamily: quoteFontFamily(item.fontFamily || item.name) }">
+                    春暖花开 Aa
+                  </span>
                 </div>
               </Option>
             </Select>
@@ -143,6 +146,14 @@ const baseAttr = reactive({
 
 const fontsList = ref([]);
 let isDisposed = false;
+
+/** 下拉预览用：单族名加引号，CSS 栈原样使用 */
+function quoteFontFamily(family) {
+  const raw = String(family || '').trim();
+  if (!raw) return 'sans-serif';
+  if (raw.includes(',')) return raw;
+  return `'${raw.replace(/'/g, '')}'`;
+}
 
 // 字体对齐方式
 const textAlignList = ['left', 'center', 'right', 'justify'];
@@ -322,22 +333,31 @@ onBeforeUnmount(() => {
 
 /* 字体下拉列表 */
 .font-selector :deep(.ivu-select-item) {
-    padding: 1px 4px;
-  }
+  padding: 6px 8px;
+}
 
 .font-selector .font-item {
-    height: 40px;
-    width: 280px;
-    background-size: auto 28px;
-    background-repeat: no-repeat;
+  width: 100%;
+  min-height: 40px;
   display: flex;
-  align-items: center;
-  padding-left: 6px;
-  }
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 4px;
+}
 
 .font-selector .font-name {
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.3;
   color: #111;
+}
+
+.font-selector .font-sample {
+  font-size: 16px;
+  line-height: 1.35;
+  color: #444;
+  letter-spacing: 0.02em;
 }
 
 /* 通用 flex 卡片 */

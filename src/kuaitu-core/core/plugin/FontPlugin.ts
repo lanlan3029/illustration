@@ -24,6 +24,7 @@ interface FontSource {
   type: string;
   file: string;
   img: string;
+  fontFamily?: string;
 }
 
 interface LocalFont {
@@ -62,6 +63,8 @@ class FontPlugin implements IPluginTempl {
         type: 'local',
         file: '',
         img: f.img || '',
+        // 供下拉预览 / 画布应用；系统字体可能是带回退的 CSS 栈
+        fontFamily: (f as LocalFont).fontFamily || f.name || '',
       })).filter((f) => !!f.name);
       this.cacheList = list;
       return list;
@@ -140,18 +143,23 @@ class FontPlugin implements IPluginTempl {
       }
     };
 
-    // 先立刻切换，避免等大字体下载 / FontFaceObserver 超时才改字
-    apply();
+    if (!fontName) return Promise.resolve();
 
-    // 中文字体需用中文测试串；默认拉丁 "BESbwy" 会导致检测失败并空等到超时
-    const font = new FontFaceObserver(fontName);
+    // 系统字体 CSS 栈（含逗号）无需等待 webfont
+    if (fontName.includes(',')) {
+      apply();
+      return Promise.resolve();
+    }
+
+    // 等自定义字体真正可用后再应用，避免先闪系统字体
+    const primary = fontName.replace(/['"]/g, '').trim();
+    const font = new FontFaceObserver(primary);
     return font
-      .load('汉字Aa', 8000)
+      .load('汉字Aa', 20000)
       .then(() => {
         apply();
       })
       .catch(() => {
-        // 超时后仍保持已设置的 fontFamily，浏览器后续加载完会自然生效
         apply();
       });
   }
