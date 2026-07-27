@@ -5,22 +5,31 @@
       <p>{{ $t('imageSegmentation.pageDesc') }}</p>
     </div>
 
-    <el-card class="segment-card" shadow="hover">
+    <el-card class="segment-card" shadow="never">
       <section class="mode-section">
         <p class="section-title">{{ $t('imageSegmentation.modeTitle') }}</p>
-        <el-radio-group v-model="selectedMode" class="mode-radio-group" @change="onModeChange">
-          <label
+        <div
+          class="mode-grid"
+          role="radiogroup"
+          :aria-label="$t('imageSegmentation.modeTitle')"
+        >
+          <button
             v-for="item in modeOptions"
             :key="item.value"
+            type="button"
+            role="radio"
             class="mode-card"
             :class="{ active: selectedMode === item.value }"
+            :aria-checked="selectedMode === item.value"
+            @click="selectMode(item.value)"
           >
-            <el-radio :label="item.value" class="mode-radio">
+            <span class="mode-dot" aria-hidden="true"></span>
+            <span class="mode-text">
               <span class="mode-label">{{ item.label }}</span>
               <span v-if="item.desc" class="mode-desc">{{ item.desc }}</span>
-            </el-radio>
-          </label>
-        </el-radio-group>
+            </span>
+          </button>
+        </div>
       </section>
 
       <el-alert
@@ -53,7 +62,9 @@
             <div class="el-upload__tip">{{ $t('imageSegmentation.uploadTip') }}</div>
           </template>
         </el-upload>
-        <div class="upload-or">{{ $t('myIllustrationPicker.or') }}</div>
+        <div class="upload-divider">
+          <span>{{ $t('myIllustrationPicker.or') }}</span>
+        </div>
         <MyIllustrationPicker @select="onPickIllustration" />
       </div>
 
@@ -236,7 +247,9 @@ export default {
       const hit = this.modeOptions.find((m) => m.value === value);
       return hit?.label || value;
     },
-    onModeChange(value) {
+    selectMode(value) {
+      if (!value) return;
+      this.selectedMode = value;
       storeRembgMode(value);
     },
     applyModeHint() {
@@ -385,100 +398,164 @@ export default {
 
 <style scoped>
 .segment-page {
-  max-width: 1100px;
+  --accent: #8167a9;
+  --accent-soft: #f5f0fa;
+  --border: #e8e0f4;
+  --text: #1c345e;
+  --muted: #6b7280;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding: 28px 16px 56px;
+}
+
+.segment-page-header {
+  text-align: center;
+  margin-bottom: 24px;
 }
 
 .segment-page-header h1 {
-  margin: 0 0 8px;
-  font-size: 22px;
-  color: #1c345e;
+  margin: 0 0 10px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
 }
 
 .segment-page-header p {
-  margin: 0 0 20px;
-  color: #666;
+  margin: 0 auto;
+  max-width: 640px;
+  color: var(--muted);
   font-size: 14px;
+  line-height: 1.65;
 }
 
 .segment-card {
-  border-radius: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(28, 52, 94, 0.06);
+}
+
+.segment-card :deep(.el-card__body) {
+  padding: 28px 28px 32px;
 }
 
 .section-title {
-  margin: 0 0 12px;
-  font-size: 14px;
+  margin: 0 0 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
+  text-align: center;
 }
 
 .mode-section {
-  margin-bottom: 16px;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0ecf6;
 }
 
-.mode-radio-group {
+.mode-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
   width: 100%;
+  align-items: stretch;
 }
 
 .mode-card {
-  display: block;
-  border: 1px solid #e8e0f4;
-  border-radius: 10px;
-  padding: 12px 14px;
-  cursor: pointer;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 104px;
+  height: 100%;
+  margin: 0;
+  padding: 16px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
   background: #faf8fc;
-  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .mode-card:hover {
   border-color: #c4b3dc;
+  background: #fff;
+}
+
+.mode-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .mode-card.active {
-  border-color: #8167a9;
-  background: #f5f0fa;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px rgba(129, 103, 169, 0.12);
 }
 
-.mode-radio {
-  width: 100%;
-  height: auto;
-  white-space: normal;
-  align-items: flex-start;
+.mode-dot {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 1.5px solid #c5bdd4;
+  background: #fff;
+  position: relative;
 }
 
-.mode-radio :deep(.el-radio__label) {
+.mode-card.active .mode-dot {
+  border-color: var(--accent);
+}
+
+.mode-card.active .mode-dot::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.mode-text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-left: 8px;
-  line-height: 1.4;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .mode-label {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: #2a2a3a;
+  line-height: 1.3;
 }
 
 .mode-desc {
   font-size: 12px;
-  color: #888;
+  color: #8a8499;
   font-weight: 400;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .mode-hint-alert {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .upload-zone {
-  padding: 8px 0 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0;
+  padding-top: 4px;
 }
 
 .upload-zone :deep(.el-upload) {
@@ -487,18 +564,64 @@ export default {
 
 .upload-zone :deep(.el-upload-dragger) {
   width: 100%;
+  padding: 40px 20px;
+  border-radius: 12px;
+  border-color: #d9d0e6;
+  background: #fcfbfd;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.upload-or {
-  margin: 14px 0 10px;
-  font-size: 13px;
-  color: #909399;
+.upload-zone :deep(.el-upload-dragger:hover) {
+  border-color: var(--accent);
+  background: #faf7fd;
+}
+
+.upload-zone :deep(.el-upload__tip) {
+  margin-top: 10px;
+  text-align: center;
+  color: #9ca3af;
+  line-height: 1.5;
 }
 
 .upload-icon {
-  font-size: 48px;
-  color: #8167a9;
-  margin-bottom: 8px;
+  font-size: 44px;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 320px;
+  margin: 22px 0 16px;
+  color: #a0a0b0;
+  font-size: 13px;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ebe6f2;
+}
+
+.upload-zone :deep(.my-ill-picker .el-button) {
+  min-width: 180px;
+  height: 40px;
+  border-radius: 10px;
+  border-color: #c4b3dc;
+  color: var(--accent);
+  font-weight: 500;
+  background: #fff;
+}
+
+.upload-zone :deep(.my-ill-picker .el-button:hover) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .compare-grid {
@@ -510,7 +633,7 @@ export default {
 .compare-label {
   margin: 0 0 8px;
   font-size: 13px;
-  color: #666;
+  color: var(--muted);
   font-weight: 500;
 }
 
@@ -518,12 +641,12 @@ export default {
   margin-left: 8px;
   font-size: 12px;
   font-weight: 400;
-  color: #8167a9;
+  color: var(--accent);
 }
 
 .image-frame {
   border: 1px solid #eee;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   min-height: 280px;
   display: flex;
@@ -565,7 +688,7 @@ export default {
 
 .result-loading .el-icon {
   font-size: 28px;
-  color: #8167a9;
+  color: var(--accent);
 }
 
 .retry-modes {
@@ -578,7 +701,7 @@ export default {
 
 .retry-label {
   font-size: 13px;
-  color: #666;
+  color: var(--muted);
 }
 
 .segment-page-actions {
@@ -593,11 +716,23 @@ export default {
 
 @media (max-width: 768px) {
   .segment-page {
-    padding: 16px 12px 32px;
+    padding: 16px 12px 40px;
   }
 
-  .mode-radio-group {
+  .segment-page-header h1 {
+    font-size: 22px;
+  }
+
+  .segment-card :deep(.el-card__body) {
+    padding: 20px 16px 24px;
+  }
+
+  .mode-grid {
     grid-template-columns: 1fr;
+  }
+
+  .mode-card {
+    min-height: 0;
   }
 
   .compare-grid {

@@ -8,9 +8,9 @@ export const DEFAULT_REMBG_MODE = 'subject'
 
 /** 后端不可用时的默认模式列表 */
 export const DEFAULT_REMBG_MODES = [
-  { value: 'subject', label: '抠出主体', desc: '人像、实物' },
-  { value: 'background', label: '删除背景', desc: '插画、拼贴、浅色元素' },
-  { value: 'hard_edge', label: '利落切边', desc: '要干净硬边时' },
+  { value: 'subject', label: '抠出主体', desc: '适合人像、实物，突出主体' },
+  { value: 'background', label: '删除背景', desc: '适合插画、拼贴，保留浅色细节' },
+  { value: 'hard_edge', label: '利落切边', desc: '边缘更利落，适合深色主体' },
 ]
 
 /** 相对路径 → 可加载的完整 URL（供 image_url JSON 提交） */
