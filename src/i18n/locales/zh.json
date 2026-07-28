@@ -57,11 +57,13 @@
     "empty": "清空",
     "down": "下载",
     "save_my_spase": "保存到我的创作",
+    "save_to_my_character": "保存到我的角色",
     "save_as_picture": "PNG图片",
     "save_as_svg": "SVG图片",
     "copy_to_clipboard": "复制到剪切板",
     "copy_to_clipboardstr": "复制字符串剪切板",
-    "save_as_json": "保存为JSON"
+    "save_as_json": "保存为JSON",
+    "saveFailed": "操作失败"
   },
   "layers": "图层",
   "my_spase": {

@@ -57,11 +57,13 @@
     "empty": "Clear",
     "down": "Download",
     "save_my_spase": "Save to My Creation",
+    "save_to_my_character": "Save to My Characters",
     "save_as_picture": "PNG Image",
     "save_as_svg": "SVG Image",
     "copy_to_clipboard": "Copy to Clipboard",
     "copy_to_clipboardstr": "Copy String to Clipboard",
-    "save_as_json": "Save as JSON"
+    "save_as_json": "Save as JSON",
+    "saveFailed": "Operation failed"
   },
   "layers": "Layers",
   "my_spase": {
