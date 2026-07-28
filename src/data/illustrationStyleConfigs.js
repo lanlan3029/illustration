@@ -1,30 +1,40 @@
 /**
- * AI 插画页与心情日记生成页共用的风格列表（与 i18n `aibooks.styles.*` 一一对应）。
+ * AI 插画风格预览图 CDN（与后端 public/prompt/{id}.webp 一致）。
+ */
+export const ILLUSTRATION_STYLE_CDN_BASE = 'https://static.kidstory.cc'
+
+/** @param {number|string} id */
+export function illustrationStyleImageUrl(id) {
+  return `${ILLUSTRATION_STYLE_CDN_BASE}/prompt/${id}.webp`
+}
+
+/**
+ * AI 插画页与心情日记生成页共用的风格列表（fallback；线上优先走 API）。
  * category 使用后端 API 白名单值。
  */
 export const ILLUSTRATION_STYLE_CONFIGS = [
-  { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.webp'), category: 'sketch' },
-  { key: 'minimalPopArt', id: 3, image: require('@/assets/prompt/3.webp'), category: 'flat' },
-  { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.webp'), category: 'watercolor' },
-  { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.webp'), category: 'crayon' },
-  { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.webp'), category: 'sketch' },
-  { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.webp'), category: '3d' },
-  { key: 'engravingLines', id: 7, image: require('@/assets/prompt/7.webp'), category: 'ink' },
-  { key: 'pencilSketch3D', id: 16, image: require('@/assets/prompt/16.webp'), category: 'sketch' },
-  { key: 'feltCollage', id: 18, image: require('@/assets/prompt/18.webp'), category: 'collage' },
-  { key: 'blackWhiteDoodle', id: 2, image: require('@/assets/prompt/2.webp'), category: 'sketch' },
-  { key: 'collageIllustration', id: 4, image: require('@/assets/prompt/4.webp'), category: 'collage' },
-  { key: 'rusticHandDrawn', id: 8, image: require('@/assets/prompt/8.webp'), category: 'sketch' },
-  { key: 'maximalistCopperplate', id: 9, image: require('@/assets/prompt/9.webp'), category: 'ink' },
-  { key: 'doodleSoul', id: 10, image: require('@/assets/prompt/10.webp'), category: 'sketch' },
-  { key: 'keithHaringDoodle', id: 11, image: require('@/assets/prompt/11.webp'), category: 'marker' },
-  { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.webp'), category: 'flat' },
-  { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.webp'), category: 'cartoon' },
-  { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp'), category: 'watercolor' },
-  { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp'), category: 'oil' },
-  { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp'), category: 'cartoon' },
-  { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp'), category: 'pastel' },
-  { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp'), category: 'sketch' },
-  { key: 'cozyNaiveFolkArt', id: 23, image: require('@/assets/prompt/23.webp'), category: 'other' },
-  { key: 'narrativeEditorialFolk', id: 24, image: require('@/assets/prompt/24.webp'), category: 'other' },
+  { key: 'penLineArt', id: 1, image: illustrationStyleImageUrl(1), category: 'sketch' },
+  { key: 'minimalPopArt', id: 3, image: illustrationStyleImageUrl(3), category: 'flat' },
+  { key: 'colorfulOutlineRomanticism', id: 6, image: illustrationStyleImageUrl(6), category: 'watercolor' },
+  { key: 'crayonNoiseHandDrawn', id: 15, image: illustrationStyleImageUrl(15), category: 'crayon' },
+  { key: 'vintageSketch', id: 17, image: illustrationStyleImageUrl(17), category: 'sketch' },
+  { key: 'pixarStyle', id: 5, image: illustrationStyleImageUrl(5), category: '3d' },
+  { key: 'engravingLines', id: 7, image: illustrationStyleImageUrl(7), category: 'ink' },
+  { key: 'pencilSketch3D', id: 16, image: illustrationStyleImageUrl(16), category: 'sketch' },
+  { key: 'feltCollage', id: 18, image: illustrationStyleImageUrl(18), category: 'collage' },
+  { key: 'blackWhiteDoodle', id: 2, image: illustrationStyleImageUrl(2), category: 'sketch' },
+  { key: 'collageIllustration', id: 4, image: illustrationStyleImageUrl(4), category: 'collage' },
+  { key: 'rusticHandDrawn', id: 8, image: illustrationStyleImageUrl(8), category: 'sketch' },
+  { key: 'maximalistCopperplate', id: 9, image: illustrationStyleImageUrl(9), category: 'ink' },
+  { key: 'doodleSoul', id: 10, image: illustrationStyleImageUrl(10), category: 'sketch' },
+  { key: 'keithHaringDoodle', id: 11, image: illustrationStyleImageUrl(11), category: 'marker' },
+  { key: 'abstractFlatDesign', id: 12, image: illustrationStyleImageUrl(12), category: 'flat' },
+  { key: 'simpleCartoon', id: 13, image: illustrationStyleImageUrl(13), category: 'cartoon' },
+  { key: 'healingWatercolor', id: 14, image: illustrationStyleImageUrl(14), category: 'watercolor' },
+  { key: 'oilPainting', id: 19, image: illustrationStyleImageUrl(19), category: 'oil' },
+  { key: 'europeanComic', id: 20, image: illustrationStyleImageUrl(20), category: 'cartoon' },
+  { key: 'gouacheChildrenBook', id: 21, image: illustrationStyleImageUrl(21), category: 'pastel' },
+  { key: 'nordicWhimsical', id: 22, image: illustrationStyleImageUrl(22), category: 'sketch' },
+  { key: 'cozyNaiveFolkArt', id: 23, image: illustrationStyleImageUrl(23), category: 'other' },
+  { key: 'narrativeEditorialFolk', id: 24, image: illustrationStyleImageUrl(24), category: 'other' },
 ]

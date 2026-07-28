@@ -217,6 +217,7 @@
 import { parseTemplate, renderTemplate } from '@/prompt-core/parseTemplate';
 import { mapState, mapGetters, mapActions } from 'vuex';
 import { ElMessage } from 'element-plus';
+import { illustrationStyleImageUrl } from '@/data/illustrationStyleConfigs';
 
 // 风格中文名 -> 风格 key（与 Home.vue / AIpicture.vue 一致）
 const STYLE_NAME_TO_KEY = {
@@ -246,7 +247,7 @@ const STYLE_NAME_TO_KEY = {
   'Keith Haring 涂鸦': 'keithHaringDoodle'
 };
 
-// 风格 key -> 缩略图编号（@/assets/prompt/{n}.webp）
+// 风格 key -> 缩略图编号（CDN prompt/{n}.webp）
 const STYLE_KEY_TO_NUM = {
   penLineArt: 1,
   blackWhiteDoodle: 2,
@@ -921,11 +922,7 @@ export default {
       if (!key) return '';
       const num = STYLE_KEY_TO_NUM[key];
       if (!num) return '';
-      try {
-        return require(`@/assets/prompt/${num}.webp`);
-      } catch (e) {
-        return '';
-      }
+      return illustrationStyleImageUrl(num);
     },
     
     handleTemplateAction(command) {

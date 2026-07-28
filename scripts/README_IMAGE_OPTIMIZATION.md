@@ -15,29 +15,17 @@
 - ✅ 已创建 WebP 检测工具 (`src/utils/imageOptimizer.js`)
 - ✅ 代码已支持 WebP 格式（需要生成 WebP 文件）
 
-## 生成 WebP 格式（可选）
+## 插画风格预览图
 
-### 安装工具
-```bash
-brew install webp
-```
+风格预览图已迁移至 CDN，由后端 API 管理：
 
-### 运行转换脚本
-```bash
-./scripts/convert-to-webp.sh
-```
+- 公开列表：`GET /api/illustration-styles/`
+- 图片地址：`https://static.kidstory.cc/prompt/{id}.webp`
+- 管理上传：站内 `/user/upload/style-prompt`（管理员）
 
-脚本会将所有 PNG 图片转换为 WebP 格式（质量 80%），通常可以再减少 30-50% 的文件大小。
+本地不再保留 `src/assets/prompt/` 静态文件。
 
-### 手动转换
-```bash
-cd src/assets/prompt
-for file in *.png; do
-    cwebp -q 80 "$file" -o "${file%.png}.webp"
-done
-```
-
-## 优化效果
+## 生成 WebP 格式（其他 PNG 资源，可选）
 
 | 项目 | 优化前 | 优化后 | 改善 |
 |------|--------|--------|------|
