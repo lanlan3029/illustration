@@ -43,29 +43,19 @@
           </div>
         </el-form-item>
 
-        <el-row :gutter="16">
-          <el-col :xs="24" :sm="12">
-            <el-form-item :label="$t('uploadStylePrompt.styleId')" prop="id">
-              <el-input-number
-                v-model="form.id"
-                :min="1"
-                :max="999"
-                :disabled="Boolean(editingId)"
-                controls-position="right"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12">
-            <el-form-item :label="$t('uploadStylePrompt.styleKey')" prop="key">
-              <el-input
-                v-model="form.key"
-                :disabled="Boolean(editingId)"
-                :placeholder="$t('uploadStylePrompt.styleKeyPlaceholder')"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item v-if="editingId" :label="$t('uploadStylePrompt.styleMeta')">
+          <div class="auto-meta">
+            <span class="auto-meta-item">#{{ form.id }}</span>
+            <span class="auto-meta-item">{{ form.key }}</span>
+          </div>
+        </el-form-item>
+        <el-form-item v-else :label="$t('uploadStylePrompt.styleMeta')">
+          <div class="auto-meta">
+            <span class="auto-meta-item">#{{ form.id }}</span>
+            <span class="auto-meta-item">{{ form.key }}</span>
+          </div>
+          <p class="auto-meta-hint">{{ $t('uploadStylePrompt.autoMetaHint') }}</p>
+        </el-form-item>
 
         <el-form-item :label="$t('uploadStylePrompt.category')" prop="category">
           <el-select v-model="form.category" style="width: 100%">
@@ -79,7 +69,11 @@
         </el-form-item>
 
         <el-form-item :label="$t('uploadStylePrompt.artStyle')" prop="artStyle">
-          <el-input v-model="form.artStyle" :placeholder="$t('uploadStylePrompt.artStylePlaceholder')" />
+          <el-input
+            v-model="form.artStyle"
+            :placeholder="$t('uploadStylePrompt.artStylePlaceholder')"
+            @input="syncAutoKey"
+          />
         </el-form-item>
 
         <el-form-item :label="$t('uploadStylePrompt.elementDetails')" prop="elementDetails">
@@ -92,7 +86,11 @@
         </el-form-item>
 
         <el-form-item :label="$t('uploadStylePrompt.artStyleEn')">
-          <el-input v-model="form.artStyleEn" :placeholder="$t('uploadStylePrompt.artStyleEnPlaceholder')" />
+          <el-input
+            v-model="form.artStyleEn"
+            :placeholder="$t('uploadStylePrompt.artStyleEnPlaceholder')"
+            @input="syncAutoKey"
+          />
         </el-form-item>
 
         <el-form-item :label="$t('uploadStylePrompt.elementDetailsEn')">
@@ -167,6 +165,8 @@ import {
   invalidateIllustrationStylesCache,
   loadIllustrationStyles,
   nextIllustrationStyleId,
+  generateStyleKey,
+  ensureUniqueStyleKey,
 } from '@/utils/illustrationStyles'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import {
@@ -188,7 +188,16 @@ export default {
   },
   data() {
     return {
-      form: this.emptyForm(),
+      form: {
+        id: 1,
+        key: 'style1',
+        category: 'sketch',
+        artStyle: '',
+        elementDetails: '',
+        artStyleEn: '',
+        elementDetailsEn: '',
+        imageFile: null,
+      },
       processed: null,
       processing: false,
       uploading: false,
@@ -233,7 +242,7 @@ export default {
   methods: {
     emptyForm() {
       return {
-        id: nextIllustrationStyleId(),
+        id: nextIllustrationStyleId(this.existingStyles),
         key: '',
         category: 'sketch',
         artStyle: '',
@@ -242,6 +251,21 @@ export default {
         elementDetailsEn: '',
         imageFile: null,
       }
+    },
+    existingStyleKeys() {
+      return this.existingStyles.map((s) => s.key).filter(Boolean)
+    },
+    applyNewStyleDefaults() {
+      if (this.editingId) return
+      const id = nextIllustrationStyleId(this.existingStyles)
+      this.form.id = id
+      this.syncAutoKey()
+    },
+    syncAutoKey() {
+      if (this.editingId) return
+      const label = (this.form.artStyleEn || '').trim() || (this.form.artStyle || '').trim()
+      const base = generateStyleKey(label, this.form.id)
+      this.form.key = ensureUniqueStyleKey(base, this.existingStyleKeys)
     },
     styleLabel(style) {
       if (style.artStyle) return style.artStyle
@@ -259,6 +283,7 @@ export default {
       this.existingImageUrl = ''
       this.lastUploadedUrl = ''
       this.form = this.emptyForm()
+      this.syncAutoKey()
     },
     clearImage() {
       this.revokeProcessedPreview()
@@ -281,6 +306,7 @@ export default {
             elementDetails: item.elementDetails,
             image: item.imageUrl,
           }))
+          this.applyNewStyleDefaults()
           return
         }
       } catch {
@@ -302,6 +328,9 @@ export default {
         }))
       } finally {
         this.listLoading = false
+        if (!this.editingId) {
+          this.applyNewStyleDefaults()
+        }
       }
     },
     async handleFileChange(uploadFile) {
@@ -375,31 +404,36 @@ export default {
         return
       }
 
+      if (!this.editingId) {
+        this.syncAutoKey()
+      }
+
       this.uploading = true
+      const wasEditing = Boolean(this.editingId)
       try {
         const formData = this.buildFormData()
-        const result = this.editingId
-          ? await updateIllustrationStyle(this.editingId, formData)
-          : await createIllustrationStyle(formData)
-
-        const imageUrl = result?.imageUrl || result?.image_url || this.lastUploadedUrl
-        if (imageUrl) {
-          this.lastUploadedUrl = imageUrl
-          this.existingImageUrl = imageUrl
-        }
+        await (wasEditing
+          ? updateIllustrationStyle(this.editingId, formData)
+          : createIllustrationStyle(formData))
 
         invalidateIllustrationStylesCache()
         await this.loadExistingStyles()
 
-        if (!this.editingId && result?.id) {
-          this.editingId = result.id
-        }
-
         ElMessage.success(
-          this.editingId
+          wasEditing
             ? this.$t('uploadStylePrompt.updateSuccess')
             : this.$t('uploadStylePrompt.uploadSuccess')
         )
+
+        if (!wasEditing) {
+          this.editingId = null
+          this.lastUploadedUrl = ''
+          this.revokeProcessedPreview()
+          this.processed = null
+          this.existingImageUrl = ''
+          this.form = this.emptyForm()
+          this.syncAutoKey()
+        }
       } catch (err) {
         const msg = err?.response?.data?.message || err?.message || this.$t('uploadStylePrompt.uploadFailed')
         ElMessage.error(msg)
@@ -517,6 +551,31 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.auto-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.auto-meta-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.auto-meta-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
 }
 
 .upload-result {

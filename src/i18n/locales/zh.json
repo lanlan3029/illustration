@@ -1023,6 +1023,8 @@
     "removeImage": "移除图片",
     "styleId": "风格编号",
     "styleKey": "风格 Key",
+    "styleMeta": "编号 / Key",
+    "autoMetaHint": "新建时自动生成：编号为当前最大编号 +1；Key 优先根据英文艺术风格名生成，否则为 style{编号}。",
     "styleKeyPlaceholder": "camelCase，如 penLineArt",
     "category": "分类",
     "artStyle": "艺术风格（中文）",

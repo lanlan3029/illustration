@@ -1008,6 +1008,8 @@
     "removeImage": "Remove image",
     "styleId": "Style ID",
     "styleKey": "Style Key",
+    "styleMeta": "ID / Key",
+    "autoMetaHint": "Auto-generated for new styles: ID is max existing + 1; Key from English art style name, or style{id} if none.",
     "styleKeyPlaceholder": "camelCase, e.g. penLineArt",
     "category": "Category",
     "artStyle": "Art Style (Chinese)",

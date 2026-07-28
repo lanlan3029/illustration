@@ -109,6 +109,50 @@ export async function loadIllustrationStyles(options = {}) {
   return cache.promise
 }
 
-export function nextIllustrationStyleId(styles = ILLUSTRATION_STYLE_CONFIGS) {
-  return styles.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1
+export function nextIllustrationStyleId(styles) {
+  const list = Array.isArray(styles) && styles.length ? styles : ILLUSTRATION_STYLE_CONFIGS
+  return list.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1
+}
+
+/**
+ * 从英文艺术风格名生成 camelCase key；中文或无英文时用 style{id}。
+ * @param {string} label
+ * @param {number} [fallbackId]
+ */
+export function generateStyleKey(label, fallbackId) {
+  const text = String(label || '').trim()
+  const words = text
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.toLowerCase())
+
+  if (words.length) {
+    const key = words
+      .map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+      .join('')
+    if (/^[a-z][a-zA-Z0-9]*$/.test(key)) {
+      return key
+    }
+  }
+
+  if (fallbackId != null) {
+    return `style${fallbackId}`
+  }
+  return 'styleNew'
+}
+
+/**
+ * @param {string} key
+ * @param {string[]} existingKeys
+ * @param {string} [excludeKey]
+ */
+export function ensureUniqueStyleKey(key, existingKeys, excludeKey = '') {
+  const taken = new Set(
+    (existingKeys || []).filter((k) => k && k !== excludeKey)
+  )
+  if (!taken.has(key)) return key
+  let n = 2
+  while (taken.has(`${key}${n}`)) n += 1
+  return `${key}${n}`
 }
