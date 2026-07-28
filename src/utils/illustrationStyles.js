@@ -148,9 +148,8 @@ export function generateStyleKey(label, fallbackId) {
  * @param {string} [excludeKey]
  */
 export function ensureUniqueStyleKey(key, existingKeys, excludeKey = '') {
-  const taken = new Set(
-    (existingKeys || []).filter((k) => k && k !== excludeKey)
-  )
+  const list = Array.isArray(existingKeys) ? existingKeys : []
+  const taken = new Set(list.filter((k) => k && k !== excludeKey))
   if (!taken.has(key)) return key
   let n = 2
   while (taken.has(`${key}${n}`)) n += 1

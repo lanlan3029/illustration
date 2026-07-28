@@ -232,6 +232,9 @@ export default {
       const hasImage = Boolean(this.processed?.blob) || Boolean(this.editingId && this.existingImageUrl)
       return hasText && hasImage && !this.uploading
     },
+    existingStyleKeys() {
+      return this.existingStyles.map((s) => s.key).filter(Boolean)
+    },
   },
   mounted() {
     this.loadExistingStyles()
@@ -251,9 +254,6 @@ export default {
         elementDetailsEn: '',
         imageFile: null,
       }
-    },
-    existingStyleKeys() {
-      return this.existingStyles.map((s) => s.key).filter(Boolean)
     },
     applyNewStyleDefaults() {
       if (this.editingId) return
