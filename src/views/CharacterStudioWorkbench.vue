@@ -185,11 +185,11 @@
 
 <script>
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 import { ElMessage } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { ElImageViewer } from 'element-plus';
-import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs';
+import { useIllustrationStyles } from '@/composables/useIllustrationStyles';
 import {
   postCreateCharacter,
   isCreateCharacterResponseOk,
@@ -216,15 +216,7 @@ export default {
     characterId: { type: String, default: 'new' },
   },
   setup() {
-    const { t } = useI18n();
-    const styles = computed(() =>
-      ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
-        key: config.key,
-        artStyle: t(`aibooks.styles.${config.key}.artStyle`),
-        elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
-        image: config.image,
-      }))
-    );
+    const { styles } = useIllustrationStyles();
     return { styles, aspectOptions: ASPECT_RATIO_OPTIONS };
   },
   data() {

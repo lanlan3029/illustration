@@ -208,6 +208,16 @@ const routes = [{
         }
     },
     {
+        path: '/user/upload/style-prompt',
+        name: 'upload-style-prompt',
+        component: () =>
+            import ( /* webpackChunkName: "upload-style-prompt" */ '../views/UploadStylePrompt.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '上传 AI 风格'
+        }
+    },
+    {
         path: '/user/upload/style-transfer',
         name: 'style-transfer',
         component: () =>

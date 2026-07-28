@@ -153,6 +153,8 @@
 </template>
 
 <script>
+import { loadIllustrationStyles } from '@/utils/illustrationStyles'
+
 export default {
     name: 'Home',
     computed: {
@@ -178,36 +180,14 @@ export default {
                 { key: 'user', titleKey: 'nav.characterStudio', descKey: 'home.createCharacterDesc', to: '/creation-studio', cls: 'ic-user', img: require('@/assets/images/cards/reddit.png') },
                 { key: 'mood', titleKey: 'nav.moodDiary', descKey: 'home.moodDiaryDesc', to: '/mood-diary', cls: 'ic-mood', img: require('@/assets/images/cards/daily-health-app.png') }
             ],
-            // 风格图片（与 AIpicture.vue 中的 styleConfigs 保持一致）
-            styleImages: [
-                { key: 'penLineArt', id: 1, image: require('@/assets/prompt/1.webp') },
-                { key: 'minimalPopArt', id: 3, image: require('@/assets/prompt/3.webp') },
-                { key: 'colorfulOutlineRomanticism', id: 6, image: require('@/assets/prompt/6.webp') },
-                { key: 'crayonNoiseHandDrawn', id: 15, image: require('@/assets/prompt/15.webp') },
-                { key: 'vintageSketch', id: 17, image: require('@/assets/prompt/17.webp') },
-                { key: 'pixarStyle', id: 5, image: require('@/assets/prompt/5.webp') },
-                { key: 'engravingLines', id: 7, image: require('@/assets/prompt/7.webp') },
-                { key: 'pencilSketch3D', id: 16, image: require('@/assets/prompt/16.webp') },
-                { key: 'feltCollage', id: 18, image: require('@/assets/prompt/18.webp') },
-                { key: 'blackWhiteDoodle', id: 2, image: require('@/assets/prompt/2.webp') },
-                { key: 'collageIllustration', id: 4, image: require('@/assets/prompt/4.webp') },
-                { key: 'rusticHandDrawn', id: 8, image: require('@/assets/prompt/8.webp') },
-                { key: 'maximalistCopperplate', id: 9, image: require('@/assets/prompt/9.webp') },
-                { key: 'doodleSoul', id: 10, image: require('@/assets/prompt/10.webp') },
-                { key: 'keithHaringDoodle', id: 11, image: require('@/assets/prompt/11.webp') },
-                { key: 'abstractFlatDesign', id: 12, image: require('@/assets/prompt/12.webp') },
-                { key: 'simpleCartoon', id: 13, image: require('@/assets/prompt/13.webp') },
-                { key: 'healingWatercolor', id: 14, image: require('@/assets/prompt/14.webp') },
-                { key: 'oilPainting', id: 19, image: require('@/assets/prompt/19.webp') },
-                { key: 'europeanComic', id: 20, image: require('@/assets/prompt/20.webp') },
-                { key: 'gouacheChildrenBook', id: 21, image: require('@/assets/prompt/21.webp') },
-                { key: 'nordicWhimsical', id: 22, image: require('@/assets/prompt/22.webp') },
-                { key: 'cozyNaiveFolkArt', id: 23, image: require('@/assets/prompt/23.webp') },
-                { key: 'narrativeEditorialFolk', id: 24, image: require('@/assets/prompt/24.webp') }
-            ]
+            styleImages: [],
         };
     },
-    mounted() {
+    async mounted() {
+        const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh';
+        const styles = await loadIllustrationStyles({ locale, t: this.$t.bind(this) });
+        this.styleImages = styles.map((s) => ({ key: s.key, id: s.id, image: s.image }));
+
         if (typeof window === 'undefined') return;
 
         this.reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');

@@ -382,34 +382,22 @@ import {
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask'
 import oaiImageData from '@/data/oaiImageTemplates.json'
-import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
+import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 
 export default {
     name: 'AIPicture',
     setup() {
-        const { t, locale } = useI18n()
-
+        const { locale } = useI18n()
+        const { styles, loading: stylesLoading } = useIllustrationStyles()
         const supportsWebP = ref(false)
-
-        const styleConfigs = ILLUSTRATION_STYLE_CONFIGS
 
         onMounted(async () => {
             supportsWebP.value = await checkWebPSupport()
         })
 
-        const styles = computed(() => {
-            return styleConfigs.map(config => ({
-                id: config.id,
-                key: config.key,
-                category: config.category,
-                artStyle: t(`aibooks.styles.${config.key}.artStyle`),
-                elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
-                image: config.image
-            }))
-        })
-
         return {
             styles,
+            stylesLoading,
             locale
         }
     },

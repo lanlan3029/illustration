@@ -126,6 +126,7 @@ import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.
 import MoodDiaryWaitingJournal from '@/components/moodDiary/MoodDiaryWaitingJournal.vue'
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
 import { getDraft, setDraft, resolvePosterMode } from '@/utils/moodDiary/draft'
+import { loadIllustrationStyles } from '@/utils/illustrationStyles'
 import { popularStyleConfigs } from '@/utils/moodDiary/moodAssets'
 import { composePosterFromDraft, recomposePoster } from '@/utils/moodDiary/posterPipeline'
 import { generateIllustrationImage, isIllustrationStale, resolvePosterBodyTexts } from '@/utils/moodDiary/posterIllustrate'
@@ -157,6 +158,7 @@ export default {
       imagePlacement: d.imagePlacement || pref.imagePlacement || 'below',
       templatePreviews: {},
       templatePreviewsBusy: false,
+      apiIllustrationStyles: [],
       prepareBusy: false,
       illustrateBusy: false,
       illustrationPreviewUrl: d.rawIllustrationUrl || '',
@@ -179,12 +181,15 @@ export default {
       return !!(this.draft.narrative || '').trim()
     },
     popularStyles() {
+      if (this.apiIllustrationStyles.length) {
+        return this.apiIllustrationStyles
+      }
       return popularStyleConfigs.map((config) => ({
         id: config.id,
         key: config.key,
         image: config.image,
         artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
-        elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`)
+        elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`),
       }))
     },
     selectedStyle() {
@@ -247,6 +252,7 @@ export default {
     }
   },
   mounted() {
+    this.loadIllustrationStylesList()
     if (!this.hasNarrative) {
       this.$router.replace({ path: '/mood-diary/narrative', query: { write: '1' } })
       return
@@ -301,6 +307,10 @@ export default {
     if (this.previewTimer) clearTimeout(this.previewTimer)
   },
   methods: {
+    async loadIllustrationStylesList() {
+      const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
+      this.apiIllustrationStyles = await loadIllustrationStyles({ locale, t: this.$t.bind(this) })
+    },
     syncDraftMeta() {
       setDraft({
         posterMode: this.posterMode,

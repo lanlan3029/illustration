@@ -25,19 +25,31 @@
                         </div>
                     </el-card>
                 </router-link>
+                <router-link to="/user/upload/style-prompt" class="upload-card">
+                    <el-card class="card" shadow="hover">
+                        <div class="card-content">
+                            <div class="icon-wrapper">
+                                <el-icon class="card-icon"><BrushIcon /></el-icon>
+                            </div>
+                            <h3 class="card-title">{{ $t('upload.uploadStylePrompt') }}</h3>
+                            <p class="card-desc">{{ $t('upload.uploadStylePromptDesc') }}</p>
+                        </div>
+                    </el-card>
+                </router-link>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import { Picture as UploadPictureIcon, Reading as UploadReadingIcon } from '@element-plus/icons-vue'
+import { Picture as UploadPictureIcon, Reading as UploadReadingIcon, Brush as BrushIcon } from '@element-plus/icons-vue'
 
 export default {
   name: 'UploadPage',
   components: {
     UploadPictureIcon,
     UploadReadingIcon,
+    BrushIcon,
   },
   data() {
     return {

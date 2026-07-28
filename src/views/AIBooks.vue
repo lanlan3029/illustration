@@ -241,7 +241,7 @@ import {
     isCreateCharacterResponseOk,
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask'
-import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
+import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 import {
     appendStorySchemaGuide,
     extractCharacterProfiles,
@@ -265,43 +265,9 @@ export default {
     },
     setup() {
         const { proxy } = getCurrentInstance()
-        const { t, locale } = useI18n()
-        
-        // 风格键名数组，用于保持顺序
-        const styleKeys = [
-            'healingWatercolor',
-            'penLineArt',
-            'minimalPopArt',
-            'colorfulOutlineRomanticism',
-            'crayonNoiseHandDrawn',
-            'vintageSketch',
-            'pixarStyle',
-            'engravingLines',
-            'pencilSketch3D',
-            'feltCollage',
-            'collageIllustration',
-            'doodleSoul',
-            'abstractFlatDesign',
-            'simpleCartoon',
-            'oilPainting',
-            'europeanComic',
-            'gouacheChildrenBook'
-        ]
-        
-        const styleImageMap = Object.fromEntries(
-            ILLUSTRATION_STYLE_CONFIGS.map((config) => [config.key, config.image])
-        )
+        const { locale } = useI18n()
+        const { styles } = useIllustrationStyles()
 
-        // 根据当前语言动态获取风格列表
-        const styles = computed(() => {
-            return styleKeys.map(key => ({
-                key: key,
-                artStyle: t(`aibooks.styles.${key}.artStyle`),
-                elementDetails: t(`aibooks.styles.${key}.elementDetails`),
-                image: styleImageMap[key] || null,
-            }))
-        })
-        
         return {
             $http: proxy?.$http || axios,
             styles,

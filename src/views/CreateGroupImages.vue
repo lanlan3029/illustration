@@ -211,7 +211,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { takeCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
-import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs';
+import { loadIllustrationStyles } from '@/utils/illustrationStyles';
 import { resolveStyleInfo } from '@/utils/characterStudioPrompt';
 
 const STYLE_STORAGE_KEY = 'createGroupImages_styleKey';
@@ -231,6 +231,7 @@ export default {
 
             // 风格
             artStyleKey: localStorage.getItem(STYLE_STORAGE_KEY) || 'healingWatercolor',
+            illustrationStyles: [],
             
             // 处理状态
             processing: false,
@@ -274,12 +275,7 @@ export default {
             return this.$t('createGroupImages.groupIllustration');
         },
         styles() {
-            return ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
-                key: config.key,
-                artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
-                elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`),
-                image: config.image,
-            }));
+            return this.illustrationStyles;
         },
         selectedStyleLabel() {
             const s = this.styles.find((x) => x.key === this.artStyleKey);
@@ -296,13 +292,19 @@ export default {
     activated() {
         this.importPendingReference();
         this.loadCharacterFromMyCharacters();
+        this.loadIllustrationStylesList();
     },
     mounted() {
         this.importPendingReference();
         this.loadCharacterFromMyCharacters();
         this.loadGroupImagesFromLocalStorage();
+        this.loadIllustrationStylesList();
     },
     methods: {
+        async loadIllustrationStylesList() {
+            const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh';
+            this.illustrationStyles = await loadIllustrationStyles({ locale, t: this.$t.bind(this) });
+        },
         selectStyle(key) {
             this.artStyleKey = key;
             localStorage.setItem(STYLE_STORAGE_KEY, key);

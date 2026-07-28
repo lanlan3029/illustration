@@ -1,0 +1,268 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "key": "penLineArt",
+      "category": "sketch",
+      "art_style_zh": "钢笔线稿插画",
+      "element_details_zh": "细节丰富，黑白线条，饱满构图，明亮的光线。",
+      "art_style_en": "Pen Line Art Illustration",
+      "element_details_en": "Rich details, black and white lines, full composition, bright lighting.",
+      "sort_order": 1,
+      "is_enabled": true
+    },
+    {
+      "id": 3,
+      "key": "minimalPopArt",
+      "category": "toon",
+      "art_style_zh": "极简波普风",
+      "element_details_zh": "极简平面插画，当代治愈系画风，厚实的黑色手绘勾边，大面积纯色块背景，平涂风格，没有阴影，慵懒颓废的神态，圆润可爱的线条，波普色彩搭配，矢量插画感，高质量，高饱和度",
+      "art_style_en": "Minimal Pop Art",
+      "element_details_en": "Minimal flat illustration, contemporary soothing aesthetic, thick black hand-drawn outlines, large flat solid-color backgrounds, cel-shaded flats, no shadows, lazy subdued expressions, rounded cute linework, pop-art color pairings, vector-illustration feel, high quality, high saturation",
+      "sort_order": 3,
+      "is_enabled": true
+    },
+    {
+      "id": 6,
+      "key": "colorfulOutlineRomanticism",
+      "category": "paint",
+      "art_style_zh": "梦幻童话风格",
+      "element_details_zh": "彩色轮廓插图，无拘无束的氛围，浪漫、生动的色彩和宽松的笔触，嬉戏和无忧无虑的场景。",
+      "art_style_en": "Colorful Outline Romanticism",
+      "element_details_en": "Colorful outline illustration, unrestrained atmosphere, vivid colors and loose brushstrokes, playful and carefree scenes.",
+      "sort_order": 6,
+      "is_enabled": true
+    },
+    {
+      "id": 15,
+      "key": "crayonNoiseHandDrawn",
+      "category": "sketch",
+      "art_style_zh": "蜡笔噪点手绘",
+      "element_details_zh": "采用蜡笔笔触风格，粗糙颗粒质感与不规则边缘，简约手绘感。暖柔色调为基础，画面添加噪点效果，以颗粒密度替代渐变。",
+      "art_style_en": "Crayon Noise Hand-drawn",
+      "element_details_en": "Crayon brush style, rough granular texture with irregular edges, simple hand-drawn feel. Warm soft tones as the base, adding noise effects to the image, replacing gradients with particle density.",
+      "sort_order": 15,
+      "is_enabled": true
+    },
+    {
+      "id": 17,
+      "key": "vintageSketch",
+      "category": "sketch",
+      "art_style_zh": "复古绘本草图",
+      "element_details_zh": "手绘彩色草图，粗略的线条，粗重质感笔触，米黄色暖调背景，复古儿童读物风格。",
+      "art_style_en": "Vintage Picture Book Sketch",
+      "element_details_en": "Hand-drawn colored sketches, rough lines, heavy textured brushstrokes, beige warm-toned background, vintage children's book style.",
+      "sort_order": 17,
+      "is_enabled": true
+    },
+    {
+      "id": 5,
+      "key": "pixarStyle",
+      "category": "toon",
+      "art_style_zh": "皮克斯风格动画",
+      "element_details_zh": "高质量3D渲染，柔和的材质，影棚效果，生动的表情和动作。",
+      "art_style_en": "Pixar Style Animation",
+      "element_details_en": "High-quality 3D rendering, soft materials, studio effects, vivid expressions and movements.",
+      "sort_order": 5,
+      "is_enabled": true
+    },
+    {
+      "id": 7,
+      "key": "engravingLines",
+      "category": "sketch",
+      "art_style_zh": "凹版印刷线条",
+      "element_details_zh": "彩色图片，精致的线条，0.01毫米线条，以点线表现明暗关系，大师级排线，细致的细节，高清画质。",
+      "art_style_en": "Engraving Lines",
+      "element_details_en": "Colorful images, exquisite lines, 0.01mm lines, using dots and lines to express light and shadow relationships, master-level line arrangement, detailed details, high-definition quality.",
+      "sort_order": 7,
+      "is_enabled": true
+    },
+    {
+      "id": 16,
+      "key": "pencilSketch3D",
+      "category": "sketch",
+      "art_style_zh": "铅笔素描3D图",
+      "element_details_zh": "手绘铅笔素描风格，3D 设计图视角，主体居中构图。",
+      "art_style_en": "Pencil Sketch 3D",
+      "element_details_en": "Hand-drawn pencil sketch style, 3D design perspective, centered composition.",
+      "sort_order": 16,
+      "is_enabled": true
+    },
+    {
+      "id": 18,
+      "key": "feltCollage",
+      "category": "paint",
+      "art_style_zh": "薄片毛毡拼贴画",
+      "element_details_zh": "手工质感，色彩鲜艳，带有波点、条纹等装饰性图案，黄色带白色波点的背景，材质呈现毛毡的纹理与厚度，角色造型卡通夸张。",
+      "art_style_en": "Felt Collage",
+      "element_details_en": "Handmade texture, bright colors, with decorative patterns such as polka dots and stripes, yellow background with white polka dots, material showing felt texture and thickness, cartoon-exaggerated character shapes.",
+      "sort_order": 18,
+      "is_enabled": true
+    },
+    {
+      "id": 2,
+      "key": "blackWhiteDoodle",
+      "category": "sketch",
+      "art_style_zh": "黑白涂鸦风",
+      "element_details_zh": "一张密集的涂鸦插画，充满各种卡通风格的黑色线条绘制的图像。这些元素以随机和重复的方式排列，营造出一种混乱但充满活力的氛围。 角色具有简单的线条，圆润的轮廓和各种表情，展现出天真和幽默感。 构图是紧凑的，没有明显的留白。 整个图像只有黑白两色，对比鲜明，线条粗细一致，风格统一。 照明均匀，没有阴影，呈现出一种平面的视觉效果。 整体风格是卡通、涂鸦，带有童趣和创意。 营造出一种随意而又充满想象力的感觉。",
+      "art_style_en": "Black and White Doodle",
+      "element_details_en": "A dense doodle illustration filled with various cartoon-style black line-drawn images. These elements are arranged randomly and repetitively, creating a chaotic yet vibrant atmosphere. Characters have simple lines, rounded outlines, and various expressions, showing innocence and humor. The composition is compact with no obvious white space. The entire image uses only black and white, with sharp contrast, consistent line thickness, and unified style. Lighting is even with no shadows, presenting a flat visual effect. The overall style is cartoon, doodle, with childlike fun and creativity, creating a casual yet imaginative feeling.",
+      "sort_order": 2,
+      "is_enabled": true
+    },
+    {
+      "id": 4,
+      "key": "collageIllustration",
+      "category": "paint",
+      "art_style_zh": "拼贴风格插画",
+      "element_details_zh": "纸张拼贴画风格，通过使用清晰的形状和色块来展现平面的透视感和纹理。整体氛围欢快愉悦，色彩明亮，风格活泼俏皮。",
+      "art_style_en": "Collage Style Illustration",
+      "element_details_en": "Paper collage style, showing flat perspective and texture through the use of clear shapes and color blocks. Overall atmosphere is cheerful and joyful, bright colors, lively and playful style.",
+      "sort_order": 4,
+      "is_enabled": true
+    },
+    {
+      "id": 8,
+      "key": "rusticHandDrawn",
+      "category": "sketch",
+      "art_style_zh": "质朴手绘风格",
+      "element_details_zh": "背景白色，极简，九宫格，灵魂画手，手绘线稿，涂鸦风格，普鲁士蓝色线勾勒，小女孩，趣味，绘本风，雷蒙德·布里格斯（Raymond Briggs）和马蒂亚斯·阿道夫松（Mattias Adolfsson）风格的插画，彩铅与水彩混合创作，手稿，大师杰作。",
+      "art_style_en": "Rustic Hand-drawn Style",
+      "element_details_en": "White background, minimalist, nine-grid, soul artist, hand-drawn line art, doodle style, Prussian blue line outline, little girl, fun, picture book style, illustrations in the style of Raymond Briggs and Mattias Adolfsson, mixed creation of colored pencils and watercolors, manuscript, masterpiece.",
+      "sort_order": 8,
+      "is_enabled": true
+    },
+    {
+      "id": 9,
+      "key": "maximalistCopperplate",
+      "category": "sketch",
+      "art_style_zh": "极繁铜版印刷",
+      "element_details_zh": "铜版画风格，满画幅，极繁主义，黑色粗线条勾线清晰，高饱和色，高对比度，以蓝色为主色调营造宁静氛围，搭配橙色、白色，纹理细腻，层次丰富，塑造优雅自然的画面。借精致笔触与色彩层次，营造宁静清新、诗意浪漫的氛围，展现浪漫美好与艺术价值，让观者沉浸于宁静美好视觉体验 ，极繁主义，丰富的细节、装饰图案、层次感，空间感，呈现出一种神圣感，令人震撼的画面画面，高清，高细节。",
+      "art_style_en": "Maximalist Copperplate Printing",
+      "element_details_en": "Copperplate style, full-frame, maximalism, black thick lines with clear outlines, high saturation, high contrast, blue as the main tone creating a peaceful atmosphere, paired with orange and white, delicate texture, rich layers, shaping an elegant and natural picture. Through exquisite brushstrokes and color layers, creating a peaceful, fresh, poetic and romantic atmosphere, showing romantic beauty and artistic value, allowing viewers to immerse themselves in a peaceful and beautiful visual experience, maximalism, rich details, decorative patterns, sense of layers, sense of space, presenting a sacred feeling, stunning picture, high-definition, high detail.",
+      "sort_order": 9,
+      "is_enabled": true
+    },
+    {
+      "id": 10,
+      "key": "doodleSoul",
+      "category": "sketch",
+      "art_style_zh": "绘本涂鸦/灵魂画手",
+      "element_details_zh": "背景白色，极简，九宫格布局，手绘线稿，涂鸦风格，普鲁士蓝色线勾勒，彩铅与水彩混合创作，手稿质感，趣味，雷蒙德·布里格斯风格。",
+      "art_style_en": "Picture Book Doodle / Soul Artist",
+      "element_details_en": "White background, minimalist, nine-grid layout, hand-drawn line art, doodle style, Prussian blue line outline, mixed creation of colored pencils and watercolors, manuscript texture, fun, Raymond Briggs style.",
+      "sort_order": 10,
+      "is_enabled": true
+    },
+    {
+      "id": 11,
+      "key": "keithHaringDoodle",
+      "category": "sketch",
+      "art_style_zh": "Keith Haring 涂鸦",
+      "element_details_zh": "粗线条记号笔插图，黑白配色，白色背景，装饰性涂鸦图案。",
+      "art_style_en": "Keith Haring Doodle",
+      "element_details_en": "Thick line marker illustration, black and white color scheme, white background, decorative doodle patterns.",
+      "sort_order": 11,
+      "is_enabled": true
+    },
+    {
+      "id": 12,
+      "key": "abstractFlatDesign",
+      "category": "toon",
+      "art_style_zh": "抽象平面设计",
+      "element_details_zh": "风格化的形状，色彩鲜艳，卡通般的视觉效果，柔和的米色天空，光线均匀分布，平静温馨的氛围，简约风格。",
+      "art_style_en": "Abstract Flat Design",
+      "element_details_en": "Stylized shapes, bright colors, cartoon-like visual effects, soft beige sky, evenly distributed light, calm and warm atmosphere, minimalist style.",
+      "sort_order": 12,
+      "is_enabled": true
+    },
+    {
+      "id": 13,
+      "key": "simpleCartoon",
+      "category": "toon",
+      "art_style_zh": "简洁卡通插画",
+      "element_details_zh": "简洁明快，色彩柔和，纯白色背景，物体/角色拥有圆润的身形和短小的四肢。",
+      "art_style_en": "Simple Cartoon Illustration",
+      "element_details_en": "Simple and bright, soft colors, pure white background, objects/characters have rounded bodies and short limbs.",
+      "sort_order": 13,
+      "is_enabled": true
+    },
+    {
+      "id": 14,
+      "key": "healingWatercolor",
+      "category": "paint",
+      "art_style_zh": "治愈系水彩",
+      "element_details_zh": "水彩质感，清新柔和的色调，营造平静、治愈的氛围。",
+      "art_style_en": "Healing Watercolor",
+      "element_details_en": "Watercolor texture, fresh and soft tones, creating a calm and healing atmosphere.",
+      "sort_order": 14,
+      "is_enabled": true
+    },
+    {
+      "id": 19,
+      "key": "oilPainting",
+      "category": "paint",
+      "art_style_zh": "油画风格",
+      "element_details_zh": "浓厚笔触的油画风格，童趣绘本，炫彩光影，清晰的笔触，复杂的画面，极致的细节，超高清，32k。",
+      "art_style_en": "Oil Painting Style",
+      "element_details_en": "Thick brushstrokes oil painting style, children's picture book, colorful light and shadow, clear brushstrokes, complex scenes, extreme details, ultra-high definition, 32k.",
+      "sort_order": 19,
+      "is_enabled": true
+    },
+    {
+      "id": 20,
+      "key": "europeanComic",
+      "category": "toon",
+      "art_style_zh": "欧洲漫画风格",
+      "element_details_zh": "欧洲漫画风格，线条简洁，色彩平淡，背景细节丰富。",
+      "art_style_en": "European Comic Style",
+      "element_details_en": "European comic style, clean simple linework, muted flat colors, richly detailed backgrounds.",
+      "sort_order": 20,
+      "is_enabled": true
+    },
+    {
+      "id": 21,
+      "key": "gouacheChildrenBook",
+      "category": "paint",
+      "art_style_zh": "水粉童书绘本",
+      "element_details_zh": "厚实不透明的水粉颜料质感，圆润可爱的造型轮廓，温暖柔和的配色方案，手绘笔触，童书出版级插画，富有故事感，温馨治愈氛围，儿童绘本风格。",
+      "art_style_en": "Gouache Children's Book",
+      "element_details_en": "Thick opaque gouache paint texture, rounded cute silhouettes, warm soft color palette, hand-painted brushstrokes, picture-book publishing quality, narrative storytelling mood, cozy healing atmosphere, children's picture book illustration style.",
+      "sort_order": 21,
+      "is_enabled": true
+    },
+    {
+      "id": 22,
+      "key": "nordicWhimsical",
+      "category": "sketch",
+      "art_style_zh": "北欧奇趣风格",
+      "element_details_zh": "一幅充满童趣的手绘插画，画面采用简洁的线稿表现，仅使用黑色、白色和浅蓝色三种颜色，呈现出清新而富有设计感的视觉效果。氛围宁静、温馨而富有童话色彩，带着一丝超现实主义的趣味。",
+      "art_style_en": "Nordic Whimsical",
+      "element_details_en": "A playful hand-drawn illustration full of childlike wonder, with clean line art using only black, white, and light blue for a fresh, design-forward look. Quiet, cozy, and fairy-tale in mood, with a touch of surreal whimsy.",
+      "sort_order": 22,
+      "is_enabled": true
+    },
+    {
+      "id": 23,
+      "key": "cozyNaiveFolkArt",
+      "category": "paint",
+      "art_style_zh": "温馨民艺手绘",
+      "element_details_zh": "温馨场景，手绘插画风，Naive Art（稚拙艺术）风格，Folk Art（民间艺术）风格，简洁几何造型，儿童绘本质感，可爱，柔和，明显手工纹理与笔触痕迹，装饰性图案，平涂配色，有限色彩方案（红色、浅蓝色、白色、灰色为主），温暖治愈，生活化叙事场景，复古手工艺气息，画面干净简约，高级设计感，富有故事性。",
+      "art_style_en": "Cozy Naive Folk Art",
+      "element_details_en": "Cozy everyday scene, hand-drawn illustration, Naive Art and Folk Art style, simple geometric shapes, children's picture-book texture, cute and soft, visible handmade texture and brushstrokes, decorative patterns, flat color blocks, limited palette (mainly red, light blue, white, gray), warm and healing, slice-of-life narrative, vintage craft atmosphere, clean minimalist composition, refined design sense, storytelling mood.",
+      "sort_order": 23,
+      "is_enabled": true
+    },
+    {
+      "id": 24,
+      "key": "narrativeEditorialFolk",
+      "category": "paint",
+      "art_style_zh": "叙事编辑民艺",
+      "element_details_zh": "叙事性插画、复古编辑插画风、现代民艺风、稚拙艺术美学、手绘纹理、可见颗粒感、几何化简约造型、温暖配色、干净构图、治愈系日常生活、富有故事感、可爱形象、柔和自然光、高级简约美感、儿童绘本质感、杂志插画风格、温暖平静氛围、美术馆级插画品质。",
+      "art_style_en": "Narrative Editorial Folk",
+      "element_details_en": "Narrative illustration, vintage editorial illustration style, modern folk art, naive art aesthetic, hand-drawn texture, visible grain, geometric simplified forms, warm color palette, clean composition, healing everyday life, story-rich mood, cute characters, soft natural light, refined minimalist beauty, picture-book quality, magazine illustration style, warm calm atmosphere, gallery-grade illustration quality.",
+      "sort_order": 24,
+      "is_enabled": true
+    }
+  ]
+}
