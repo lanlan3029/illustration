@@ -184,12 +184,10 @@
 </template>
 
 <script>
-import { computed } from 'vue';
-import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
+import { useIllustrationStyles } from '@/composables/useIllustrationStyles';
 import { ElMessage } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { ElImageViewer } from 'element-plus';
-import { useIllustrationStyles } from '@/composables/useIllustrationStyles';
 import {
   postCreateCharacter,
   isCreateCharacterResponseOk,
