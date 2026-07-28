@@ -485,7 +485,7 @@ export default {
         },
         visibleStyles() {
             if (this.activeIllustrationTab === 'all') return this.styles
-            return this.styles.filter(s => s.category === this.activeIllustrationTab)
+            return this.styles.filter((s) => (s.uiTab || s.category) === this.activeIllustrationTab)
         },
         canGenerate() {
             return !!(this.subjectScene && this.subjectScene.trim())

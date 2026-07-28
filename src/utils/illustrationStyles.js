@@ -1,3 +1,4 @@
+import { backendCategoryToUiTab } from '@/data/illustrationStyleCategories'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import { fetchPublicIllustrationStyles } from '@/utils/illustrationStylesApi'
 
@@ -16,10 +17,12 @@ const cache = {
  */
 export function normalizeIllustrationStyle(item) {
   const imageUrl = item.imageUrl || item.image || ''
+  const category = item.category || 'sketch'
   return {
     id: item.id,
     key: item.key,
-    category: item.category,
+    category,
+    uiTab: backendCategoryToUiTab(category),
     artStyle: item.artStyle || '',
     elementDetails: item.elementDetails || '',
     image: imageUrl,
@@ -36,6 +39,7 @@ export function buildFallbackIllustrationStyles(t) {
     id: config.id,
     key: config.key,
     category: config.category,
+    uiTab: backendCategoryToUiTab(config.category),
     artStyle: t(`aibooks.styles.${config.key}.artStyle`),
     elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
     image: config.image,

@@ -1,4 +1,5 @@
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
+import { backendCategoryToUiTab } from '@/data/illustrationStyleCategories'
 
 /** 站点功能截图（已压缩为 guides/*.webp，宽约 1200px） */
 export const GUIDE_SCREENSHOTS = {
@@ -129,13 +130,17 @@ const styleCategoryMap = Object.fromEntries(
 )
 
 export function getStyleGuideCards(t) {
-  return FEATURED_STYLE_GUIDES.map((key) => ({
-    key,
-    image: styleImageMap[key],
-    category: styleCategoryMap[key],
-    artStyle: t(`aibooks.styles.${key}.artStyle`),
-    categoryLabel: t(`guides.styleCategories.${styleCategoryMap[key]}.name`),
-  }))
+  return FEATURED_STYLE_GUIDES.map((key) => {
+    const backendCat = styleCategoryMap[key]
+    const uiTab = backendCategoryToUiTab(backendCat)
+    return {
+      key,
+      image: styleImageMap[key],
+      category: backendCat,
+      artStyle: t(`aibooks.styles.${key}.artStyle`),
+      categoryLabel: t(`guides.styleCategories.${uiTab}.name`),
+    }
+  })
 }
 
 export function getCategoryStylePreviews(categoryId, limit = 4) {

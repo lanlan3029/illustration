@@ -69,9 +69,12 @@
 
         <el-form-item :label="$t('uploadStylePrompt.category')" prop="category">
           <el-select v-model="form.category" style="width: 100%">
-            <el-option :label="$t('aiPicture.styleTabSketch')" value="sketch" />
-            <el-option :label="$t('aiPicture.styleTabPaint')" value="paint" />
-            <el-option :label="$t('aiPicture.styleTabToon')" value="toon" />
+            <el-option
+              v-for="cat in backendCategories"
+              :key="cat"
+              :label="$t(`uploadStylePrompt.backendCategory.${cat}`)"
+              :value="cat"
+            />
           </el-select>
         </el-form-item>
 
@@ -159,12 +162,13 @@
 import { UploadFilled, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import enMessages from '@/i18n/locales/en.json'
-import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
+import { ILLUSTRATION_STYLE_BACKEND_CATEGORIES } from '@/data/illustrationStyleCategories'
 import {
   invalidateIllustrationStylesCache,
   loadIllustrationStyles,
   nextIllustrationStyleId,
 } from '@/utils/illustrationStyles'
+import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import {
   createIllustrationStyle,
   fetchAdminIllustrationStyles,
@@ -206,6 +210,9 @@ export default {
     }
   },
   computed: {
+    backendCategories() {
+      return ILLUSTRATION_STYLE_BACKEND_CATEGORIES
+    },
     previewSrc() {
       if (this.processed?.previewUrl) return this.processed.previewUrl
       if (this.existingImageUrl) return this.existingImageUrl
