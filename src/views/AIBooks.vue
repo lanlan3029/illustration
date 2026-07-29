@@ -169,7 +169,7 @@
                                 type="primary"
                                 @click="downloadAllImages"
                                 :loading="downloading"
-                                :disabled="!bookData.images || bookData.images.length === 0 || downloading"
+                                :disabled="!bookPreviewImages.length || downloading"
                                 class="download-btn">
                                 <el-icon><Download /></el-icon>
                                 {{ $t('aibooks.downloadAll') }}
@@ -206,7 +206,7 @@
                                     </el-image>
                                     <div v-else class="image-placeholder">
                                         <i class="el-icon-picture-outline"></i>
-                                        <p>图片生成中...</p>
+                                        <p>{{ generatingImages ? '图片生成中...' : '图片未生成' }}</p>
                                     </div>
                                 </div>
                                 <div class="card-content">
@@ -582,34 +582,45 @@ export default {
             this.progressPercentage = 0
             this.progressStatus = ''
             this.progressText = '开始生成图片...'
+
+            // 先占位展示全部页，每张成图立刻写入对应槽位（不必等全部完成）
+            const pageCount = this.imagePrompts.length
+            this.bookData = {
+                title: this.storyData.title,
+                summary: this.storyData.summary,
+                scenes: this.storyData.scenes,
+                scenes_detail: this.storyData.scenes_detail,
+                character_profiles: this.characterProfiles,
+                character_card: this.characterCard,
+                images: Array(pageCount).fill(null)
+            }
+            this.saveToLocalStorage()
             
             try {
-                // 生成图片
-                const images = await this.generateImages(this.imagePrompts, this.imagePrompts.length)
-                
-                // 组装故事书数据
-                this.bookData = {
-                    title: this.storyData.title,
-                    summary: this.storyData.summary,
-                    scenes: this.storyData.scenes,
-                    scenes_detail: this.storyData.scenes_detail,
-                    character_profiles: this.characterProfiles,
-                    character_card: this.characterCard,
-                    images: images
-                }
-                
+                await this.generateImages(this.imagePrompts, pageCount)
+
+                const okCount = (this.bookData.images || []).filter(Boolean).length
                 this.progressPercentage = 100
-                this.progressStatus = 'success'
-                this.progressText = '绘本生成完成！'
-                
-                // 保存到本地存储
-                this.saveToLocalStorage();
-                
-                ElMessage.success('绘本生成成功！')
+                if (okCount === 0) {
+                    this.progressStatus = 'exception'
+                    this.progressText = '生成失败，请重试'
+                    ElMessage.error('图片生成失败，请重试')
+                } else if (okCount < pageCount) {
+                    this.progressStatus = 'warning'
+                    this.progressText = `已生成 ${okCount}/${pageCount} 张，部分页面失败`
+                    this.saveToLocalStorage()
+                    ElMessage.warning(`已生成 ${okCount}/${pageCount} 张图片，失败页可稍后重试`)
+                } else {
+                    this.progressStatus = 'success'
+                    this.progressText = '绘本生成完成！'
+                    this.saveToLocalStorage()
+                    ElMessage.success('绘本生成成功！')
+                }
             } catch (error) {
                 console.error('生成图片失败:', error)
                 this.progressStatus = 'exception'
                 this.progressText = '生成失败，请重试'
+                this.saveToLocalStorage()
                 ElMessage.error(error.message || '生成失败，请重试')
             } finally {
                 this.generatingImages = false
@@ -670,106 +681,162 @@ export default {
             })
         },
         
-        // 生成图片（逐页调用 /create-character；第 2 页起附第一页或用户上传的角色参考图）
+        // 生成单页：POST /create-character（异步 task_id 会在工具内轮询至有图）
+        async generateOnePageImage(i, promptList, styleInfo, allProfiles, referenceImage) {
+            const sceneText = this.storyData?.scenes?.[i] || ''
+            const { card: pageCharacterCard, names: pageCharacterNames } = buildPageCharacterCard({
+                scenePrompt: promptList[i],
+                sceneText,
+                profiles: allProfiles,
+            })
+
+            const requestData = {
+                prompt: buildPageImagePrompt({
+                    scenePrompt: promptList[i].trim(),
+                    characterCard: pageCharacterCard,
+                    characterNames: pageCharacterNames,
+                    styleInfo,
+                    withReferenceImage: Boolean(referenceImage),
+                }),
+                size: '1280x960',
+                watermark: false,
+            }
+
+            if (referenceImage) {
+                requestData.image = referenceImage
+            }
+
+            const responseData = await postCreateCharacter(
+                this.$http,
+                requestData,
+                { apiBaseUrl: this.apiBaseUrl }
+            )
+
+            if (!responseData) {
+                throw new Error('API响应为空')
+            }
+
+            if (responseData.error) {
+                const errorMsg = responseData.error.message || responseData.error.code || '未知错误'
+                throw new Error(`生成图片失败: ${errorMsg}`)
+            }
+
+            if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
+                const errorMsg = responseData.desc || responseData.message?.error || `code: ${responseData.code}`
+                throw new Error(`生成图片失败: ${errorMsg}`)
+            }
+
+            const result = responseData.message
+
+            if (result && typeof result === 'object' && result.points !== undefined && this.$store?.state) {
+                this.$store.commit('setUserInfo', {
+                    ...(this.$store.state.userInfo || {}),
+                    points: result.points,
+                })
+            }
+
+            const imageUrl = this.resolveGeneratedImageUrl(result)
+            if (!imageUrl) {
+                throw new Error(`第 ${i + 1} 张图片生成成功但未找到图片URL`)
+            }
+            return imageUrl
+        },
+
+        setPageImage(index, imageUrl) {
+            if (!this.bookData || !Array.isArray(this.bookData.images)) return
+            this.bookData.images[index] = imageUrl
+            this.saveToLocalStorage()
+        },
+
+        // 生成图片：有角色参考图则各页并行；否则先生成第 1 页作锚点，再并行后续页。每张成图立刻显示。
         async generateImages(prompts, imageCount) {
-            const images = []
             const promptList = Array.isArray(prompts) ? prompts : [prompts]
             const styleInfo = getStyleInfoText(this.styles, this.form.artStyle)
             const allProfiles = this.characterProfiles?.length
                 ? this.characterProfiles
                 : parseCharacterCardText(this.characterCard)
 
-            let anchorImageBase64 = this.characterReferenceBase64 || ''
-            let firstPageImageBase64 = ''
+            const total = Math.min(imageCount, promptList.length)
+            if (!this.bookData) {
+                this.bookData = {
+                    title: this.storyData?.title || '',
+                    summary: this.storyData?.summary || '',
+                    scenes: this.storyData?.scenes || [],
+                    scenes_detail: this.storyData?.scenes_detail,
+                    character_profiles: this.characterProfiles,
+                    character_card: this.characterCard,
+                    images: Array(total).fill(null)
+                }
+            } else if (!Array.isArray(this.bookData.images) || this.bookData.images.length !== total) {
+                this.bookData.images = Array(total).fill(null)
+            }
 
-            for (let i = 0; i < imageCount && i < promptList.length; i++) {
-                this.progressPercentage = Math.floor((i / imageCount) * 100)
-                this.progressText = `正在生成第 ${i + 1}/${imageCount} 张图片...`
+            let completed = 0
+            const bumpProgress = (pageLabel) => {
+                completed += 1
+                this.progressPercentage = Math.min(99, Math.floor((completed / total) * 100))
+                this.progressText = pageLabel
+                    ? `第 ${pageLabel} 页已完成（${completed}/${total}）`
+                    : `已完成 ${completed}/${total} 张`
+            }
 
+            const runPage = async (i, referenceImage) => {
                 try {
-                    const useUploadedRef = Boolean(anchorImageBase64)
-                    const useFirstPageRef = !useUploadedRef && i > 0 && Boolean(firstPageImageBase64)
-                    const referenceImage = useUploadedRef
-                        ? anchorImageBase64
-                        : (useFirstPageRef ? firstPageImageBase64 : '')
-
-                    const sceneText = this.storyData?.scenes?.[i] || ''
-                    const { card: pageCharacterCard, names: pageCharacterNames } = buildPageCharacterCard({
-                        scenePrompt: promptList[i],
-                        sceneText,
-                        profiles: allProfiles,
-                    })
-
-                    const requestData = {
-                        prompt: buildPageImagePrompt({
-                            scenePrompt: promptList[i].trim(),
-                            characterCard: pageCharacterCard,
-                            characterNames: pageCharacterNames,
-                            styleInfo,
-                            withReferenceImage: Boolean(referenceImage),
-                        }),
-                        size: '1280x960',
-                        watermark: false,
-                    }
-
-                    if (referenceImage) {
-                        requestData.image = referenceImage
-                    }
-
-                    const responseData = await postCreateCharacter(
-                        this.$http,
-                        requestData,
-                        { apiBaseUrl: this.apiBaseUrl }
+                    const imageUrl = await this.generateOnePageImage(
+                        i,
+                        promptList,
+                        styleInfo,
+                        allProfiles,
+                        referenceImage
                     )
-
-                    if (!responseData) {
-                        throw new Error('API响应为空')
-                    }
-
-                    if (responseData.error) {
-                        const errorMsg = responseData.error.message || responseData.error.code || '未知错误'
-                        throw new Error(`生成图片失败: ${errorMsg}`)
-                    }
-
-                    if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
-                        const errorMsg = responseData.desc || responseData.message?.error || `code: ${responseData.code}`
-                        throw new Error(`生成图片失败: ${errorMsg}`)
-                    }
-
-                    const result = responseData.message
-
-                    if (result && typeof result === 'object' && result.points !== undefined && this.$store?.state) {
-                        this.$store.commit('setUserInfo', {
-                            ...(this.$store.state.userInfo || {}),
-                            points: result.points,
-                        })
-                    }
-
-                    const imageUrl = this.resolveGeneratedImageUrl(result)
-                    if (!imageUrl) {
-                        throw new Error(`第 ${i + 1} 张图片生成成功但未找到图片URL`)
-                    }
-
-                    images.push(imageUrl)
-
-                    if (i === 0 && !anchorImageBase64) {
-                        try {
-                            firstPageImageBase64 = await this.imageToBase64(imageUrl)
-                        } catch (e) {
-                            console.warn('第一页参考图转换失败，后续页面将仅依赖文字设定卡:', e)
-                        }
-                    }
+                    this.setPageImage(i, imageUrl)
+                    bumpProgress(i + 1)
+                    return imageUrl
                 } catch (error) {
                     console.error(`生成第 ${i + 1} 张图片失败:`, error)
-                    images.push(null)
+                    this.setPageImage(i, null)
+                    bumpProgress(i + 1)
+                    return null
                 }
             }
 
-            return images
+            const anchorImageBase64 = this.characterReferenceBase64 || ''
+
+            if (anchorImageBase64) {
+                this.progressText = `正在并行生成 ${total} 张图片...`
+                await Promise.all(
+                    Array.from({ length: total }, (_, i) => runPage(i, anchorImageBase64))
+                )
+                return this.bookData.images
+            }
+
+            // 无上传参考图：先出第 1 页，再用其作后续页参考并并行
+            this.progressText = `正在生成第 1/${total} 张图片...`
+            const firstUrl = await runPage(0, '')
+            let firstPageImageBase64 = ''
+            if (firstUrl) {
+                try {
+                    firstPageImageBase64 = await this.imageToBase64(firstUrl)
+                } catch (e) {
+                    console.warn('第一页参考图转换失败，后续页面将仅依赖文字设定卡:', e)
+                }
+            }
+
+            if (total > 1) {
+                this.progressText = `第 1 页已出，正在并行生成其余 ${total - 1} 张...`
+                await Promise.all(
+                    Array.from({ length: total - 1 }, (_, j) => runPage(j + 1, firstPageImageBase64))
+                )
+            }
+
+            return this.bookData.images
         },
 
         resolveGeneratedImageUrl(result) {
             let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
+            if (!imageUrl && result.image_remote_url) {
+                imageUrl = result.image_remote_url
+            }
             if (!imageUrl && result.character_image_url) {
                 imageUrl = result.character_image_url
             }

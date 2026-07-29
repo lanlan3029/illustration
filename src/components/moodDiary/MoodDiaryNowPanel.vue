@@ -180,13 +180,12 @@ import { ElMessage } from 'element-plus'
 import { checkTextSafe } from '@/utils/moodDiary/checkTextSafe'
 import { MOOD_DIARY_NARRATIVE_MAX } from '@/utils/moodDiary/constants'
 import { dataUrlToPathHint, getDraft, setDraft } from '@/utils/moodDiary/draft'
-import { findMoodById, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
+import { findMoodById, getPickerExcludedIds, quickMoodIds, resolveMoodList } from '@/utils/moodDiary/moodAssets'
+import { getMoodAssetsVersion, hydrateMoodAssets, onMoodAssetsChange } from '@/utils/moodDiary/moodAssetsApi'
 import {
   atmosphereCssVars,
   getMoodAtmosphere
 } from '@/utils/moodDiary/moodTheme'
-
-const HIDDEN_EXTRA_MOOD_IDS = new Set(['heart', 'thumbs-up', 'star-eyes'])
 
 export default {
   name: 'MoodDiaryNowPanel',
@@ -204,7 +203,9 @@ export default {
       showExtraMoods: false,
       showMoodPicker: false,
       refDragOver: false,
-      diaryTab: 'photo'
+      diaryTab: 'photo',
+      moodAssetsVersion: getMoodAssetsVersion(),
+      unwatchMoodAssets: null,
     }
   },
   computed: {
@@ -247,6 +248,8 @@ export default {
       return this.$t(this.atmosphere.placeholderKey)
     },
     moods() {
+      // depend on moodAssetsVersion so hydrate 后重新算 URL
+      void this.moodAssetsVersion
       const isZh = this.$i18n?.locale === 'zh'
       return resolveMoodList(isZh)
     },
@@ -256,7 +259,8 @@ export default {
     },
     extraMoods() {
       const quick = new Set(quickMoodIds)
-      return this.moods.filter((m) => !quick.has(m.id) && !HIDDEN_EXTRA_MOOD_IDS.has(m.id))
+      const hidden = new Set(getPickerExcludedIds())
+      return this.moods.filter((m) => !quick.has(m.id) && !hidden.has(m.id))
     }
   },
   watch: {
@@ -269,8 +273,20 @@ export default {
     }
   },
   mounted() {
+    this.unwatchMoodAssets = onMoodAssetsChange((version) => {
+      this.moodAssetsVersion = version
+      // 远程清单就绪后刷新已选心情的 src
+      if (this.moodObj?.id) {
+        const isZh = this.$i18n?.locale === 'zh'
+        this.moodObj = findMoodById(this.moodObj.id, isZh) || this.moodObj
+      }
+    })
+    hydrateMoodAssets()
     this.hydrate()
     this.$emit('mood-change', this.moodObj ? this.moodObj.id : null)
+  },
+  beforeUnmount() {
+    this.unwatchMoodAssets?.()
   },
   methods: {
     hydrate() {

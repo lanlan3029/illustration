@@ -23,6 +23,7 @@ import LoginRegister from "./components/LoginRegister.vue"
 import TheFooter from './components/TheFooter.vue'
 import MobileTabBar from './components/MobileTabBar.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import { hydrateMoodAssets } from '@/utils/moodDiary/moodAssetsApi'
 
 document.oncontextmenu = function () {
         return false;
@@ -44,6 +45,9 @@ export default {
     const elementPlusLocale = computed(() => getElementPlusLocale(locale.value))
     
     const isMask = computed(() => store.state.isMask)
+
+    // 心情图标清单：启动时拉取 CDN PNG
+    hydrateMoodAssets()
     
     return {
       elementPlusLocale,

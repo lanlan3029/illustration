@@ -15,8 +15,8 @@ export const POLL_REQUEST_TIMEOUT_MS = 15000
 /** 轮询总等待下限 */
 export const POLL_MIN_WAIT_MS = 180000
 
-/** 轮询总等待上限 */
-export const POLL_MAX_WAIT_MS = 240000
+/** 轮询总等待默认上限（无 estimated_wait_sec 时）；有预估时按预估 + buffer，可超过此值 */
+export const POLL_MAX_WAIT_MS = 600000
 
 /** 同步兜底：带参考图 POST 超时 */
 export const SYNC_POST_TIMEOUT_WITH_REFS_MS = 140000
@@ -41,8 +41,9 @@ export function hasReferenceImages(requestData) {
 export function computePollMaxWaitMs(envelope) {
   const sec = envelope && envelope.estimated_wait_sec
   if (typeof sec === 'number' && sec > 0) {
-    const ms = sec * 1000 + 60000
-    return Math.min(POLL_MAX_WAIT_MS, Math.max(POLL_MIN_WAIT_MS, ms))
+    // 后端常给 estimated_wait_sec=300；勿再压到 < 预估，否则前几页易超时只剩后几页成功
+    const ms = sec * 1000 + 90000
+    return Math.max(POLL_MIN_WAIT_MS, ms)
   }
   return POLL_MAX_WAIT_MS
 }
@@ -83,20 +84,28 @@ export function resolveApiOrigin(apiBaseUrl) {
 
 /**
  * 异步任务是否已完成（仅基于 res.data.message，不看外层 statuscode）。
- * 与后端约定：succeeded | image_url | image_base64 任一即停轮询。
+ * 与后端/小程序约定：succeeded | image_url | image_remote_url | image_base64 任一即停轮询。
  */
 export function isPollTaskComplete(message) {
   if (!message || typeof message !== 'object') return false
   return (
     message.status === 'succeeded' ||
     Boolean(message.image_url) ||
+    Boolean(message.image_remote_url) ||
     Boolean(message.image_base64)
   )
 }
 
+function absolutizeImagePath(raw, apiBaseUrl) {
+  const u = String(raw || '').trim()
+  if (!u) return ''
+  if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')) return u
+  return `${resolveApiOrigin(apiBaseUrl)}/${u.replace(/^\//, '')}`
+}
+
 /**
- * 从 message 解析可展示图片地址（轮询大图优先 image_url）。
- * 相对路径拼到 API 根，例如 upload/generation-tasks/{taskId}/result.png
+ * 从 message 解析可展示图片地址。
+ * 优先 CDN image_remote_url，其次 image_url（相对路径拼 API 根）。
  */
 export function resolveGenerationImageUrl(message, apiBaseUrl, mime = 'image/png') {
   if (!message || typeof message !== 'object') return ''
@@ -108,12 +117,11 @@ export function resolveGenerationImageUrl(message, apiBaseUrl, mime = 'image/png
     return `data:${mime};base64,${trimmed.replace(/\s/g, '')}`
   }
 
-  if (message.image_url) {
-    const u = String(message.image_url).trim()
-    if (!u) return ''
-    if (u.startsWith('http://') || u.startsWith('https://')) return u
-    return `${resolveApiOrigin(apiBaseUrl)}/${u.replace(/^\//, '')}`
-  }
+  const remote = absolutizeImagePath(message.image_remote_url, apiBaseUrl)
+  if (remote) return remote
+
+  const local = absolutizeImagePath(message.image_url, apiBaseUrl)
+  if (local) return local
 
   return ''
 }

@@ -43,6 +43,7 @@
 import MoodDiaryWriteDialog from '@/components/moodDiary/MoodDiaryWriteDialog.vue'
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
 import { preloadMoodDiaryFonts } from '@/utils/moodDiary/fonts'
+import { hydrateMoodAssets } from '@/utils/moodDiary/moodAssetsApi'
 import { onOpenWriteDialog } from '@/utils/moodDiary/writeDialogBus'
 import { ElMessage } from 'element-plus'
 import '@/styles/moodDiaryFonts.css'
@@ -73,6 +74,7 @@ export default {
     }
   },
   mounted() {
+    hydrateMoodAssets()
     preloadMoodDiaryFonts()
     this.unregisterWriteDialog = onOpenWriteDialog(() => this.openWriteEntry())
     if (this.$route.query.write === '1') {
