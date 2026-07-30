@@ -833,7 +833,17 @@ export default {
         },
 
         resolveGeneratedImageUrl(result) {
-            let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
+            // 优先 API 落盘地址（api.kidstory.cc），避免 CDN 跨域导致下载/收集 canvas 无法 toBlob
+            let imageUrl = resolveGenerationImageUrl(
+                {
+                    image_base64: result.image_base64,
+                    image_url: result.image_url,
+                },
+                this.apiBaseUrl
+            )
+            if (!imageUrl) {
+                imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
+            }
             if (!imageUrl && result.image_remote_url) {
                 imageUrl = result.image_remote_url
             }
@@ -900,7 +910,7 @@ export default {
             this.characterReferencePreview = ''
         },
         
-        // 收集插画（保存到"我的插画"）
+        // 收集插画（只保存纯插画；图下文案仅在「下载全部」时拼接）
         async collectIllustration(imageUrl, index) {
             if (!imageUrl) {
                 ElMessage.warning('图片尚未生成，请稍候');
@@ -910,30 +920,24 @@ export default {
             try {
                 ElMessage.info(`正在保存第 ${index + 1} 张插画...`);
                 
-                // 处理URL格式
                 let pictureValue = imageUrl;
-                
-                // 如果是相对路径，转换为完整URL
                 if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
                     pictureValue = `https://static.kidstory.cc/${pictureValue}`;
                 }
                 
-                // 构建请求数据
                 const requestData = {
-                    picture: pictureValue, // 支持 URL 或 base64
+                    picture: pictureValue,
                     title: `${this.bookData.title} - 第 ${index + 1} 页`,
                     description: `${this.bookData.title} 的第 ${index + 1} 页插画`,
-                    type: 'others' // 默认类别为"其他"
+                    type: 'others'
                 };
                 
-                // 获取token
                 const token = localStorage.getItem('token') || '';
                 if (!token) {
                     ElMessage.error('请先登录');
                     return;
                 }
                 
-                // 发送请求到服务器
                 const response = await this.$http.post('/ill/', requestData, {
                     headers: {
                         'Content-Type': 'application/json',
@@ -941,7 +945,6 @@ export default {
                     }
                 });
                 
-                // 检查响应
                 if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
                     ElMessage.success(`第 ${index + 1} 张插画已保存到"我的插画"`);
                 } else {
@@ -1012,215 +1015,155 @@ export default {
             }
         },
         
+        // 把远端图拉成同源 blob URL，避免页面 <img> 无 CORS 缓存污染 canvas
+        async resolveImageSrcForCanvas(imageUrl) {
+            if (!imageUrl) throw new Error('无图片地址')
+            const src = String(imageUrl)
+            if (src.startsWith('data:') || src.startsWith('blob:')) return { src, revoke: null }
+
+            const toObjectUrl = (blob) => {
+                if (!blob || !blob.size) throw new Error('图片数据为空')
+                return URL.createObjectURL(blob)
+            }
+
+            const candidates = [src]
+            // CDN（如 getapib.org）常无 CORS；若路径含 generation-tasks，改走 API 同源拉取
+            const taskPath = src.match(/(\/upload\/generation-tasks\/[^\s?#]+)/i)
+            if (taskPath && taskPath[1]) {
+                candidates.push(taskPath[1])
+                candidates.push(`https://api.kidstory.cc${taskPath[1]}`)
+            }
+
+            for (const candidate of candidates) {
+                try {
+                    const res = await fetch(candidate, { mode: 'cors', cache: 'no-store', credentials: 'omit' })
+                    if (res.ok) {
+                        const objectUrl = toObjectUrl(await res.blob())
+                        return { src: objectUrl, revoke: objectUrl }
+                    }
+                } catch (e) {
+                    // try next
+                }
+
+                try {
+                    const res = await this.$http.get(candidate, {
+                        responseType: 'blob',
+                        withCredentials: false,
+                        timeout: 60000,
+                    })
+                    if (res.data) {
+                        const objectUrl = toObjectUrl(res.data)
+                        return { src: objectUrl, revoke: objectUrl }
+                    }
+                } catch (e) {
+                    // try next
+                }
+            }
+
+            console.warn('图片拉取均失败，回退跨域 Image:', src)
+            const bust = `${src}${src.includes('?') ? '&' : '?'}_cb=${Date.now()}`
+            return { src: bust, revoke: null, needCrossOrigin: true }
+        },
+
+        loadHtmlImage(src, { crossOrigin = false } = {}) {
+            return new Promise((resolve, reject) => {
+                const img = new Image()
+                if (crossOrigin) img.crossOrigin = 'anonymous'
+                img.onload = () => resolve(img)
+                img.onerror = () => reject(new Error('图片加载失败'))
+                img.src = src
+            })
+        },
+
+        composeCanvasWithText(img, text) {
+            const imageHeight = img.height
+            const imageWidth = img.width
+            const textAreaHeight = Math.floor(imageHeight / 3)
+            const canvas = document.createElement('canvas')
+            canvas.width = imageWidth
+            canvas.height = imageHeight + textAreaHeight
+            const ctx = canvas.getContext('2d')
+
+            ctx.drawImage(img, 0, 0, imageWidth, imageHeight)
+
+            const textY = imageHeight
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, textY, imageWidth, textAreaHeight)
+
+            const padding = 40
+            const maxTextWidth = imageWidth - padding * 2
+            const fontSize = Math.max(24, Math.min(32, Math.floor(imageWidth / 30)))
+            const lineHeight = fontSize * 1.6
+            const content = text == null ? '' : String(text)
+
+            ctx.fillStyle = '#333333'
+            ctx.font = `${fontSize}px "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif`
+            ctx.textAlign = 'left'
+            ctx.textBaseline = 'top'
+
+            const lines = []
+            let currentLine = ''
+            for (let i = 0; i < content.length; i++) {
+                const testLine = currentLine + content[i]
+                if (ctx.measureText(testLine).width > maxTextWidth && currentLine !== '') {
+                    lines.push(currentLine)
+                    currentLine = content[i]
+                } else {
+                    currentLine = testLine
+                }
+            }
+            if (currentLine) lines.push(currentLine)
+
+            const maxLines = Math.max(1, Math.floor((textAreaHeight - padding * 2) / lineHeight))
+            const displayLines = lines.slice(0, maxLines)
+            const totalTextHeight = displayLines.length * lineHeight
+            const startY = textY + (textAreaHeight - totalTextHeight) / 2
+
+            displayLines.forEach((line, index) => {
+                ctx.fillText(line, padding, startY + index * lineHeight)
+            })
+
+            if (lines.length > maxLines && displayLines.length) {
+                const lastLine = displayLines[displayLines.length - 1]
+                const lastLineY = startY + (displayLines.length - 1) * lineHeight
+                const lastLineWidth = ctx.measureText(lastLine).width
+                if (lastLineWidth + ctx.measureText('...').width < maxTextWidth) {
+                    ctx.fillText('...', padding + lastLineWidth, lastLineY)
+                }
+            }
+
+            return canvas
+        },
+
         // 创建带文字的图片（图片在上，文字在下）
         async createImageWithText(imageUrl, text) {
-            return new Promise((resolve, reject) => {
-                // 创建图片对象
-                const img = new Image();
-                
-                
-                img.onload = () => {
+            const resolved = await this.resolveImageSrcForCanvas(imageUrl)
+            try {
+                const img = await this.loadHtmlImage(resolved.src, {
+                    crossOrigin: Boolean(resolved.needCrossOrigin),
+                })
+                const canvas = this.composeCanvasWithText(img, text)
+                const blob = await new Promise((resolve, reject) => {
                     try {
-                        // 设置画布尺寸
-                        // 图片高度占比 75%，文字高度占比 25%
-                        const imageHeight = img.height;
-                        const imageWidth = img.width;
-                        
-                        // 计算文字区域高度（图片高度的 25% / 75% = 1/3）
-                        const textAreaHeight = Math.floor(imageHeight / 3);
-                        const canvasHeight = imageHeight + textAreaHeight;
-                        const canvasWidth = imageWidth;
-                        
-                        // 创建 canvas
-                        const canvas = document.createElement('canvas');
-                        canvas.width = canvasWidth;
-                        canvas.height = canvasHeight;
-                        const ctx = canvas.getContext('2d');
-                        
-                        // 绘制图片（占 75% 高度）
-                        const imageDrawHeight = imageHeight;
-                        ctx.drawImage(img, 0, 0, imageWidth, imageDrawHeight);
-                        
-                        // 绘制文字区域背景（白色）
-                        const textY = imageDrawHeight;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, textY, canvasWidth, textAreaHeight);
-                        
-                        // 设置文字样式
-                        const padding = 40; // 页边距
-                        const maxTextWidth = canvasWidth - padding * 2;
-                        const fontSize = Math.max(24, Math.min(32, Math.floor(canvasWidth / 30))); // 根据画布宽度自适应字体大小
-                        const lineHeight = fontSize * 1.6; // 行高
-                        
-                        ctx.fillStyle = '#333333';
-                        ctx.font = `${fontSize}px "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif`;
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'top';
-                        
-                        // 处理文字换行
-                        const words = text.split('');
-                        const lines = [];
-                        let currentLine = '';
-                        
-                        for (let i = 0; i < words.length; i++) {
-                            const testLine = currentLine + words[i];
-                            const metrics = ctx.measureText(testLine);
-                            
-                            if (metrics.width > maxTextWidth && currentLine !== '') {
-                                lines.push(currentLine);
-                                currentLine = words[i];
-                            } else {
-                                currentLine = testLine;
-                            }
-                        }
-                        if (currentLine) {
-                            lines.push(currentLine);
-                        }
-                        
-                        // 限制最大行数，避免超出文字区域
-                        const maxLines = Math.floor((textAreaHeight - padding * 2) / lineHeight);
-                        const displayLines = lines.slice(0, maxLines);
-                        
-                        // 计算文字起始位置（垂直居中）
-                        const totalTextHeight = displayLines.length * lineHeight;
-                        const startY = textY + (textAreaHeight - totalTextHeight) / 2;
-                        
-                        // 绘制文字
-                        displayLines.forEach((line, index) => {
-                            const y = startY + index * lineHeight;
-                            ctx.fillText(line, padding, y);
-                        });
-                        
-                        // 如果文字被截断，在最后一行添加省略号
-                        if (lines.length > maxLines) {
-                            const lastLine = displayLines[displayLines.length - 1];
-                            const lastLineY = startY + (displayLines.length - 1) * lineHeight;
-                            const lastLineWidth = ctx.measureText(lastLine).width;
-                            
-                            // 如果最后一行还有空间，添加省略号
-                            if (lastLineWidth + ctx.measureText('...').width < maxTextWidth) {
-                                ctx.fillText('...', padding + lastLineWidth, lastLineY);
-                            }
-                        }
-                        
-                        // 转换为 Blob
-                        canvas.toBlob((blob) => {
-                            if (blob) {
-                                resolve(blob);
-                            } else {
-                                reject(new Error('生成图片失败'));
-                            }
-                        }, 'image/png', 0.95);
-                    } catch (error) {
-                        reject(error);
+                        canvas.toBlob(
+                            (b) => (b ? resolve(b) : reject(new Error('生成图片失败'))),
+                            'image/png',
+                            0.95
+                        )
+                    } catch (err) {
+                        reject(err)
                     }
-                };
-                
-                img.onerror = () => {
-                    // 如果跨域加载失败，尝试使用代理或直接使用原图
-                    console.warn('图片加载失败，尝试备用方案:', imageUrl);
-                    
-                    // 创建一个新的图片对象，尝试不同的加载方式
-                    const img2 = new Image();
-                    img2.crossOrigin = 'anonymous';
-                    
-                    // 如果是 base64 或 data URL，直接使用
-                    if (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
-                        img2.src = imageUrl;
-                    } else {
-                        // 尝试添加时间戳避免缓存问题
-                        img2.src = imageUrl + (imageUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
+                })
+                return blob
+            } finally {
+                if (resolved.revoke) {
+                    try {
+                        URL.revokeObjectURL(resolved.revoke)
+                    } catch (e) {
+                        /* ignore */
                     }
-                    
-                    img2.onload = () => {
-                        // 使用相同的绘制逻辑
-                        const imageHeight = img2.height;
-                        const imageWidth = img2.width;
-                        const textAreaHeight = Math.floor(imageHeight / 3);
-                        const canvasHeight = imageHeight + textAreaHeight;
-                        const canvasWidth = imageWidth;
-                        
-                        const canvas = document.createElement('canvas');
-                        canvas.width = canvasWidth;
-                        canvas.height = canvasHeight;
-                        const ctx = canvas.getContext('2d');
-                        
-                        ctx.drawImage(img2, 0, 0, imageWidth, imageHeight);
-                        
-                        const textY = imageHeight;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, textY, canvasWidth, textAreaHeight);
-                        
-                        const padding = 40;
-                        const maxTextWidth = canvasWidth - padding * 2;
-                        const fontSize = Math.max(24, Math.min(32, Math.floor(canvasWidth / 30)));
-                        const lineHeight = fontSize * 1.6;
-                        
-                        ctx.fillStyle = '#333333';
-                        ctx.font = `${fontSize}px "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif`;
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'top';
-                        
-                        const words = text.split('');
-                        const lines = [];
-                        let currentLine = '';
-                        
-                        for (let i = 0; i < words.length; i++) {
-                            const testLine = currentLine + words[i];
-                            const metrics = ctx.measureText(testLine);
-                            
-                            if (metrics.width > maxTextWidth && currentLine !== '') {
-                                lines.push(currentLine);
-                                currentLine = words[i];
-                            } else {
-                                currentLine = testLine;
-                            }
-                        }
-                        if (currentLine) {
-                            lines.push(currentLine);
-                        }
-                        
-                        const maxLines = Math.floor((textAreaHeight - padding * 2) / lineHeight);
-                        const displayLines = lines.slice(0, maxLines);
-                        const totalTextHeight = displayLines.length * lineHeight;
-                        const startY = textY + (textAreaHeight - totalTextHeight) / 2;
-                        
-                        displayLines.forEach((line, index) => {
-                            const y = startY + index * lineHeight;
-                            ctx.fillText(line, padding, y);
-                        });
-                        
-                        if (lines.length > maxLines) {
-                            const lastLine = displayLines[displayLines.length - 1];
-                            const lastLineY = startY + (displayLines.length - 1) * lineHeight;
-                            const lastLineWidth = ctx.measureText(lastLine).width;
-                            
-                            if (lastLineWidth + ctx.measureText('...').width < maxTextWidth) {
-                                ctx.fillText('...', padding + lastLineWidth, lastLineY);
-                            }
-                        }
-                        
-                        canvas.toBlob((blob) => {
-                            if (blob) {
-                                resolve(blob);
-                            } else {
-                                reject(new Error('生成图片失败'));
-                            }
-                        }, 'image/png', 0.95);
-                    };
-                    
-                    img2.onerror = () => {
-                        reject(new Error('图片加载失败，可能是跨域问题'));
-                    };
-                };
-                
-                // 开始加载图片
-                if (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
-                    img.src = imageUrl;
-                } else {
-                    img.src = imageUrl;
                 }
-            });
+            }
         },
         
         // 从本地存储恢复数据
