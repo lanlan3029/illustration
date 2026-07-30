@@ -241,6 +241,7 @@ import {
     isCreateCharacterResponseOk,
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask'
+import { createImageWithText as composeImageWithCaption, loadImageBlob } from '@/utils/canvasImageCompose'
 import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 import {
     appendStorySchemaGuide,
@@ -348,14 +349,16 @@ export default {
             }
         },
 
-        // 将图片转换为 Base64
+        // 将图片转换为 Base64（直连失败走 fetch-image 代理，避免 getapib CORS）
         async imageToBase64(imageUrl) {
             if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
                 return imageUrl
             }
             try {
-                const response = await fetch(imageUrl)
-                const blob = await response.blob()
+                const blob = await loadImageBlob(imageUrl, {
+                    http: this.$http,
+                    apiBaseUrl: this.apiBaseUrl,
+                })
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader()
                     reader.onload = () => resolve(reader.result)
@@ -833,30 +836,10 @@ export default {
         },
 
         resolveGeneratedImageUrl(result) {
-            // 优先 API 落盘地址（api.kidstory.cc），避免 CDN 跨域导致下载/收集 canvas 无法 toBlob
-            let imageUrl = resolveGenerationImageUrl(
-                {
-                    image_base64: result.image_base64,
-                    image_url: result.image_url,
-                },
-                this.apiBaseUrl
-            )
-            if (!imageUrl) {
-                imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
-            }
-            if (!imageUrl && result.image_remote_url) {
-                imageUrl = result.image_remote_url
-            }
+            // 优先 image_url（api 落盘），再 image_remote_url / 其它字段
+            let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
             if (!imageUrl && result.character_image_url) {
                 imageUrl = result.character_image_url
-            }
-            if (!imageUrl && result.image_base64) {
-                let base64Str = result.image_base64.trim()
-                if (!base64Str.startsWith('data:')) {
-                    base64Str = base64Str.replace(/\s/g, '')
-                    base64Str = `data:image/jpeg;base64,${base64Str}`
-                }
-                imageUrl = base64Str
             }
             if (!imageUrl && result.character_image_base64) {
                 let base64Str = result.character_image_base64.trim()
@@ -974,8 +957,8 @@ export default {
             try {
                 const images = this.bookData.images;
                 const scenes = this.bookData.scenes || [];
+                let okCount = 0;
                 
-                // 遍历每张图片，生成带文字的图片
                 for (let i = 0; i < images.length; i++) {
                     if (!images[i]) {
                         console.warn(`第 ${i + 1} 张图片不存在，跳过`);
@@ -983,10 +966,7 @@ export default {
                     }
                     
                     try {
-                        // 生成带文字的图片
                         const blob = await this.createImageWithText(images[i], scenes[i] || '');
-                        
-                        // 下载图片
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -995,8 +975,8 @@ export default {
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
+                        okCount += 1;
                         
-                        // 每张图片之间稍作延迟，避免浏览器阻止多个下载
                         if (i < images.length - 1) {
                             await new Promise(resolve => setTimeout(resolve, 300));
                         }
@@ -1006,7 +986,13 @@ export default {
                     }
                 }
                 
-                ElMessage.success(`已成功下载 ${images.length} 张图片`);
+                if (okCount === 0) {
+                    ElMessage.error('下载失败：图片无法读取（跨域），请确认已部署图片代理后重试');
+                } else if (okCount < images.filter(Boolean).length) {
+                    ElMessage.warning(`已下载 ${okCount} 张，其余失败已跳过`);
+                } else {
+                    ElMessage.success(`已成功下载 ${okCount} 张图片`);
+                }
             } catch (error) {
                 console.error('下载图片失败:', error);
                 ElMessage.error('下载失败，请重试');
@@ -1014,156 +1000,13 @@ export default {
                 this.downloading = false;
             }
         },
-        
-        // 把远端图拉成同源 blob URL，避免页面 <img> 无 CORS 缓存污染 canvas
-        async resolveImageSrcForCanvas(imageUrl) {
-            if (!imageUrl) throw new Error('无图片地址')
-            const src = String(imageUrl)
-            if (src.startsWith('data:') || src.startsWith('blob:')) return { src, revoke: null }
 
-            const toObjectUrl = (blob) => {
-                if (!blob || !blob.size) throw new Error('图片数据为空')
-                return URL.createObjectURL(blob)
-            }
-
-            const candidates = [src]
-            // CDN（如 getapib.org）常无 CORS；若路径含 generation-tasks，改走 API 同源拉取
-            const taskPath = src.match(/(\/upload\/generation-tasks\/[^\s?#]+)/i)
-            if (taskPath && taskPath[1]) {
-                candidates.push(taskPath[1])
-                candidates.push(`https://api.kidstory.cc${taskPath[1]}`)
-            }
-
-            for (const candidate of candidates) {
-                try {
-                    const res = await fetch(candidate, { mode: 'cors', cache: 'no-store', credentials: 'omit' })
-                    if (res.ok) {
-                        const objectUrl = toObjectUrl(await res.blob())
-                        return { src: objectUrl, revoke: objectUrl }
-                    }
-                } catch (e) {
-                    // try next
-                }
-
-                try {
-                    const res = await this.$http.get(candidate, {
-                        responseType: 'blob',
-                        withCredentials: false,
-                        timeout: 60000,
-                    })
-                    if (res.data) {
-                        const objectUrl = toObjectUrl(res.data)
-                        return { src: objectUrl, revoke: objectUrl }
-                    }
-                } catch (e) {
-                    // try next
-                }
-            }
-
-            console.warn('图片拉取均失败，回退跨域 Image:', src)
-            const bust = `${src}${src.includes('?') ? '&' : '?'}_cb=${Date.now()}`
-            return { src: bust, revoke: null, needCrossOrigin: true }
-        },
-
-        loadHtmlImage(src, { crossOrigin = false } = {}) {
-            return new Promise((resolve, reject) => {
-                const img = new Image()
-                if (crossOrigin) img.crossOrigin = 'anonymous'
-                img.onload = () => resolve(img)
-                img.onerror = () => reject(new Error('图片加载失败'))
-                img.src = src
+        // 下载拼字：直连 → /create-character/fetch-image 代理 → canvas
+        createImageWithText(imageUrl, text) {
+            return composeImageWithCaption(imageUrl, text, {
+                http: this.$http,
+                apiBaseUrl: this.apiBaseUrl,
             })
-        },
-
-        composeCanvasWithText(img, text) {
-            const imageHeight = img.height
-            const imageWidth = img.width
-            const textAreaHeight = Math.floor(imageHeight / 3)
-            const canvas = document.createElement('canvas')
-            canvas.width = imageWidth
-            canvas.height = imageHeight + textAreaHeight
-            const ctx = canvas.getContext('2d')
-
-            ctx.drawImage(img, 0, 0, imageWidth, imageHeight)
-
-            const textY = imageHeight
-            ctx.fillStyle = '#ffffff'
-            ctx.fillRect(0, textY, imageWidth, textAreaHeight)
-
-            const padding = 40
-            const maxTextWidth = imageWidth - padding * 2
-            const fontSize = Math.max(24, Math.min(32, Math.floor(imageWidth / 30)))
-            const lineHeight = fontSize * 1.6
-            const content = text == null ? '' : String(text)
-
-            ctx.fillStyle = '#333333'
-            ctx.font = `${fontSize}px "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif`
-            ctx.textAlign = 'left'
-            ctx.textBaseline = 'top'
-
-            const lines = []
-            let currentLine = ''
-            for (let i = 0; i < content.length; i++) {
-                const testLine = currentLine + content[i]
-                if (ctx.measureText(testLine).width > maxTextWidth && currentLine !== '') {
-                    lines.push(currentLine)
-                    currentLine = content[i]
-                } else {
-                    currentLine = testLine
-                }
-            }
-            if (currentLine) lines.push(currentLine)
-
-            const maxLines = Math.max(1, Math.floor((textAreaHeight - padding * 2) / lineHeight))
-            const displayLines = lines.slice(0, maxLines)
-            const totalTextHeight = displayLines.length * lineHeight
-            const startY = textY + (textAreaHeight - totalTextHeight) / 2
-
-            displayLines.forEach((line, index) => {
-                ctx.fillText(line, padding, startY + index * lineHeight)
-            })
-
-            if (lines.length > maxLines && displayLines.length) {
-                const lastLine = displayLines[displayLines.length - 1]
-                const lastLineY = startY + (displayLines.length - 1) * lineHeight
-                const lastLineWidth = ctx.measureText(lastLine).width
-                if (lastLineWidth + ctx.measureText('...').width < maxTextWidth) {
-                    ctx.fillText('...', padding + lastLineWidth, lastLineY)
-                }
-            }
-
-            return canvas
-        },
-
-        // 创建带文字的图片（图片在上，文字在下）
-        async createImageWithText(imageUrl, text) {
-            const resolved = await this.resolveImageSrcForCanvas(imageUrl)
-            try {
-                const img = await this.loadHtmlImage(resolved.src, {
-                    crossOrigin: Boolean(resolved.needCrossOrigin),
-                })
-                const canvas = this.composeCanvasWithText(img, text)
-                const blob = await new Promise((resolve, reject) => {
-                    try {
-                        canvas.toBlob(
-                            (b) => (b ? resolve(b) : reject(new Error('生成图片失败'))),
-                            'image/png',
-                            0.95
-                        )
-                    } catch (err) {
-                        reject(err)
-                    }
-                })
-                return blob
-            } finally {
-                if (resolved.revoke) {
-                    try {
-                        URL.revokeObjectURL(resolved.revoke)
-                    } catch (e) {
-                        /* ignore */
-                    }
-                }
-            }
         },
         
         // 从本地存储恢复数据

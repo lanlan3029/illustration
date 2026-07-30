@@ -105,7 +105,8 @@ function absolutizeImagePath(raw, apiBaseUrl) {
 
 /**
  * 从 message 解析可展示图片地址。
- * 优先 CDN image_remote_url，其次 image_url（相对路径拼 API 根）。
+ * 优先本站 image_url（api.kidstory.cc/upload/...），便于 canvas 下载；
+ * 其次 CDN image_remote_url（getapib，常无 CORS）。
  */
 export function resolveGenerationImageUrl(message, apiBaseUrl, mime = 'image/png') {
   if (!message || typeof message !== 'object') return ''
@@ -117,11 +118,11 @@ export function resolveGenerationImageUrl(message, apiBaseUrl, mime = 'image/png
     return `data:${mime};base64,${trimmed.replace(/\s/g, '')}`
   }
 
-  const remote = absolutizeImagePath(message.image_remote_url, apiBaseUrl)
-  if (remote) return remote
-
   const local = absolutizeImagePath(message.image_url, apiBaseUrl)
   if (local) return local
+
+  const remote = absolutizeImagePath(message.image_remote_url, apiBaseUrl)
+  if (remote) return remote
 
   return ''
 }
