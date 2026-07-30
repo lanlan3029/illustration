@@ -109,17 +109,37 @@
                     <!-- 图片生成提示词编辑区域 -->
                     <div v-if="!generating && imagePrompts && imagePrompts.length > 0" class="prompts-editor">
                         <h3 class="prompts-title">{{ $t('aibooks.editPrompts') }}</h3>
+                        <p class="prompts-hint">{{ $t('aibooks.editPromptsHint') }}</p>
                         <div class="prompts-list">
                             <div
                                 v-for="(prompt, index) in imagePrompts"
-                                :key="index"
+                                :key="promptSceneIndexes[index] ?? index"
                                 class="prompt-item">
-                                <div class="prompt-label">{{ $t('aibooks.page', { page: index + 1 }) }}：</div>
+                                <div class="prompt-item-header">
+                                    <div class="prompt-label">
+                                        {{ $t('aibooks.page', { page: (promptSceneIndexes[index] ?? index) + 1 }) }}
+                                        <span
+                                            v-if="hasPageImage(promptSceneIndexes[index] ?? index)"
+                                            class="prompt-status ok"
+                                        >{{ $t('aibooks.promptHasImage') }}</span>
+                                        <span
+                                            v-else-if="bookData"
+                                            class="prompt-status pending"
+                                        >{{ $t('aibooks.promptNeedRegen') }}</span>
+                                    </div>
+                                    <el-button
+                                        type="danger"
+                                        link
+                                        size="small"
+                                        :disabled="generatingImages || imagePrompts.length <= 1"
+                                        @click="removeImagePrompt(index)"
+                                    >{{ $t('aibooks.deletePrompt') }}</el-button>
+                                </div>
                                 <el-input
                                     v-model="imagePrompts[index]"
                                     type="textarea"
                                     :rows="3"
-                                    :placeholder="$t('aibooks.page', { page: index + 1 }) + ' ' + $t('aibooks.promptPlaceholder')"
+                                    :placeholder="$t('aibooks.page', { page: (promptSceneIndexes[index] ?? index) + 1 }) + ' ' + $t('aibooks.promptPlaceholder')"
                                     class="prompt-textarea">
                                 </el-input>
                             </div>
@@ -128,9 +148,9 @@
                             type="primary"
                             @click="generateImagesFromPrompts"
                             :loading="generatingImages"
-                            :disabled="generatingImages || !imagePrompts || imagePrompts.length === 0"
+                            :disabled="generatingImages || !pendingGenerateJobs.length"
                             class="generate-images-btn">
-                            {{ generatingImages ? $t('aibooks.generating') : $t('aibooks.startGenerate') }}
+                            {{ generateImagesButtonLabel }}
                         </el-button>
                     </div>
                 </el-scrollbar>
@@ -289,6 +309,8 @@ export default {
             bookData: null,
             storyData: null,
             imagePrompts: [],
+            /** 与 imagePrompts 一一对应，标记该提示词属于故事第几页（0-based） */
+            promptSceneIndexes: [],
             characterProfiles: [],
             characterCard: '',
             characterReferenceBase64: '',
@@ -303,6 +325,29 @@ export default {
     computed: {
         bookPreviewImages() {
             return (this.bookData?.images || []).filter((img) => img);
+        },
+        pendingGenerateJobs() {
+            const prompts = this.imagePrompts || []
+            const indexes = this.promptSceneIndexes || []
+            const jobs = []
+            for (let i = 0; i < prompts.length; i++) {
+                const prompt = String(prompts[i] || '').trim()
+                if (!prompt) continue
+                jobs.push({
+                    listIndex: i,
+                    sceneIndex: Number.isInteger(indexes[i]) ? indexes[i] : i,
+                    prompt,
+                })
+            }
+            return jobs
+        },
+        generateImagesButtonLabel() {
+            if (this.generatingImages) return this.$t('aibooks.generating')
+            const n = this.pendingGenerateJobs.length
+            if (this.bookData?.images?.some(Boolean)) {
+                return this.$t('aibooks.regenerateSelected', { count: n })
+            }
+            return this.$t('aibooks.startGenerate')
         },
     },
     mounted() {
@@ -385,6 +430,8 @@ export default {
             this.bookData = null
             this.characterProfiles = []
             this.characterCard = ''
+            this.imagePrompts = []
+            this.promptSceneIndexes = []
             this.clearCharacterReference()
             
             try {
@@ -405,6 +452,7 @@ export default {
                 this.characterProfiles = extractCharacterProfiles(storyData)
                 this.characterCard = formatCharacterCard(this.characterProfiles)
                 this.imagePrompts = scenesDetailToImagePrompts(storyData.scenes_detail)
+                this.promptSceneIndexes = this.imagePrompts.map((_, i) => i)
                 
                 if (!this.characterCard.trim()) {
                     console.warn('故事 JSON 未返回 character_profiles，请手动填写角色设定卡')
@@ -560,10 +608,39 @@ export default {
             return storyJson
         },
         
-        // 从编辑后的提示词生成图片
+        hasPageImage(sceneIndex) {
+            return Boolean(this.bookData?.images?.[sceneIndex])
+        },
+
+        removeImagePrompt(index) {
+            if (this.generatingImages) return
+            if (!this.imagePrompts || this.imagePrompts.length <= 1) {
+                ElMessage.warning(this.$t('aibooks.keepAtLeastOnePrompt'))
+                return
+            }
+            const sceneIndex = this.promptSceneIndexes[index] ?? index
+            this.imagePrompts.splice(index, 1)
+            this.promptSceneIndexes.splice(index, 1)
+            this.saveToLocalStorage()
+            ElMessage.success(this.$t('aibooks.promptRemoved', { page: sceneIndex + 1 }))
+        },
+
+        syncPromptSceneIndexes() {
+            const n = (this.imagePrompts || []).length
+            if (!Array.isArray(this.promptSceneIndexes) || this.promptSceneIndexes.length !== n) {
+                this.promptSceneIndexes = Array.from({ length: n }, (_, i) => {
+                    const existing = this.promptSceneIndexes?.[i]
+                    return Number.isInteger(existing) ? existing : i
+                })
+            }
+        },
+
+        // 从编辑后的提示词生成图片（只提交列表中剩余的提示词；已删页不请求后端）
         async generateImagesFromPrompts() {
-            if (!this.imagePrompts || this.imagePrompts.length === 0) {
-                ElMessage.warning('没有可生成的提示词');
+            this.syncPromptSceneIndexes()
+            const jobs = this.pendingGenerateJobs
+            if (!jobs.length) {
+                ElMessage.warning(this.$t('aibooks.noPromptsToGenerate'));
                 return;
             }
             
@@ -586,8 +663,17 @@ export default {
             this.progressStatus = ''
             this.progressText = '开始生成图片...'
 
-            // 先占位展示全部页，每张成图立刻写入对应槽位（不必等全部完成）
-            const pageCount = this.imagePrompts.length
+            const sceneCount = Array.isArray(this.storyData.scenes)
+                ? this.storyData.scenes.length
+                : jobs.length
+            const prevImages = Array.isArray(this.bookData?.images)
+                ? [...this.bookData.images]
+                : []
+            while (prevImages.length < sceneCount) prevImages.push(null)
+
+            const regenSet = new Set(jobs.map((j) => j.sceneIndex))
+            const nextImages = prevImages.map((img, idx) => (regenSet.has(idx) ? null : img))
+
             this.bookData = {
                 title: this.storyData.title,
                 summary: this.storyData.summary,
@@ -595,29 +681,32 @@ export default {
                 scenes_detail: this.storyData.scenes_detail,
                 character_profiles: this.characterProfiles,
                 character_card: this.characterCard,
-                images: Array(pageCount).fill(null)
+                images: nextImages,
             }
             this.saveToLocalStorage()
             
             try {
-                await this.generateImages(this.imagePrompts, pageCount)
+                await this.generateImagesForJobs(jobs)
 
-                const okCount = (this.bookData.images || []).filter(Boolean).length
+                const okCount = jobs.filter((j) => this.bookData.images?.[j.sceneIndex]).length
+                const totalBookOk = (this.bookData.images || []).filter(Boolean).length
                 this.progressPercentage = 100
                 if (okCount === 0) {
                     this.progressStatus = 'exception'
                     this.progressText = '生成失败，请重试'
                     ElMessage.error('图片生成失败，请重试')
-                } else if (okCount < pageCount) {
+                } else if (okCount < jobs.length) {
                     this.progressStatus = 'warning'
-                    this.progressText = `已生成 ${okCount}/${pageCount} 张，部分页面失败`
+                    this.progressText = `本次生成 ${okCount}/${jobs.length} 张，全书已有 ${totalBookOk} 张`
                     this.saveToLocalStorage()
-                    ElMessage.warning(`已生成 ${okCount}/${pageCount} 张图片，失败页可稍后重试`)
+                    ElMessage.warning(`本次已生成 ${okCount}/${jobs.length} 张，失败页可改提示词后重试`)
                 } else {
                     this.progressStatus = 'success'
-                    this.progressText = '绘本生成完成！'
+                    this.progressText = `生成完成（全书 ${totalBookOk} 张）`
                     this.saveToLocalStorage()
-                    ElMessage.success('绘本生成成功！')
+                    ElMessage.success(jobs.length < sceneCount
+                        ? `已重新生成 ${okCount} 张，其余页保留原图`
+                        : '绘本生成成功！')
                 }
             } catch (error) {
                 console.error('生成图片失败:', error)
@@ -685,17 +774,17 @@ export default {
         },
         
         // 生成单页：POST /create-character（异步 task_id 会在工具内轮询至有图）
-        async generateOnePageImage(i, promptList, styleInfo, allProfiles, referenceImage) {
-            const sceneText = this.storyData?.scenes?.[i] || ''
+        async generateOnePageImage(sceneIndex, scenePrompt, styleInfo, allProfiles, referenceImage) {
+            const sceneText = this.storyData?.scenes?.[sceneIndex] || ''
             const { card: pageCharacterCard, names: pageCharacterNames } = buildPageCharacterCard({
-                scenePrompt: promptList[i],
+                scenePrompt,
                 sceneText,
                 profiles: allProfiles,
             })
 
             const requestData = {
                 prompt: buildPageImagePrompt({
-                    scenePrompt: promptList[i].trim(),
+                    scenePrompt: String(scenePrompt || '').trim(),
                     characterCard: pageCharacterCard,
                     characterNames: pageCharacterNames,
                     styleInfo,
@@ -740,7 +829,7 @@ export default {
 
             const imageUrl = this.resolveGeneratedImageUrl(result)
             if (!imageUrl) {
-                throw new Error(`第 ${i + 1} 张图片生成成功但未找到图片URL`)
+                throw new Error(`第 ${sceneIndex + 1} 张图片生成成功但未找到图片URL`)
             }
             return imageUrl
         },
@@ -751,15 +840,36 @@ export default {
             this.saveToLocalStorage()
         },
 
-        // 生成图片：有角色参考图则各页并行；否则先生成第 1 页作锚点，再并行后续页。每张成图立刻显示。
-        async generateImages(prompts, imageCount) {
-            const promptList = Array.isArray(prompts) ? prompts : [prompts]
+        async pickAnchorImageBase64(excludeSceneIndexes = []) {
+            if (this.characterReferenceBase64) return this.characterReferenceBase64
+            const exclude = new Set(excludeSceneIndexes)
+            const images = this.bookData?.images || []
+            for (let i = 0; i < images.length; i++) {
+                if (exclude.has(i) || !images[i]) continue
+                try {
+                    return await this.imageToBase64(images[i])
+                } catch (e) {
+                    console.warn('已有页参考图转换失败:', e)
+                }
+            }
+            return ''
+        },
+
+        // 仅生成 jobs 中的页；保留其它页已有插画
+        async generateImagesForJobs(jobs) {
+            const jobList = Array.isArray(jobs) ? jobs.filter((j) => j && j.prompt) : []
+            const total = jobList.length
+            if (!total) return this.bookData?.images || []
+
             const styleInfo = getStyleInfoText(this.styles, this.form.artStyle)
             const allProfiles = this.characterProfiles?.length
                 ? this.characterProfiles
                 : parseCharacterCardText(this.characterCard)
 
-            const total = Math.min(imageCount, promptList.length)
+            const sceneCount = Array.isArray(this.storyData?.scenes)
+                ? this.storyData.scenes.length
+                : Math.max(...jobList.map((j) => j.sceneIndex), 0) + 1
+
             if (!this.bookData) {
                 this.bookData = {
                     title: this.storyData?.title || '',
@@ -768,10 +878,14 @@ export default {
                     scenes_detail: this.storyData?.scenes_detail,
                     character_profiles: this.characterProfiles,
                     character_card: this.characterCard,
-                    images: Array(total).fill(null)
+                    images: Array(sceneCount).fill(null),
                 }
-            } else if (!Array.isArray(this.bookData.images) || this.bookData.images.length !== total) {
-                this.bookData.images = Array(total).fill(null)
+            } else if (!Array.isArray(this.bookData.images)) {
+                this.bookData.images = Array(sceneCount).fill(null)
+            } else if (this.bookData.images.length < sceneCount) {
+                while (this.bookData.images.length < sceneCount) {
+                    this.bookData.images.push(null)
+                }
             }
 
             let completed = 0
@@ -783,39 +897,40 @@ export default {
                     : `已完成 ${completed}/${total} 张`
             }
 
-            const runPage = async (i, referenceImage) => {
+            const runJob = async (job, referenceImage) => {
+                const sceneIndex = job.sceneIndex
                 try {
                     const imageUrl = await this.generateOnePageImage(
-                        i,
-                        promptList,
+                        sceneIndex,
+                        job.prompt,
                         styleInfo,
                         allProfiles,
                         referenceImage
                     )
-                    this.setPageImage(i, imageUrl)
-                    bumpProgress(i + 1)
+                    this.setPageImage(sceneIndex, imageUrl)
+                    bumpProgress(sceneIndex + 1)
                     return imageUrl
                 } catch (error) {
-                    console.error(`生成第 ${i + 1} 张图片失败:`, error)
-                    this.setPageImage(i, null)
-                    bumpProgress(i + 1)
+                    console.error(`生成第 ${sceneIndex + 1} 张图片失败:`, error)
+                    this.setPageImage(sceneIndex, null)
+                    bumpProgress(sceneIndex + 1)
                     return null
                 }
             }
 
-            const anchorImageBase64 = this.characterReferenceBase64 || ''
+            const regenIndexes = jobList.map((j) => j.sceneIndex)
+            let anchorImageBase64 = await this.pickAnchorImageBase64(regenIndexes)
 
-            if (anchorImageBase64) {
+            if (anchorImageBase64 || this.characterReferenceBase64) {
+                const ref = this.characterReferenceBase64 || anchorImageBase64
                 this.progressText = `正在并行生成 ${total} 张图片...`
-                await Promise.all(
-                    Array.from({ length: total }, (_, i) => runPage(i, anchorImageBase64))
-                )
+                await Promise.all(jobList.map((job) => runJob(job, ref)))
                 return this.bookData.images
             }
 
-            // 无上传参考图：先出第 1 页，再用其作后续页参考并并行
-            this.progressText = `正在生成第 1/${total} 张图片...`
-            const firstUrl = await runPage(0, '')
+            // 无参考图：先生成列表第一项作锚点，再并行其余
+            this.progressText = `正在生成第 ${jobList[0].sceneIndex + 1} 页（1/${total}）...`
+            const firstUrl = await runJob(jobList[0], '')
             let firstPageImageBase64 = ''
             if (firstUrl) {
                 try {
@@ -825,10 +940,10 @@ export default {
                 }
             }
 
-            if (total > 1) {
-                this.progressText = `第 1 页已出，正在并行生成其余 ${total - 1} 张...`
+            if (jobList.length > 1) {
+                this.progressText = `锚点页已出，正在并行生成其余 ${jobList.length - 1} 张...`
                 await Promise.all(
-                    Array.from({ length: total - 1 }, (_, j) => runPage(j + 1, firstPageImageBase64))
+                    jobList.slice(1).map((job) => runJob(job, firstPageImageBase64))
                 )
             }
 
@@ -1035,6 +1150,11 @@ export default {
                         // 恢复编辑后的提示词
                         if (data.imagePrompts && data.imagePrompts.length > 0) {
                             this.imagePrompts = data.imagePrompts;
+                            if (Array.isArray(data.promptSceneIndexes) && data.promptSceneIndexes.length === data.imagePrompts.length) {
+                                this.promptSceneIndexes = data.promptSceneIndexes;
+                            } else {
+                                this.promptSceneIndexes = data.imagePrompts.map((_, i) => i);
+                            }
                         }
 
                         if (data.characterProfiles) {
@@ -1075,6 +1195,7 @@ export default {
                     },
                     storyData: this.storyData,
                     imagePrompts: this.imagePrompts,
+                    promptSceneIndexes: this.promptSceneIndexes,
                     characterProfiles: this.characterProfiles,
                     characterCard: this.characterCard,
                     characterReferencePreview: this.characterReferencePreview || '',
@@ -1095,6 +1216,7 @@ export default {
                         },
                         storyData: this.storyData,
                         imagePrompts: this.imagePrompts,
+                        promptSceneIndexes: this.promptSceneIndexes,
                         characterProfiles: this.characterProfiles,
                         characterCard: this.characterCard,
                         characterReferencePreview: this.characterReferencePreview || '',
@@ -1136,7 +1258,11 @@ export default {
             this.$watch('imagePrompts', () => {
                 debounceSave();
             }, { deep: true });
-            
+
+            this.$watch('promptSceneIndexes', () => {
+                debounceSave();
+            }, { deep: true });
+
             // 监听故事数据变化
             this.$watch('storyData', () => {
                 debounceSave();
@@ -1312,7 +1438,14 @@ export default {
     font-size: 16px;
     font-weight: 600;
     color: #303133;
-    margin: 0 0 20px 0;
+    margin: 0 0 8px 0;
+}
+
+.prompts-hint {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #909399;
 }
 
 .prompts-list {
@@ -1328,10 +1461,38 @@ export default {
     gap: 8px;
 }
 
+.prompt-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .prompt-label {
     font-size: 14px;
     font-weight: 500;
     color: #606266;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.prompt-status {
+    font-size: 12px;
+    font-weight: 400;
+    padding: 1px 8px;
+    border-radius: 999px;
+}
+
+.prompt-status.ok {
+    color: #67c23a;
+    background: #f0f9eb;
+}
+
+.prompt-status.pending {
+    color: #e6a23c;
+    background: #fdf6ec;
 }
 
 .prompt-textarea {
