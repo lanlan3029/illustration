@@ -27,6 +27,9 @@ export function normalizeIllustrationStyle(item) {
     elementDetails: item.elementDetails || '',
     image: imageUrl,
     imageUrl,
+    inputTemplate: item.inputTemplate || '',
+    prependBaseOnGenerate: Boolean(item.prependBaseOnGenerate || item.inputTemplate),
+    preferredSize: item.preferredSize || '',
   }
 }
 
@@ -35,16 +38,55 @@ export function normalizeIllustrationStyle(item) {
  * @returns {NormalizedStyle[]}
  */
 export function buildFallbackIllustrationStyles(t) {
-  return ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
-    id: config.id,
-    key: config.key,
-    category: config.category,
-    uiTab: backendCategoryToUiTab(config.category),
-    artStyle: t(`aibooks.styles.${config.key}.artStyle`),
-    elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
-    image: config.image,
-    imageUrl: typeof config.image === 'string' ? config.image : String(config.image),
-  }))
+  return ILLUSTRATION_STYLE_CONFIGS.map((config) => {
+    const inputKey = `aibooks.styles.${config.key}.inputTemplate`
+    const inputRaw = t(inputKey)
+    const inputTemplate = inputRaw && inputRaw !== inputKey ? inputRaw : ''
+    return {
+      id: config.id,
+      key: config.key,
+      category: config.category,
+      uiTab: backendCategoryToUiTab(config.category),
+      artStyle: t(`aibooks.styles.${config.key}.artStyle`),
+      elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
+      image: config.image,
+      imageUrl: typeof config.image === 'string' ? config.image : String(config.image),
+      inputTemplate,
+      prependBaseOnGenerate: Boolean(config.prependBaseOnGenerate || inputTemplate),
+      preferredSize: config.preferredSize || '',
+    }
+  })
+}
+
+/**
+ * API 列表合并本地特殊风格（带 inputTemplate / 底词前置），避免线上 API 尚未入库时缺失。
+ * @param {NormalizedStyle[]} apiItems
+ * @param {(key: string) => string} t
+ */
+export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
+  const list = Array.isArray(apiItems) ? apiItems.map(normalizeIllustrationStyle) : []
+  if (!t) return list
+  const local = buildFallbackIllustrationStyles(t)
+  const specials = local.filter((s) => s.inputTemplate || s.prependBaseOnGenerate)
+  const byKey = new Map(list.map((s) => [s.key, s]))
+  const byId = new Map(list.map((s) => [s.id, s]))
+
+  for (const special of specials) {
+    const existing = byKey.get(special.key) || byId.get(special.id)
+    if (existing) {
+      existing.inputTemplate = special.inputTemplate || existing.inputTemplate
+      existing.prependBaseOnGenerate = true
+      existing.preferredSize = special.preferredSize || existing.preferredSize
+      if (!existing.elementDetails && special.elementDetails) {
+        existing.elementDetails = special.elementDetails
+      }
+    } else {
+      list.push(special)
+      byKey.set(special.key, special)
+      byId.set(special.id, special)
+    }
+  }
+  return list
 }
 
 export function invalidateIllustrationStylesCache() {
@@ -80,10 +122,13 @@ export async function loadIllustrationStyles(options = {}) {
     .then((items) => {
       const normalized = (items || []).map(normalizeIllustrationStyle)
       if (normalized.length) {
-        cache.items = normalized
+        const merged = t
+          ? mergeLocalSpecialIllustrationStyles(normalized, t)
+          : normalized
+        cache.items = merged
         cache.locale = locale
         cache.category = category
-        return normalized
+        return merged
       }
       throw new Error('empty styles')
     })

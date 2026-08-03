@@ -561,6 +561,15 @@ export default {
         generatedPrompt() {
             if (!this.subjectScene || !this.subjectScene.trim()) return ''
             let prompt = this.subjectScene.trim()
+            const style = this.selectedStyle
+            // 底词固定在网站：输入框只显示 C，生成时自动前置 A（elementDetails）
+            if (style?.prependBaseOnGenerate && style.elementDetails) {
+                const base = String(style.elementDetails).trim()
+                const marker = base.slice(0, 24)
+                if (base && (!marker || !prompt.includes(marker))) {
+                    prompt = `${base}\n\n${prompt}`
+                }
+            }
             if (this.isCharacterInput(prompt)) {
                 const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。'
                 prompt = `${prompt}，${characterAccuracy}`
@@ -612,6 +621,11 @@ export default {
         },
         applyStylePromptToInput(style) {
             if (!style) return
+            // 特殊风格：输入框只填精简模板 C，底词 A 不写入输入框
+            if (style.inputTemplate) {
+                this.subjectScene = String(style.inputTemplate).trim()
+                return
+            }
             const parts = [style.artStyle, style.elementDetails].filter(p => p && String(p).trim())
             this.subjectScene = parts.join('，')
         },
@@ -631,6 +645,9 @@ export default {
                 this.editableArtStyle = style.artStyle
                 this.editableElementDetails = style.elementDetails
                 this.applyStylePromptToInput(style)
+                if (style.preferredSize) {
+                    this.selectedSize = style.preferredSize
+                }
             }
         },
         selectOaiTemplate(item) {
