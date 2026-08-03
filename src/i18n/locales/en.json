@@ -1047,9 +1047,10 @@
     "updateSuccess": "Style updated",
     "uploadFailed": "Upload failed",
     "deleteStyle": "Delete",
-    "deleteConfirm": "Disable style \"{name}\" (#{id})? It will disappear from the public list.",
-    "deleteSuccess": "Style disabled",
+    "deleteConfirm": "Permanently delete style \"{name}\" (#{id})? The record and local preview image will be removed and cannot be recovered.",
+    "deleteSuccess": "Permanently deleted",
     "deleteFailed": "Delete failed",
+    "loadListFailed": "Could not load existing styles. Please sign in with an admin account.",
     "backendCategory": {
       "sketch": "Sketch",
       "watercolor": "Watercolor",

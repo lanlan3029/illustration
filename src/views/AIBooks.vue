@@ -26,7 +26,7 @@
                                     type="button"
                                     class="style-picker-item"
                                     :class="{ selected: form.artStyle === style.key }"
-                                    :title="style.elementDetails"
+                                    :title="style.artStyle"
                                     @click="handleStyleChange(style.key, true)"
                                 >
                                     <div class="style-picker-thumb">
@@ -384,7 +384,10 @@ export default {
             const style = this.styles.find(s => s.key === styleKey);
             if (!style) return;
 
-            const styleText = `【画风：${style.artStyle}】${style.elementDetails}`;
+            // 底词前置风格：不把长 elementDetails/basePrompt 写进可见提示词
+            const styleText = (style.prependBaseOnGenerate || style.basePrompt || style.inputTemplate)
+                ? `【画风：${style.artStyle}】`
+                : `【画风：${style.artStyle}】${style.elementDetails || ''}`;
 
             // 如果 prompt 中还没有这段风格描述，则追加到末尾
             if (!this.form.prompt.includes(styleText)) {
@@ -480,9 +483,13 @@ export default {
             const selectedStyle = this.styles.find(s => s.key === this.form.artStyle)
                 if (selectedStyle) {
                     const styleName = selectedStyle.artStyle || ''
-                    const styleDetails = selectedStyle.elementDetails || ''
+                    const styleDetails = selectedStyle.prependBaseOnGenerate
+                        ? (selectedStyle.basePrompt || '')
+                        : (selectedStyle.elementDetails || '')
                     if (styleName && styleDetails) {
                         stylePrompt = `画风要求：${styleName}。${styleDetails}`
+                    } else if (styleName) {
+                        stylePrompt = `画风要求：${styleName}`
                     }
                 }
             }
@@ -861,7 +868,7 @@ export default {
             const total = jobList.length
             if (!total) return this.bookData?.images || []
 
-            const styleInfo = getStyleInfoText(this.styles, this.form.artStyle)
+            const styleInfo = getStyleInfoText(this.styles, this.form.artStyle, { forGenerate: true })
             const allProfiles = this.characterProfiles?.length
                 ? this.characterProfiles
                 : parseCharacterCardText(this.characterCard)

@@ -25,7 +25,11 @@
                         </div>
                     </el-card>
                 </router-link>
-                <router-link to="/user/upload/style-prompt" class="upload-card">
+                <router-link
+                    v-if="isAdmin"
+                    to="/user/upload/style-prompt"
+                    class="upload-card"
+                >
                     <el-card class="card" shadow="hover">
                         <div class="card-content">
                             <div class="icon-wrapper">
@@ -43,6 +47,7 @@
 
 <script>
 import { Picture as UploadPictureIcon, Reading as UploadReadingIcon, Brush as BrushIcon } from '@element-plus/icons-vue'
+import { isCurrentUserAdmin } from '@/utils/auth'
 
 export default {
   name: 'UploadPage',
@@ -51,13 +56,10 @@ export default {
     UploadReadingIcon,
     BrushIcon,
   },
-  data() {
-    return {
-    }
-  },
-  methods: {
-  },
-  mounted() {
+  computed: {
+    isAdmin() {
+      return isCurrentUserAdmin()
+    },
   },
 }
 </script>

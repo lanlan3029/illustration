@@ -42,10 +42,19 @@ export async function fetchPublicIllustrationStyles(options = {}) {
 }
 
 /**
+ * @param {{ enabledOnly?: boolean }} [options] 默认只拉启用中的（软删后不再出现）
  * @returns {Promise<IllustrationStyleDto[]>}
  */
-export async function fetchAdminIllustrationStyles() {
-  const res = await axios.get(`${ADMIN_PATH}/`, { headers: authHeaders() })
+export async function fetchAdminIllustrationStyles(options = {}) {
+  const params = {}
+  // 管理端默认 is_enabled 不传会返回含下线项；上传页默认只要启用中的
+  if (options.enabledOnly !== false) {
+    params.is_enabled = true
+  }
+  const res = await axios.get(`${ADMIN_PATH}/`, {
+    headers: authHeaders(),
+    params,
+  })
   if (!isOk(res.data)) {
     throw new Error(res.data?.message || '加载管理端风格列表失败')
   }

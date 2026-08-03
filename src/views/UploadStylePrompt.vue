@@ -144,21 +144,29 @@
           class="existing-item"
           :class="{ 'is-active': editingId === style.id }"
         >
-          <button type="button" class="existing-item-main" @click="loadExistingStyle(style)">
-            <img :src="style.image" :alt="style.artStyle || styleLabel(style)" class="existing-thumb" />
+          <button
+            type="button"
+            class="existing-item-main"
+            @click="loadExistingStyle(style)"
+          >
+            <span class="existing-thumb-wrap">
+              <img :src="style.image" :alt="style.artStyle || styleLabel(style)" class="existing-thumb" />
+            </span>
             <span class="existing-name">{{ style.artStyle || styleLabel(style) }}</span>
             <span class="existing-id">#{{ style.id }}</span>
           </button>
-          <el-button
+          <button
+            type="button"
             class="existing-delete"
-            type="danger"
-            link
-            size="small"
-            :loading="deletingId === style.id"
+            :class="{ 'is-loading': deletingId === style.id }"
+            :disabled="deletingId === style.id"
+            :title="$t('uploadStylePrompt.deleteStyle')"
+            :aria-label="$t('uploadStylePrompt.deleteStyle')"
             @click.stop="confirmDeleteStyle(style)"
           >
-            {{ $t('uploadStylePrompt.deleteStyle') }}
-          </el-button>
+            <el-icon v-if="deletingId === style.id" class="is-loading"><Loading /></el-icon>
+            <el-icon v-else><Delete /></el-icon>
+          </button>
         </div>
       </div>
       <el-empty v-else :description="$t('uploadStylePrompt.noStyles')" />
@@ -167,22 +175,21 @@
 </template>
 
 <script>
-import { UploadFilled, Loading } from '@element-plus/icons-vue'
+import { UploadFilled, Loading, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import enMessages from '@/i18n/locales/en.json'
 import { ILLUSTRATION_STYLE_BACKEND_CATEGORIES } from '@/data/illustrationStyleCategories'
 import {
   invalidateIllustrationStylesCache,
-  loadIllustrationStyles,
   nextIllustrationStyleId,
   generateStyleKey,
   ensureUniqueStyleKey,
 } from '@/utils/illustrationStyles'
-import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import {
   createIllustrationStyle,
   deleteIllustrationStyle,
   fetchAdminIllustrationStyles,
+  fetchPublicIllustrationStyles,
   updateIllustrationStyle,
 } from '@/utils/illustrationStylesApi'
 import {
@@ -196,6 +203,7 @@ export default {
   components: {
     UploadFilled,
     Loading,
+    Delete,
   },
   data() {
     return {
@@ -305,39 +313,36 @@ export default {
         this.existingImageUrl = ''
       }
     },
+    mapStyleRow(item) {
+      return {
+        id: item.id,
+        key: item.key,
+        category: item.category,
+        artStyle: item.artStyle,
+        elementDetails: item.elementDetails,
+        image: item.imageUrl || item.image,
+      }
+    },
     async loadExistingStyles() {
       this.listLoading = true
       try {
         try {
-          const adminItems = await fetchAdminIllustrationStyles()
-          if (adminItems.length) {
-            this.existingStyles = adminItems.map((item) => ({
-              id: item.id,
-              key: item.key,
-              category: item.category,
-              artStyle: item.artStyle,
-              elementDetails: item.elementDetails,
-              image: item.imageUrl,
-            }))
-            return
-          }
+          // 管理端成功即用服务端结果（含空列表）；勿再回退本地，否则会把已删的 #29 又插回来
+          const adminItems = await fetchAdminIllustrationStyles({ enabledOnly: true })
+          this.existingStyles = (adminItems || []).map((item) => this.mapStyleRow(item))
+          return
         } catch {
-          // 非管理员或未部署 API 时回退公开列表
+          // 非管理员或未部署 API 时回退公开列表（公开接口本身已过滤 is_enabled）
         }
 
         try {
           const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
-          const items = await loadIllustrationStyles({ locale, t: this.$t.bind(this), force: true })
-          this.existingStyles = items
+          // 不用 loadIllustrationStyles：它会 merge 本地特殊风格（如 poeticMinimalZine/#29）
+          const items = await fetchPublicIllustrationStyles({ locale })
+          this.existingStyles = (items || []).map((item) => this.mapStyleRow(item))
         } catch {
-          this.existingStyles = ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
-            id: config.id,
-            key: config.key,
-            category: config.category,
-            image: config.image,
-            artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
-            elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`),
-          }))
+          this.existingStyles = []
+          ElMessage.warning(this.$t('uploadStylePrompt.loadListFailed'))
         }
       } finally {
         this.listLoading = false
@@ -411,7 +416,8 @@ export default {
 
       this.deletingId = style.id
       try {
-        await deleteIllustrationStyle(style.id)
+        // 硬删：从库中移除，避免软删后管理列表仍看到
+        await deleteIllustrationStyle(style.id, { hard: true })
         if (this.editingId === style.id) {
           this.resetForm()
         }
@@ -654,20 +660,19 @@ export default {
 
 .existing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: 12px;
 }
 
 .existing-item {
+  position: relative;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  padding: 8px;
+  padding: 0 0 8px;
   background: #fff;
   text-align: center;
+  overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .existing-item:hover,
@@ -685,21 +690,67 @@ export default {
   text-align: center;
 }
 
-.existing-delete {
-  align-self: center;
+.existing-thumb-wrap {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin: 0 0 6px;
+  background: #f3f4f6;
+  overflow: hidden;
 }
 
 .existing-thumb {
-  width: 72px;
-  height: 72px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 8px;
   display: block;
-  margin: 0 auto 6px;
+}
+
+.existing-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.5);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.15s, background 0.15s, transform 0.15s;
+}
+
+.existing-item:hover .existing-delete,
+.existing-item:focus-within .existing-delete,
+.existing-delete.is-loading,
+.existing-delete:focus-visible {
+  opacity: 1;
+}
+
+.existing-delete:hover:not(:disabled) {
+  background: #ef4444;
+  transform: scale(1.06);
+}
+
+.existing-delete:disabled {
+  cursor: wait;
+  opacity: 1;
+}
+
+.existing-delete .el-icon {
+  font-size: 13px;
 }
 
 .existing-name {
   display: block;
+  padding: 0 6px;
   font-size: 11px;
   line-height: 1.3;
   color: #374151;
@@ -710,6 +761,7 @@ export default {
 
 .existing-id {
   display: block;
+  padding: 0 6px;
   font-size: 10px;
   color: #9ca3af;
   margin-top: 2px;

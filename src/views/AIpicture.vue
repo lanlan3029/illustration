@@ -562,18 +562,23 @@ export default {
             if (!this.subjectScene || !this.subjectScene.trim()) return ''
             let prompt = this.subjectScene.trim()
             const style = this.selectedStyle
-            // 底词固定在网站：输入框只显示 C，生成时自动前置 A（elementDetails）
-            if (this.isPoeticZineStyle(style)) {
+            // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
+            if (this.isPoeticZineStyle(style) || style?.prependBaseOnGenerate) {
                 const base = String(
-                    style?.elementDetails
-                    || this.$t('aibooks.styles.poeticMinimalZine.elementDetails')
+                    style?.basePrompt
+                    || style?.elementDetails
+                    || (this.isPoeticZineStyle(style)
+                        ? this.$t('aibooks.styles.poeticMinimalZine.elementDetails')
+                        : '')
                     || ''
                 ).trim()
                 const marker = base.slice(0, 24)
                 if (base && (!marker || !prompt.includes(marker))) {
                     prompt = `${base}\n\n${prompt}`
                 }
-                prompt = this.enrichPoeticZinePrompt(prompt)
+                if (this.isPoeticZineStyle(style)) {
+                    prompt = this.enrichPoeticZinePrompt(prompt)
+                }
             }
             if (this.isCharacterInput(prompt)) {
                 const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。'
@@ -651,10 +656,14 @@ export default {
 
         applyStylePromptToInput(style) {
             if (!style) return
-            // 特殊风格：输入框只填精简模板 C，底词 A 不写入输入框
+            // 特殊风格：输入框只填精简模板 C，底词 A（basePrompt）永不写入输入框
             const tmpl = this.resolveStyleInputTemplate(style)
             if (tmpl) {
                 this.subjectScene = tmpl
+                return
+            }
+            if (style.prependBaseOnGenerate || style.basePrompt) {
+                this.subjectScene = style.artStyle || ''
                 return
             }
             const parts = [style.artStyle, style.elementDetails].filter(p => p && String(p).trim())

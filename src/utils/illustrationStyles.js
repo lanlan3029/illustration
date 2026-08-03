@@ -2,7 +2,21 @@ import { backendCategoryToUiTab } from '@/data/illustrationStyleCategories'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import { fetchPublicIllustrationStyles } from '@/utils/illustrationStylesApi'
 
-/** @typedef {{ id: number, key: string, category: string, artStyle: string, elementDetails: string, image: string, imageUrl?: string }} NormalizedStyle */
+/**
+ * @typedef {{
+ *   id: number,
+ *   key: string,
+ *   category: string,
+ *   artStyle: string,
+ *   elementDetails: string,
+ *   basePrompt?: string,
+ *   inputTemplate?: string,
+ *   prependBaseOnGenerate?: boolean,
+ *   preferredSize?: string,
+ *   image: string,
+ *   imageUrl?: string,
+ * }} NormalizedStyle
+ */
 
 const cache = {
   locale: '',
@@ -15,22 +29,48 @@ const cache = {
  * @param {object} item
  * @returns {NormalizedStyle}
  */
+/**
+ * 底词前置风格：长规则进 basePrompt（仅生成用），elementDetails 对用户置空。
+ * @param {NormalizedStyle} style
+ * @returns {NormalizedStyle}
+ */
+export function sealHiddenBasePrompt(style) {
+  if (!style) return style
+  const hide = Boolean(style.prependBaseOnGenerate || style.inputTemplate)
+  if (!hide) return style
+  const base = String(style.basePrompt || style.elementDetails || '').trim()
+  return {
+    ...style,
+    basePrompt: base,
+    elementDetails: '',
+    prependBaseOnGenerate: true,
+  }
+}
+
+/** 生成时取隐藏底词 A */
+export function resolveStyleBasePrompt(style) {
+  if (!style) return ''
+  return String(style.basePrompt || style.elementDetails || '').trim()
+}
+
 export function normalizeIllustrationStyle(item) {
   const imageUrl = item.imageUrl || item.image || ''
   const category = item.category || 'sketch'
-  return {
+  const style = {
     id: item.id,
     key: item.key,
     category,
     uiTab: backendCategoryToUiTab(category),
     artStyle: item.artStyle || '',
     elementDetails: item.elementDetails || '',
+    basePrompt: item.basePrompt || '',
     image: imageUrl,
     imageUrl,
     inputTemplate: item.inputTemplate || '',
     prependBaseOnGenerate: Boolean(item.prependBaseOnGenerate || item.inputTemplate),
     preferredSize: item.preferredSize || '',
   }
+  return sealHiddenBasePrompt(style)
 }
 
 /**
@@ -42,19 +82,20 @@ export function buildFallbackIllustrationStyles(t) {
     const inputKey = `aibooks.styles.${config.key}.inputTemplate`
     const inputRaw = t(inputKey)
     const inputTemplate = inputRaw && inputRaw !== inputKey ? inputRaw : ''
-    return {
+    const details = t(`aibooks.styles.${config.key}.elementDetails`)
+    return sealHiddenBasePrompt({
       id: config.id,
       key: config.key,
       category: config.category,
       uiTab: backendCategoryToUiTab(config.category),
       artStyle: t(`aibooks.styles.${config.key}.artStyle`),
-      elementDetails: t(`aibooks.styles.${config.key}.elementDetails`),
+      elementDetails: details,
       image: config.image,
       imageUrl: typeof config.image === 'string' ? config.image : String(config.image),
       inputTemplate,
       prependBaseOnGenerate: Boolean(config.prependBaseOnGenerate || inputTemplate),
       preferredSize: config.preferredSize || '',
-    }
+    })
   })
 }
 
@@ -95,10 +136,16 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
       existing.inputTemplate = special.inputTemplate || existing.inputTemplate
       existing.prependBaseOnGenerate = true
       existing.preferredSize = special.preferredSize || existing.preferredSize
-      // 保留线上 elementDetails（底词 A）；仅在空时用本地补齐
-      if (!existing.elementDetails && special.elementDetails) {
-        existing.elementDetails = special.elementDetails
-      }
+      // 底词进 basePrompt；线上/本地谁有用谁，不暴露到 elementDetails
+      const base = String(
+        existing.basePrompt
+        || existing.elementDetails
+        || special.basePrompt
+        || special.elementDetails
+        || ''
+      ).trim()
+      if (base) existing.basePrompt = base
+      existing.elementDetails = ''
       continue
     }
     // 本地兜底追加时避开已占用 id
@@ -107,7 +154,7 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
       id = (usedIds.size ? Math.max(...usedIds) : 0) + 1
     }
     usedIds.add(id)
-    list.push({ ...special, id })
+    list.push(sealHiddenBasePrompt({ ...special, id }))
   }
   return list
 }

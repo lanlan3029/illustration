@@ -1062,9 +1062,10 @@
     "updateSuccess": "风格已更新",
     "uploadFailed": "上传失败",
     "deleteStyle": "删除",
-    "deleteConfirm": "确定下线风格「{name}」（#{id}）？前台列表将不再显示。",
-    "deleteSuccess": "已删除（下线）",
+    "deleteConfirm": "确定永久删除风格「{name}」（#{id}）？记录与本地预览图将被移除，且不可恢复。",
+    "deleteSuccess": "已永久删除",
     "deleteFailed": "删除失败",
+    "loadListFailed": "无法加载已有风格列表，请确认已登录管理员账号",
     "backendCategory": {
       "sketch": "线稿 / 素描",
       "watercolor": "水彩",

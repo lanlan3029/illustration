@@ -238,13 +238,20 @@ export function scenesDetailToImagePrompts(scenesDetail) {
 
 /**
  * 获取当前选中风格的 styleInfo 文本。
+ * @param {{ forGenerate?: boolean }} [options] forGenerate=true 时带上隐藏底词 basePrompt
  */
-export function getStyleInfoText(styles, artStyleKey) {
+export function getStyleInfoText(styles, artStyleKey, options = {}) {
   if (!artStyleKey || !styles?.length) return '';
   const selected = styles.find((s) => s.key === artStyleKey);
   if (!selected) return '';
   const name = selected.artStyle || '';
-  const details = selected.elementDetails || '';
+  let details = ''
+  if (selected.prependBaseOnGenerate || selected.basePrompt) {
+    // 用户可见处不带长规则；真正生图/故事时可带 basePrompt
+    details = options.forGenerate ? (selected.basePrompt || '') : ''
+  } else {
+    details = selected.elementDetails || ''
+  }
   if (name && details) return `${name}。${details}`;
   return name || details;
 }

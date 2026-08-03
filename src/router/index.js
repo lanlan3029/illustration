@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import store from '../store'
 import { applyRouteSeo } from '@/utils/seo'
 import { isChunkLoadErrorMessage, reloadForStaleChunks } from '@/utils/chunkLoadRecovery'
+import { isCurrentUserAdmin } from '@/utils/auth'
 
 
 
@@ -214,6 +215,7 @@ const routes = [{
             import ( /* webpackChunkName: "upload-style-prompt" */ '../views/UploadStylePrompt.vue'),
         meta: {
             requiresAuth: true,
+            requiresAdmin: true,
             seoTitle: '上传 AI 风格'
         }
     },
@@ -545,12 +547,14 @@ router.beforeEach((to, from, next) => {
         if ((!token || token == "undefined") && (!cango)) {
             store.state.isMask = true
             next(false)
-        } else {
-            next()
+            return
         }
-    } else {
-        next()
     }
+    if (to.matched.some(record => record.meta.requiresAdmin) && !isCurrentUserAdmin()) {
+        next({ path: '/user/upload', replace: true })
+        return
+    }
+    next()
 })
 
 router.onError((error) => {
