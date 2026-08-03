@@ -717,7 +717,7 @@ export default {
                 this.editableArtStyle = style.artStyle
                 this.editableElementDetails = style.elementDetails
                 this.applyStylePromptToInput(style)
-                if (style.preferredSize || this.isPoeticZineStyle(style)) {
+                if (style.preferredSize || style.prependBaseOnGenerate || this.isPoeticZineStyle(style)) {
                     this.selectedSize = style.preferredSize || '768x1024'
                 }
             }

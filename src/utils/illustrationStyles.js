@@ -102,17 +102,31 @@ export function buildFallbackIllustrationStyles(t) {
 /** 是否为诗意极简 zine 海报（兼容线上 key 非 poeticMinimalZine 的情况） */
 export function isPoeticMinimalZineStyle(style) {
   if (!style) return false
-  if (style.key === 'poeticMinimalZine') return true
+  const key = String(style.key || '').toLowerCase()
+  if (key === 'poeticminimalzine' || key === 'poeticminimalzineposter') return true
   const label = `${style.key || ''} ${style.artStyle || ''}`
   return /诗意极简.*zine|zine.*海报|Poetic Minimal Zine/i.test(label)
 }
 
+/** 喜茶灵感·实物简笔画无字海报 */
+export function isObjectDoodlePosterNoTextStyle(style) {
+  if (!style) return false
+  const key = String(style.key || '').toLowerCase()
+  if (key === 'objectdoodleposternotext' || key === 'heyteadoodlenotext') return true
+  const label = `${style.key || ''} ${style.artStyle || ''}`
+  return /实物简笔画|无字.*海报|Object Doodle Poster|Heytea.*[Nn]o.?[Tt]ext|简笔画海报/i.test(label)
+}
+
 function findSpecialMatchInList(list, special) {
-  const byKey = list.find((s) => s.key && s.key === special.key)
+  const specialKey = String(special.key || '').toLowerCase()
+  const byKey = list.find((s) => s.key && String(s.key).toLowerCase() === specialKey)
   if (byKey) return byKey
-  // 线上已上传但 key 不同时，按中/英文风格名识别，避免再插一条造成双 #29
-  if (special.key === 'poeticMinimalZine') {
+  // 线上已上传但 key 不同时，按中/英文风格名识别，避免双 id
+  if (specialKey === 'poeticminimalzine') {
     return list.find((s) => isPoeticMinimalZineStyle(s)) || null
+  }
+  if (specialKey === 'objectdoodleposternotext') {
+    return list.find((s) => isObjectDoodlePosterNoTextStyle(s)) || null
   }
   return null
 }

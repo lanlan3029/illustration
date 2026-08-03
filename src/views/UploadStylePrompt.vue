@@ -445,6 +445,8 @@ export default {
       formData.append('element_details_zh', this.form.elementDetails)
       if (this.form.artStyleEn) formData.append('art_style_en', this.form.artStyleEn)
       if (this.form.elementDetailsEn) formData.append('element_details_en', this.form.elementDetailsEn)
+      // 管理端保存即重新上线（此前软删的 is_enabled=false 不会自动恢复）
+      formData.append('is_enabled', 'true')
       return formData
     },
     async submitToServer() {

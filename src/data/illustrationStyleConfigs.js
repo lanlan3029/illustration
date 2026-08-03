@@ -46,4 +46,13 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',
   },
+  /** 喜茶灵感·实物简笔画无字海报；线上 id 30 */
+  {
+    key: 'objectDoodlePosterNoText',
+    id: 30,
+    image: illustrationStyleImageUrl(30),
+    category: 'collage',
+    prependBaseOnGenerate: true,
+    preferredSize: '768x1024',
+  },
 ]
