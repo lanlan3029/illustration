@@ -69,10 +69,10 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
   const local = buildFallbackIllustrationStyles(t)
   const specials = local.filter((s) => s.inputTemplate || s.prependBaseOnGenerate)
   const byKey = new Map(list.map((s) => [s.key, s]))
-  const byId = new Map(list.map((s) => [s.id, s]))
 
   for (const special of specials) {
-    const existing = byKey.get(special.key) || byId.get(special.id)
+    // 只按 key 合并，避免本地 id 与线上已占用 id（如 25=拼豆）撞车误改
+    const existing = byKey.get(special.key)
     if (existing) {
       existing.inputTemplate = special.inputTemplate || existing.inputTemplate
       existing.prependBaseOnGenerate = true
@@ -83,7 +83,6 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
     } else {
       list.push(special)
       byKey.set(special.key, special)
-      byId.set(special.id, special)
     }
   }
   return list

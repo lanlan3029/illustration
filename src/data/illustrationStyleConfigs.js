@@ -37,11 +37,11 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
   { key: 'nordicWhimsical', id: 22, image: illustrationStyleImageUrl(22), category: 'sketch' },
   { key: 'cozyNaiveFolkArt', id: 23, image: illustrationStyleImageUrl(23), category: 'other' },
   { key: 'narrativeEditorialFolk', id: 24, image: illustrationStyleImageUrl(24), category: 'other' },
-  /** 输入框只显示 inputTemplate（C）；elementDetails（A）生成时自动前置 */
+  /** 输入框只显示 inputTemplate（C）；elementDetails（A）生成时自动前置。服务端 id 25 已占用，用 29 */
   {
     key: 'poeticMinimalZine',
-    id: 25,
-    image: illustrationStyleImageUrl(25),
+    id: 29,
+    image: illustrationStyleImageUrl(29),
     category: 'collage',
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',

@@ -296,36 +296,37 @@ export default {
     async loadExistingStyles() {
       this.listLoading = true
       try {
-        const adminItems = await fetchAdminIllustrationStyles()
-        if (adminItems.length) {
-          this.existingStyles = adminItems.map((item) => ({
-            id: item.id,
-            key: item.key,
-            category: item.category,
-            artStyle: item.artStyle,
-            elementDetails: item.elementDetails,
-            image: item.imageUrl,
-          }))
-          this.applyNewStyleDefaults()
-          return
+        try {
+          const adminItems = await fetchAdminIllustrationStyles()
+          if (adminItems.length) {
+            this.existingStyles = adminItems.map((item) => ({
+              id: item.id,
+              key: item.key,
+              category: item.category,
+              artStyle: item.artStyle,
+              elementDetails: item.elementDetails,
+              image: item.imageUrl,
+            }))
+            return
+          }
+        } catch {
+          // 非管理员或未部署 API 时回退公开列表
         }
-      } catch {
-        // 非管理员或未部署 API 时回退公开列表
-      }
 
-      try {
-        const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
-        const items = await loadIllustrationStyles({ locale, t: this.$t.bind(this), force: true })
-        this.existingStyles = items
-      } catch {
-        this.existingStyles = ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
-          id: config.id,
-          key: config.key,
-          category: config.category,
-          image: config.image,
-          artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
-          elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`),
-        }))
+        try {
+          const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh'
+          const items = await loadIllustrationStyles({ locale, t: this.$t.bind(this), force: true })
+          this.existingStyles = items
+        } catch {
+          this.existingStyles = ILLUSTRATION_STYLE_CONFIGS.map((config) => ({
+            id: config.id,
+            key: config.key,
+            category: config.category,
+            image: config.image,
+            artStyle: this.$t(`aibooks.styles.${config.key}.artStyle`),
+            elementDetails: this.$t(`aibooks.styles.${config.key}.elementDetails`),
+          }))
+        }
       } finally {
         this.listLoading = false
         if (!this.editingId) {
