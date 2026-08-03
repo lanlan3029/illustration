@@ -111,6 +111,7 @@ export function isPoeticMinimalZineStyle(style) {
 /** 喜茶灵感·实物简笔画无字海报 */
 export function isObjectDoodlePosterNoTextStyle(style) {
   if (!style) return false
+  if (Number(style.id) === 30) return true
   const key = String(style.key || '').toLowerCase()
   if (key === 'objectdoodleposternotext' || key === 'heyteadoodlenotext') return true
   const label = `${style.key || ''} ${style.artStyle || ''}`
@@ -147,16 +148,16 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
   for (const special of specials) {
     const existing = findSpecialMatchInList(list, special)
     if (existing) {
+      // 本地短模板优先（避免线上弱/空 inputTemplate，或误把长底词当可见文案）
       existing.inputTemplate = special.inputTemplate || existing.inputTemplate
       existing.prependBaseOnGenerate = true
       existing.preferredSize = special.preferredSize || existing.preferredSize
-      // 底词进 basePrompt；线上/本地谁有用谁，不暴露到 elementDetails
+      // 喜茶无字等：本地强化底词优先；其余保留线上底词
+      const preferLocalBase = special.key === 'objectDoodlePosterNoText'
       const base = String(
-        existing.basePrompt
-        || existing.elementDetails
-        || special.basePrompt
-        || special.elementDetails
-        || ''
+        preferLocalBase
+          ? (special.basePrompt || special.elementDetails || existing.basePrompt || existing.elementDetails || '')
+          : (existing.basePrompt || existing.elementDetails || special.basePrompt || special.elementDetails || '')
       ).trim()
       if (base) existing.basePrompt = base
       existing.elementDetails = ''

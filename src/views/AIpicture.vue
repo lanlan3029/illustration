@@ -383,6 +383,10 @@ import {
 } from '@/utils/createCharacterTask'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
+import {
+    isObjectDoodlePosterNoTextStyle,
+    isPoeticMinimalZineStyle,
+} from '@/utils/illustrationStyles'
 
 export default {
     name: 'AIPicture',
@@ -562,22 +566,38 @@ export default {
             if (!this.subjectScene || !this.subjectScene.trim()) return ''
             let prompt = this.subjectScene.trim()
             const style = this.selectedStyle
+            const isDoodle = this.isObjectDoodleStyle(style)
+            const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
-            if (this.isPoeticZineStyle(style) || style?.prependBaseOnGenerate) {
-                const base = String(
-                    style?.basePrompt
-                    || style?.elementDetails
-                    || (this.isPoeticZineStyle(style)
-                        ? this.$t('aibooks.styles.poeticMinimalZine.elementDetails')
-                        : '')
-                    || ''
-                ).trim()
+            if (isZine || isDoodle || style?.prependBaseOnGenerate) {
+                let base = ''
+                if (isDoodle) {
+                    // 喜茶无字：始终用本地强化底词，避免线上旧文案未绑定参考图
+                    base = String(
+                        this.$t('aibooks.styles.objectDoodlePosterNoText.elementDetails')
+                        || style?.basePrompt
+                        || style?.elementDetails
+                        || ''
+                    ).trim()
+                } else {
+                    base = String(
+                        style?.basePrompt
+                        || style?.elementDetails
+                        || (isZine
+                            ? this.$t('aibooks.styles.poeticMinimalZine.elementDetails')
+                            : '')
+                        || ''
+                    ).trim()
+                }
                 const marker = base.slice(0, 24)
                 if (base && (!marker || !prompt.includes(marker))) {
                     prompt = `${base}\n\n${prompt}`
                 }
-                if (this.isPoeticZineStyle(style)) {
+                if (isZine) {
                     prompt = this.enrichPoeticZinePrompt(prompt)
+                }
+                if (isDoodle) {
+                    prompt = this.enrichObjectDoodlePrompt(prompt)
                 }
             }
             if (this.isCharacterInput(prompt)) {
@@ -630,15 +650,21 @@ export default {
             })
         },
         isPoeticZineStyle(style) {
-            if (!style) return false
-            if (style.key === 'poeticMinimalZine') return true
-            const label = `${style.key || ''} ${style.artStyle || ''}`
-            return /诗意极简.*zine|zine.*海报|Poetic Minimal Zine/i.test(label)
+            return isPoeticMinimalZineStyle(style)
+        },
+        isObjectDoodleStyle(style) {
+            return isObjectDoodlePosterNoTextStyle(style)
         },
 
-        /** 优先 style.inputTemplate，否则按 key / zine 识别从 i18n 取短模板 */
+        /** 优先 style.inputTemplate，否则按 key / zine / doodle 识别从 i18n 取短模板 */
         resolveStyleInputTemplate(style) {
             if (!style) return ''
+            // 喜茶无字：强制用本地短模板（线上可能仍是弱文案「请上传图片」）
+            if (this.isObjectDoodleStyle(style)) {
+                const path = 'aibooks.styles.objectDoodlePosterNoText.inputTemplate'
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
             if (style.inputTemplate) return String(style.inputTemplate).trim()
             const key = style.key
             if (key) {
@@ -656,7 +682,11 @@ export default {
 
         applyStylePromptToInput(style) {
             if (!style) return
-            // 特殊风格：输入框只填精简模板 C，底词 A（basePrompt）永不写入输入框
+            // 特殊风格：输入框只填精简模板 C，底词 A（basePrompt / elementDetails）永不写入输入框
+            if (this.isObjectDoodleStyle(style)) {
+                this.subjectScene = this.$t('aibooks.styles.objectDoodlePosterNoText.inputTemplate') || '请上传参考图'
+                return
+            }
             const tmpl = this.resolveStyleInputTemplate(style)
             if (tmpl) {
                 this.subjectScene = tmpl
@@ -666,8 +696,8 @@ export default {
                 this.subjectScene = style.artStyle || ''
                 return
             }
-            const parts = [style.artStyle, style.elementDetails].filter(p => p && String(p).trim())
-            this.subjectScene = parts.join('，')
+            // 绝不用长 elementDetails 填输入框
+            this.subjectScene = style.artStyle || ''
         },
 
         /**
@@ -701,6 +731,19 @@ export default {
             return `${text}\n${block}`
         },
 
+        /**
+         * 实物简笔画：在文末再次强调必须使用附件参考图，避免模型忽略上传图另画。
+         */
+        enrichObjectDoodlePrompt(prompt) {
+            const text = String(prompt || '')
+            const codaZh = '【图像绑定】必须使用本次请求附带的参考图作为唯一物件来源：从中提取一个真实物件并保留摄影质感，仅叠加黑色简笔小人；禁止忽略参考图或另造主体。'
+            const codaEn = '[IMAGE BINDING] You MUST use the reference image attached to this request as the sole object source: keep one real photographed object, add only black micro-worker doodles; do not ignore the reference or invent a new subject.'
+            if (text.includes('【图像绑定】') || text.includes('[IMAGE BINDING] You MUST')) {
+                return text
+            }
+            const coda = /Reference image:|sole object source|Please upload/i.test(text) ? codaEn : codaZh
+            return `${text}\n\n${coda}`
+        },
 
         clearSelectedStyle() {
             this.selectedStyleId = null
@@ -992,13 +1035,20 @@ export default {
                 ElMessage.warning({ message: this.$t('aiPicture.needPrompt') || '请先描述你想要的画面', offset: 200 })
                 return
             }
+            let refs = (this.referenceImageUrls || []).filter(Boolean)
+            if (this.isObjectDoodleStyle(this.selectedStyle) && !refs.length) {
+                ElMessage.warning({
+                    message: this.$t('aiPicture.needReferenceForStyle') || '该风格必须先添加参考图',
+                    offset: 200,
+                })
+                return
+            }
             this.generatedImageUrl = null
             this.lastGeneratedPromptSnapshot = ''
             this.generating = true
 
             try {
                 const requestData = this.buildCreateCharacterRequest()
-                let refs = (this.referenceImageUrls || []).filter(Boolean)
                 // 多图时 JSON 体积极大，按张数分摊压缩，降低网关/解析失败概率
                 if (refs.length > 1) {
                     const budget = 850 * 1024
@@ -1007,7 +1057,10 @@ export default {
                         refs.slice(0, 10).map((u) => this.compressDataUrlIfNeeded(u, per))
                     )
                 }
-                if (refs.length === 1) {
+                // 喜茶无字：只用第一张参考图，避免多图稀释物件锚点
+                if (this.isObjectDoodleStyle(this.selectedStyle) && refs.length) {
+                    requestData.image = refs[0]
+                } else if (refs.length === 1) {
                     requestData.image = refs[0]
                 } else if (refs.length > 1) {
                     requestData.image = refs
