@@ -58,8 +58,27 @@ export function buildFallbackIllustrationStyles(t) {
   })
 }
 
+/** 是否为诗意极简 zine 海报（兼容线上 key 非 poeticMinimalZine 的情况） */
+export function isPoeticMinimalZineStyle(style) {
+  if (!style) return false
+  if (style.key === 'poeticMinimalZine') return true
+  const label = `${style.key || ''} ${style.artStyle || ''}`
+  return /诗意极简.*zine|zine.*海报|Poetic Minimal Zine/i.test(label)
+}
+
+function findSpecialMatchInList(list, special) {
+  const byKey = list.find((s) => s.key && s.key === special.key)
+  if (byKey) return byKey
+  // 线上已上传但 key 不同时，按中/英文风格名识别，避免再插一条造成双 #29
+  if (special.key === 'poeticMinimalZine') {
+    return list.find((s) => isPoeticMinimalZineStyle(s)) || null
+  }
+  return null
+}
+
 /**
- * API 列表合并本地特殊风格（带 inputTemplate / 底词前置），避免线上 API 尚未入库时缺失。
+ * API 列表合并本地特殊风格（带 inputTemplate / 底词前置）。
+ * 已存在同名风格则只挂模板字段，不再追加，避免双 id。
  * @param {NormalizedStyle[]} apiItems
  * @param {(key: string) => string} t
  */
@@ -68,22 +87,27 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
   if (!t) return list
   const local = buildFallbackIllustrationStyles(t)
   const specials = local.filter((s) => s.inputTemplate || s.prependBaseOnGenerate)
-  const byKey = new Map(list.map((s) => [s.key, s]))
+  const usedIds = new Set(list.map((s) => Number(s.id)).filter((n) => n > 0))
 
   for (const special of specials) {
-    // 只按 key 合并，避免本地 id 与线上已占用 id（如 25=拼豆）撞车误改
-    const existing = byKey.get(special.key)
+    const existing = findSpecialMatchInList(list, special)
     if (existing) {
       existing.inputTemplate = special.inputTemplate || existing.inputTemplate
       existing.prependBaseOnGenerate = true
       existing.preferredSize = special.preferredSize || existing.preferredSize
+      // 保留线上 elementDetails（底词 A）；仅在空时用本地补齐
       if (!existing.elementDetails && special.elementDetails) {
         existing.elementDetails = special.elementDetails
       }
-    } else {
-      list.push(special)
-      byKey.set(special.key, special)
+      continue
     }
+    // 本地兜底追加时避开已占用 id
+    let id = Number(special.id) || 0
+    if (!id || usedIds.has(id)) {
+      id = (usedIds.size ? Math.max(...usedIds) : 0) + 1
+    }
+    usedIds.add(id)
+    list.push({ ...special, id })
   }
   return list
 }

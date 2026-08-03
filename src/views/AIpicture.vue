@@ -563,15 +563,17 @@ export default {
             let prompt = this.subjectScene.trim()
             const style = this.selectedStyle
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（elementDetails）
-            if (style?.prependBaseOnGenerate && style.elementDetails) {
-                const base = String(style.elementDetails).trim()
+            if (this.isPoeticZineStyle(style)) {
+                const base = String(
+                    style?.elementDetails
+                    || this.$t('aibooks.styles.poeticMinimalZine.elementDetails')
+                    || ''
+                ).trim()
                 const marker = base.slice(0, 24)
                 if (base && (!marker || !prompt.includes(marker))) {
                     prompt = `${base}\n\n${prompt}`
                 }
-                if (style.key === 'poeticMinimalZine') {
-                    prompt = this.enrichPoeticZinePrompt(prompt)
-                }
+                prompt = this.enrichPoeticZinePrompt(prompt)
             }
             if (this.isCharacterInput(prompt)) {
                 const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。'
@@ -622,11 +624,37 @@ export default {
                 if (list) list.scrollTo({ top: 0, behavior: 'auto' })
             })
         },
+        isPoeticZineStyle(style) {
+            if (!style) return false
+            if (style.key === 'poeticMinimalZine') return true
+            const label = `${style.key || ''} ${style.artStyle || ''}`
+            return /诗意极简.*zine|zine.*海报|Poetic Minimal Zine/i.test(label)
+        },
+
+        /** 优先 style.inputTemplate，否则按 key / zine 识别从 i18n 取短模板 */
+        resolveStyleInputTemplate(style) {
+            if (!style) return ''
+            if (style.inputTemplate) return String(style.inputTemplate).trim()
+            const key = style.key
+            if (key) {
+                const path = `aibooks.styles.${key}.inputTemplate`
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
+            if (this.isPoeticZineStyle(style)) {
+                const path = 'aibooks.styles.poeticMinimalZine.inputTemplate'
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
+            return ''
+        },
+
         applyStylePromptToInput(style) {
             if (!style) return
             // 特殊风格：输入框只填精简模板 C，底词 A 不写入输入框
-            if (style.inputTemplate) {
-                this.subjectScene = String(style.inputTemplate).trim()
+            const tmpl = this.resolveStyleInputTemplate(style)
+            if (tmpl) {
+                this.subjectScene = tmpl
                 return
             }
             const parts = [style.artStyle, style.elementDetails].filter(p => p && String(p).trim())
@@ -680,8 +708,8 @@ export default {
                 this.editableArtStyle = style.artStyle
                 this.editableElementDetails = style.elementDetails
                 this.applyStylePromptToInput(style)
-                if (style.preferredSize) {
-                    this.selectedSize = style.preferredSize
+                if (style.preferredSize || this.isPoeticZineStyle(style)) {
+                    this.selectedSize = style.preferredSize || '768x1024'
                 }
             }
         },

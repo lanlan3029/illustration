@@ -1061,6 +1061,10 @@
     "uploadSuccess": "风格已上传",
     "updateSuccess": "风格已更新",
     "uploadFailed": "上传失败",
+    "deleteStyle": "删除",
+    "deleteConfirm": "确定下线风格「{name}」（#{id}）？前台列表将不再显示。",
+    "deleteSuccess": "已删除（下线）",
+    "deleteFailed": "删除失败",
     "backendCategory": {
       "sketch": "线稿 / 素描",
       "watercolor": "水彩",

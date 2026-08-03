@@ -138,18 +138,28 @@
         </div>
       </template>
       <div v-if="existingStyles.length" class="existing-grid">
-        <button
+        <div
           v-for="style in existingStyles"
-          :key="style.key"
-          type="button"
+          :key="`${style.id}-${style.key}`"
           class="existing-item"
           :class="{ 'is-active': editingId === style.id }"
-          @click="loadExistingStyle(style)"
         >
-          <img :src="style.image" :alt="style.artStyle || styleLabel(style)" class="existing-thumb" />
-          <span class="existing-name">{{ style.artStyle || styleLabel(style) }}</span>
-          <span class="existing-id">#{{ style.id }}</span>
-        </button>
+          <button type="button" class="existing-item-main" @click="loadExistingStyle(style)">
+            <img :src="style.image" :alt="style.artStyle || styleLabel(style)" class="existing-thumb" />
+            <span class="existing-name">{{ style.artStyle || styleLabel(style) }}</span>
+            <span class="existing-id">#{{ style.id }}</span>
+          </button>
+          <el-button
+            class="existing-delete"
+            type="danger"
+            link
+            size="small"
+            :loading="deletingId === style.id"
+            @click.stop="confirmDeleteStyle(style)"
+          >
+            {{ $t('uploadStylePrompt.deleteStyle') }}
+          </el-button>
+        </div>
       </div>
       <el-empty v-else :description="$t('uploadStylePrompt.noStyles')" />
     </el-card>
@@ -158,7 +168,7 @@
 
 <script>
 import { UploadFilled, Loading } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import enMessages from '@/i18n/locales/en.json'
 import { ILLUSTRATION_STYLE_BACKEND_CATEGORIES } from '@/data/illustrationStyleCategories'
 import {
@@ -171,6 +181,7 @@ import {
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import {
   createIllustrationStyle,
+  deleteIllustrationStyle,
   fetchAdminIllustrationStyles,
   updateIllustrationStyle,
 } from '@/utils/illustrationStylesApi'
@@ -202,6 +213,7 @@ export default {
       processing: false,
       uploading: false,
       listLoading: false,
+      deletingId: null,
       editingId: null,
       existingStyles: [],
       existingImageUrl: '',
@@ -374,6 +386,43 @@ export default {
       this.existingImageUrl = typeof style.image === 'string' ? style.image : ''
       this.lastUploadedUrl = this.existingImageUrl
       ElMessage.success(this.$t('uploadStylePrompt.loadedExisting', { name: this.form.artStyle }))
+    },
+    async confirmDeleteStyle(style) {
+      if (!style?.id) return
+      const token = localStorage.getItem('token')
+      if (!token) {
+        ElMessage.error(this.$t('uploadStylePrompt.loginRequired'))
+        return
+      }
+      const name = style.artStyle || this.styleLabel(style) || `#${style.id}`
+      try {
+        await ElMessageBox.confirm(
+          this.$t('uploadStylePrompt.deleteConfirm', { name, id: style.id }),
+          this.$t('uploadStylePrompt.deleteStyle'),
+          {
+            type: 'warning',
+            confirmButtonText: this.$t('uploadStylePrompt.deleteStyle'),
+            cancelButtonText: this.$t('common.cancel') || '取消',
+          }
+        )
+      } catch {
+        return
+      }
+
+      this.deletingId = style.id
+      try {
+        await deleteIllustrationStyle(style.id)
+        if (this.editingId === style.id) {
+          this.resetForm()
+        }
+        invalidateIllustrationStylesCache()
+        ElMessage.success(this.$t('uploadStylePrompt.deleteSuccess'))
+        await this.loadExistingStyles()
+      } catch (err) {
+        ElMessage.error(err?.message || this.$t('uploadStylePrompt.deleteFailed'))
+      } finally {
+        this.deletingId = null
+      }
     },
     buildFormData() {
       const formData = new FormData()
@@ -614,15 +663,30 @@ export default {
   border-radius: 10px;
   padding: 8px;
   background: #fff;
-  cursor: pointer;
   text-align: center;
   transition: border-color 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .existing-item:hover,
 .existing-item.is-active {
   border-color: #409eff;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.12);
+}
+
+.existing-item-main {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.existing-delete {
+  align-self: center;
 }
 
 .existing-thumb {

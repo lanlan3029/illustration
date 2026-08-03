@@ -1046,6 +1046,10 @@
     "uploadSuccess": "Style uploaded",
     "updateSuccess": "Style updated",
     "uploadFailed": "Upload failed",
+    "deleteStyle": "Delete",
+    "deleteConfirm": "Disable style \"{name}\" (#{id})? It will disappear from the public list.",
+    "deleteSuccess": "Style disabled",
+    "deleteFailed": "Delete failed",
     "backendCategory": {
       "sketch": "Sketch",
       "watercolor": "Watercolor",
