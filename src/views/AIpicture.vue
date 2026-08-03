@@ -569,6 +569,9 @@ export default {
                 if (base && (!marker || !prompt.includes(marker))) {
                     prompt = `${base}\n\n${prompt}`
                 }
+                if (style.key === 'poeticMinimalZine') {
+                    prompt = this.enrichPoeticZinePrompt(prompt)
+                }
             }
             if (this.isCharacterInput(prompt)) {
                 const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。'
@@ -629,6 +632,38 @@ export default {
             const parts = [style.artStyle, style.elementDetails].filter(p => p && String(p).trim())
             this.subjectScene = parts.join('，')
         },
+
+        /**
+         * zine 风格：用户只填「用户原文」；生成时自动补「画面主文案」。
+         * 原文很短则两者相同；空原文则写「无」。
+         */
+        enrichPoeticZinePrompt(prompt) {
+            const text = String(prompt || '')
+            if (/画面主文案\s*[：:]/.test(text)) return text
+
+            const match = text.match(/用户原文\s*[：:]\s*[“"']([^”"']*)[”"']/)
+            let original = match ? String(match[1] || '').trim() : ''
+            if (!original || original === '无') {
+                original = '无'
+            }
+
+            let headline = '无'
+            if (original !== '无') {
+                // 已很短则原样；否则取首句/前 16 字，尽量保留原词
+                const firstLine = original.split(/[\n。！？.!?]/).map((s) => s.trim()).filter(Boolean)[0] || original
+                headline = firstLine.length <= 16 ? firstLine : `${firstLine.slice(0, 16)}…`
+            }
+
+            const block = `画面主文案：“${headline}”`
+            if (/按上述规则组织/.test(text)) {
+                return text.replace(/按上述规则组织/, `${block}\n按上述规则组织`)
+            }
+            if (/Organize a vertical 3:5/.test(text)) {
+                return text.replace(/Organize a vertical 3:5/, `Main poster line: "${headline}"\nOrganize a vertical 3:5`)
+            }
+            return `${text}\n${block}`
+        },
+
 
         clearSelectedStyle() {
             this.selectedStyleId = null
