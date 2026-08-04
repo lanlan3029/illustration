@@ -57,9 +57,12 @@
 
       <p v-if="progressLabel" class="mj-progress">{{ progressLabel }}</p>
 
+      <div class="mj-actions-spacer" aria-hidden="true" />
       <div class="mj-actions">
         <el-button
           type="primary"
+          class="mj-generate-btn"
+          size="large"
           :loading="generating"
           :disabled="!canGenerate"
           @click="runGenerate"
@@ -69,17 +72,18 @@
       </div>
     </div>
 
-    <MoodDiaryPosterResult
-      v-else
-      :poster-url="resultUrl"
-      :saving="saving"
-      :loading="generating"
-      :hint="resultHint"
-      @save="saveResult"
-      @download="downloadResult"
-      @regenerate="resetForRegen"
-      @back-to-write="resetForRegen"
-    />
+    <div v-else class="mj-result-wrap">
+      <MoodDiaryPosterResult
+        :poster-url="resultUrl"
+        :saving="saving"
+        :loading="generating"
+        :hint="resultHint"
+        @save="saveResult"
+        @download="downloadResult"
+        @regenerate="resetForRegen"
+        @back-to-write="resetForRegen"
+      />
+    </div>
   </div>
 </template>
 
@@ -273,6 +277,7 @@ export default {
 
 .mj-head {
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .mj-title {
@@ -298,6 +303,13 @@ export default {
   min-height: 0;
 }
 
+.mj-result-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
 .mj-label {
   font-size: 13px;
   font-weight: 600;
@@ -313,10 +325,11 @@ export default {
   border-radius: 12px;
   background: var(--md-card, #fffcfe);
   color: var(--md-text, #5f5970);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.65;
   box-sizing: border-box;
   font-family: inherit;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mj-diary:focus {
@@ -343,6 +356,7 @@ export default {
 .mj-hint {
   font-size: 11px;
   color: var(--md-muted, #9d96a8);
+  flex-shrink: 0;
 }
 
 .mj-photos {
@@ -371,15 +385,19 @@ export default {
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border: none;
   border-radius: 50%;
   background: rgba(17, 24, 39, 0.55);
   color: #fff;
   cursor: pointer;
   line-height: 1;
-  font-size: 14px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
 }
 
 .mj-photo-add {
@@ -396,6 +414,8 @@ export default {
   gap: 2px;
   font-size: 22px;
   line-height: 1;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mj-photo-add small {
@@ -416,6 +436,11 @@ export default {
   margin: 4px 0 0;
   font-size: 13px;
   color: var(--md-accent-deep, #7ecbb8);
+  text-align: center;
+}
+
+.mj-actions-spacer {
+  display: none;
 }
 
 .mj-actions {
@@ -424,14 +449,127 @@ export default {
   gap: 10px;
 }
 
-@media (max-width: 640px) {
+.mj-generate-btn {
+  width: 100%;
+  margin: 0 !important;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.mj-actions :deep(.el-button--primary) {
+  --el-button-bg-color: var(--md-accent, #a8e0d2);
+  --el-button-border-color: var(--md-accent, #a8e0d2);
+  --el-button-hover-bg-color: var(--md-accent-deep, #7ecbb8);
+  --el-button-hover-border-color: var(--md-accent-deep, #7ecbb8);
+}
+
+@media (max-width: 768px) {
   .mj-panel {
     max-width: 100%;
-    padding: 4px 0 20px;
+    height: auto;
+    min-height: 0;
+    /* 底部固定按钮 + 站点 TabBar + 安全区 */
+    padding: 4px 0 calc(76px + var(--kid-tabbar-h, 58px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mj-head {
+    margin-bottom: 12px;
   }
 
   .mj-title {
     font-size: 20px;
+  }
+
+  .mj-lead {
+    font-size: 12px;
+  }
+
+  .mj-diary {
+    min-height: 140px;
+    font-size: 16px; /* 避免 iOS 聚焦自动放大 */
+    border-radius: 14px;
+  }
+
+  .mj-photos-head {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mj-photos {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .mj-photo,
+  .mj-photo-add {
+    border-radius: 12px;
+  }
+
+  .mj-photo-remove {
+    top: 6px;
+    right: 6px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .mj-actions-spacer {
+    display: block;
+    height: 8px;
+  }
+
+  .mj-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--kid-tabbar-h, 58px) + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    margin: 0;
+    padding: 10px 14px;
+    background: linear-gradient(
+      180deg,
+      rgba(245, 242, 248, 0) 0%,
+      rgba(245, 242, 248, 0.92) 28%,
+      rgba(245, 242, 248, 0.98) 100%
+    );
+    backdrop-filter: blur(10px);
+    box-sizing: border-box;
+  }
+
+  .mj-generate-btn {
+    min-height: 48px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+
+  .mj-result-wrap {
+    width: 100%;
+    padding-bottom: calc(16px + var(--kid-tabbar-h, 58px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mj-result-wrap :deep(.poster-result) {
+    max-width: 100%;
+  }
+
+  .mj-result-wrap :deep(.poster-result__slot) {
+    height: min(48vh, 380px);
+    transform: rotate(-1.5deg);
+  }
+
+  .mj-result-wrap :deep(.poster-result__btn) {
+    min-height: 44px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mj-photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mj-photo-add small {
+    font-size: 10px;
   }
 }
 </style>

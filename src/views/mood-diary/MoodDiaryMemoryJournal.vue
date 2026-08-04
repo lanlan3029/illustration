@@ -30,5 +30,15 @@ export default {
   flex-direction: column;
   box-sizing: border-box;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .md-memory-journal {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    padding: 0 2px;
+  }
 }
 </style>

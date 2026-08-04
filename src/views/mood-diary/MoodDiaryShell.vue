@@ -347,7 +347,7 @@ export default {
 @media (max-width: 768px) {
   .mood-shell {
     flex-direction: column;
-    padding: 12px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
     height: auto;
     min-height: 0;
     overflow: visible;
@@ -371,27 +371,45 @@ export default {
   .mood-sidebar {
     flex: none;
     width: 100%;
-    padding: 14px 12px;
+    padding: 12px 10px 10px;
   }
 
   .sidebar-brand {
-    padding-bottom: 10px;
+    padding-bottom: 8px;
+    font-size: 16px;
   }
 
   .sidebar-nav {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     flex: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .sidebar-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .sidebar-link {
-    padding: 10px 14px;
-    font-size: 14px;
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+    min-height: 40px;
+  }
+
+  .sidebar-link-label {
+    max-width: 5.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .sidebar-link-icon .iconfont {
-    font-size: 19px;
+    font-size: 18px;
   }
 
   .sidebar-promo {
