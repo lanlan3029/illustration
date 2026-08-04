@@ -60,6 +60,7 @@ export default {
     navItems() {
       return [
         { to: '/mood-diary/narrative', label: this.$t('moodDiary.navDashboard'), iconClass: 'icon-rili' },
+        { to: '/mood-diary/memory-journal', label: this.$t('moodDiary.navMemoryJournal'), iconClass: 'icon-sanwen' },
         { to: '/mood-diary/book', label: this.$t('moodDiary.navBook'), iconClass: 'icon-wodeshujia' },
         { to: '/mood-diary/recap', label: this.$t('moodDiary.navRecap'), iconClass: 'icon-changtu' }
       ]

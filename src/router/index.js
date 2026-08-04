@@ -434,6 +434,13 @@ const routes = [{
                     import ( /* webpackChunkName: "mood-diary-generate" */ '../views/mood-diary/MoodDiaryGenerate.vue')
             },
             {
+                path: 'memory-journal',
+                name: 'mood-diary-memory-journal',
+                component: () =>
+                    import ( /* webpackChunkName: "mood-diary-memory-journal" */ '../views/mood-diary/MoodDiaryMemoryJournal.vue'),
+                meta: { seoTitle: '长文日记' }
+            },
+            {
                 path: 'book',
                 name: 'mood-diary-book',
                 component: () =>
