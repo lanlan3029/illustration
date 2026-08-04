@@ -6,7 +6,10 @@
     </header>
 
     <div v-if="!resultUrl" class="mj-body">
-      <label class="mj-label" for="mj-diary">{{ $t('moodDiary.memoryJournal.diaryLabel') }}</label>
+      <div class="mj-diary-head">
+        <label class="mj-label" for="mj-diary">{{ $t('moodDiary.memoryJournal.diaryLabel') }}</label>
+        <span class="mj-hint">{{ $t('moodDiary.memoryJournal.diaryGuide') }}</span>
+      </div>
       <textarea
         id="mj-diary"
         v-model="diary"
@@ -16,7 +19,10 @@
         :disabled="generating"
         :placeholder="$t('moodDiary.memoryJournal.diaryPlaceholder')"
       />
-      <p class="mj-count">{{ diary.length }} / {{ diaryMax }}</p>
+      <p class="mj-count" :class="{ 'is-soft': diary.length > 800 }">
+        {{ diary.length }} / {{ diaryMax }}
+        <span v-if="diary.length > 800" class="mj-count-tip">{{ $t('moodDiary.memoryJournal.diaryLongTip') }}</span>
+      </p>
 
       <div class="mj-photos-head">
         <span class="mj-label">{{ $t('moodDiary.memoryJournal.photosLabel') }}</span>
@@ -77,12 +83,26 @@
         :poster-url="resultUrl"
         :saving="saving"
         :loading="generating"
-        :hint="resultHint"
+        hint=""
         @save="saveResult"
         @download="downloadResult"
         @regenerate="resetForRegen"
         @back-to-write="resetForRegen"
       />
+      <aside class="mj-story-card" aria-label="story">
+        <p v-if="displayCaption" class="mj-story-caption">「{{ displayCaption }}」</p>
+        <p v-if="displayStoryCore && displayStoryCore !== displayCaption" class="mj-story-core">
+          {{ displayStoryCore }}
+        </p>
+        <div v-if="displayEmotion || displayDate" class="mj-story-meta">
+          <span v-if="displayEmotion" class="mj-chip">{{ displayEmotion }}</span>
+          <span v-if="displayDate" class="mj-chip mj-chip--mute">{{ displayDate }}</span>
+        </div>
+        <details class="mj-original" :open="false">
+          <summary>{{ $t('moodDiary.memoryJournal.viewOriginal') }}</summary>
+          <div class="mj-original-body">{{ diary.trim() }}</div>
+        </details>
+      </aside>
     </div>
   </div>
 </template>
@@ -136,11 +156,32 @@ export default {
         && this.photos.length >= 1
       )
     },
-    resultHint() {
-      const title = this.analysis?.title
-      const caption = this.analysis?.caption
-      if (title && caption) return `${title} · ${caption}`
-      return title || caption || ''
+    diaryAnalysis() {
+      const a = this.analysis
+      if (!a) return null
+      if (a.diary && typeof a.diary === 'object') return a.diary
+      return null
+    },
+    displayCaption() {
+      const fromTop = this.analysis?.caption
+      const fromDiary = this.diaryAnalysis?.caption
+      const text = String(fromTop || fromDiary || '').trim()
+      return text
+    },
+    displayStoryCore() {
+      return String(this.diaryAnalysis?.story_core || '').trim()
+    },
+    displayEmotion() {
+      return String(this.diaryAnalysis?.emotion || this.analysis?.emotion || '').trim()
+    },
+    displayDate() {
+      const d = this.analysis?.date
+      if (!d) return ''
+      if (typeof d === 'string') return d.trim()
+      if (typeof d === 'object') {
+        return String(d.line || d.text || d.label || '').trim()
+      }
+      return ''
     },
     userName() {
       return this.$store?.state?.userInfo?.name || ''
@@ -196,10 +237,12 @@ export default {
       this.analysis = null
 
       try {
+        // 全部照片进 photos[]，勿只传 [photos[0]]
+        const allPhotos = [...this.photos].filter(Boolean)
         const { imageUrl, analysis } = await generateMemoryJournalPoster({
           http: this.$http,
           diary: this.diary.trim(),
-          photos: this.photos,
+          photos: allPhotos,
           date: this.todayDate(),
           name: this.userName,
           onStage: (s) => {
@@ -307,7 +350,104 @@ export default {
   flex: 1;
   min-height: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.mj-story-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 14px 16px 12px;
+  border-radius: 14px;
+  background: var(--md-card, #fffcfe);
+  border: 1px solid var(--md-border, #e6deef);
+  box-sizing: border-box;
+}
+
+.mj-story-caption {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--md-text, #5f5970);
+  letter-spacing: 0.01em;
+}
+
+.mj-story-core {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--md-muted, #9d96a8);
+}
+
+.mj-story-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.mj-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--md-accent-soft, #edf8f4);
+  color: var(--md-accent-deep, #7ecbb8);
+}
+
+.mj-chip--mute {
+  background: #f3f0f6;
+  color: var(--md-muted, #9d96a8);
+}
+
+.mj-original {
+  border-top: 1px solid var(--md-border, #e6deef);
+  padding-top: 8px;
+}
+
+.mj-original summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--md-muted, #9d96a8);
+  user-select: none;
+  list-style: none;
+}
+
+.mj-original summary::-webkit-details-marker {
+  display: none;
+}
+
+.mj-original summary::before {
+  content: '▸ ';
+  color: var(--md-accent-deep, #7ecbb8);
+}
+
+.mj-original[open] summary::before {
+  content: '▾ ';
+}
+
+.mj-original-body {
+  margin-top: 8px;
+  max-height: 200px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--md-text, #5f5970);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mj-diary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mj-label {
@@ -343,6 +483,14 @@ export default {
   text-align: right;
   font-size: 11px;
   color: var(--md-muted, #9d96a8);
+}
+
+.mj-count.is-soft {
+  color: #b08968;
+}
+
+.mj-count-tip {
+  margin-left: 6px;
 }
 
 .mj-photos-head {
@@ -544,6 +692,14 @@ export default {
   .mj-result-wrap {
     width: 100%;
     padding-bottom: calc(16px + var(--kid-tabbar-h, 58px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mj-story-card {
+    max-width: 100%;
+  }
+
+  .mj-story-caption {
+    font-size: 16px;
   }
 
   .mj-result-wrap :deep(.poster-result) {

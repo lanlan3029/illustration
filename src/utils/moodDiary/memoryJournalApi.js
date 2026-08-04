@@ -17,13 +17,57 @@ function authHeaders() {
 }
 
 /**
- * 压缩照片列表后再提交（1～9 张 dataURL）
+ * 规范为照片数组（绝不为单字符串 / 只取第一张）
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+export function normalizeMemoryJournalPhotos(raw) {
+  if (Array.isArray(raw)) {
+    return raw.filter((p) => typeof p === 'string' && p.trim()).map((p) => p.trim()).slice(0, 9)
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    return [raw.trim()]
+  }
+  return []
+}
+
+/**
+ * 压缩照片列表后再提交（1～9 张 dataURL；张数多时单张更小，保证全部能进 photos[]）
  * @param {string[]} photos
  * @param {number} [maxBytes]
  */
-export async function compressMemoryJournalPhotos(photos, maxBytes = 720 * 1024) {
-  const list = (Array.isArray(photos) ? photos : []).filter(Boolean).slice(0, 9)
-  return Promise.all(list.map((p) => compressDataUrlForUpload(p, maxBytes)))
+export async function compressMemoryJournalPhotos(photos, maxBytes) {
+  const list = normalizeMemoryJournalPhotos(photos)
+  const n = list.length
+  const per =
+    maxBytes != null
+      ? maxBytes
+      : n >= 6
+        ? 380 * 1024
+        : n >= 3
+          ? 520 * 1024
+          : 720 * 1024
+  const out = await Promise.all(list.map((p) => compressDataUrlForUpload(p, per)))
+  return out.filter((p) => typeof p === 'string' && p.startsWith('data:'))
+}
+
+/**
+ * 请求体：必须带完整 photos 数组（后端按数组贴多张贴纸）
+ * @param {object} fields
+ * @param {string[]} photos
+ */
+function buildMemoryJournalBody(fields, photos) {
+  const list = normalizeMemoryJournalPhotos(photos)
+  return {
+    diary: String(fields.diary || '').trim(),
+    // 关键字段：全部照片
+    photos: list,
+    // 兼容别名（同样传完整数组，勿用单张 photo/image）
+    images: list,
+    date: fields.date || undefined,
+    name: fields.name || undefined,
+    ...(fields.extra || {})
+  }
 }
 
 /**
@@ -33,18 +77,24 @@ export async function compressMemoryJournalPhotos(photos, maxBytes = 720 * 1024)
 export async function analyzeMemoryJournal(opts) {
   const http = opts.http || axios
   const photos = await compressMemoryJournalPhotos(opts.photos || [])
+  if (!photos.length) {
+    throw new Error('请至少上传一张照片')
+  }
   const res = await http.post(
     MEMORY_JOURNAL_PATH,
-    {
-      diary: String(opts.diary || '').trim(),
-      photos,
-      date: opts.date || undefined,
-      name: opts.name || undefined,
-      analyze_only: true,
-      generate: false
-    },
+    buildMemoryJournalBody(
+      {
+        diary: opts.diary,
+        date: opts.date,
+        name: opts.name,
+        extra: { analyze_only: true, generate: false }
+      },
+      photos
+    ),
     {
       timeout: 180000,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
       headers: {
         'Content-Type': 'application/json',
         ...authHeaders()
@@ -69,7 +119,7 @@ export async function analyzeMemoryJournal(opts) {
  *   http?: import('axios').AxiosInstance,
  *   apiBaseUrl?: string,
  * }} opts
- * photos: dataURL[]，1～9 张
+ * photos: dataURL[]，1～9 张（全部放入 photos，不要只传一张）
  */
 export async function generateMemoryJournalPoster(opts) {
   const { diary, date, name, onStage } = opts
@@ -77,22 +127,41 @@ export async function generateMemoryJournalPoster(opts) {
   const apiBase = (opts.apiBaseUrl || API_BASE).replace(/\/$/, '')
 
   onStage?.({ key: 'photo', label: '正在理解你的照片' })
-  const photos = await compressMemoryJournalPhotos(opts.photos || [])
+  const inputList = normalizeMemoryJournalPhotos(opts.photos)
+  const photos = await compressMemoryJournalPhotos(inputList)
   if (!photos.length) {
     throw new Error('请至少上传一张照片')
+  }
+  if (photos.length < inputList.length) {
+    console.warn(
+      '[memory-journal] some photos dropped after compress',
+      inputList.length,
+      '→',
+      photos.length
+    )
+  }
+
+  const requestBody = buildMemoryJournalBody(
+    {
+      diary,
+      date,
+      name,
+      extra: { generate: true }
+    },
+    photos
+  )
+  // 防御：必须是数组且含全部张数
+  if (!Array.isArray(requestBody.photos) || requestBody.photos.length !== photos.length) {
+    throw new Error('照片列表组装失败，请重试')
   }
 
   const submit = await http.post(
     MEMORY_JOURNAL_PATH,
-    {
-      diary: String(diary || '').trim(),
-      photos,
-      date: date || undefined,
-      name: name || undefined,
-      generate: true
-    },
+    requestBody,
     {
       timeout: 180000,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
       headers: {
         'Content-Type': 'application/json',
         ...authHeaders()

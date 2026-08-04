@@ -558,6 +558,8 @@
       "title": "长文日记",
       "lead": "写下一段完整回忆，配上几张照片，生成一张收藏页海报。",
       "diaryLabel": "日记正文",
+      "diaryGuide": "海报只提炼一句短句；这里可以写长一些",
+      "diaryLongTip": "偏长也没关系，海报仍会浓缩成短句",
       "diaryPlaceholder": "写一段今天想留住的事、一段旅程，或一份心情……",
       "photosLabel": "照片",
       "photosHint": "{min}～{max} 张",
@@ -565,7 +567,8 @@
       "photosTruncated": "最多 {max} 张，其余未添加",
       "generate": "生成收藏页",
       "generateSuccess": "收藏页已生成",
-      "stagePrepare": "准备中…"
+      "stagePrepare": "准备中…",
+      "viewOriginal": "查看完整原文"
     },
     "goToNow": "去写此刻",
     "goToBook": "我的日记",
