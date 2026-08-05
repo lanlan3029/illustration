@@ -28,27 +28,32 @@ import { installChunkLoadRecovery } from '@/utils/chunkLoadRecovery'
 
 installChunkLoadRecovery();
 
-// 处理微信登录回调 - 必须在 Vue 应用创建之前执行
-// 微信授权成功后，会跳转到：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
-// 但由于我们使用 hash 路由模式（createWebHashHistory），需要将参数转移到 hash 路由中
-// 将 /wechat/callback?code=xxx&state=xxx 转换为 /#/wechat/callback?code=xxx&state=xxx
-(function handleWeChatCallback() {
-  // 检查是否是直接访问的微信回调URL（没有hash）
-  // 微信回调格式：https://www.kidstory.cc/wechat/callback?code=CODE&state=STATE
-  if (window.location.pathname === '/wechat/callback' && !window.location.hash.includes('/wechat/callback')) {
-    const search = window.location.search // 包含 ?code=xxx&state=xxx
-    
-    
-    if (search) {
-      // 重定向到 hash 路由格式，保留所有查询参数
-      // 例如：/#/wechat/callback?code=081L7Fll2dO52h4pKsml2baLOJ3L7FlE&state=3d6be0a40sssssxxxxx6624a415e
-      const hashUrl = `${window.location.origin}/#/wechat/callback${search}`
-     
-      window.location.replace(hashUrl)
-      // 注意：执行 replace 后会立即跳转，后续代码不会执行
-      return // 阻止后续代码执行
-    }
+// 本站使用 hash 路由（createWebHashHistory）。正确形态应为：
+//   https://www.kidstory.cc/#/mood-diary/memory-journal
+// 若 pathname 被写成 History 风格（如 /mood-diary/...），再跳编辑器会变成：
+//   https://www.kidstory.cc/mood-diary/memory-journal#/editorpro
+// Vue 实际路由只看 hash，但脏 pathname 易造成静态资源 404、分享链接混乱。
+// 启动时统一把 pathname 收进 hash，并清掉残留 pathname。
+;(function normalizeHashRouteEntry() {
+  const { origin, pathname, search, hash } = window.location
+  if (!pathname || pathname === '/') return
+  // 真实静态文件（带扩展名）不要改写
+  if (/\.[a-zA-Z0-9]+$/.test(pathname)) return
+
+  const pathOnly = pathname.replace(/\/+$/, '') || '/'
+  const hashPath = (hash || '').replace(/^#/, '')
+  const hasHashRoute = Boolean(hashPath && hashPath !== '/')
+
+  // 已有 hash 路由（如 /mood-diary/...#/editorpro）→ 以 hash 为准，丢掉 pathname
+  if (hasHashRoute) {
+    const next = `${origin}/#${hashPath.startsWith('/') ? hashPath : `/${hashPath}`}`
+    window.location.replace(next)
+    return
   }
+
+  // 无有效 hash：把 pathname(+search) 挪进 hash
+  // 含微信回调：/wechat/callback?code=... → /#/wechat/callback?code=...
+  window.location.replace(`${origin}/#${pathOnly}${search || ''}`)
 })()
 
 const app = createApp(App)

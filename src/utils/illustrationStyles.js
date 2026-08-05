@@ -13,6 +13,7 @@ import { fetchPublicIllustrationStyles } from '@/utils/illustrationStylesApi'
  *   inputTemplate?: string,
  *   prependBaseOnGenerate?: boolean,
  *   preferredSize?: string,
+ *   customGenerate?: string,
  *   image: string,
  *   imageUrl?: string,
  * }} NormalizedStyle
@@ -69,6 +70,7 @@ export function normalizeIllustrationStyle(item) {
     inputTemplate: item.inputTemplate || '',
     prependBaseOnGenerate: Boolean(item.prependBaseOnGenerate || item.inputTemplate),
     preferredSize: item.preferredSize || '',
+    customGenerate: item.customGenerate || '',
   }
   return sealHiddenBasePrompt(style)
 }
@@ -95,6 +97,7 @@ export function buildFallbackIllustrationStyles(t) {
       inputTemplate,
       prependBaseOnGenerate: Boolean(config.prependBaseOnGenerate || inputTemplate),
       preferredSize: config.preferredSize || '',
+      customGenerate: config.customGenerate || '',
     })
   })
 }
@@ -118,6 +121,17 @@ export function isObjectDoodlePosterNoTextStyle(style) {
   return /实物简笔画|无字.*海报|Object Doodle Poster|Heytea.*[Nn]o.?[Tt]ext|简笔画海报/i.test(label)
 }
 
+/** 怪诞小黑正文配图（SKILL：服务端扩写生图） */
+export function isXiaoheiAbsurdIllustrationStyle(style) {
+  if (!style) return false
+  if (Number(style.id) === 31) return true
+  if (String(style.customGenerate || '').toLowerCase() === 'xiaohei') return true
+  const key = String(style.key || '').toLowerCase()
+  if (key === 'xiaoheiabsurdillustration' || key === 'xiaoheiabsurd') return true
+  const label = `${style.key || ''} ${style.artStyle || ''}`
+  return /小黑怪诞|怪诞小黑|Xiaohei Absurd|小黑.*配图/i.test(label)
+}
+
 function findSpecialMatchInList(list, special) {
   const specialKey = String(special.key || '').toLowerCase()
   const byKey = list.find((s) => s.key && String(s.key).toLowerCase() === specialKey)
@@ -128,6 +142,9 @@ function findSpecialMatchInList(list, special) {
   }
   if (specialKey === 'objectdoodleposternotext') {
     return list.find((s) => isObjectDoodlePosterNoTextStyle(s)) || null
+  }
+  if (specialKey === 'xiaoheiabsurdillustration') {
+    return list.find((s) => isXiaoheiAbsurdIllustrationStyle(s)) || null
   }
   return null
 }
@@ -152,8 +169,13 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
       existing.inputTemplate = special.inputTemplate || existing.inputTemplate
       existing.prependBaseOnGenerate = true
       existing.preferredSize = special.preferredSize || existing.preferredSize
-      // 喜茶无字等：本地强化底词优先；其余保留线上底词
-      const preferLocalBase = special.key === 'objectDoodlePosterNoText'
+      existing.customGenerate = special.customGenerate || existing.customGenerate
+      existing.category = special.category || existing.category
+      existing.uiTab = backendCategoryToUiTab(existing.category)
+      // 喜茶无字 / 小黑：本地强化底词优先；其余保留线上底词
+      const preferLocalBase =
+        special.key === 'objectDoodlePosterNoText' ||
+        special.key === 'xiaoheiAbsurdIllustration'
       const base = String(
         preferLocalBase
           ? (special.basePrompt || special.elementDetails || existing.basePrompt || existing.elementDetails || '')

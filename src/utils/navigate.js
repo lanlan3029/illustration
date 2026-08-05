@@ -12,7 +12,9 @@ export async function navigateTo(router, location, hashFallback) {
       return;
     }
     if (hashFallback) {
-      window.location.hash = hashFallback.replace(/^#/, '');
+      // 始终落到 origin/#/...，避免残留 pathname（如 /mood-diary/...#/editorpro）
+      const path = hashFallback.replace(/^#/, '').replace(/^\//, '');
+      window.location.replace(`${window.location.origin}/#/${path}`);
       return;
     }
     throw err;

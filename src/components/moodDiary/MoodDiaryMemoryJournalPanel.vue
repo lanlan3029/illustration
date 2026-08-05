@@ -1,5 +1,5 @@
 <template>
-  <div class="mj-panel">
+  <div class="mj-panel" :class="{ 'has-result': !!resultUrl }">
     <header class="mj-head">
       <h1 class="mj-title">{{ $t('moodDiary.memoryJournal.title') }}</h1>
       <p class="mj-lead">{{ $t('moodDiary.memoryJournal.lead') }}</p>
@@ -79,6 +79,29 @@
     </div>
 
     <div v-else class="mj-result-wrap">
+      <aside class="mj-story-card" aria-label="story">
+        <p v-if="displayCaption" class="mj-story-caption">「{{ displayCaption }}」</p>
+        <p v-else class="mj-story-caption mj-story-caption--fallback">
+          {{ originalDiaryExcerpt }}
+        </p>
+        <p v-if="displayStoryCore && displayStoryCore !== displayCaption" class="mj-story-core">
+          {{ displayStoryCore }}
+        </p>
+        <div v-if="displayEmotion || displayDate" class="mj-story-meta">
+          <span v-if="displayEmotion" class="mj-chip">{{ displayEmotion }}</span>
+          <span v-if="displayDate" class="mj-chip mj-chip--mute">{{ displayDate }}</span>
+        </div>
+        <button
+          type="button"
+          class="mj-original-toggle"
+          @click="showOriginal = !showOriginal"
+        >
+          {{ showOriginal
+            ? $t('moodDiary.memoryJournal.hideOriginal')
+            : $t('moodDiary.memoryJournal.viewOriginal') }}
+        </button>
+        <div v-show="showOriginal" class="mj-original-body">{{ originalDiary }}</div>
+      </aside>
       <MoodDiaryPosterResult
         :poster-url="resultUrl"
         :saving="saving"
@@ -89,20 +112,6 @@
         @regenerate="resetForRegen"
         @back-to-write="resetForRegen"
       />
-      <aside class="mj-story-card" aria-label="story">
-        <p v-if="displayCaption" class="mj-story-caption">「{{ displayCaption }}」</p>
-        <p v-if="displayStoryCore && displayStoryCore !== displayCaption" class="mj-story-core">
-          {{ displayStoryCore }}
-        </p>
-        <div v-if="displayEmotion || displayDate" class="mj-story-meta">
-          <span v-if="displayEmotion" class="mj-chip">{{ displayEmotion }}</span>
-          <span v-if="displayDate" class="mj-chip mj-chip--mute">{{ displayDate }}</span>
-        </div>
-        <details class="mj-original" :open="false">
-          <summary>{{ $t('moodDiary.memoryJournal.viewOriginal') }}</summary>
-          <div class="mj-original-body">{{ diary.trim() }}</div>
-        </details>
-      </aside>
     </div>
   </div>
 </template>
@@ -139,7 +148,9 @@ export default {
       saving: false,
       progressLabel: '',
       resultUrl: '',
-      analysis: null
+      analysis: null,
+      originalDiary: '',
+      showOriginal: false
     }
   },
   computed: {
@@ -182,6 +193,11 @@ export default {
         return String(d.line || d.text || d.label || '').trim()
       }
       return ''
+    },
+    originalDiaryExcerpt() {
+      const text = this.originalDiary || this.diary.trim()
+      if (!text) return ''
+      return text.length > 72 ? `${text.slice(0, 72)}…` : text
     },
     userName() {
       return this.$store?.state?.userInfo?.name || ''
@@ -235,13 +251,16 @@ export default {
       this.progressLabel = this.$t('moodDiary.memoryJournal.stagePrepare')
       this.resultUrl = ''
       this.analysis = null
+      this.showOriginal = false
+      const diaryText = this.diary.trim()
+      this.originalDiary = diaryText
 
       try {
         // 全部照片进 photos[]，勿只传 [photos[0]]
         const allPhotos = [...this.photos].filter(Boolean)
         const { imageUrl, analysis } = await generateMemoryJournalPoster({
           http: this.$http,
-          diary: this.diary.trim(),
+          diary: diaryText,
           photos: allPhotos,
           date: this.todayDate(),
           name: this.userName,
@@ -252,8 +271,9 @@ export default {
 
         this.analysis = analysis || null
         this.resultUrl = imageUrl
+        this.showOriginal = false
         setDraft({
-          narrative: this.diary.trim(),
+          narrative: diaryText,
           diaryCaption: analysis?.caption || '',
           rawIllustrationUrl: imageUrl,
           hasRawIllustration: true,
@@ -276,7 +296,7 @@ export default {
       if (!this.resultUrl) return
       this.saving = true
       try {
-        const caption = this.analysis?.caption || this.diary.trim().slice(0, 80)
+        const caption = this.displayCaption || this.originalDiary.slice(0, 80)
         const res = await saveMoodPoster(this.resultUrl, caption, this.$t.bind(this))
         if (res.cloudOk) {
           ElMessage.success(this.$t('moodDiary.saveToMyCreationSuccess'))
@@ -300,6 +320,10 @@ export default {
       this.resultUrl = ''
       this.analysis = null
       this.progressLabel = ''
+      this.showOriginal = false
+      if (this.originalDiary && !this.diary.trim()) {
+        this.diary = this.originalDiary
+      }
     }
   }
 }
@@ -316,6 +340,12 @@ export default {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+}
+
+.mj-panel.has-result {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .mj-head {
@@ -356,6 +386,11 @@ export default {
   width: 100%;
 }
 
+.mj-result-wrap :deep(.poster-result) {
+  height: auto;
+  max-width: 100%;
+}
+
 .mj-story-card {
   width: 100%;
   max-width: 480px;
@@ -373,6 +408,12 @@ export default {
   line-height: 1.55;
   color: var(--md-text, #5f5970);
   letter-spacing: 0.01em;
+}
+
+.mj-story-caption--fallback {
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--md-muted, #9d96a8);
 }
 
 .mj-story-core {
@@ -404,35 +445,29 @@ export default {
   color: var(--md-muted, #9d96a8);
 }
 
-.mj-original {
-  border-top: 1px solid var(--md-border, #e6deef);
-  padding-top: 8px;
-}
-
-.mj-original summary {
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--md-muted, #9d96a8);
-  user-select: none;
-  list-style: none;
-}
-
-.mj-original summary::-webkit-details-marker {
-  display: none;
-}
-
-.mj-original summary::before {
-  content: '▸ ';
+.mj-original-toggle {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
   color: var(--md-accent-deep, #7ecbb8);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.mj-original[open] summary::before {
-  content: '▾ ';
+.mj-original-toggle:hover {
+  text-decoration: underline;
 }
 
 .mj-original-body {
-  margin-top: 8px;
-  max-height: 200px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  max-height: 220px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   font-size: 13px;
@@ -440,6 +475,8 @@ export default {
   color: var(--md-text, #5f5970);
   white-space: pre-wrap;
   word-break: break-word;
+  background: #f7f4fa;
+  border-radius: 10px;
 }
 
 .mj-diary-head {
@@ -704,10 +741,11 @@ export default {
 
   .mj-result-wrap :deep(.poster-result) {
     max-width: 100%;
+    height: auto;
   }
 
   .mj-result-wrap :deep(.poster-result__slot) {
-    height: min(48vh, 380px);
+    height: min(42vh, 340px);
     transform: rotate(-1.5deg);
   }
 

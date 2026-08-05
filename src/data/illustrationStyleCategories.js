@@ -16,6 +16,7 @@ export const ILLUSTRATION_STYLE_BACKEND_CATEGORIES = [
   '3d',
   'collage',
   'other',
+  'skill',
 ]
 
 /** AI 插画页 UI 子 Tab → 后端 category 列表 */
@@ -23,11 +24,12 @@ export const UI_TAB_BACKEND_CATEGORIES = {
   sketch: ['sketch', 'ink', 'crayon'],
   paint: ['watercolor', 'oil', 'pastel', 'marker', 'collage', 'other'],
   toon: ['cartoon', 'flat', '3d', 'digital', 'pixel'],
+  skill: ['skill'],
 }
 
 /**
  * @param {string} category 后端 category
- * @returns {'sketch'|'paint'|'toon'}
+ * @returns {'sketch'|'paint'|'toon'|'skill'}
  */
 export function backendCategoryToUiTab(category) {
   const c = String(category || '').toLowerCase()

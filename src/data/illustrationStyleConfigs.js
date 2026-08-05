@@ -55,4 +55,17 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',
   },
+  /**
+   * 怪诞小黑正文配图（SKILL）：前端只交一句话，
+   * 生图走 POST /xiaohei/expand-generate（服务端扩写 + 拼 prompt）。
+   */
+  {
+    key: 'xiaoheiAbsurdIllustration',
+    id: 31,
+    image: illustrationStyleImageUrl(31),
+    category: 'skill',
+    prependBaseOnGenerate: true,
+    preferredSize: '1024x576',
+    customGenerate: 'xiaohei',
+  },
 ]

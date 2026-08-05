@@ -96,16 +96,36 @@
                     ref="promptInput"
                     v-model="subjectScene"
                     class="prompt-textarea"
-                    :placeholder="$t('aiPicture.heroPlaceholder') || '描述或编辑图片'"
+                    :placeholder="promptPlaceholder"
                     rows="3"
                     @focus="isFocused = true"
                     @blur="isFocused = false"
                     @keydown.enter.exact.prevent="generateIllustration"
                 ></textarea>
 
+                <div v-if="isXiaoheiStyle(selectedStyle) && xiaoheiPlan" class="xiaohei-plan-card">
+                    <p class="xiaohei-plan-title">{{ $t('aiPicture.xiaoheiPlanTitle') || '小黑方案' }}</p>
+                    <p><span>{{ $t('aiPicture.xiaoheiCore') || '核心' }}：</span>{{ xiaoheiPlan.core_idea }}</p>
+                    <p><span>{{ $t('aiPicture.xiaoheiMetaphor') || '隐喻' }}：</span>{{ xiaoheiPlan.metaphor }}</p>
+                    <p><span>{{ $t('aiPicture.xiaoheiAction') || '小黑' }}：</span>{{ xiaoheiPlan.xiaohei_action }}</p>
+                    <p v-if="xiaoheiPlan.labels?.length">
+                        <span>{{ $t('aiPicture.xiaoheiLabels') || '标注' }}：</span>{{ xiaoheiPlan.labels.join(' / ') }}
+                    </p>
+                </div>
+
                 <!-- 底部工具栏（基础操作） -->
                 <div class="prompt-toolbar">
                     <div class="toolbar-left">
+                        <!-- 小黑：先扩写方案（可选） -->
+                        <button
+                            v-if="isXiaoheiStyle(selectedStyle)"
+                            type="button"
+                            class="tool-btn pill"
+                            :disabled="!canGenerate || generating || xiaoheiExpanding"
+                            @click="expandXiaoheiPlan"
+                        >
+                            {{ $t('aiPicture.xiaoheiExpandFirst') || '先看方案' }}
+                        </button>
                         <!-- 添加参考图 -->
                         <button
                             type="button"
@@ -381,11 +401,16 @@ import {
     isCreateCharacterResponseOk,
     resolveGenerationImageUrl
 } from '@/utils/createCharacterTask'
+import {
+    expandXiaoheiSentence,
+    generateXiaoheiIllustration,
+} from '@/utils/xiaohei/api'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 import {
     isObjectDoodlePosterNoTextStyle,
     isPoeticMinimalZineStyle,
+    isXiaoheiAbsurdIllustrationStyle,
 } from '@/utils/illustrationStyles'
 
 export default {
@@ -440,6 +465,9 @@ export default {
             downloading: false,
             imageLoading: false,
             imageLoadError: false,
+            /** 小黑 Skill：扩写方案预览 */
+            xiaoheiPlan: null,
+            xiaoheiExpanding: false,
 
             /** 最近一次成功「生成」时请求里的 prompt 快照，与 current generatedImageUrl 一致；重选风格后不会变。 */
             lastGeneratedPromptSnapshot: '',
@@ -484,8 +512,16 @@ export default {
                 { id: 'all', label: this.$t('aiPicture.styleTabAll') || '全部' },
                 { id: 'sketch', label: this.$t('aiPicture.styleTabSketch') || '线稿手绘' },
                 { id: 'paint', label: this.$t('aiPicture.styleTabPaint') || '色彩综合' },
-                { id: 'toon', label: this.$t('aiPicture.styleTabToon') || '卡通 / 3D' }
+                { id: 'toon', label: this.$t('aiPicture.styleTabToon') || '卡通 / 3D' },
+                { id: 'skill', label: this.$t('aiPicture.styleTabSkill') || 'SKILL' },
             ]
+        },
+        promptPlaceholder() {
+            if (this.isXiaoheiStyle(this.selectedStyle)) {
+                return this.$t('aiPicture.xiaoheiPlaceholder')
+                    || '输入一句话，例如：信任是一块证据一块证据铺过去'
+            }
+            return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
         visibleStyles() {
             if (this.activeIllustrationTab === 'all') return this.styles
@@ -566,6 +602,8 @@ export default {
             if (!this.subjectScene || !this.subjectScene.trim()) return ''
             let prompt = this.subjectScene.trim()
             const style = this.selectedStyle
+            // 小黑：服务端扩写拼 prompt，前端只交一句话
+            if (this.isXiaoheiStyle(style)) return prompt
             const isDoodle = this.isObjectDoodleStyle(style)
             const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
@@ -655,6 +693,9 @@ export default {
         isObjectDoodleStyle(style) {
             return isObjectDoodlePosterNoTextStyle(style)
         },
+        isXiaoheiStyle(style) {
+            return isXiaoheiAbsurdIllustrationStyle(style)
+        },
 
         /** 优先 style.inputTemplate，否则按 key / zine / doodle 识别从 i18n 取短模板 */
         resolveStyleInputTemplate(style) {
@@ -662,6 +703,11 @@ export default {
             // 喜茶无字：强制用本地短模板（线上可能仍是弱文案「请上传图片」）
             if (this.isObjectDoodleStyle(style)) {
                 const path = 'aibooks.styles.objectDoodlePosterNoText.inputTemplate'
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
+            if (this.isXiaoheiStyle(style)) {
+                const path = 'aibooks.styles.xiaoheiAbsurdIllustration.inputTemplate'
                 const v = this.$t(path)
                 if (v && v !== path) return String(v).trim()
             }
@@ -682,9 +728,15 @@ export default {
 
         applyStylePromptToInput(style) {
             if (!style) return
+            this.xiaoheiPlan = null
             // 特殊风格：输入框只填精简模板 C，底词 A（basePrompt / elementDetails）永不写入输入框
             if (this.isObjectDoodleStyle(style)) {
                 this.subjectScene = this.$t('aibooks.styles.objectDoodlePosterNoText.inputTemplate') || '请上传参考图'
+                return
+            }
+            if (this.isXiaoheiStyle(style)) {
+                const tmpl = this.resolveStyleInputTemplate(style)
+                this.subjectScene = tmpl || ''
                 return
             }
             const tmpl = this.resolveStyleInputTemplate(style)
@@ -698,6 +750,35 @@ export default {
             }
             // 绝不用长 elementDetails 填输入框
             this.subjectScene = style.artStyle || ''
+        },
+
+        async expandXiaoheiPlan() {
+            const sentence = String(this.subjectScene || '').trim()
+            if (!sentence) {
+                ElMessage.warning({
+                    message: this.$t('aiPicture.xiaoheiNeedSentence') || '请先输入一句话',
+                    offset: 200,
+                })
+                return
+            }
+            this.xiaoheiExpanding = true
+            try {
+                const data = await expandXiaoheiSentence(this.$http, sentence, {
+                    apiBaseUrl: this.apiBaseUrl,
+                })
+                this.xiaoheiPlan = data.plan || null
+                ElMessage.success({
+                    message: this.$t('aiPicture.xiaoheiPlanReady') || '方案已就绪，可直接生成',
+                    offset: 200,
+                })
+            } catch (e) {
+                ElMessage.error({
+                    message: e?.message || this.$t('aiPicture.xiaoheiExpandFailed') || '扩写失败',
+                    offset: 200,
+                })
+            } finally {
+                this.xiaoheiExpanding = false
+            }
         },
 
         /**
@@ -760,8 +841,13 @@ export default {
                 this.editableArtStyle = style.artStyle
                 this.editableElementDetails = style.elementDetails
                 this.applyStylePromptToInput(style)
-                if (style.preferredSize || style.prependBaseOnGenerate || this.isPoeticZineStyle(style)) {
-                    this.selectedSize = style.preferredSize || '768x1024'
+                if (
+                    style.preferredSize ||
+                    style.prependBaseOnGenerate ||
+                    this.isPoeticZineStyle(style) ||
+                    this.isXiaoheiStyle(style)
+                ) {
+                    this.selectedSize = style.preferredSize || (this.isXiaoheiStyle(style) ? '1024x576' : '768x1024')
                 }
             }
         },
@@ -1048,6 +1134,35 @@ export default {
             this.generating = true
 
             try {
+                // SKILL·怪诞小黑：一句话 → 服务端扩写 → create-character 异步任务
+                if (this.isXiaoheiStyle(this.selectedStyle)) {
+                    const sentence = String(this.subjectScene || '').trim()
+                    const result = await generateXiaoheiIllustration(
+                        this.$http,
+                        {
+                            sentence,
+                            plan: this.xiaoheiPlan,
+                            size: this.selectedSize || '1024x576',
+                        },
+                        { apiBaseUrl: this.apiBaseUrl }
+                    )
+                    if (result.plan) this.xiaoheiPlan = result.plan
+                    const message = result.message
+                    if (message && typeof message === 'object' && message.points !== undefined && this.$store && this.$store.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: message.points
+                        })
+                    }
+                    this.lastGeneratedPromptSnapshot = sentence
+                    this.generatedImageUrl = result.imageUrl
+                    this.imageLoading = true
+                    this.imageLoadError = false
+                    this.saveGeneratedImageToLocalStorage(result.imageUrl)
+                    ElMessage.success({ message: this.$t('aiPicture.generateSuccess') || '插画生成成功！', offset: 200 })
+                    return
+                }
+
                 const requestData = this.buildCreateCharacterRequest()
                 // 多图时 JSON 体积极大，按张数分摊压缩，降低网关/解析失败概率
                 if (refs.length > 1) {
@@ -1469,6 +1584,36 @@ export default {
 
 .prompt-textarea::placeholder {
     color: #b5b8be;
+}
+
+.xiaohei-plan-card {
+    margin: 10px 4px 4px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f7f5fb;
+    border: 1px solid #e8e0f4;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #444;
+}
+
+.xiaohei-plan-card p {
+    margin: 0 0 4px;
+}
+
+.xiaohei-plan-card p:last-child {
+    margin-bottom: 0;
+}
+
+.xiaohei-plan-card span {
+    color: #8167a9;
+    font-weight: 600;
+}
+
+.xiaohei-plan-title {
+    font-weight: 600;
+    color: #333 !important;
+    margin-bottom: 6px !important;
 }
 
 .selected-style-bar {

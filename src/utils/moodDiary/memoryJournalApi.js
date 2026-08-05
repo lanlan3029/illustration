@@ -16,19 +16,36 @@ function authHeaders() {
     : {}
 }
 
+/** 粗指纹：与后端一致，避免同一张图在数组里出现两次 */
+function photoFingerprint(src) {
+  const s = String(src || '').trim()
+  if (!s) return ''
+  if (s.length <= 120) return s
+  return `${s.slice(0, 64)}|${s.length}|${s.slice(-48)}`
+}
+
 /**
- * 规范为照片数组（绝不为单字符串 / 只取第一张）
+ * 规范为照片数组（绝不为单字符串 / 只取第一张；按指纹去重）
  * @param {unknown} raw
  * @returns {string[]}
  */
 export function normalizeMemoryJournalPhotos(raw) {
-  if (Array.isArray(raw)) {
-    return raw.filter((p) => typeof p === 'string' && p.trim()).map((p) => p.trim()).slice(0, 9)
+  const incoming = Array.isArray(raw)
+    ? raw
+    : (typeof raw === 'string' && raw.trim() ? [raw.trim()] : [])
+  const out = []
+  const seen = new Set()
+  for (const item of incoming) {
+    if (typeof item !== 'string') continue
+    const t = item.trim()
+    if (!t) continue
+    const fp = photoFingerprint(t)
+    if (!fp || seen.has(fp)) continue
+    seen.add(fp)
+    out.push(t)
+    if (out.length >= 9) break
   }
-  if (typeof raw === 'string' && raw.trim()) {
-    return [raw.trim()]
-  }
-  return []
+  return out
 }
 
 /**
@@ -60,10 +77,8 @@ function buildMemoryJournalBody(fields, photos) {
   const list = normalizeMemoryJournalPhotos(photos)
   return {
     diary: String(fields.diary || '').trim(),
-    // 关键字段：全部照片
+    // 只传 photos；勿再附带 images/photo/image，否则后端会重复计入贴纸
     photos: list,
-    // 兼容别名（同样传完整数组，勿用单张 photo/image）
-    images: list,
     date: fields.date || undefined,
     name: fields.name || undefined,
     ...(fields.extra || {})
