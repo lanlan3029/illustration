@@ -34,7 +34,7 @@ installChunkLoadRecovery();
 //   https://www.kidstory.cc/mood-diary/memory-journal#/editorpro
 // Vue 实际路由只看 hash，但脏 pathname 易造成静态资源 404、分享链接混乱。
 // 启动时统一把 pathname 收进 hash，并清掉残留 pathname。
-;(function normalizeHashRouteEntry() {
+function normalizeHashRouteEntry() {
   const { origin, pathname, search, hash } = window.location
   if (!pathname || pathname === '/') return
   // 真实静态文件（带扩展名）不要改写
@@ -54,7 +54,8 @@ installChunkLoadRecovery();
   // 无有效 hash：把 pathname(+search) 挪进 hash
   // 含微信回调：/wechat/callback?code=... → /#/wechat/callback?code=...
   window.location.replace(`${origin}/#${pathOnly}${search || ''}`)
-})()
+}
+normalizeHashRouteEntry()
 
 const app = createApp(App)
 
