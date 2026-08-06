@@ -1063,7 +1063,9 @@ export default {
         buildCreateCharacterRequest() {
             const prompt = (this.generatedPrompt || '').slice(0, 5000)
             const size = this.selectedSize || '1280x960'
-            return {
+            const model = this.selectedModel || 'gpt-image-2'
+            const quality = this.selectedQuality || (this.isDallE ? 'medium' : '1k')
+            const body = {
                 prompt,
                 size,
                 model,
