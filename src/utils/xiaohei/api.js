@@ -47,13 +47,14 @@ export async function expandXiaoheiSentence(http, sentence, opts = {}) {
  * 扩写并入队生图（可传入已编辑 plan）
  * @returns {Promise<{ task_id: string, poll_url?: string, poll_interval_ms?: number, plan?: object }>}
  */
-export async function expandGenerateXiaohei(http, { sentence, plan, size } = {}, opts = {}) {
+export async function expandGenerateXiaohei(http, { sentence, plan, size, resolution } = {}, opts = {}) {
   const root = resolveApiRoot(opts.apiBaseUrl)
   const body = {
     sentence: String(sentence || '').trim(),
   }
   if (plan?.core_idea) body.plan = plan
   if (size) body.size = size
+  if (resolution) body.resolution = resolution
 
   const res = await http.post(`${root}/xiaohei/expand-generate`, body, {
     timeout: 60000,

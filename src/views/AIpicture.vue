@@ -450,7 +450,8 @@ export default {
             selectedSize: '1280x960',
 
             selectedModel: 'gpt-image-2',
-            selectedQuality: 'medium',
+            /** gpt-image：resolution 1k/2k/4k；dall-e：auto/high/medium/low */
+            selectedQuality: '1k',
             outputFormat: 'png',
             imageCount: 1,
 
@@ -577,16 +578,16 @@ export default {
                     { value: 'low', label: this.$t('aiPicture.qualityFast'), hint: 'standard' }
                 ]
             }
+            // gpt-image / APIMart：按 resolution 选 1k / 2k / 4k
             return [
-                { value: 'auto', label: this.$t('aiPicture.qualityAuto'), hint: '' },
-                { value: 'high', label: this.$t('aiPicture.qualityHigh'), hint: '' },
-                { value: 'medium', label: this.$t('aiPicture.qualityMedium'), hint: '' },
-                { value: 'low', label: this.$t('aiPicture.qualityLow'), hint: '' }
+                { value: '1k', label: this.$t('aiPicture.quality1k') || '1K', hint: '1k' },
+                { value: '2k', label: this.$t('aiPicture.quality2k') || '2K', hint: '2k' },
+                { value: '4k', label: this.$t('aiPicture.quality4k') || '4K', hint: '4k' },
             ]
         },
         currentQualityLabel() {
             const hit = this.qualityMenuOptions.find(o => o.value === this.selectedQuality)
-            return hit ? hit.label : (this.$t('aiPicture.qualityMedium') || '中')
+            return hit ? hit.label : (this.$t('aiPicture.quality1k') || '1K')
         },
         displayedStyles() {
             const vis = this.visibleStyles
@@ -882,7 +883,7 @@ export default {
             this.selectedModel = value
             this.modelMenuOpen = false
             const valid = this.qualityMenuOptions.some(o => o.value === this.selectedQuality)
-            if (!valid) this.selectedQuality = 'medium'
+            if (!valid) this.selectedQuality = this.isDallE ? 'medium' : '1k'
         },
         toggleQualityMenu() {
             const next = !this.qualityMenuOpen
@@ -1065,8 +1066,17 @@ export default {
             return {
                 prompt,
                 size,
-                watermark: false
+                model,
+                watermark: false,
             }
+            // gpt-image：传 resolution（1k/2k/4k）；dall-e：传 quality
+            if (this.isDallE) {
+                body.quality = quality
+            } else {
+                body.resolution = quality
+                body.quality = quality
+            }
+            return body
         },
 
         extractImageUrl(responseData) {
@@ -1143,6 +1153,7 @@ export default {
                             sentence,
                             plan: this.xiaoheiPlan,
                             size: this.selectedSize || '1024x576',
+                            resolution: this.selectedQuality || '1k',
                         },
                         { apiBaseUrl: this.apiBaseUrl }
                     )
