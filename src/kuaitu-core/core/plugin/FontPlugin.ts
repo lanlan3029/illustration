@@ -100,24 +100,69 @@ class FontPlugin implements IPluginTempl {
 
   downFontByJSON(str: string) {
     const object = JSON.parse(str);
+    const skipFonts = new Set([
+      'arial',
+      'helvetica',
+      'sans-serif',
+      'serif',
+      'monospace',
+      'times',
+      'times new roman',
+      'courier',
+      'courier new',
+      'georgia',
+      'system-ui',
+    ]);
+
+    const primaryFamily = (raw: unknown) =>
+      String(raw || '')
+        .split(',')[0]
+        .replace(/['"]/g, '')
+        .trim();
+
+    const shouldSkipFamily = (raw: unknown) => {
+      const name = primaryFamily(raw).toLowerCase();
+      if (!name) return true;
+      if (skipFonts.has(name)) return true;
+      // 系统字体 CSS 栈或未配置 file 的本地字体，无需 FontFaceObserver
+      return false;
+    };
+
+    /** 仅对带真实字体文件的项做预加载；系统/本地空 file 会卡死 Spin */
+    const needsWebFontLoad = (family: string) => {
+      if (shouldSkipFamily(family)) return false;
+      const hit = this.cacheList.find(
+        (font) =>
+          font.name === family ||
+          font.fontFamily === family ||
+          primaryFamily(font.fontFamily) === primaryFamily(family)
+      );
+      return Boolean(hit?.file);
+    };
+
     let fontFamilies: string[] = [];
-    const skipFonts = ['arial'];
     if (object.objects) {
-      fontFamilies = JSON.parse(str)
-        .objects.filter((item: Font) => {
-          const hasFontFile = this.cacheList.find((font) => font.name === item.fontFamily);
-          return item.type.includes('text') && !skipFonts.includes(item.fontFamily) && hasFontFile;
+      fontFamilies = object.objects
+        .filter((item: Font) => {
+          const type = String((item as any)?.type || '');
+          return type.includes('text') && needsWebFontLoad(item.fontFamily);
         })
-        .map((item: Font) => item.fontFamily);
-    } else {
-      fontFamilies = skipFonts.includes(object.fontFamily) ? [] : [object.fontFamily];
+        .map((item: Font) => primaryFamily(item.fontFamily))
+        .filter(Boolean);
+    } else if (object.fontFamily && needsWebFontLoad(object.fontFamily)) {
+      fontFamilies = [primaryFamily(object.fontFamily)];
     }
 
-    const fontFamiliesAll = fontFamilies.map((fontName) => {
-      const font = new FontFaceObserver(fontName);
-      return font.load('汉字Aa', 15000);
-    });
-    return Promise.all(fontFamiliesAll);
+    // 去重；任一字体失败也不阻断模版导入（避免全屏 Spin 白屏）
+    const unique = [...new Set(fontFamilies)];
+    if (!unique.length) return Promise.resolve([]);
+
+    return Promise.all(
+      unique.map((fontName) => {
+        const font = new FontFaceObserver(fontName);
+        return font.load('汉字Aa', 8000).catch(() => null);
+      })
+    );
   }
 
   // 获取字体数据 新增字体样式使用

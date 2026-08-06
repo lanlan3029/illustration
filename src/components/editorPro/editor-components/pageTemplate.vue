@@ -140,21 +140,38 @@ const applyTemplate = async (item) => {
     okText: t('ok'),
     cancelText: t('cancel'),
     onOk: async () => {
-      Spin.show({ render: (h) => h('div', t('alert.loading_data')) })
+      // 不用自定义 render：Vue3 下 h 未必注入，且字体预加载卡住时全屏 Spin 会像白屏
+      Spin.show()
       try {
         refreshWorkspaceSize()
         const { width, height } = workspaceSize.value
+        if (!width || !height) {
+          throw new Error(t('editorProLeft.pageTemplateFailed') || '画布尺寸无效')
+        }
         const fittedJson = fitTemplateToCanvas(item.json, width, height)
-        await canvasEditor.downFontByJSON(JSON.stringify(fittedJson))
-        await new Promise((resolve) => {
-          canvasEditor.loadJSON(JSON.stringify(fittedJson), () => {
-            applyPageTemplateBehavior(canvasEditor.canvas)
-            activePhotoSlot.value = null
-            resolve()
-          })
+        try {
+          await canvasEditor.downFontByJSON(JSON.stringify(fittedJson))
+        } catch (fontErr) {
+          console.warn('[pageTemplate] downFontByJSON skipped', fontErr)
+        }
+        await new Promise((resolve, reject) => {
+          try {
+            canvasEditor.loadJSON(JSON.stringify(fittedJson), () => {
+              try {
+                applyPageTemplateBehavior(canvasEditor.canvas)
+                activePhotoSlot.value = null
+                resolve()
+              } catch (behaviorErr) {
+                reject(behaviorErr)
+              }
+            })
+          } catch (loadErr) {
+            reject(loadErr)
+          }
         })
         Message.success(t('editorProLeft.pageTemplateApplied'))
       } catch (e) {
+        console.error('[pageTemplate] apply failed', e)
         Message.error(e?.message || t('editorProLeft.pageTemplateFailed'))
       } finally {
         Spin.hide()

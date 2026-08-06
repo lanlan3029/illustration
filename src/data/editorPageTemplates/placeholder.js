@@ -95,7 +95,8 @@ export function editableText({ left, top, width, text, fontSize = 36, textAlign 
     angle: 0,
     opacity: 1,
     visible: true,
-    fontFamily: 'Arial',
+    // 系统字体栈：避免 FontPlugin 把 Arial 当 WebFont 预加载导致全屏 Spin 卡住
+    fontFamily: 'PingFang SC, Microsoft YaHei, Arial, sans-serif',
     fontWeight: 'normal',
     fontSize,
     text,
@@ -103,6 +104,7 @@ export function editableText({ left, top, width, text, fontSize = 36, textAlign 
     lineHeight: 1.2,
     editable: true,
     kidstoryRole: 'text',
+    styles: {},
   }
 }
 

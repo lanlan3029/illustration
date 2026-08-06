@@ -170,6 +170,8 @@ export default class LockPlugin implements IPluginTempl {
 
   hookImportAfter() {
     this.canvas.forEachObject((obj: fabric.Object) => {
+      // 跳过画布底板，避免导入模版后选中 workspace 触发属性面板异常
+      if ((obj as any).id === 'workspace' || (obj as any).name === 'workspace') return;
       if (obj.hasControls === false && obj.selectable === false) {
         this.canvas.setActiveObject(obj);
         this.lock();
