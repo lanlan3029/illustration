@@ -9,16 +9,6 @@
                 <p class="hero-subtitle">{{ $t('home.welcomeSubtitle') || '选择您想要使用的创作功能' }}</p>
             </header>
 
-            <!-- 创作者计划 -->
-            <router-link to="/creator-program" class="creator-program-banner">
-                <div class="creator-program-banner-text">
-                    <span class="creator-program-banner-kicker">{{ $t('home.creatorProgramKicker') }}</span>
-                    <strong>{{ $t('home.creatorProgramTitle') }}</strong>
-                    <p>{{ $t('home.creatorProgramDesc') }}</p>
-                </div>
-                <span class="creator-program-banner-cta">{{ $t('home.creatorProgramCta') }} →</span>
-            </router-link>
-
             <!-- 顶部四个功能卡片 -->
             <section class="feature-cards">
                 <button
@@ -269,63 +259,6 @@ export default {
     max-width: 420px;
     margin-left: auto;
     margin-right: auto;
-}
-
-/* ===== 创作者计划横幅 ===== */
-.creator-program-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 24px;
-    padding: 22px 28px;
-    border-radius: 20px;
-    text-decoration: none;
-    color: #fff;
-    background:
-        radial-gradient(ellipse 80% 100% at 0% 0%, rgba(255, 200, 180, 0.25), transparent),
-        linear-gradient(120deg, #3d2f62 0%, #6b5a9a 55%, #8167a9 100%);
-    box-shadow: 0 12px 36px -12px rgba(61, 47, 98, 0.45);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.creator-program-banner:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 44px -10px rgba(61, 47, 98, 0.5);
-    color: #fff;
-}
-
-.creator-program-banner-kicker {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    opacity: 0.85;
-    margin-bottom: 6px;
-}
-
-.creator-program-banner-text strong {
-    display: block;
-    font-size: 1.15rem;
-    margin-bottom: 6px;
-}
-
-.creator-program-banner-text p {
-    margin: 0;
-    font-size: 14px;
-    opacity: 0.9;
-    line-height: 1.55;
-    max-width: 640px;
-}
-
-.creator-program-banner-cta {
-    flex-shrink: 0;
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.95);
-    color: #3d2f62;
-    font-size: 14px;
-    font-weight: 600;
 }
 
 /* ===== 四个功能卡片 ===== */
