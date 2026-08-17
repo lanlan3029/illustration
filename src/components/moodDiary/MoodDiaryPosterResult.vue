@@ -1,13 +1,18 @@
 <template>
-  <div class="poster-result">
+  <div class="poster-result" :class="orientationClass">
     <header v-if="showBackToWrite" class="poster-result__head">
       <button type="button" class="poster-result__back" @click="$emit('back-to-write')">
         {{ $t('moodDiary.backToWrite') }}
       </button>
     </header>
     <div class="poster-result__stage">
-      <div class="poster-result__slot">
-        <img :src="posterUrl" class="poster-result__img" alt="" />
+      <div class="poster-result__slot" :style="slotStyle">
+        <img
+          :src="posterUrl"
+          class="poster-result__img"
+          alt=""
+          @load="onImgLoad"
+        />
       </div>
     </div>
 
@@ -42,7 +47,37 @@ export default {
     showBackToWrite: { type: Boolean, default: true },
     hint: { type: String, default: '' }
   },
-  emits: ['save', 'download', 'regenerate', 'back-to-write']
+  emits: ['save', 'download', 'regenerate', 'back-to-write'],
+  data() {
+    return {
+      imgRatio: 0
+    }
+  },
+  computed: {
+    orientationClass() {
+      if (!this.imgRatio) return 'is-unknown'
+      if (this.imgRatio > 1.08) return 'is-landscape'
+      if (this.imgRatio < 0.92) return 'is-portrait'
+      return 'is-square'
+    },
+    slotStyle() {
+      if (!this.imgRatio) return {}
+      return { aspectRatio: String(this.imgRatio) }
+    }
+  },
+  watch: {
+    posterUrl() {
+      this.imgRatio = 0
+    }
+  },
+  methods: {
+    onImgLoad(e) {
+      const img = e?.target
+      const w = img?.naturalWidth || 0
+      const h = img?.naturalHeight || 0
+      if (w > 0 && h > 0) this.imgRatio = w / h
+    }
+  }
 }
 </script>
 
@@ -56,6 +91,10 @@ export default {
   flex-direction: column;
   padding: 8px 0 0;
   box-sizing: border-box;
+}
+
+.poster-result.is-landscape {
+  max-width: 560px;
 }
 
 .poster-result__head {
@@ -112,6 +151,19 @@ export default {
   background: var(--md-poster-slot);
 }
 
+.poster-result.is-landscape .poster-result__slot {
+  height: auto;
+  width: min(100%, 520px);
+  max-height: min(52vh, 420px);
+  transform: rotate(-1.2deg);
+}
+
+.poster-result.is-square .poster-result__slot {
+  height: min(56vh, 440px);
+  width: auto;
+  transform: rotate(-1.8deg);
+}
+
 .poster-result:hover .poster-result__slot {
   transform: rotate(-1.5deg) translateY(-3px);
   box-shadow:
@@ -120,11 +172,16 @@ export default {
     0 8px 16px rgba(79, 86, 104, 0.1);
 }
 
+.poster-result.is-landscape:hover .poster-result__slot {
+  transform: rotate(-0.6deg) translateY(-2px);
+}
+
 .poster-result__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: var(--md-poster-slot);
 }
 
 .poster-result__actions :deep(.el-button--primary) {
@@ -187,6 +244,16 @@ export default {
 
   .poster-result__slot {
     height: min(52vh, 440px);
+  }
+
+  .poster-result.is-landscape .poster-result__slot {
+    height: auto;
+    width: min(100%, 100%);
+    max-height: min(40vh, 320px);
+  }
+
+  .poster-result.is-square .poster-result__slot {
+    height: min(44vh, 360px);
   }
 }
 </style>

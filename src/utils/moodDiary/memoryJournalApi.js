@@ -219,10 +219,15 @@ export async function generateMemoryJournalPoster(opts) {
   const imageUrl = resolveGenerationImageUrl(message, apiBase)
   if (!imageUrl) throw new Error('生成成功但未拿到图片地址')
 
+  const analysis =
+    message?.analysis
+    || payload.analysis
+    || (message?.diary || message?.caption ? message : null)
+
   return {
     imageUrl,
-    analysis: payload.analysis || null,
+    analysis,
     taskId: payload.task_id,
-    finalPrompt: payload.final_prompt || ''
+    finalPrompt: payload.final_prompt || message?.final_prompt || ''
   }
 }

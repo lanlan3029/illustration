@@ -24,18 +24,17 @@
       </div>
     </div>
 
-    <!-- <div>
+    <div class="attr-item-box">
       <Divider plain orientation="left">
-        <h4>蒙版</h4>
+        <h4>{{ $t('bgSeting.mask') || '遮罩' }}</h4>
       </Divider>
-
       <workspaceMask />
-    </div> -->
+    </div>
   </div>
 </template>
 
 <script setup name="BgBar">
-// import workspaceMask from './workspaceMask.vue';
+import workspaceMask from './workspaceMask.vue';
 import { ref, onMounted, onUnmounted } from 'vue';
 import useSelect from '@/components/editorPro/hooks/select';
 

@@ -8,8 +8,17 @@
         @click="$emit('preview', latestRecord.posterDataUrl)"
       >
         <div class="now-card__poster-stage">
-          <div class="now-card__slot now-card__slot--poster">
-            <img :src="latestRecord.posterDataUrl" class="now-card__poster-img" alt="" />
+          <div
+            class="now-card__slot now-card__slot--poster"
+            :class="orientationClass"
+            :style="slotStyle"
+          >
+            <img
+              :src="latestRecord.posterDataUrl"
+              class="now-card__poster-img"
+              alt=""
+              @load="onImgLoad"
+            />
             <div v-if="generating" class="now-card__generating">
               <span>{{ $t('moodDiary.posterGeneratingHint') }}</span>
             </div>
@@ -59,14 +68,40 @@ export default {
     generating: { type: Boolean, default: false }
   },
   emits: ['preview', 'write'],
+  data() {
+    return {
+      imgRatio: 0
+    }
+  },
   computed: {
     latestCaption() {
       const t = (this.latestRecord?.caption || this.latestRecord?.narrative || '').trim()
       if (!t) return ''
       return t.length > 56 ? `${t.slice(0, 56)}…` : t
+    },
+    orientationClass() {
+      if (!this.imgRatio) return 'is-unknown'
+      if (this.imgRatio > 1.08) return 'is-landscape'
+      if (this.imgRatio < 0.92) return 'is-portrait'
+      return 'is-square'
+    },
+    slotStyle() {
+      if (!this.imgRatio) return {}
+      return { aspectRatio: String(this.imgRatio) }
+    }
+  },
+  watch: {
+    'latestRecord.posterDataUrl'() {
+      this.imgRatio = 0
     }
   },
   methods: {
+    onImgLoad(e) {
+      const img = e?.target
+      const w = img?.naturalWidth || 0
+      const h = img?.naturalHeight || 0
+      if (w > 0 && h > 0) this.imgRatio = w / h
+    },
     formatShortDate(ts) {
       const d = new Date(ts || Date.now())
       const locale = this.$i18n?.locale === 'zh' ? 'zh-CN' : 'en-US'
@@ -201,12 +236,28 @@ export default {
   transform: rotate(-2.5deg);
 }
 
+.now-card__poster-btn .now-card__slot.is-landscape {
+  height: auto;
+  width: min(100%, 520px);
+  max-height: min(52vh, 420px);
+  transform: rotate(-1.2deg);
+}
+
+.now-card__poster-btn .now-card__slot.is-square {
+  height: min(56vh, 440px);
+  transform: rotate(-1.8deg);
+}
+
 .now-card__poster-btn:hover .now-card__slot {
   transform: rotate(-1.5deg) translateY(-3px);
   box-shadow:
     0 0 0 1px rgba(196, 181, 224, 0.2),
     0 18px 36px rgba(196, 181, 224, 0.18),
     0 8px 16px rgba(184, 223, 240, 0.12);
+}
+
+.now-card__poster-btn:hover .now-card__slot.is-landscape {
+  transform: rotate(-0.6deg) translateY(-2px);
 }
 
 .now-card__empty:hover .now-card__slot--front {
@@ -250,8 +301,9 @@ export default {
 .now-card__poster-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: var(--md-poster-slot, #f8fafc);
 }
 
 .now-card__meta {
@@ -348,6 +400,16 @@ export default {
 
   .now-card__poster-btn .now-card__slot {
     height: min(52vh, 440px);
+  }
+
+  .now-card__poster-btn .now-card__slot.is-landscape {
+    height: auto;
+    width: min(100%, 100%);
+    max-height: min(40vh, 320px);
+  }
+
+  .now-card__poster-btn .now-card__slot.is-square {
+    height: min(44vh, 360px);
   }
 }
 </style>

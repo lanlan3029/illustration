@@ -4,7 +4,11 @@
     "color": "颜色",
     "colorMacthing": "配色",
     "width": "宽度",
-    "height": "高度"
+    "height": "高度",
+    "mask": "遮罩",
+    "maskNone": "无",
+    "maskLight": "浅色",
+    "maskDark": "深色"
   },
   "flip": {
     "x": "水平翻转",
@@ -568,7 +572,9 @@
       "generate": "生成收藏页",
       "generateSuccess": "收藏页已生成",
       "stagePrepare": "准备中…",
-      "viewOriginal": "查看完整原文",
+      "posterLineLabel": "海报短句",
+      "originalLabel": "日记原文",
+      "viewOriginal": "展开原文",
       "hideOriginal": "收起原文"
     },
     "goToNow": "去写此刻",

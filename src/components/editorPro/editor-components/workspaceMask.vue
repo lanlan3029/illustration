@@ -1,37 +1,51 @@
 <template>
   <div class="mask-wrap">
-    <div>开启背景蒙版</div>
-
-    <iSwitch v-model="openMask" size="large" @on-change="onMaskChange">
-      <template #open>
-        <span>开启</span>
-      </template>
-      <template #close>
-        <span>关闭</span>
-      </template>
-    </iSwitch>
+    <RadioGroup v-model="maskLevel" type="button" size="small" @on-change="onLevelChange">
+      <Radio label="none">{{ $t('bgSeting.maskNone') || '无' }}</Radio>
+      <Radio label="light">{{ $t('bgSeting.maskLight') || '浅色' }}</Radio>
+      <Radio label="dark">{{ $t('bgSeting.maskDark') || '深色' }}</Radio>
+    </RadioGroup>
   </div>
 </template>
 
 <script setup>
-import useSelect from '@/components/editorPro/hooks/select.js';
+import { ref, onMounted } from 'vue'
+import useSelect from '@/components/editorPro/hooks/select.js'
 
-const { canvasEditor } = useSelect() || {};
+const { canvasEditor } = useSelect() || {}
 
-const openMask = ref(false);
-const onMaskChange = () => {
-  canvasEditor?.workspaceMaskToggle();
-};
+const maskLevel = ref('none')
+
+const syncFromEditor = () => {
+  if (typeof canvasEditor?.getWorkspaceMaskLevel === 'function') {
+    maskLevel.value = canvasEditor.getWorkspaceMaskLevel() || 'none'
+    return
+  }
+  // 兼容旧 API
+  maskLevel.value = canvasEditor?.getworkspaceMaskStatus?.() ? 'dark' : 'none'
+}
+
+const onLevelChange = (level) => {
+  const next = level === 'light' || level === 'dark' ? level : 'none'
+  maskLevel.value = next
+  if (typeof canvasEditor?.setWorkspaceMaskLevel === 'function') {
+    canvasEditor.setWorkspaceMaskLevel(next)
+    return
+  }
+  // 兼容旧开关：仅 none ↔ dark
+  const on = canvasEditor?.getworkspaceMaskStatus?.()
+  if (next === 'none' && on) canvasEditor.workspaceMaskToggle()
+  if (next !== 'none' && !on) canvasEditor.workspaceMaskToggle()
+}
 
 onMounted(() => {
-  openMask.value = canvasEditor?.getworkspaceMaskStatus();
-});
+  syncFromEditor()
+})
 </script>
 
-<style   scoped>
+<style scoped>
 .mask-wrap {
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 </style>

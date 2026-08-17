@@ -80,27 +80,36 @@
 
     <div v-else class="mj-result-wrap">
       <aside class="mj-story-card" aria-label="story">
-        <p v-if="displayCaption" class="mj-story-caption">「{{ displayCaption }}」</p>
-        <p v-else class="mj-story-caption mj-story-caption--fallback">
-          {{ originalDiaryExcerpt }}
-        </p>
-        <p v-if="displayStoryCore && displayStoryCore !== displayCaption" class="mj-story-core">
+        <div v-if="displayCaption" class="mj-story-block">
+          <p class="mj-story-kicker">{{ $t('moodDiary.memoryJournal.posterLineLabel') }}</p>
+          <p class="mj-story-caption">「{{ displayCaption }}」</p>
+        </div>
+        <p
+          v-if="displayStoryCore && displayStoryCore !== displayCaption"
+          class="mj-story-core"
+        >
           {{ displayStoryCore }}
         </p>
         <div v-if="displayEmotion || displayDate" class="mj-story-meta">
           <span v-if="displayEmotion" class="mj-chip">{{ displayEmotion }}</span>
           <span v-if="displayDate" class="mj-chip mj-chip--mute">{{ displayDate }}</span>
         </div>
-        <button
-          type="button"
-          class="mj-original-toggle"
-          @click="showOriginal = !showOriginal"
-        >
-          {{ showOriginal
-            ? $t('moodDiary.memoryJournal.hideOriginal')
-            : $t('moodDiary.memoryJournal.viewOriginal') }}
-        </button>
-        <div v-show="showOriginal" class="mj-original-body">{{ originalDiary }}</div>
+
+        <div v-if="originalDiary" class="mj-original-section">
+          <div class="mj-original-head">
+            <p class="mj-story-kicker">{{ $t('moodDiary.memoryJournal.originalLabel') }}</p>
+            <button
+              type="button"
+              class="mj-original-toggle"
+              @click="showOriginal = !showOriginal"
+            >
+              {{ showOriginal
+                ? $t('moodDiary.memoryJournal.hideOriginal')
+                : $t('moodDiary.memoryJournal.viewOriginal') }}
+            </button>
+          </div>
+          <div v-show="showOriginal" class="mj-original-body">{{ originalDiary }}</div>
+        </div>
       </aside>
       <MoodDiaryPosterResult
         :poster-url="resultUrl"
@@ -150,7 +159,7 @@ export default {
       resultUrl: '',
       analysis: null,
       originalDiary: '',
-      showOriginal: false
+      showOriginal: true
     }
   },
   computed: {
@@ -194,16 +203,17 @@ export default {
       }
       return ''
     },
-    originalDiaryExcerpt() {
-      const text = this.originalDiary || this.diary.trim()
-      if (!text) return ''
-      return text.length > 72 ? `${text.slice(0, 72)}…` : text
-    },
     userName() {
       return this.$store?.state?.userInfo?.name || ''
     }
   },
   methods: {
+    pickAnalysis(payload) {
+      if (!payload || typeof payload !== 'object') return null
+      if (payload.analysis && typeof payload.analysis === 'object') return payload.analysis
+      if (payload.diary || payload.caption || payload.emotion) return payload
+      return null
+    },
     triggerPick() {
       this.$refs.fileInput?.click()
     },
@@ -251,7 +261,7 @@ export default {
       this.progressLabel = this.$t('moodDiary.memoryJournal.stagePrepare')
       this.resultUrl = ''
       this.analysis = null
-      this.showOriginal = false
+      this.showOriginal = true
       const diaryText = this.diary.trim()
       this.originalDiary = diaryText
 
@@ -269,12 +279,12 @@ export default {
           }
         })
 
-        this.analysis = analysis || null
+        this.analysis = this.pickAnalysis(analysis) || analysis || null
         this.resultUrl = imageUrl
-        this.showOriginal = false
+        this.showOriginal = true
         setDraft({
           narrative: diaryText,
-          diaryCaption: analysis?.caption || '',
+          diaryCaption: this.displayCaption || '',
           rawIllustrationUrl: imageUrl,
           hasRawIllustration: true,
           composedPosterDataUrl: imageUrl,
@@ -296,6 +306,11 @@ export default {
       if (!this.resultUrl) return
       this.saving = true
       try {
+        // 草稿里保留全文 narrative；caption 用短句便于列表摘要
+        setDraft({
+          narrative: this.originalDiary || this.diary.trim(),
+          diaryCaption: this.displayCaption || ''
+        })
         const caption = this.displayCaption || this.originalDiary.slice(0, 80)
         const res = await saveMoodPoster(this.resultUrl, caption, this.$t.bind(this))
         if (res.cloudOk) {
@@ -320,7 +335,7 @@ export default {
       this.resultUrl = ''
       this.analysis = null
       this.progressLabel = ''
-      this.showOriginal = false
+      this.showOriginal = true
       if (this.originalDiary && !this.diary.trim()) {
         this.diary = this.originalDiary
       }
@@ -402,7 +417,7 @@ export default {
 }
 
 .mj-story-caption {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.55;
@@ -410,10 +425,17 @@ export default {
   letter-spacing: 0.01em;
 }
 
-.mj-story-caption--fallback {
-  font-weight: 500;
-  font-size: 15px;
+.mj-story-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--md-muted, #9d96a8);
+}
+
+.mj-story-block {
+  margin-bottom: 10px;
 }
 
 .mj-story-core {
@@ -427,7 +449,7 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .mj-chip {
@@ -445,15 +467,34 @@ export default {
   color: var(--md-muted, #9d96a8);
 }
 
+.mj-original-section {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--md-border, #e6deef);
+}
+
+.mj-original-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.mj-original-head .mj-story-kicker {
+  margin: 0;
+}
+
 .mj-original-toggle {
   display: inline-flex;
   align-items: center;
-  margin-top: 4px;
-  padding: 8px 0;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 0;
   border: none;
   background: transparent;
   color: var(--md-accent-deep, #7ecbb8);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   touch-action: manipulation;
@@ -466,12 +507,12 @@ export default {
 
 .mj-original-body {
   margin-top: 6px;
-  padding: 10px 12px;
-  max-height: 220px;
+  padding: 12px 14px;
+  max-height: min(42vh, 360px);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.75;
   color: var(--md-text, #5f5970);
   white-space: pre-wrap;
   word-break: break-word;
@@ -742,11 +783,6 @@ export default {
   .mj-result-wrap :deep(.poster-result) {
     max-width: 100%;
     height: auto;
-  }
-
-  .mj-result-wrap :deep(.poster-result__slot) {
-    height: min(42vh, 340px);
-    transform: rotate(-1.5deg);
   }
 
   .mj-result-wrap :deep(.poster-result__btn) {

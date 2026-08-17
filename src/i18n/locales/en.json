@@ -4,7 +4,11 @@
     "color": "Color",
     "colorMacthing": "Color Matching",
     "width": "Width",
-    "height": "Height"
+    "height": "Height",
+    "mask": "Mask",
+    "maskNone": "None",
+    "maskLight": "Light",
+    "maskDark": "Dark"
   },
   "flip": {
     "x": "Flip Horizontal",
@@ -553,8 +557,10 @@
       "generate": "Generate keepsake page",
       "generateSuccess": "Keepsake page ready",
       "stagePrepare": "Preparing…",
-      "viewOriginal": "View full journal",
-      "hideOriginal": "Hide journal"
+      "posterLineLabel": "Poster line",
+      "originalLabel": "Full journal",
+      "viewOriginal": "Expand journal",
+      "hideOriginal": "Collapse journal"
     },
     "goToNow": "Write an entry",
     "goToBook": "My journal",

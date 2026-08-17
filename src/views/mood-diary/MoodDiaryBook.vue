@@ -672,11 +672,16 @@ export default {
 }
 
 .grid-image-wrap {
-  aspect-ratio: 9 / 16;
+  aspect-ratio: auto;
+  min-height: 120px;
+  max-height: 280px;
   overflow: hidden;
   background: #f1f5f9;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   transition: box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .grid-cell:hover .grid-image-wrap {
@@ -685,8 +690,9 @@ export default {
 
 .grid-img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 280px;
+  object-fit: contain;
   display: block;
 }
 
