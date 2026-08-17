@@ -113,13 +113,22 @@
                     </p>
                 </div>
 
-                <div v-if="isGatheredScenesStyle(selectedStyle) && gatheredScenesPlan" class="xiaohei-plan-card">
-                    <p class="xiaohei-plan-title">{{ $t('aiPicture.gatheredScenesPlanTitle') || '纸刊方案' }}</p>
-                    <p><span>主体：</span>{{ gatheredScenesPlan.core_subjects }}</p>
-                    <p><span>命题：</span>{{ gatheredScenesPlan.proposition }}</p>
-                    <p><span>张力：</span>{{ gatheredScenesPlan.tension }}</p>
-                    <p><span>隐喻：</span>{{ gatheredScenesPlan.metaphor }}</p>
-                    <p v-if="gatheredScenesPlan.accent_hue"><span>强调色：</span>{{ gatheredScenesPlan.accent_hue }}</p>
+                <div v-if="isPaperPosterStyle(selectedStyle) && paperPosterPlan" class="xiaohei-plan-card">
+                    <p class="xiaohei-plan-title">{{ $t('aiPicture.paperPosterPlanTitle') || '纸刊方案' }}</p>
+                    <p><span>焦点：</span>{{ paperPosterPlan.focus || paperPosterPlan.core_subjects }}</p>
+                    <p><span>意图：</span>{{ paperPosterPlan.concept || paperPosterPlan.proposition }}</p>
+                    <p><span>对比：</span>{{ paperPosterPlan.contrast_pair || paperPosterPlan.tension }}</p>
+                    <p><span>图形线索：</span>{{ paperPosterPlan.graphic_cue || paperPosterPlan.metaphor }}</p>
+                    <p v-if="paperPosterPlan.accent_color || paperPosterPlan.accent_hue">
+                        <span>强调色：</span>{{ paperPosterPlan.accent_color || paperPosterPlan.accent_hue }}
+                    </p>
+                </div>
+                <div v-if="isPhotoEditorialStyle(selectedStyle) && photoEditorialPlan" class="xiaohei-plan-card">
+                    <p class="xiaohei-plan-title">{{ $t('aiPicture.photoEditorialPlanTitle') || '编页方案' }}</p>
+                    <p><span>Title：</span>{{ photoEditorialPlan.title_en }}</p>
+                    <p v-if="photoEditorialPlan.subtitle_en"><span>Subtitle：</span>{{ photoEditorialPlan.subtitle_en }}</p>
+                    <p><span>结构：</span>{{ photoEditorialPlan.structure_notes }}</p>
+                    <p><span>色彩：</span>{{ photoEditorialPlan.color_notes }}</p>
                 </div>
 
                 <!-- 底部工具栏（基础操作） -->
@@ -414,17 +423,19 @@ import {
     expandXiaoheiSentence,
     generateXiaoheiIllustration,
 } from '@/utils/xiaohei/api'
-import { generateGatheredScenesPoster } from '@/utils/gatheredScenes/api'
+import { generatePaperPoster } from '@/utils/paperPoster/api'
+import { generatePhotoEditorial } from '@/utils/photoEditorial/api'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 import {
     isObjectDoodlePosterNoTextStyle,
     isPoeticMinimalZineStyle,
     isXiaoheiAbsurdIllustrationStyle,
-    isGatheredScenesSkillStyle,
-    isScenesGatheredZineStyle,
-    isSceneDistillationZineStyle,
-    gatheredScenesModeFromStyle,
+    isPaperPosterSkillStyle,
+    isTrueScenePaperCollageStyle,
+    isMoodScenePaperRedrawStyle,
+    isTruePhotoAbstractPanelStyle,
+    paperPosterModeFromStyle,
 } from '@/utils/illustrationStyles'
 
 export default {
@@ -483,7 +494,8 @@ export default {
             /** 小黑 Skill：扩写方案预览 */
             xiaoheiPlan: null,
             xiaoheiExpanding: false,
-            gatheredScenesPlan: null,
+            paperPosterPlan: null,
+            photoEditorialPlan: null,
 
             /** 最近一次成功「生成」时请求里的 prompt 快照，与 current generatedImageUrl 一致；重选风格后不会变。 */
             lastGeneratedPromptSnapshot: '',
@@ -537,9 +549,13 @@ export default {
                 return this.$t('aiPicture.xiaoheiPlaceholder')
                     || '输入一句话，例如：信任是一块证据一块证据铺过去'
             }
-            if (this.isGatheredScenesStyle(this.selectedStyle)) {
-                return this.$t('aiPicture.gatheredScenesPlaceholder')
+            if (this.isPaperPosterStyle(this.selectedStyle)) {
+                return this.$t('aiPicture.paperPosterPlaceholder')
                     || '可选：想保留的关系、文字语言或情绪方向'
+            }
+            if (this.isPhotoEditorialStyle(this.selectedStyle)) {
+                return this.$t('aiPicture.photoEditorialPlaceholder')
+                    || '可选：标题方向或想强调的画面关系'
             }
             return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
@@ -548,7 +564,7 @@ export default {
             return this.styles.filter((s) => (s.uiTab || s.category) === this.activeIllustrationTab)
         },
         canGenerate() {
-            if (this.isGatheredScenesStyle(this.selectedStyle)) {
+            if (this.isPaperPosterStyle(this.selectedStyle) || this.isPhotoEditorialStyle(this.selectedStyle)) {
                 return (this.referenceImageUrls || []).some(Boolean)
             }
             return !!(this.subjectScene && this.subjectScene.trim())
@@ -625,8 +641,8 @@ export default {
             if (!this.subjectScene || !this.subjectScene.trim()) return ''
             let prompt = this.subjectScene.trim()
             const style = this.selectedStyle
-            // 小黑 / 拾景：服务端扩写拼 prompt，前端只交用户补充
-            if (this.isXiaoheiStyle(style) || this.isGatheredScenesStyle(style)) return prompt
+            // 小黑 / 纸刊：服务端扩写拼 prompt，前端只交用户补充
+            if (this.isXiaoheiStyle(style) || this.isPaperPosterStyle(style) || this.isPhotoEditorialStyle(style)) return prompt
             const isDoodle = this.isObjectDoodleStyle(style)
             const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
@@ -719,14 +735,27 @@ export default {
         isXiaoheiStyle(style) {
             return isXiaoheiAbsurdIllustrationStyle(style)
         },
+        isPaperPosterStyle(style) {
+            return isPaperPosterSkillStyle(style)
+        },
+        isTrueSceneCollageStyle(style) {
+            return isTrueScenePaperCollageStyle(style)
+        },
+        isMoodSceneRedrawStyle(style) {
+            return isMoodScenePaperRedrawStyle(style)
+        },
+        isPhotoEditorialStyle(style) {
+            return isTruePhotoAbstractPanelStyle(style)
+        },
+        // 兼容旧方法名
         isGatheredScenesStyle(style) {
-            return isGatheredScenesSkillStyle(style)
+            return isPaperPosterSkillStyle(style)
         },
         isScenesGatheredStyle(style) {
-            return isScenesGatheredZineStyle(style)
+            return isTrueScenePaperCollageStyle(style)
         },
         isSceneDistillationStyle(style) {
-            return isSceneDistillationZineStyle(style)
+            return isMoodScenePaperRedrawStyle(style)
         },
 
         /** 优先 style.inputTemplate，否则按 key / zine / doodle 识别从 i18n 取短模板 */
@@ -743,13 +772,18 @@ export default {
                 const v = this.$t(path)
                 if (v && v !== path) return String(v).trim()
             }
-            if (this.isScenesGatheredStyle(style)) {
-                const path = 'aibooks.styles.scenesGatheredZine.inputTemplate'
+            if (this.isTrueSceneCollageStyle(style)) {
+                const path = 'aibooks.styles.trueScenePaperCollage.inputTemplate'
                 const v = this.$t(path)
                 if (v && v !== path) return String(v).trim()
             }
-            if (this.isSceneDistillationStyle(style)) {
-                const path = 'aibooks.styles.sceneDistillationZine.inputTemplate'
+            if (this.isMoodSceneRedrawStyle(style)) {
+                const path = 'aibooks.styles.moodScenePaperRedraw.inputTemplate'
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
+            if (this.isPhotoEditorialStyle(style)) {
+                const path = 'aibooks.styles.truePhotoAbstractPanel.inputTemplate'
                 const v = this.$t(path)
                 if (v && v !== path) return String(v).trim()
             }
@@ -771,7 +805,8 @@ export default {
         applyStylePromptToInput(style) {
             if (!style) return
             this.xiaoheiPlan = null
-            this.gatheredScenesPlan = null
+            this.paperPosterPlan = null
+            this.photoEditorialPlan = null
             // 特殊风格：输入框只填精简模板 C，底词 A（basePrompt / elementDetails）永不写入输入框
             if (this.isObjectDoodleStyle(style)) {
                 this.subjectScene = this.$t('aibooks.styles.objectDoodlePosterNoText.inputTemplate') || '请上传参考图'
@@ -782,8 +817,8 @@ export default {
                 this.subjectScene = tmpl || ''
                 return
             }
-            if (this.isGatheredScenesStyle(style)) {
-                // 拾景：主输入可选；占位符提示即可，不预填模板句
+            if (this.isPaperPosterStyle(style) || this.isPhotoEditorialStyle(style)) {
+                // 纸刊 / 原片编页：主输入可选
                 this.subjectScene = ''
                 return
             }
@@ -894,10 +929,18 @@ export default {
                     style.prependBaseOnGenerate ||
                     this.isPoeticZineStyle(style) ||
                     this.isXiaoheiStyle(style) ||
-                    this.isGatheredScenesStyle(style)
+                    this.isPaperPosterStyle(style) ||
+                    this.isPhotoEditorialStyle(style)
                 ) {
                     this.selectedSize = style.preferredSize
                         || (this.isXiaoheiStyle(style) ? '1024x576' : '768x1024')
+                }
+                // 纸刊 / 原片编页：若已有参考图，按照片比例覆盖默认 preferredSize
+                if (
+                    (this.isPaperPosterStyle(style) || this.isPhotoEditorialStyle(style))
+                    && this.referenceImageUrls[0]
+                ) {
+                    this.syncSizeFromPhoto(this.referenceImageUrls[0])
                 }
             }
         },
@@ -1040,6 +1083,13 @@ export default {
                         message: this.$t('aiPicture.referenceAddedCount', { n: added }) || `已添加 ${added} 张参考图`,
                         offset: 200
                     })
+                    // 纸刊风格：按首张参考图比例同步尺寸选项（用户之后仍可手动改）
+                    if (
+                        (this.isPaperPosterStyle(this.selectedStyle) || this.isPhotoEditorialStyle(this.selectedStyle))
+                        && this.referenceImageUrls[0]
+                    ) {
+                        await this.syncSizeFromPhoto(this.referenceImageUrls[0])
+                    }
                 }
                 if (files.length > room) {
                     ElMessage.info({
@@ -1057,6 +1107,49 @@ export default {
         removeReferenceAt(index) {
             if (index < 0 || index >= this.referenceImageUrls.length) return
             this.referenceImageUrls.splice(index, 1)
+        },
+        /** 读取 dataURL / http 图片自然宽高 */
+        getDataUrlImageSize(src) {
+            return new Promise((resolve) => {
+                if (!src) {
+                    resolve({ width: 0, height: 0 })
+                    return
+                }
+                const img = new Image()
+                img.onload = () => {
+                    resolve({
+                        width: img.naturalWidth || img.width || 0,
+                        height: img.naturalHeight || img.height || 0,
+                    })
+                }
+                img.onerror = () => resolve({ width: 0, height: 0 })
+                img.src = src
+            })
+        },
+        /** 在尺寸菜单里选与照片最接近的选项 */
+        pickClosestSizeOption(width, height) {
+            if (!(width > 0) && !(height > 0)) return this.selectedSize || '768x1024'
+            const ratio = width / height
+            let best = this.selectedSize || '768x1024'
+            let bestDiff = Infinity
+            for (const g of this.sizeGroups || []) {
+                for (const item of g.items || []) {
+                    const m = String(item.value || '').match(/^(\d+)x(\d+)$/i)
+                    if (!m) continue
+                    const rw = Number(m[1]) / Number(m[2])
+                    const diff = Math.abs(ratio - rw)
+                    if (diff < bestDiff) {
+                        bestDiff = diff
+                        best = item.value
+                    }
+                }
+            }
+            return best
+        },
+        async syncSizeFromPhoto(photoSrc) {
+            const { width, height } = await this.getDataUrlImageSize(photoSrc)
+            if (!(width > 0) || !(height > 0)) return
+            this.selectedSize = this.pickClosestSizeOption(width, height)
         },
         fileToDataUrl(file) {
             return new Promise((resolve, reject) => {
@@ -1178,11 +1271,16 @@ export default {
         },
 
         async generateIllustration() {
-            if (this.isGatheredScenesStyle(this.selectedStyle)) {
+            if (this.isPaperPosterStyle(this.selectedStyle) || this.isPhotoEditorialStyle(this.selectedStyle)) {
                 const refs = (this.referenceImageUrls || []).filter(Boolean)
                 if (!refs.length) {
                     ElMessage.warning({
-                        message: this.$t('aiPicture.gatheredScenesNeedPhoto') || '该技能需要先上传一张照片',
+                        message:
+                            this.$t(
+                              this.isPhotoEditorialStyle(this.selectedStyle)
+                                ? 'aiPicture.photoEditorialNeedPhoto'
+                                : 'aiPicture.paperPosterNeedPhoto'
+                            ) || '该技能需要先上传一张照片',
                         offset: 200,
                     })
                     return
@@ -1193,7 +1291,11 @@ export default {
             }
             let refs = (this.referenceImageUrls || []).filter(Boolean)
             if (
-                (this.isObjectDoodleStyle(this.selectedStyle) || this.isGatheredScenesStyle(this.selectedStyle))
+                (
+                  this.isObjectDoodleStyle(this.selectedStyle)
+                  || this.isPaperPosterStyle(this.selectedStyle)
+                  || this.isPhotoEditorialStyle(this.selectedStyle)
+                )
                 && !refs.length
             ) {
                 ElMessage.warning({
@@ -1207,25 +1309,27 @@ export default {
             this.generating = true
 
             try {
-                // SKILL·拾景纸刊：参考图 → 服务端 vision 分析 → create-character 异步任务
-                if (this.isGatheredScenesStyle(this.selectedStyle)) {
+                // SKILL·原片抽象编页：母题异步生成 → 服务端合成原片+色板+标题
+                if (this.isPhotoEditorialStyle(this.selectedStyle)) {
                     const note = String(this.subjectScene || '').trim()
                     let photo = refs[0]
-                    // 压图，避免 vision + 生图请求体过大
                     photo = await this.compressDataUrlIfNeeded(photo, 900 * 1024)
-                    const result = await generateGatheredScenesPoster(
+                    const dims = await this.getDataUrlImageSize(photo)
+                    const size = this.selectedSize || this.pickClosestSizeOption(dims.width, dims.height)
+                    const result = await generatePhotoEditorial(
                         this.$http,
                         {
-                            mode: gatheredScenesModeFromStyle(this.selectedStyle),
                             image: photo,
                             note,
-                            plan: this.gatheredScenesPlan,
-                            size: this.selectedSize || '768x1024',
+                            plan: this.photoEditorialPlan,
+                            size,
+                            photoWidth: dims.width,
+                            photoHeight: dims.height,
                             resolution: this.selectedQuality || '1k',
                         },
                         { apiBaseUrl: this.apiBaseUrl }
                     )
-                    if (result.plan) this.gatheredScenesPlan = result.plan
+                    if (result.plan) this.photoEditorialPlan = result.plan
                     const message = result.message
                     if (message && typeof message === 'object' && message.points !== undefined && this.$store && this.$store.state) {
                         this.$store.commit('setUserInfo', {
@@ -1233,7 +1337,47 @@ export default {
                             points: message.points
                         })
                     }
-                    this.lastGeneratedPromptSnapshot = note || '[gathered-scenes]'
+                    this.lastGeneratedPromptSnapshot = note || '[photo-editorial]'
+                    this.generatedImageUrl = result.imageUrl
+                    this.imageLoading = true
+                    this.imageLoadError = false
+                    this.saveGeneratedImageToLocalStorage(result.imageUrl)
+                    ElMessage.success({ message: this.$t('aiPicture.generateSuccess') || '插画生成成功！', offset: 200 })
+                    return
+                }
+
+                // SKILL·纸刊海报：参考图 → 服务端读图分析 → create-character 异步任务
+                if (this.isPaperPosterStyle(this.selectedStyle)) {
+                    const note = String(this.subjectScene || '').trim()
+                    let photo = refs[0]
+                    // 压图，避免 vision + 生图请求体过大
+                    photo = await this.compressDataUrlIfNeeded(photo, 900 * 1024)
+                    const dims = await this.getDataUrlImageSize(photo)
+                    // 用户当前选中的尺寸优先；同时传照片宽高作兜底
+                    const size = this.selectedSize || this.pickClosestSizeOption(dims.width, dims.height)
+                    const result = await generatePaperPoster(
+                        this.$http,
+                        {
+                            mode: paperPosterModeFromStyle(this.selectedStyle),
+                            image: photo,
+                            note,
+                            plan: this.paperPosterPlan,
+                            size,
+                            photoWidth: dims.width,
+                            photoHeight: dims.height,
+                            resolution: this.selectedQuality || '1k',
+                        },
+                        { apiBaseUrl: this.apiBaseUrl }
+                    )
+                    if (result.plan) this.paperPosterPlan = result.plan
+                    const message = result.message
+                    if (message && typeof message === 'object' && message.points !== undefined && this.$store && this.$store.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: message.points
+                        })
+                    }
+                    this.lastGeneratedPromptSnapshot = note || '[paper-poster]'
                     this.generatedImageUrl = result.imageUrl
                     this.imageLoading = true
                     this.imageLoadError = false

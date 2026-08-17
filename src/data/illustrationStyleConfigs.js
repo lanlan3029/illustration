@@ -69,33 +69,48 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
     customGenerate: 'xiaohei',
   },
   /**
-   * 真景纸刊拼贴：参考图必填，服务端 vision 分析后拼贴生图。
-   * POST /gathered-scenes/expand-generate mode=gathered
+   * 真景纸刊拼贴：参考图必填，服务端读图后拼贴生图。
+   * POST /paper-poster/expand-generate mode=collage
    */
   {
-    key: 'scenesGatheredZine',
+    key: 'trueScenePaperCollage',
     id: 34,
     image: require('@/assets/prompt/34.jpg'),
     category: 'skill',
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',
-    customGenerate: 'gatheredScenes',
-    skillMode: 'gathered',
+    customGenerate: 'paperPosterCollage',
+    skillMode: 'collage',
     requiresReference: true,
   },
   /**
    * 意象纸刊重绘：参考图必填（仅语义），成品不保留原照片。
-   * POST /gathered-scenes/expand-generate mode=distillation
+   * POST /paper-poster/expand-generate mode=redraw
    */
   {
-    key: 'sceneDistillationZine',
+    key: 'moodScenePaperRedraw',
     id: 35,
     image: require('@/assets/prompt/35.jpg'),
     category: 'skill',
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',
-    customGenerate: 'sceneDistillation',
-    skillMode: 'distillation',
+    customGenerate: 'paperPosterRedraw',
+    skillMode: 'redraw',
+    requiresReference: true,
+  },
+  /**
+   * 原片抽象编页（自研）：完整原片 + 抽象色板母题 + 服务端合成标题。
+   * POST /photo-editorial/expand-generate → compose
+   */
+  {
+    key: 'truePhotoAbstractPanel',
+    id: 36,
+    image: require('@/assets/prompt/36.jpg'),
+    category: 'skill',
+    prependBaseOnGenerate: true,
+    preferredSize: '1280x960',
+    customGenerate: 'photoEditorial',
+    skillMode: 'photoEditorial',
     requiresReference: true,
   },
 ]

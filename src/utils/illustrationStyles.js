@@ -139,36 +139,78 @@ export function isXiaoheiAbsurdIllustrationStyle(style) {
 }
 
 /** 真景纸刊拼贴（照片作锚点） */
-export function isScenesGatheredZineStyle(style) {
+export function isTrueScenePaperCollageStyle(style) {
   if (!style) return false
   if (Number(style.id) === 34) return true
-  if (String(style.customGenerate || '').toLowerCase() === 'gatheredscenes') return true
-  if (String(style.skillMode || '').toLowerCase() === 'gathered') return true
+  const gen = String(style.customGenerate || '').toLowerCase()
+  if (gen === 'paperpostercollage' || gen === 'gatheredscenes') return true
+  const mode = String(style.skillMode || '').toLowerCase()
+  if (mode === 'collage' || mode === 'gathered') return true
   const key = String(style.key || '').toLowerCase()
-  if (key === 'scenesgatheredzine' || key === 'gatheredscenes') return true
+  if (
+    key === 'truescenepapercollage'
+    || key === 'scenesgatheredzine'
+    || key === 'gatheredscenes'
+  ) return true
   const label = `${style.key || ''} ${style.artStyle || ''}`
-  return /真景纸刊拼贴|True-Scene Paper Collage|拾景.*实景拼贴|实景拼贴|Gathered Scenes/i.test(label)
+  return /真景纸刊拼贴|True-Scene Paper Collage/i.test(label)
 }
 
 /** 意象纸刊重绘（照片仅语义） */
-export function isSceneDistillationZineStyle(style) {
+export function isMoodScenePaperRedrawStyle(style) {
   if (!style) return false
   if (Number(style.id) === 35) return true
-  if (String(style.customGenerate || '').toLowerCase() === 'scenedistillation') return true
-  if (String(style.skillMode || '').toLowerCase() === 'distillation') return true
+  const gen = String(style.customGenerate || '').toLowerCase()
+  if (gen === 'paperposterredraw' || gen === 'scenedistillation') return true
+  const mode = String(style.skillMode || '').toLowerCase()
+  if (mode === 'redraw' || mode === 'distillation') return true
   const key = String(style.key || '').toLowerCase()
-  if (key === 'scenedistillationzine' || key === 'scenedistillation') return true
+  if (
+    key === 'moodscenepaperredraw'
+    || key === 'scenedistillationzine'
+    || key === 'scenedistillation'
+  ) return true
   const label = `${style.key || ''} ${style.artStyle || ''}`
-  return /意象纸刊重绘|Mood-Scene Paper Redraw|拾景.*影像蒸馏|影像蒸馏|Scene Distillation/i.test(label)
+  return /意象纸刊重绘|Mood-Scene Paper Redraw/i.test(label)
 }
 
+export function isPaperPosterSkillStyle(style) {
+  return isTrueScenePaperCollageStyle(style) || isMoodScenePaperRedrawStyle(style)
+}
+
+/** 原片抽象编页：原片保真 + 抽象色板本地合成 */
+export function isTruePhotoAbstractPanelStyle(style) {
+  if (!style) return false
+  if (Number(style.id) === 36) return true
+  if (String(style.customGenerate || '').toLowerCase() === 'photoeditorial') return true
+  if (String(style.skillMode || '').toLowerCase() === 'photoeditorial') return true
+  const key = String(style.key || '').toLowerCase()
+  if (key === 'truephotoabstractpanel' || key === 'photoeditorial') return true
+  const label = `${style.key || ''} ${style.artStyle || ''}`
+  return /原片抽象编页|True-Photo Abstract/i.test(label)
+}
+
+/** @deprecated 兼容旧调用名 */
+export function isScenesGatheredZineStyle(style) {
+  return isTrueScenePaperCollageStyle(style)
+}
+/** @deprecated 兼容旧调用名 */
+export function isSceneDistillationZineStyle(style) {
+  return isMoodScenePaperRedrawStyle(style)
+}
+/** @deprecated 兼容旧调用名 */
 export function isGatheredScenesSkillStyle(style) {
-  return isScenesGatheredZineStyle(style) || isSceneDistillationZineStyle(style)
+  return isPaperPosterSkillStyle(style)
 }
 
+export function paperPosterModeFromStyle(style) {
+  if (isMoodScenePaperRedrawStyle(style)) return 'redraw'
+  return 'collage'
+}
+
+/** @deprecated 兼容旧调用名 */
 export function gatheredScenesModeFromStyle(style) {
-  if (isSceneDistillationZineStyle(style)) return 'distillation'
-  return 'gathered'
+  return paperPosterModeFromStyle(style)
 }
 
 function findSpecialMatchInList(list, special) {
@@ -185,11 +227,14 @@ function findSpecialMatchInList(list, special) {
   if (specialKey === 'xiaoheiabsurdillustration') {
     return list.find((s) => isXiaoheiAbsurdIllustrationStyle(s)) || null
   }
-  if (specialKey === 'scenesgatheredzine') {
-    return list.find((s) => isScenesGatheredZineStyle(s)) || null
+  if (specialKey === 'truescenepapercollage' || specialKey === 'scenesgatheredzine') {
+    return list.find((s) => isTrueScenePaperCollageStyle(s)) || null
   }
-  if (specialKey === 'scenedistillationzine') {
-    return list.find((s) => isSceneDistillationZineStyle(s)) || null
+  if (specialKey === 'moodscenepaperredraw' || specialKey === 'scenedistillationzine') {
+    return list.find((s) => isMoodScenePaperRedrawStyle(s)) || null
+  }
+  if (specialKey === 'truephotoabstractpanel') {
+    return list.find((s) => isTruePhotoAbstractPanelStyle(s)) || null
   }
   return null
 }
@@ -221,10 +266,13 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
       )
       existing.category = special.category || existing.category
       existing.uiTab = backendCategoryToUiTab(existing.category)
-      // 喜茶无字 / 小黑 / 拾景：本地强化底词优先；其余保留线上底词
+      // 喜茶无字 / 小黑 / 纸刊：本地强化底词优先；其余保留线上底词
       const preferLocalBase =
         special.key === 'objectDoodlePosterNoText'
         || special.key === 'xiaoheiAbsurdIllustration'
+        || special.key === 'trueScenePaperCollage'
+        || special.key === 'moodScenePaperRedraw'
+        || special.key === 'truePhotoAbstractPanel'
         || special.key === 'scenesGatheredZine'
         || special.key === 'sceneDistillationZine'
       const base = String(

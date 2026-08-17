@@ -928,14 +928,29 @@
         "elementDetails": "[Canvas] 16:9 landscape; one image = one core idea.\n[Visual DNA] Pure white background; black hand-drawn thin lines with slight wobble; lots of negative space (subject 40%–60%, blank ≥35%); product-sketch feel. No gradients/shadows/paper texture/PPT/cute cartoon/children's illustration/realistic UI.\n[Character · Xiaohei] Solid black little monster, white-dot eyes, thin legs, blank expression. Must perform the core action—not just stand aside; deadpan dry humor, not cute.\n[Chinese labels] At most 5, each 2–8 characters. No top-left title.\n[Color] Black = subject; orange = path; red = key warning; blue = secondary note (optional).",
         "inputTemplate": "Trust is laid brick by brick of evidence"
       },
+      "trueScenePaperCollage": {
+        "artStyle": "True-Scene Paper Collage",
+        "elementDetails": "Vertical paper collage: keep a truthful photo patch as the anchor, support it with flat paper marks from the same scene, one accent color, irregular torn edge into quiet paper space.",
+        "inputTemplate": "Optional: relationships to keep / language / mood"
+      },
+      "moodScenePaperRedraw": {
+        "artStyle": "Mood-Scene Paper Redraw",
+        "elementDetails": "Mood paper redraw: the photo is semantic reference only — do not keep the original photograph. Rebuild a flat paper illustration from mood and relationships, with quiet space and optional short micro-text.",
+        "inputTemplate": "Optional: emotion or proposition (e.g. nearness and missing)"
+      },
+      "truePhotoAbstractPanel": {
+        "artStyle": "True-Photo Abstract Editorial",
+        "elementDetails": "Keep the full source photo. Add a warm ivory abstract panel and an English title. The motif is generated alone; photo and type are composed on the server without redrawing the photograph.",
+        "inputTemplate": "Optional: title direction or relationships to emphasize"
+      },
       "scenesGatheredZine": {
         "artStyle": "True-Scene Paper Collage",
-        "elementDetails": "Vertical 3:5 paper poster: photographic truth as anchor, source-derived illustration as field, one high-chroma hue as structure, hand-torn fibrous edge, breathing paper. Keep the photo truthful; simplify with one grammar; one accent hue only.",
+        "elementDetails": "Vertical paper collage: keep a truthful photo patch as the anchor, support it with flat paper marks from the same scene, one accent color, irregular torn edge into quiet paper space.",
         "inputTemplate": "Optional: relationships to keep / language / mood"
       },
       "sceneDistillationZine": {
         "artStyle": "Mood-Scene Paper Redraw",
-        "elementDetails": "Mood-scene paper redraw: the photo is semantic evidence only — do not keep the original photograph. Distill proposition, tension, and metaphor into minimal editorial paper art with spacious negative space.",
+        "elementDetails": "Mood paper redraw: the photo is semantic reference only — do not keep the original photograph. Rebuild a flat paper illustration from mood and relationships, with quiet space and optional short micro-text.",
         "inputTemplate": "Optional: emotion or proposition (e.g. nearness and missing)"
       },
       "objectDoodlePosterNoText": {
@@ -1024,6 +1039,14 @@
     "xiaoheiNeedSentence": "Please enter one sentence first",
     "xiaoheiPlanReady": "Plan ready — you can generate now",
     "xiaoheiExpandFailed": "Expand failed",
+    "paperPosterPlaceholder": "Optional: relationships to keep, language, or mood",
+    "paperPosterNeedPhoto": "This skill needs a photo first",
+    "paperPosterPlanTitle": "Paper plan",
+    "paperPosterGenerateFailed": "Paper poster generation failed",
+    "photoEditorialPlaceholder": "Optional: title direction or relationships to emphasize",
+    "photoEditorialNeedPhoto": "This skill needs a photo first",
+    "photoEditorialPlanTitle": "Editorial plan",
+    "photoEditorialGenerateFailed": "True-photo abstract editorial failed",
     "gatheredScenesPlaceholder": "Optional: relationships to keep, language, or mood",
     "gatheredScenesNeedPhoto": "This skill needs a photo first",
     "gatheredScenesPlanTitle": "Paper plan",

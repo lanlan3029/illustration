@@ -1,6 +1,6 @@
 /**
- * 拾景纸刊 Skill
- * 参考图 → POST /gathered-scenes/expand-generate → 轮询 /create-character/task/:id
+ * KidStory 纸刊海报（自研）
+ * 参考图 → POST /paper-poster/expand-generate → 轮询 /create-character/task/:id
  */
 import {
   pollCreateCharacterTask,
@@ -26,26 +26,27 @@ function authHeaders(extra = {}) {
   return headers
 }
 
-/**
- * @param {'gathered'|'distillation'} mode
- */
-export function normalizeGatheredScenesMode(mode) {
+/** @param {'collage'|'redraw'|string} mode */
+export function normalizePaperPosterMode(mode) {
   const m = String(mode || '').toLowerCase()
-  if (m === 'distillation' || m === 'scene_distillation' || m === 'scenedistillation') {
-    return 'distillation'
+  if (
+    m === 'redraw'
+    || m === 'mood'
+    || m === 'mood_redraw'
+    || m === 'distillation'
+    || m === 'scenedistillation'
+  ) {
+    return 'redraw'
   }
-  return 'gathered'
+  return 'collage'
 }
 
-/**
- * 只分析，不生图
- */
-export async function expandGatheredScenes(http, { mode, image, note } = {}, opts = {}) {
+export async function expandPaperPoster(http, { mode, image, note } = {}, opts = {}) {
   const root = resolveApiRoot(opts.apiBaseUrl)
   const res = await http.post(
-    `${root}/gathered-scenes/expand`,
+    `${root}/paper-poster/expand`,
     {
-      mode: normalizeGatheredScenesMode(mode),
+      mode: normalizePaperPosterMode(mode),
       image: String(image || '').trim(),
       note: String(note || '').trim(),
     },
@@ -57,25 +58,24 @@ export async function expandGatheredScenes(http, { mode, image, note } = {}, opt
   return unwrapData(res)
 }
 
-/**
- * 分析并入队生图
- */
-export async function expandGenerateGatheredScenes(
+export async function expandGeneratePaperPoster(
   http,
-  { mode, image, note, plan, size, resolution } = {},
+  { mode, image, note, plan, size, resolution, photoWidth, photoHeight } = {},
   opts = {}
 ) {
   const root = resolveApiRoot(opts.apiBaseUrl)
   const body = {
-    mode: normalizeGatheredScenesMode(mode),
+    mode: normalizePaperPosterMode(mode),
     image: String(image || '').trim(),
     note: String(note || '').trim(),
   }
   if (plan && typeof plan === 'object') body.plan = plan
   if (size) body.size = size
   if (resolution) body.resolution = resolution
+  if (Number(photoWidth) > 0) body.photo_width = Number(photoWidth)
+  if (Number(photoHeight) > 0) body.photo_height = Number(photoHeight)
 
-  const res = await http.post(`${root}/gathered-scenes/expand-generate`, body, {
+  const res = await http.post(`${root}/paper-poster/expand-generate`, body, {
     timeout: 130000,
     headers: authHeaders(opts.headers),
     maxBodyLength: Infinity,
@@ -95,11 +95,8 @@ export async function expandGenerateGatheredScenes(
   }
 }
 
-/**
- * 提交 + 轮询
- */
-export async function generateGatheredScenesPoster(http, payload, opts = {}) {
-  const submit = await expandGenerateGatheredScenes(http, payload, opts)
+export async function generatePaperPoster(http, payload, opts = {}) {
+  const submit = await expandGeneratePaperPoster(http, payload, opts)
   const done = await pollCreateCharacterTask(http, submit.task_id, {
     pollUrl: submit.poll_url,
     pollIntervalMs: submit.poll_interval_ms || 2000,
