@@ -1079,6 +1079,8 @@ export default {
                     added++
                 }
                 if (added > 0) {
+                    // 换参考图后清空上次读图方案，避免旧 plan 绑进下次生成
+                    this.clearPlansTiedToReference()
                     ElMessage.success({
                         message: this.$t('aiPicture.referenceAddedCount', { n: added }) || `已添加 ${added} 张参考图`,
                         offset: 200
@@ -1107,6 +1109,19 @@ export default {
         removeReferenceAt(index) {
             if (index < 0 || index >= this.referenceImageUrls.length) return
             this.referenceImageUrls.splice(index, 1)
+            this.clearPlansTiedToReference()
+        },
+        /** 参考图变更后，清掉依赖该照片的方案/预览，避免污染下次生成 */
+        clearPlansTiedToReference() {
+            this.paperPosterPlan = null
+            this.photoEditorialPlan = null
+            this.xiaoheiPlan = null
+            if (this.isPaperPosterStyle(this.selectedStyle) || this.isPhotoEditorialStyle(this.selectedStyle)) {
+                this.generatedImageUrl = null
+                this.lastGeneratedPromptSnapshot = ''
+                this.imageLoading = false
+                this.imageLoadError = false
+            }
         },
         /** 读取 dataURL / http 图片自然宽高 */
         getDataUrlImageSize(src) {
