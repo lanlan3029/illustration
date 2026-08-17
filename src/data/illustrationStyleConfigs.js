@@ -74,8 +74,8 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
    */
   {
     key: 'scenesGatheredZine',
-    id: 32,
-    image: require('@/assets/prompt/32.jpg'),
+    id: 34,
+    image: require('@/assets/prompt/34.jpg'),
     category: 'skill',
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',
@@ -89,8 +89,8 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
    */
   {
     key: 'sceneDistillationZine',
-    id: 33,
-    image: require('@/assets/prompt/33.jpg'),
+    id: 35,
+    image: require('@/assets/prompt/35.jpg'),
     category: 'skill',
     prependBaseOnGenerate: true,
     preferredSize: '768x1024',

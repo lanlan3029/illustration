@@ -141,7 +141,7 @@ export function isXiaoheiAbsurdIllustrationStyle(style) {
 /** 真景纸刊拼贴（照片作锚点） */
 export function isScenesGatheredZineStyle(style) {
   if (!style) return false
-  if (Number(style.id) === 32) return true
+  if (Number(style.id) === 34) return true
   if (String(style.customGenerate || '').toLowerCase() === 'gatheredscenes') return true
   if (String(style.skillMode || '').toLowerCase() === 'gathered') return true
   const key = String(style.key || '').toLowerCase()
@@ -153,7 +153,7 @@ export function isScenesGatheredZineStyle(style) {
 /** 意象纸刊重绘（照片仅语义） */
 export function isSceneDistillationZineStyle(style) {
   if (!style) return false
-  if (Number(style.id) === 33) return true
+  if (Number(style.id) === 35) return true
   if (String(style.customGenerate || '').toLowerCase() === 'scenedistillation') return true
   if (String(style.skillMode || '').toLowerCase() === 'distillation') return true
   const key = String(style.key || '').toLowerCase()
