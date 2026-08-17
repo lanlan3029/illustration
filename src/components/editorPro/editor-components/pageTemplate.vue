@@ -116,6 +116,7 @@ const canvasSizeLabel = computed(() => {
 function previewClass(aspectRatio) {
   if (aspectRatio === '2:1') return 'preview-2-1'
   if (aspectRatio === '1:1') return 'preview-1-1'
+  if (aspectRatio === '210:297') return 'preview-a4'
   return 'preview-3-4'
 }
 
@@ -148,7 +149,9 @@ const applyTemplate = async (item) => {
         if (!width || !height) {
           throw new Error(t('editorProLeft.pageTemplateFailed') || '画布尺寸无效')
         }
-        const fittedJson = fitTemplateToCanvas(item.json, width, height)
+        const fittedJson = fitTemplateToCanvas(item.json, width, height, {
+          mode: item.fitMode === 'stretch' ? 'stretch' : 'contain',
+        })
         try {
           await canvasEditor.downFontByJSON(JSON.stringify(fittedJson))
         } catch (fontErr) {
@@ -309,6 +312,10 @@ onBeforeUnmount(() => {
   aspect-ratio: 2 / 1;
 }
 
+.template-card img.preview-a4 {
+  aspect-ratio: 210 / 297;
+}
+
 .template-card img {
   width: 100%;
   object-fit: contain;
@@ -317,7 +324,7 @@ onBeforeUnmount(() => {
   background: #fff;
 }
 
-.template-card img:not(.preview-2-1):not(.preview-3-4):not(.preview-1-1) {
+.template-card img:not(.preview-2-1):not(.preview-3-4):not(.preview-1-1):not(.preview-a4) {
   aspect-ratio: 3 / 4;
 }
 

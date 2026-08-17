@@ -16,6 +16,7 @@ import {
 import { spreadTemplates } from './spreadTemplates'
 import { singlePageTemplates } from './singlePageTemplates'
 import { portraitCollageTemplates } from './portraitCollageTemplates'
+import { photoBookTemplates } from './photoBookTemplates'
 
 export {
   CANVAS_W,
@@ -205,13 +206,20 @@ const portraitTemplates = [
   },
 ]
 
-const templates = [...portraitTemplates, ...portraitCollageTemplates, ...singlePageTemplates, ...spreadTemplates]
+const templates = [
+  ...portraitTemplates,
+  ...portraitCollageTemplates,
+  ...singlePageTemplates,
+  ...spreadTemplates,
+  ...photoBookTemplates,
+]
 
 export const PAGE_TEMPLATE_CATEGORIES = [
   { id: 'story', nameKey: 'editorProLeft.pageTemplateCatStory' },
   { id: 'album', nameKey: 'editorProLeft.pageTemplateCatAlbum' },
   { id: 'collage', nameKey: 'editorProLeft.pageTemplateCatCollage' },
   { id: 'albumPage', nameKey: 'editorProLeft.pageTemplateCatAlbumPage' },
+  { id: 'photoBook', nameKey: 'editorProLeft.pageTemplateCatPhotoBook' },
   { id: 'cover', nameKey: 'editorProLeft.pageTemplateCatCover' },
   { id: 'spread', nameKey: 'editorProLeft.pageTemplateCatSpread' },
 ]
@@ -265,9 +273,23 @@ const TEMPLATE_NAME_KEYS = {
   'page-vertical-center': 'editorProLeft.pageTemplatePageVerticalCenter',
   'page-grid-3': 'editorProLeft.pageTemplatePageGrid3',
   'page-grid-2x3': 'editorProLeft.pageTemplatePageGrid2x3',
+  'photobook-hero': 'editorProLeft.pageTemplatePhotobookHero',
+  'photobook-paired': 'editorProLeft.pageTemplatePhotobookPaired',
+  'photobook-one-plus-two': 'editorProLeft.pageTemplatePhotobookOnePlusTwo',
+  'photobook-grid': 'editorProLeft.pageTemplatePhotobookGrid',
+  'photobook-breathing': 'editorProLeft.pageTemplatePhotobookBreathing',
+  'photobook-sequence': 'editorProLeft.pageTemplatePhotobookSequence',
 }
 
-/** 按分类分组的本地页面模版（可按当前画布比例过滤） */
+function templateVisibleOnCanvas(item, canvasW, canvasH) {
+  if (!canvasW || !canvasH) return true
+  if (item.anyAspect) return true
+  const baseW = item.json?.kidstoryTemplateBase?.width || CANVAS_W
+  const baseH = item.json?.kidstoryTemplateBase?.height || CANVAS_H
+  return Math.abs(baseW / baseH - canvasW / canvasH) < 0.018
+}
+
+/** 按分类分组的本地页面模版（可按当前画布比例过滤；anyAspect 模版始终可见） */
 export function getLocalPageTemplateGroups(t, canvasSize = null) {
   const canvasW = canvasSize?.width
   const canvasH = canvasSize?.height
@@ -277,31 +299,23 @@ export function getLocalPageTemplateGroups(t, canvasSize = null) {
     name: t(cat.nameKey),
     templates: templates
       .filter((item) => item.category === cat.id)
-      .filter((item) => {
-        if (!canvasW || !canvasH) return true
-        const baseW = item.json?.kidstoryTemplateBase?.width || CANVAS_W
-        const baseH = item.json?.kidstoryTemplateBase?.height || CANVAS_H
-        const ratioA = baseW / baseH
-        const ratioB = canvasW / canvasH
-        return Math.abs(ratioA - ratioB) < 0.018
-      })
+      .filter((item) => templateVisibleOnCanvas(item, canvasW, canvasH))
       .map((item) => ({
         id: item.id,
         name: t(TEMPLATE_NAME_KEYS[item.id] || item.id),
         preview: item.preview,
         json: item.json,
         aspectRatio: item.aspectRatio || TEMPLATE_ASPECT_RATIO,
+        anyAspect: Boolean(item.anyAspect),
+        fitMode: item.fitMode || 'contain',
       })),
   })).filter((group) => group.templates.length > 0)
 }
 
 export function countMatchingTemplates(canvasSize) {
-  return templates.filter((item) => {
-    if (!canvasSize?.width || !canvasSize?.height) return true
-    const baseW = item.json?.kidstoryTemplateBase?.width || CANVAS_W
-    const baseH = item.json?.kidstoryTemplateBase?.height || CANVAS_H
-    return Math.abs(baseW / baseH - canvasSize.width / canvasSize.height) < 0.018
-  }).length
+  return templates.filter((item) =>
+    templateVisibleOnCanvas(item, canvasSize?.width, canvasSize?.height)
+  ).length
 }
 
 export default templates

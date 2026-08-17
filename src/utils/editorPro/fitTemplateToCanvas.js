@@ -73,6 +73,8 @@ export function formatAspectRatio(width, height) {
     [16, 9],
     [2, 1],
     [1, 2],
+    [210, 297],
+    [297, 210],
   ]
   for (const [w, h] of presets) {
     if (Math.abs(ratio - w / h) < ASPECT_TOLERANCE) return `${w}:${h}`
@@ -85,48 +87,74 @@ export function aspectRatiosMatch(widthA, heightA, widthB, heightB, tolerance = 
   return Math.abs(widthA / heightA - widthB / heightB) <= tolerance
 }
 
-function scaleJsonObject(obj, scale, offsetX, offsetY, isRoot) {
+const X_SCALAR_PROPS = new Set(['width', 'kidstorySlotW', 'kidstorySlotLeft', 'charSpacing', 'rx', 'padding'])
+const Y_SCALAR_PROPS = new Set(['height', 'kidstorySlotH', 'kidstorySlotTop', 'ry'])
+const AVG_SCALAR_PROPS = new Set(['fontSize', 'strokeWidth'])
+
+function scaleJsonObject(obj, scaleX, scaleY, offsetX, offsetY, isRoot) {
   if (!obj || isWorkspaceJsonObject(obj)) return
 
   if (typeof obj.left === 'number') {
-    obj.left = obj.left * scale + (isRoot ? offsetX : 0)
+    obj.left = obj.left * scaleX + (isRoot ? offsetX : 0)
   }
   if (typeof obj.top === 'number') {
-    obj.top = obj.top * scale + (isRoot ? offsetY : 0)
+    obj.top = obj.top * scaleY + (isRoot ? offsetY : 0)
   }
 
+  const avgScale = Math.sqrt(Math.abs(scaleX * scaleY)) || 1
+
   SCALAR_PROPS.forEach((key) => {
-    if (typeof obj[key] === 'number') obj[key] *= scale
+    if (typeof obj[key] !== 'number') return
+    if (X_SCALAR_PROPS.has(key)) obj[key] *= scaleX
+    else if (Y_SCALAR_PROPS.has(key)) obj[key] *= scaleY
+    else if (AVG_SCALAR_PROPS.has(key)) obj[key] *= avgScale
+    else obj[key] *= avgScale
   })
 
   if (Array.isArray(obj.strokeDashArray)) {
-    obj.strokeDashArray = obj.strokeDashArray.map((value) => value * scale)
+    obj.strokeDashArray = obj.strokeDashArray.map((value) => value * avgScale)
   }
 
   if (Array.isArray(obj.objects)) {
-    obj.objects.forEach((child) => scaleJsonObject(child, scale, offsetX, offsetY, false))
+    obj.objects.forEach((child) => scaleJsonObject(child, scaleX, scaleY, offsetX, offsetY, false))
   }
 }
 
 /**
- * 将按基准尺寸设计的模版 JSON 等比缩放并居中适配到目标画布
+ * 将按基准尺寸设计的模版 JSON 适配到目标画布
  * @param {object|string} templateJson
  * @param {number} targetWidth
  * @param {number} targetHeight
+ * @param {{ mode?: 'contain' | 'stretch' }} [options]
+ * - contain：等比缩放并居中（可能留白）
+ * - stretch：宽高分别缩放铺满画布（比例不同时会压扁/拉长）
  */
-export function fitTemplateToCanvas(templateJson, targetWidth, targetHeight) {
+export function fitTemplateToCanvas(templateJson, targetWidth, targetHeight, options = {}) {
   const data = cloneJson(templateJson)
   const base = getTemplateBaseSize(data)
   const baseW = base.width
   const baseH = base.height
+  const mode = options.mode === 'stretch' ? 'stretch' : 'contain'
 
   if (!targetWidth || !targetHeight) {
     throw new Error('invalid target canvas size')
   }
 
-  const scale = Math.min(targetWidth / baseW, targetHeight / baseH)
-  const offsetX = (targetWidth - baseW * scale) / 2
-  const offsetY = (targetHeight - baseH * scale) / 2
+  let scaleX
+  let scaleY
+  let offsetX = 0
+  let offsetY = 0
+
+  if (mode === 'stretch') {
+    scaleX = targetWidth / baseW
+    scaleY = targetHeight / baseH
+  } else {
+    const scale = Math.min(targetWidth / baseW, targetHeight / baseH)
+    scaleX = scale
+    scaleY = scale
+    offsetX = (targetWidth - baseW * scale) / 2
+    offsetY = (targetHeight - baseH * scale) / 2
+  }
 
   data.objects?.forEach((obj) => {
     if (isWorkspaceJsonObject(obj)) {
@@ -138,14 +166,14 @@ export function fitTemplateToCanvas(templateJson, targetWidth, targetHeight) {
       obj.scaleY = 1
       return
     }
-    scaleJsonObject(obj, scale, offsetX, offsetY, true)
+    scaleJsonObject(obj, scaleX, scaleY, offsetX, offsetY, true)
   })
 
   data.kidstoryTemplateBase = {
     width: baseW,
     height: baseH,
     aspectRatio: base.aspectRatio || formatAspectRatio(baseW, baseH),
-    fittedTo: { width: targetWidth, height: targetHeight, scale },
+    fittedTo: { width: targetWidth, height: targetHeight, scaleX, scaleY, mode },
   }
 
   return data
