@@ -930,7 +930,7 @@
       },
       "trueScenePaperCollage": {
         "artStyle": "True-Scene Paper Collage",
-        "elementDetails": "Vertical paper collage: keep a truthful photo patch as the anchor, support it with flat paper marks from the same scene, one accent color, irregular torn edge into quiet paper space.",
+        "elementDetails": "Large quiet paper margins; photo only inside a torn window; tear follows the photo’s own silhouette (ridge/horizon/subject edge); footnote-scale type only; one small accent color.",
         "inputTemplate": "Optional: relationships to keep / language / mood"
       },
       "moodScenePaperRedraw": {

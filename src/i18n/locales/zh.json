@@ -945,7 +945,7 @@
       },
       "trueScenePaperCollage": {
         "artStyle": "真景纸刊拼贴",
-        "elementDetails": "竖版纸刊拼贴：保留照片真实局部作锚点，周围用扁平纸面图形托住场景；单一强调色；照片与纸面交界为不规则撕边；大面积安静留白。",
+        "elementDetails": "大面积素纸留白；照片只占撕纸窗口；撕边贴合照片自身轮廓（山脊/天际线/主体外缘）；文字极小如注脚；至多一个小强调色。",
         "inputTemplate": "可选补充：想保留的关系 / 文字语言 / 情绪方向"
       },
       "moodScenePaperRedraw": {
