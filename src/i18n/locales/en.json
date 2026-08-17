@@ -214,7 +214,7 @@
   "editorProLeft": {
     "canvas": "Canvas",
     "pageTemplates": "Page templates",
-    "pageTemplateHint": "Pick a canvas size, then a template. Matching-ratio templates scale uniformly; Photo book templates work on any canvas and stretch to fill. Replace dashed photo boxes; double-click text to edit.",
+    "pageTemplateHint": "Pick a canvas size, then a template. Matching-ratio templates scale uniformly; Photo book templates rebuild for the current canvas with shared type scale, margins, and centered layout. Replace dashed photo boxes; double-click text to edit.",
     "pageTemplateCanvasSize": "Canvas: {width} × {height} ({ratio})",
     "pageTemplateNoMatch": "No templates for this canvas ratio. Use 3:4 for story pages, 1:1 for album pages, or 2:1 for spreads. Photo book works on any canvas.",
     "pageTemplateApplied": "Template loaded",

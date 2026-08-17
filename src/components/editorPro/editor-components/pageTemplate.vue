@@ -77,6 +77,7 @@ import {
   getLocalPageTemplateGroups,
   countMatchingTemplates,
 } from '@/data/editorPageTemplates'
+import { buildPhotoBookTemplateJson } from '@/data/editorPageTemplates/photoBookTemplates'
 import {
   applyPageTemplateBehavior,
   fillPhotoSlotObject,
@@ -149,9 +150,12 @@ const applyTemplate = async (item) => {
         if (!width || !height) {
           throw new Error(t('editorProLeft.pageTemplateFailed') || '画布尺寸无效')
         }
-        const fittedJson = fitTemplateToCanvas(item.json, width, height, {
-          mode: item.fitMode === 'stretch' ? 'stretch' : 'contain',
-        })
+        const fittedJson =
+          item.rebuildLayout
+            ? buildPhotoBookTemplateJson(item.id, width, height)
+            : fitTemplateToCanvas(item.json, width, height, {
+                mode: item.fitMode === 'stretch' ? 'stretch' : 'contain',
+              })
         try {
           await canvasEditor.downFontByJSON(JSON.stringify(fittedJson))
         } catch (fontErr) {

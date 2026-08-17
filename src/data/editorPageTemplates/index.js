@@ -308,6 +308,7 @@ export function getLocalPageTemplateGroups(t, canvasSize = null) {
         aspectRatio: item.aspectRatio || TEMPLATE_ASPECT_RATIO,
         anyAspect: Boolean(item.anyAspect),
         fitMode: item.fitMode || 'contain',
+        rebuildLayout: Boolean(item.rebuildLayout),
       })),
   })).filter((group) => group.templates.length > 0)
 }
