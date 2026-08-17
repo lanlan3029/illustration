@@ -77,7 +77,7 @@
                     <time class="list-date">{{ formatDay(r.createdAt) }}</time>
                     <span v-if="r.moodLabel" class="list-mood">{{ r.moodLabel }}</span>
                   </div>
-                  <p class="list-text">{{ excerpt(r.caption || r.narrative, 56) }}</p>
+                  <p class="list-text">{{ excerpt(r.narrative || r.caption, 56) }}</p>
                 </div>
               </button>
             </li>
@@ -149,7 +149,7 @@
                 <span v-else class="export-pick-thumb export-pick-thumb--empty" />
                 <span class="export-pick-info">
                   <span class="export-pick-date">{{ formatDay(r.createdAt) }}</span>
-                  <span class="export-pick-text">{{ excerpt(r.caption || r.narrative, 40) }}</span>
+                  <span class="export-pick-text">{{ excerpt(r.narrative || r.caption, 40) }}</span>
                 </span>
               </span>
             </el-checkbox>
@@ -169,56 +169,66 @@
 
     <el-dialog
       v-model="previewOpen"
-      width="min(640px, 96vw)"
+      width="min(920px, 96vw)"
       class="preview-dialog"
-      :show-header="false"
+      :class="{ 'preview-dialog--with-text': !!previewDiaryText }"
+      :show-close="true"
       align-center
       destroy-on-close
       @closed="onPreviewClosed"
     >
-      <div v-if="previewRecord" class="preview-stage">
-        <button
-          type="button"
-          class="preview-nav preview-nav--prev"
-          :disabled="!previewHasPrev"
-          :aria-label="$t('moodDiary.bookPreviewPrev')"
-          @click="previewPrev"
-        >
-          ‹
-        </button>
-
-        <div class="preview-image-wrap">
+      <div v-if="previewRecord" class="preview-layout">
+        <div class="preview-stage">
           <button
             type="button"
-            class="preview-hit preview-hit--prev"
+            class="preview-nav preview-nav--prev"
             :disabled="!previewHasPrev"
             :aria-label="$t('moodDiary.bookPreviewPrev')"
             @click="previewPrev"
-          />
-          <img
-            :src="previewRecord.posterDataUrl"
-            class="preview-img"
-            alt=""
-            @click.stop
-          />
+          >
+            ‹
+          </button>
+
+          <div class="preview-image-wrap">
+            <button
+              type="button"
+              class="preview-hit preview-hit--prev"
+              :disabled="!previewHasPrev"
+              :aria-label="$t('moodDiary.bookPreviewPrev')"
+              @click="previewPrev"
+            />
+            <img
+              :src="previewRecord.posterDataUrl"
+              class="preview-img"
+              alt=""
+              @click.stop
+            />
+            <button
+              type="button"
+              class="preview-hit preview-hit--next"
+              :disabled="!previewHasNext"
+              :aria-label="$t('moodDiary.bookPreviewNext')"
+              @click="previewNext"
+            />
+          </div>
+
           <button
             type="button"
-            class="preview-hit preview-hit--next"
+            class="preview-nav preview-nav--next"
             :disabled="!previewHasNext"
             :aria-label="$t('moodDiary.bookPreviewNext')"
             @click="previewNext"
-          />
+          >
+            ›
+          </button>
         </div>
 
-        <button
-          type="button"
-          class="preview-nav preview-nav--next"
-          :disabled="!previewHasNext"
-          :aria-label="$t('moodDiary.bookPreviewNext')"
-          @click="previewNext"
-        >
-          ›
-        </button>
+        <aside v-if="previewDiaryText" class="preview-diary">
+          <p class="preview-diary-label">{{ $t('moodDiary.memoryJournal.originalLabel') }}</p>
+          <div class="preview-diary-scroll">
+            <p class="preview-diary-text">{{ previewDiaryText }}</p>
+          </div>
+        </aside>
       </div>
     </el-dialog>
   </div>
@@ -284,6 +294,13 @@ export default {
     },
     previewRecord() {
       return this.previewableRecords[this.previewIndex] || null
+    },
+    previewDiaryText() {
+      const r = this.previewRecord
+      if (!r) return ''
+      const narrative = String(r.narrative || '').trim()
+      if (narrative) return narrative
+      return String(r.caption || '').trim()
     },
     previewHasPrev() {
       return this.previewIndex > 0
@@ -806,16 +823,35 @@ export default {
   overflow: hidden;
 }
 
+.preview-dialog :deep(.el-dialog__header) {
+  padding: 8px 12px 0;
+}
+
+.preview-dialog :deep(.el-dialog__headerbtn) {
+  top: 10px;
+  right: 12px;
+  z-index: 5;
+}
+
 .preview-dialog :deep(.el-dialog__body) {
-  padding: 16px 12px 20px;
+  padding: 8px 16px 16px;
+}
+
+.preview-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 20px;
+  min-height: 0;
 }
 
 .preview-stage {
+  flex: 1.15;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: min(72vh, 680px);
 }
 
 .preview-image-wrap {
@@ -825,8 +861,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: min(520px, 88vw);
-  max-height: min(90vh, 960px);
+  max-height: min(70vh, 640px);
 }
 
 .preview-img {
@@ -834,12 +869,53 @@ export default {
   width: auto;
   max-width: 100%;
   height: auto;
-  max-height: min(90vh, 960px);
+  max-height: min(70vh, 640px);
   object-fit: contain;
   border-radius: 10px;
   margin: 0 auto;
   user-select: none;
   pointer-events: none;
+  background: #f7f5fa;
+}
+
+.preview-diary {
+  flex: 0.85;
+  min-width: 0;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 0;
+  box-sizing: border-box;
+}
+
+.preview-diary-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.preview-diary-scroll {
+  flex: 1;
+  min-height: 120px;
+  max-height: min(62vh, 560px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e8ecf1;
+}
+
+.preview-diary-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .preview-hit {
@@ -898,6 +974,40 @@ export default {
 .preview-nav:disabled {
   opacity: 0.28;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .preview-layout {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .preview-stage {
+    flex: none;
+  }
+
+  .preview-image-wrap {
+    max-height: min(42vh, 360px);
+  }
+
+  .preview-img {
+    max-height: min(42vh, 360px);
+  }
+
+  .preview-diary {
+    flex: none;
+    max-width: none;
+    width: 100%;
+  }
+
+  .preview-diary-scroll {
+    max-height: min(36vh, 280px);
+    min-height: 96px;
+  }
+
+  .preview-nav {
+    display: none;
+  }
 }
 
 .book-loading,

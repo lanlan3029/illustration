@@ -79,7 +79,27 @@
     </div>
 
     <div v-else class="mj-result-wrap">
-      <aside class="mj-story-card" aria-label="story">
+      <MoodDiaryPosterResult
+        :poster-url="resultUrl"
+        :saving="saving"
+        :loading="generating"
+        hint=""
+        @save="saveResult"
+        @download="downloadResult"
+        @regenerate="resetForRegen"
+        @back-to-write="resetForRegen"
+      />
+
+      <button
+        v-if="originalDiary"
+        type="button"
+        class="mj-view-original-btn"
+        @click="originalDialogOpen = true"
+      >
+        {{ $t('moodDiary.memoryJournal.viewOriginal') }}
+      </button>
+
+      <aside v-if="displayCaption || displayStoryCore || displayEmotion || displayDate" class="mj-story-card">
         <div v-if="displayCaption" class="mj-story-block">
           <p class="mj-story-kicker">{{ $t('moodDiary.memoryJournal.posterLineLabel') }}</p>
           <p class="mj-story-caption">「{{ displayCaption }}」</p>
@@ -94,33 +114,24 @@
           <span v-if="displayEmotion" class="mj-chip">{{ displayEmotion }}</span>
           <span v-if="displayDate" class="mj-chip mj-chip--mute">{{ displayDate }}</span>
         </div>
-
-        <div v-if="originalDiary" class="mj-original-section">
-          <div class="mj-original-head">
-            <p class="mj-story-kicker">{{ $t('moodDiary.memoryJournal.originalLabel') }}</p>
-            <button
-              type="button"
-              class="mj-original-toggle"
-              @click="showOriginal = !showOriginal"
-            >
-              {{ showOriginal
-                ? $t('moodDiary.memoryJournal.hideOriginal')
-                : $t('moodDiary.memoryJournal.viewOriginal') }}
-            </button>
-          </div>
-          <div v-show="showOriginal" class="mj-original-body">{{ originalDiary }}</div>
-        </div>
       </aside>
-      <MoodDiaryPosterResult
-        :poster-url="resultUrl"
-        :saving="saving"
-        :loading="generating"
-        hint=""
-        @save="saveResult"
-        @download="downloadResult"
-        @regenerate="resetForRegen"
-        @back-to-write="resetForRegen"
-      />
+
+      <el-dialog
+        v-model="originalDialogOpen"
+        :title="$t('moodDiary.memoryJournal.originalLabel')"
+        width="min(560px, 94vw)"
+        align-center
+        append-to-body
+        destroy-on-close
+        class="mj-original-dialog"
+      >
+        <div class="mj-dialog-diary">{{ originalDiary }}</div>
+        <template #footer>
+          <el-button type="primary" @click="originalDialogOpen = false">
+            {{ $t('common.confirm') || '知道了' }}
+          </el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -159,7 +170,8 @@ export default {
       resultUrl: '',
       analysis: null,
       originalDiary: '',
-      showOriginal: true
+      showOriginal: true,
+      originalDialogOpen: false
     }
   },
   computed: {
@@ -397,13 +409,35 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
 }
 
 .mj-result-wrap :deep(.poster-result) {
   height: auto;
   max-width: 100%;
+}
+
+.mj-view-original-btn {
+  width: 100%;
+  max-width: 480px;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 16px;
+  border: 1.5px solid var(--md-accent-deep, #7ecbb8);
+  border-radius: 12px;
+  background: var(--md-accent-soft, #edf8f4);
+  color: var(--md-accent-deep, #7ecbb8);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  touch-action: manipulation;
+}
+
+.mj-view-original-btn:hover {
+  background: #e2f6ef;
 }
 
 .mj-story-card {
@@ -414,6 +448,18 @@ export default {
   background: var(--md-card, #fffcfe);
   border: 1px solid var(--md-border, #e6deef);
   box-sizing: border-box;
+}
+
+.mj-dialog-diary {
+  max-height: min(60vh, 480px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--md-text, #5f5970);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .mj-story-caption {
