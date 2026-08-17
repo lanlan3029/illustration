@@ -68,4 +68,34 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
     preferredSize: '1024x576',
     customGenerate: 'xiaohei',
   },
+  /**
+   * 真景纸刊拼贴：参考图必填，服务端 vision 分析后拼贴生图。
+   * POST /gathered-scenes/expand-generate mode=gathered
+   */
+  {
+    key: 'scenesGatheredZine',
+    id: 32,
+    image: require('@/assets/prompt/32.jpg'),
+    category: 'skill',
+    prependBaseOnGenerate: true,
+    preferredSize: '768x1024',
+    customGenerate: 'gatheredScenes',
+    skillMode: 'gathered',
+    requiresReference: true,
+  },
+  /**
+   * 意象纸刊重绘：参考图必填（仅语义），成品不保留原照片。
+   * POST /gathered-scenes/expand-generate mode=distillation
+   */
+  {
+    key: 'sceneDistillationZine',
+    id: 33,
+    image: require('@/assets/prompt/33.jpg'),
+    category: 'skill',
+    prependBaseOnGenerate: true,
+    preferredSize: '768x1024',
+    customGenerate: 'sceneDistillation',
+    skillMode: 'distillation',
+    requiresReference: true,
+  },
 ]

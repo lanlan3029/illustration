@@ -113,6 +113,15 @@
                     </p>
                 </div>
 
+                <div v-if="isGatheredScenesStyle(selectedStyle) && gatheredScenesPlan" class="xiaohei-plan-card">
+                    <p class="xiaohei-plan-title">{{ $t('aiPicture.gatheredScenesPlanTitle') || '纸刊方案' }}</p>
+                    <p><span>主体：</span>{{ gatheredScenesPlan.core_subjects }}</p>
+                    <p><span>命题：</span>{{ gatheredScenesPlan.proposition }}</p>
+                    <p><span>张力：</span>{{ gatheredScenesPlan.tension }}</p>
+                    <p><span>隐喻：</span>{{ gatheredScenesPlan.metaphor }}</p>
+                    <p v-if="gatheredScenesPlan.accent_hue"><span>强调色：</span>{{ gatheredScenesPlan.accent_hue }}</p>
+                </div>
+
                 <!-- 底部工具栏（基础操作） -->
                 <div class="prompt-toolbar">
                     <div class="toolbar-left">
@@ -405,12 +414,17 @@ import {
     expandXiaoheiSentence,
     generateXiaoheiIllustration,
 } from '@/utils/xiaohei/api'
+import { generateGatheredScenesPoster } from '@/utils/gatheredScenes/api'
 import oaiImageData from '@/data/oaiImageTemplates.json'
 import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
 import {
     isObjectDoodlePosterNoTextStyle,
     isPoeticMinimalZineStyle,
     isXiaoheiAbsurdIllustrationStyle,
+    isGatheredScenesSkillStyle,
+    isScenesGatheredZineStyle,
+    isSceneDistillationZineStyle,
+    gatheredScenesModeFromStyle,
 } from '@/utils/illustrationStyles'
 
 export default {
@@ -469,6 +483,7 @@ export default {
             /** 小黑 Skill：扩写方案预览 */
             xiaoheiPlan: null,
             xiaoheiExpanding: false,
+            gatheredScenesPlan: null,
 
             /** 最近一次成功「生成」时请求里的 prompt 快照，与 current generatedImageUrl 一致；重选风格后不会变。 */
             lastGeneratedPromptSnapshot: '',
@@ -522,6 +537,10 @@ export default {
                 return this.$t('aiPicture.xiaoheiPlaceholder')
                     || '输入一句话，例如：信任是一块证据一块证据铺过去'
             }
+            if (this.isGatheredScenesStyle(this.selectedStyle)) {
+                return this.$t('aiPicture.gatheredScenesPlaceholder')
+                    || '可选：想保留的关系、文字语言或情绪方向'
+            }
             return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
         visibleStyles() {
@@ -529,6 +548,9 @@ export default {
             return this.styles.filter((s) => (s.uiTab || s.category) === this.activeIllustrationTab)
         },
         canGenerate() {
+            if (this.isGatheredScenesStyle(this.selectedStyle)) {
+                return (this.referenceImageUrls || []).some(Boolean)
+            }
             return !!(this.subjectScene && this.subjectScene.trim())
         },
         sizeGroups() {
@@ -603,8 +625,8 @@ export default {
             if (!this.subjectScene || !this.subjectScene.trim()) return ''
             let prompt = this.subjectScene.trim()
             const style = this.selectedStyle
-            // 小黑：服务端扩写拼 prompt，前端只交一句话
-            if (this.isXiaoheiStyle(style)) return prompt
+            // 小黑 / 拾景：服务端扩写拼 prompt，前端只交用户补充
+            if (this.isXiaoheiStyle(style) || this.isGatheredScenesStyle(style)) return prompt
             const isDoodle = this.isObjectDoodleStyle(style)
             const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
@@ -697,6 +719,15 @@ export default {
         isXiaoheiStyle(style) {
             return isXiaoheiAbsurdIllustrationStyle(style)
         },
+        isGatheredScenesStyle(style) {
+            return isGatheredScenesSkillStyle(style)
+        },
+        isScenesGatheredStyle(style) {
+            return isScenesGatheredZineStyle(style)
+        },
+        isSceneDistillationStyle(style) {
+            return isSceneDistillationZineStyle(style)
+        },
 
         /** 优先 style.inputTemplate，否则按 key / zine / doodle 识别从 i18n 取短模板 */
         resolveStyleInputTemplate(style) {
@@ -709,6 +740,16 @@ export default {
             }
             if (this.isXiaoheiStyle(style)) {
                 const path = 'aibooks.styles.xiaoheiAbsurdIllustration.inputTemplate'
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
+            if (this.isScenesGatheredStyle(style)) {
+                const path = 'aibooks.styles.scenesGatheredZine.inputTemplate'
+                const v = this.$t(path)
+                if (v && v !== path) return String(v).trim()
+            }
+            if (this.isSceneDistillationStyle(style)) {
+                const path = 'aibooks.styles.sceneDistillationZine.inputTemplate'
                 const v = this.$t(path)
                 if (v && v !== path) return String(v).trim()
             }
@@ -730,6 +771,7 @@ export default {
         applyStylePromptToInput(style) {
             if (!style) return
             this.xiaoheiPlan = null
+            this.gatheredScenesPlan = null
             // 特殊风格：输入框只填精简模板 C，底词 A（basePrompt / elementDetails）永不写入输入框
             if (this.isObjectDoodleStyle(style)) {
                 this.subjectScene = this.$t('aibooks.styles.objectDoodlePosterNoText.inputTemplate') || '请上传参考图'
@@ -738,6 +780,11 @@ export default {
             if (this.isXiaoheiStyle(style)) {
                 const tmpl = this.resolveStyleInputTemplate(style)
                 this.subjectScene = tmpl || ''
+                return
+            }
+            if (this.isGatheredScenesStyle(style)) {
+                // 拾景：主输入可选；占位符提示即可，不预填模板句
+                this.subjectScene = ''
                 return
             }
             const tmpl = this.resolveStyleInputTemplate(style)
@@ -846,9 +893,11 @@ export default {
                     style.preferredSize ||
                     style.prependBaseOnGenerate ||
                     this.isPoeticZineStyle(style) ||
-                    this.isXiaoheiStyle(style)
+                    this.isXiaoheiStyle(style) ||
+                    this.isGatheredScenesStyle(style)
                 ) {
-                    this.selectedSize = style.preferredSize || (this.isXiaoheiStyle(style) ? '1024x576' : '768x1024')
+                    this.selectedSize = style.preferredSize
+                        || (this.isXiaoheiStyle(style) ? '1024x576' : '768x1024')
                 }
             }
         },
@@ -1129,12 +1178,24 @@ export default {
         },
 
         async generateIllustration() {
-            if (!this.generatedPrompt) {
+            if (this.isGatheredScenesStyle(this.selectedStyle)) {
+                const refs = (this.referenceImageUrls || []).filter(Boolean)
+                if (!refs.length) {
+                    ElMessage.warning({
+                        message: this.$t('aiPicture.gatheredScenesNeedPhoto') || '该技能需要先上传一张照片',
+                        offset: 200,
+                    })
+                    return
+                }
+            } else if (!this.generatedPrompt) {
                 ElMessage.warning({ message: this.$t('aiPicture.needPrompt') || '请先描述你想要的画面', offset: 200 })
                 return
             }
             let refs = (this.referenceImageUrls || []).filter(Boolean)
-            if (this.isObjectDoodleStyle(this.selectedStyle) && !refs.length) {
+            if (
+                (this.isObjectDoodleStyle(this.selectedStyle) || this.isGatheredScenesStyle(this.selectedStyle))
+                && !refs.length
+            ) {
                 ElMessage.warning({
                     message: this.$t('aiPicture.needReferenceForStyle') || '该风格必须先添加参考图',
                     offset: 200,
@@ -1146,6 +1207,41 @@ export default {
             this.generating = true
 
             try {
+                // SKILL·拾景纸刊：参考图 → 服务端 vision 分析 → create-character 异步任务
+                if (this.isGatheredScenesStyle(this.selectedStyle)) {
+                    const note = String(this.subjectScene || '').trim()
+                    let photo = refs[0]
+                    // 压图，避免 vision + 生图请求体过大
+                    photo = await this.compressDataUrlIfNeeded(photo, 900 * 1024)
+                    const result = await generateGatheredScenesPoster(
+                        this.$http,
+                        {
+                            mode: gatheredScenesModeFromStyle(this.selectedStyle),
+                            image: photo,
+                            note,
+                            plan: this.gatheredScenesPlan,
+                            size: this.selectedSize || '768x1024',
+                            resolution: this.selectedQuality || '1k',
+                        },
+                        { apiBaseUrl: this.apiBaseUrl }
+                    )
+                    if (result.plan) this.gatheredScenesPlan = result.plan
+                    const message = result.message
+                    if (message && typeof message === 'object' && message.points !== undefined && this.$store && this.$store.state) {
+                        this.$store.commit('setUserInfo', {
+                            ...(this.$store.state.userInfo || {}),
+                            points: message.points
+                        })
+                    }
+                    this.lastGeneratedPromptSnapshot = note || '[gathered-scenes]'
+                    this.generatedImageUrl = result.imageUrl
+                    this.imageLoading = true
+                    this.imageLoadError = false
+                    this.saveGeneratedImageToLocalStorage(result.imageUrl)
+                    ElMessage.success({ message: this.$t('aiPicture.generateSuccess') || '插画生成成功！', offset: 200 })
+                    return
+                }
+
                 // SKILL·怪诞小黑：一句话 → 服务端扩写 → create-character 异步任务
                 if (this.isXiaoheiStyle(this.selectedStyle)) {
                     const sentence = String(this.subjectScene || '').trim()

@@ -921,6 +921,16 @@
         "elementDetails": "[Canvas] 16:9 landscape; one image = one core idea.\n[Visual DNA] Pure white background; black hand-drawn thin lines with slight wobble; lots of negative space (subject 40%–60%, blank ≥35%); product-sketch feel. No gradients/shadows/paper texture/PPT/cute cartoon/children's illustration/realistic UI.\n[Character · Xiaohei] Solid black little monster, white-dot eyes, thin legs, blank expression. Must perform the core action—not just stand aside; deadpan dry humor, not cute.\n[Chinese labels] At most 5, each 2–8 characters. No top-left title.\n[Color] Black = subject; orange = path; red = key warning; blue = secondary note (optional).",
         "inputTemplate": "Trust is laid brick by brick of evidence"
       },
+      "scenesGatheredZine": {
+        "artStyle": "True-Scene Paper Collage",
+        "elementDetails": "Vertical 3:5 paper poster: photographic truth as anchor, source-derived illustration as field, one high-chroma hue as structure, hand-torn fibrous edge, breathing paper. Keep the photo truthful; simplify with one grammar; one accent hue only.",
+        "inputTemplate": "Optional: relationships to keep / language / mood"
+      },
+      "sceneDistillationZine": {
+        "artStyle": "Mood-Scene Paper Redraw",
+        "elementDetails": "Mood-scene paper redraw: the photo is semantic evidence only — do not keep the original photograph. Distill proposition, tension, and metaphor into minimal editorial paper art with spacious negative space.",
+        "inputTemplate": "Optional: emotion or proposition (e.g. nearness and missing)"
+      },
       "objectDoodlePosterNoText": {
         "artStyle": "Object Doodle Poster · No Text",
         "elementDetails": "[IMAGE BINDING — HIGHEST PRIORITY] The reference image attached to this request is the ONLY visual source. Identify and keep ONE real photographed object from that image (material, color, silhouette, natural shadow). Do NOT ignore the reference. Do NOT invent a different subject. Do NOT cartoon-redraw the whole photo.\n\nPlayful minimal product-poster collage: one real photographed object + primitive black-line micro-worker doodles on a clean white field. Vertical 3:4 or 2:3 canvas, default 1024x1536, flat scanned print look, no frame, no mockup, no border.\n\nINPUT RULES (HIGHEST PRIORITY):\n1) The user provides ONLY one reference photo. There is no text field, no title, no caption, no style options.\n2) Auto-detect the single strongest real object in the reference (cup, food, bottle, plant, bag, keys, book, dessert, daily object). If multiple objects exist, keep only one clear silhouette as the anchor.\n3) If the background is busy, isolate the object and replace surroundings with clean white / soft warm off-white.\n4) Generate immediately from the reference. Do not ask the user for title, action, or layout choices.\n\nGOAL:\nPreserve the chosen object as a REAL photographic object with original texture, material, color, silhouette, and natural shadow. Do NOT convert the whole image into a cartoon.\n\nLAYOUT:\nClean white or soft off-white background with generous negative space. Do NOT reserve a title area. Place the object slightly off-center or lower-center, about 25%–45% of canvas height. Build the composition around one clear tiny action story between the object and one micro worker.\n\nDOODLE OVERLAY:\nAdd ONE primitive black-line micro worker interacting with the object using one clear verb auto-chosen from the object (pour, throw, push, drag, climb, wash, mix, carry, inspect, repair, fish, lift).\nFigure anatomy: blank lumpy circle-ish head made from 2–4 short broken strokes, NO face/eyes/mouth/expression; short open-segment tube body; stiff segmented arms; blocky paddle ends; short bent dash feet; naive proportions; no clothes, no hair.\nLine quality: uneven stuttering black marker, blunt ends, gaps, overshoots, ugly joins, slightly angular curves — NOT smooth vector.\nOptional supporting marks only if needed (max 1–2): ladder, bucket, bag, arrow, thought bubble, liquid arc, ground line, or 2–3 drops. Quiet object theater, not sticker collage.\n\nTEXT LOCK (CRITICAL):\nNo text anywhere. No Chinese characters, no English letters, no numbers, no labels, no captions, no watermarks, no random glyphs, no invented packaging copy. If the source object already has printed labels, keep them only as part of the photographed object; invent nothing new.\n\nFORBIDDEN:\nOfficial brand logos/mascots/packaging marks, cute kawaii stickers, chibi mascots, realistic faces, polished vector icons, comic panels, gradients, dense decoration, full cartoon conversion, large smooth closed-outline characters with round mitten hands and oval feet.\n\nOUTPUT:\nOne quiet, healing, playful no-text poster. The real object from the reference image remains the hero; black doodles explain scale and action only.",
@@ -1007,6 +1017,10 @@
     "xiaoheiNeedSentence": "Please enter one sentence first",
     "xiaoheiPlanReady": "Plan ready — you can generate now",
     "xiaoheiExpandFailed": "Expand failed",
+    "gatheredScenesPlaceholder": "Optional: relationships to keep, language, or mood",
+    "gatheredScenesNeedPhoto": "This skill needs a photo first",
+    "gatheredScenesPlanTitle": "Paper plan",
+    "gatheredScenesGenerateFailed": "Paper poster generation failed",
     "illustrationSubTabs": "Illustration categories"
   },
   "upload": {

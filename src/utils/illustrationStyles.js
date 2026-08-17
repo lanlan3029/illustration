@@ -14,6 +14,8 @@ import { fetchPublicIllustrationStyles } from '@/utils/illustrationStylesApi'
  *   prependBaseOnGenerate?: boolean,
  *   preferredSize?: string,
  *   customGenerate?: string,
+ *   skillMode?: string,
+ *   requiresReference?: boolean,
  *   image: string,
  *   imageUrl?: string,
  * }} NormalizedStyle
@@ -71,6 +73,8 @@ export function normalizeIllustrationStyle(item) {
     prependBaseOnGenerate: Boolean(item.prependBaseOnGenerate || item.inputTemplate),
     preferredSize: item.preferredSize || '',
     customGenerate: item.customGenerate || '',
+    skillMode: item.skillMode || '',
+    requiresReference: Boolean(item.requiresReference),
   }
   return sealHiddenBasePrompt(style)
 }
@@ -98,6 +102,8 @@ export function buildFallbackIllustrationStyles(t) {
       prependBaseOnGenerate: Boolean(config.prependBaseOnGenerate || inputTemplate),
       preferredSize: config.preferredSize || '',
       customGenerate: config.customGenerate || '',
+      skillMode: config.skillMode || '',
+      requiresReference: Boolean(config.requiresReference),
     })
   })
 }
@@ -132,6 +138,39 @@ export function isXiaoheiAbsurdIllustrationStyle(style) {
   return /小黑怪诞|怪诞小黑|Xiaohei Absurd|小黑.*配图/i.test(label)
 }
 
+/** 真景纸刊拼贴（照片作锚点） */
+export function isScenesGatheredZineStyle(style) {
+  if (!style) return false
+  if (Number(style.id) === 32) return true
+  if (String(style.customGenerate || '').toLowerCase() === 'gatheredscenes') return true
+  if (String(style.skillMode || '').toLowerCase() === 'gathered') return true
+  const key = String(style.key || '').toLowerCase()
+  if (key === 'scenesgatheredzine' || key === 'gatheredscenes') return true
+  const label = `${style.key || ''} ${style.artStyle || ''}`
+  return /真景纸刊拼贴|True-Scene Paper Collage|拾景.*实景拼贴|实景拼贴|Gathered Scenes/i.test(label)
+}
+
+/** 意象纸刊重绘（照片仅语义） */
+export function isSceneDistillationZineStyle(style) {
+  if (!style) return false
+  if (Number(style.id) === 33) return true
+  if (String(style.customGenerate || '').toLowerCase() === 'scenedistillation') return true
+  if (String(style.skillMode || '').toLowerCase() === 'distillation') return true
+  const key = String(style.key || '').toLowerCase()
+  if (key === 'scenedistillationzine' || key === 'scenedistillation') return true
+  const label = `${style.key || ''} ${style.artStyle || ''}`
+  return /意象纸刊重绘|Mood-Scene Paper Redraw|拾景.*影像蒸馏|影像蒸馏|Scene Distillation/i.test(label)
+}
+
+export function isGatheredScenesSkillStyle(style) {
+  return isScenesGatheredZineStyle(style) || isSceneDistillationZineStyle(style)
+}
+
+export function gatheredScenesModeFromStyle(style) {
+  if (isSceneDistillationZineStyle(style)) return 'distillation'
+  return 'gathered'
+}
+
 function findSpecialMatchInList(list, special) {
   const specialKey = String(special.key || '').toLowerCase()
   const byKey = list.find((s) => s.key && String(s.key).toLowerCase() === specialKey)
@@ -145,6 +184,12 @@ function findSpecialMatchInList(list, special) {
   }
   if (specialKey === 'xiaoheiabsurdillustration') {
     return list.find((s) => isXiaoheiAbsurdIllustrationStyle(s)) || null
+  }
+  if (specialKey === 'scenesgatheredzine') {
+    return list.find((s) => isScenesGatheredZineStyle(s)) || null
+  }
+  if (specialKey === 'scenedistillationzine') {
+    return list.find((s) => isSceneDistillationZineStyle(s)) || null
   }
   return null
 }
@@ -170,12 +215,18 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
       existing.prependBaseOnGenerate = true
       existing.preferredSize = special.preferredSize || existing.preferredSize
       existing.customGenerate = special.customGenerate || existing.customGenerate
+      existing.skillMode = special.skillMode || existing.skillMode
+      existing.requiresReference = Boolean(
+        special.requiresReference || existing.requiresReference
+      )
       existing.category = special.category || existing.category
       existing.uiTab = backendCategoryToUiTab(existing.category)
-      // 喜茶无字 / 小黑：本地强化底词优先；其余保留线上底词
+      // 喜茶无字 / 小黑 / 拾景：本地强化底词优先；其余保留线上底词
       const preferLocalBase =
-        special.key === 'objectDoodlePosterNoText' ||
-        special.key === 'xiaoheiAbsurdIllustration'
+        special.key === 'objectDoodlePosterNoText'
+        || special.key === 'xiaoheiAbsurdIllustration'
+        || special.key === 'scenesGatheredZine'
+        || special.key === 'sceneDistillationZine'
       const base = String(
         preferLocalBase
           ? (special.basePrompt || special.elementDetails || existing.basePrompt || existing.elementDetails || '')
