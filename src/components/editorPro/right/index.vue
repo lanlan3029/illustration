@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import align from '@/components/editorPro/editor-components/align.vue';
 import centerAlign from '@/components/editorPro/editor-components/centerAlign.vue';
 import flip from '@/components/editorPro/editor-components/flip.vue';
@@ -29,102 +30,155 @@ import cropperImg from '@/components/editorPro/editor-components/cropperImg.vue'
 import lassoCropImg from '@/components/editorPro/editor-components/lassoCropImg.vue';
 import clipImage from '@/components/editorPro/editor-components/clipImage.vue';
 import edit from '@/components/editorPro/editor-components/edit.vue';
+import EditorSheet from '@/components/editorPro/mobile/EditorSheet.vue';
 import useSelect from '@/components/editorPro/hooks/select.js';
+import { useEditorMobile } from '@/composables/useEditorMobile';
+import { useEditorMobilePanel } from '@/composables/editorMobilePanel';
 
+const { t } = useI18n();
 const { mixinState } = useSelect() || {};
+const { isMobileEditor } = useEditorMobile();
+const { isRightOpen, openRight, close } = useEditorMobilePanel();
 
 const attrBarShow = ref(true);
+const sheetTitle = computed(() => t('creation.attributes'));
 
-// 属性面板开关
 const switchAttrBar = () => {
+  if (isMobileEditor.value) {
+    openRight();
+    return;
+  }
   attrBarShow.value = !attrBarShow.value;
 };
+
+watch(isMobileEditor, (mobile) => {
+  if (mobile) {
+    attrBarShow.value = false;
+    close();
+  } else {
+    attrBarShow.value = true;
+  }
+});
+
+if (isMobileEditor.value) {
+  attrBarShow.value = false;
+}
 </script>
 
 <template>
-  <!-- 属性区域 380-->
-  <div class="right-bar" v-show="attrBarShow">
-    <div style="padding-top: 10px">
-      <!-- 未选择元素时 展示背景设置 -->
-      <div v-show="!mixinState.mSelectMode">
-        <set-size></set-size>
-        <bg-bar></bg-bar>
-      </div>
-
-      <!-- 多选时展示 -->
-      <div v-show="mixinState.mSelectMode === 'multiple'">
-        <!-- 分组 -->
-        <group></group>
-        <!-- <Divider plain></Divider> -->
-        <!-- 组对齐方式 -->
-        <align></align>
-        <!-- 居中对齐 -->
-        <center-align></center-align>
-      </div>
-
-      <div v-show="mixinState.mSelectMode === 'one'" class="attr-item-box">
-        <!-- <h3>快捷操作</h3> -->
-        <!-- 分组 -->
-        <group></group>
-        <!-- <Divider plain></Divider> -->
-        <Divider plain orientation="left">
-          <h4>快捷操作</h4>
-        </Divider>
-        <div class="bg-item" v-show="mixinState.mSelectMode">
-          <lock></lock>
-          <dele></dele>
-          <clone></clone>
-          <hide></hide>
-          <edit></edit>
+  <div class="attr-panels">
+    <!-- 桌面属性栏 -->
+    <div v-if="!isMobileEditor" class="right-bar" v-show="attrBarShow">
+      <div style="padding-top: 10px">
+        <div v-show="!mixinState.mSelectMode">
+          <set-size></set-size>
+          <bg-bar></bg-bar>
         </div>
-        <!-- <Divider plain></Divider> -->
-        <!-- 居中对齐 -->
-        <center-align></center-align>
-        <!-- 替换图片 -->
-        <replaceImg></replaceImg>
-        <!-- 裁剪 -->
-        <cropperImg></cropperImg>
-        <lasso-crop-img></lasso-crop-img>
-        <!-- 图片裁切 -->
-        <clip-image></clip-image>
-        <!-- 翻转 -->
-        <flip></flip>
-        <!-- 条形码属性 -->
-        <attributeBarcode></attributeBarcode>
-        <!-- 二维码 -->
-        <attributeQrCode></attributeQrCode>
-        <!-- 图片滤镜 -->
-        <filters></filters>
-        <!-- 图片描边 -->
-        <imgStroke />
-        <!-- 颜色 -->
-        <attributeColor></attributeColor>
-        <!-- 字体属性（是否显示由组件内部 useSelect 的 isOne/isMatchType 控制） -->
-        <attributeFont></attributeFont>
-        <!-- 字体小数点（是否显示由组件内部控制） -->
-        <attributeTextFloat></attributeTextFloat>
-        <!-- 文字内容（是否显示由组件内部控制） -->
-        <attribute-text-content></attribute-text-content>
-        <!-- 位置信息 -->
-        <attributePostion></attributePostion>
-        <!-- 阴影 -->
-        <attributeShadow></attributeShadow>
-        <!-- 边框 -->
-        <attributeBorder></attributeBorder>
-        <!-- 圆角 -->
-        <attributeRounded></attributeRounded>
+
+        <div v-show="mixinState.mSelectMode === 'multiple'">
+          <group></group>
+          <align></align>
+          <center-align></center-align>
+        </div>
+
+        <div v-show="mixinState.mSelectMode === 'one'" class="attr-item-box">
+          <group></group>
+          <Divider plain orientation="left">
+            <h4>快捷操作</h4>
+          </Divider>
+          <div class="bg-item" v-show="mixinState.mSelectMode">
+            <lock></lock>
+            <dele></dele>
+            <clone></clone>
+            <hide></hide>
+            <edit></edit>
+          </div>
+          <center-align></center-align>
+          <replaceImg></replaceImg>
+          <cropperImg></cropperImg>
+          <lasso-crop-img></lasso-crop-img>
+          <clip-image></clip-image>
+          <flip></flip>
+          <attributeBarcode></attributeBarcode>
+          <attributeQrCode></attributeQrCode>
+          <filters></filters>
+          <imgStroke />
+          <attributeColor></attributeColor>
+          <attributeFont></attributeFont>
+          <attributeTextFloat></attributeTextFloat>
+          <attribute-text-content></attribute-text-content>
+          <attributePostion></attributePostion>
+          <attributeShadow></attributeShadow>
+          <attributeBorder></attributeBorder>
+          <attributeRounded></attributeRounded>
+        </div>
       </div>
     </div>
-    <!-- <attribute v-if="state.show"></attribute> -->
+    <div
+      v-if="!isMobileEditor"
+      :class="`close-btn right-btn ${attrBarShow && 'right-btn-open'}`"
+      @click="switchAttrBar"
+    ></div>
+
+    <!-- 手机属性抽屉 -->
+    <EditorSheet
+      v-else
+      :model-value="isRightOpen"
+      :title="sheetTitle"
+      @update:model-value="(v) => !v && close()"
+      @close="close"
+    >
+      <div class="right-bar right-bar--sheet">
+        <div v-show="!mixinState.mSelectMode">
+          <set-size></set-size>
+          <bg-bar></bg-bar>
+        </div>
+        <div v-show="mixinState.mSelectMode === 'multiple'">
+          <group></group>
+          <align></align>
+          <center-align></center-align>
+        </div>
+        <div v-show="mixinState.mSelectMode === 'one'" class="attr-item-box">
+          <group></group>
+          <Divider plain orientation="left">
+            <h4>快捷操作</h4>
+          </Divider>
+          <div class="bg-item" v-show="mixinState.mSelectMode">
+            <lock></lock>
+            <dele></dele>
+            <clone></clone>
+            <hide></hide>
+            <edit></edit>
+          </div>
+          <center-align></center-align>
+          <replaceImg></replaceImg>
+          <cropperImg></cropperImg>
+          <lasso-crop-img></lasso-crop-img>
+          <clip-image></clip-image>
+          <flip></flip>
+          <attributeBarcode></attributeBarcode>
+          <attributeQrCode></attributeQrCode>
+          <filters></filters>
+          <imgStroke />
+          <attributeColor></attributeColor>
+          <attributeFont></attributeFont>
+          <attributeTextFloat></attributeTextFloat>
+          <attribute-text-content></attribute-text-content>
+          <attributePostion></attributePostion>
+          <attributeShadow></attributeShadow>
+          <attributeBorder></attributeBorder>
+          <attributeRounded></attributeRounded>
+        </div>
+      </div>
+    </EditorSheet>
   </div>
-  <!-- 右侧关闭按钮 -->
-  <div
-    :class="`close-btn right-btn ${attrBarShow && 'right-btn-open'}`"
-    @click="switchAttrBar"
-  ></div>
 </template>
 
 <style scoped>
+.attr-panels {
+  display: contents;
+}
+
 /* 右侧容器 */
 .right-bar {
   width: 304px;
@@ -132,6 +186,14 @@ const switchAttrBar = () => {
   padding: 10px;
   overflow-y: auto;
   background: #fff;
+}
+
+.right-bar--sheet {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
 }
 
 /* 属性面板样式，对所有带 .attr-item 的块生效 */

@@ -1,23 +1,27 @@
 <script setup>
-import { reactive, ref, computed, onMounted } from 'vue';
-// 左侧组件
+import { reactive, ref, computed, watch, onMounted } from 'vue';
 import importTmpl from '@/components/editorPro/editor-components/importTmpl.vue';
 import myMaterial from '@/components/editorPro/editor-components/myMaterial/index.vue';
 import tools from '@/components/editorPro/editor-components/tools.vue';
 import material from '@/components/editorPro/editor-components/material.vue';
 import layer from '@/components/editorPro/editor-components/layer.vue';
 import pageTemplate from '@/components/editorPro/editor-components/pageTemplate.vue';
+import EditorSheet from '@/components/editorPro/mobile/EditorSheet.vue';
 import { useI18n } from 'vue-i18n';
-// 路由
 import { useRoute } from 'vue-router';
+import { useEditorMobile } from '@/composables/useEditorMobile';
+import { useEditorMobilePanel } from '@/composables/editorMobilePanel';
 
 const { t } = useI18n();
+const route = useRoute();
+const { isMobileEditor } = useEditorMobile();
+const { panel, isLeftOpen, openLeft, close } = useEditorMobilePanel();
 
 const state = reactive({
   menuActive: 1,
   toolsBarShow: true,
 });
-// 左侧菜单渲染
+
 const menuActive = ref('importTmpl');
 const leftBarComponent = {
   importTmpl,
@@ -28,8 +32,6 @@ const leftBarComponent = {
   myMaterial,
 };
 
-// fix: 修复vue-i18n function "t" not reactive inside ref object
-// https://github.com/intlify/vue-i18n/issues/1396#issuecomment-1716123143
 const leftBar = reactive([
   {
     key: 'importTmpl',
@@ -62,35 +64,68 @@ const leftBar = reactive([
     icon: 'ios-contact-outline',
   },
 ]);
-// 隐藏工具条
+
+const sheetTitle = computed(() => {
+  const hit = leftBar.find((item) => item.key === menuActive.value);
+  return hit ? hit.name : '';
+});
+
 const hideToolsBar = () => {
+  if (isMobileEditor.value) {
+    close();
+    return;
+  }
   state.toolsBarShow = !state.toolsBarShow;
 };
-// 展示工具条
+
 const showToolsBar = (val) => {
   menuActive.value = val;
+  if (isMobileEditor.value) {
+    openLeft(val);
+    return;
+  }
   state.toolsBarShow = true;
 };
 
+watch(
+  () => panel.menuActive,
+  (key) => {
+    if (key) menuActive.value = key;
+  }
+);
+
+watch(isMobileEditor, (mobile) => {
+  if (mobile) {
+    state.toolsBarShow = false;
+    close();
+  } else {
+    state.toolsBarShow = true;
+  }
+});
+
 onMounted(() => {
-  // 有ID时，打开作品面板
-  const route = useRoute();
   if (route?.query?.id) {
     menuActive.value = 'myMaterial';
+    panel.menuActive = 'myMaterial';
+  }
+  if (isMobileEditor.value) {
+    state.toolsBarShow = false;
   }
 });
 </script>
 
 <template>
-  <div :class="`left-bar ${state.toolsBarShow && 'show-tools-bar'}`">
-    <!-- 左侧菜单 -->
+  <!-- 桌面侧栏 -->
+  <div
+    v-if="!isMobileEditor"
+    :class="`left-bar ${state.toolsBarShow && 'show-tools-bar'}`"
+  >
     <Menu :active-name="menuActive" accordion @on-select="showToolsBar" width="65px">
       <MenuItem v-for="item in leftBar" :key="item.key" :name="item.key" class="menu-item">
         <Icon :type="item.icon" size="24" />
         <div>{{ item.name }}</div>
       </MenuItem>
     </Menu>
-    <!-- 左侧组件 -->
     <div class="content" v-show="state.toolsBarShow">
       <div class="left-panel">
         <KeepAlive>
@@ -98,12 +133,26 @@ onMounted(() => {
         </KeepAlive>
       </div>
     </div>
-    <!-- 关闭按钮 -->
     <div
       :class="`close-btn left-btn ${state.toolsBarShow && 'left-btn-open'}`"
       @click="hideToolsBar"
     ></div>
   </div>
+
+  <!-- 手机：底部抽屉 -->
+  <EditorSheet
+    v-else
+    :model-value="isLeftOpen"
+    :title="sheetTitle"
+    @update:model-value="(v) => !v && close()"
+    @close="close"
+  >
+    <div class="left-panel left-panel--sheet">
+      <KeepAlive>
+        <component :is="leftBarComponent[menuActive]"></component>
+      </KeepAlive>
+    </div>
+  </EditorSheet>
 </template>
 
 <style scoped>
@@ -139,6 +188,10 @@ onMounted(() => {
   padding: 0 10px;
   height: 100%;
   overflow-y: auto;
+}
+
+.left-panel--sheet {
+  min-height: 120px;
 }
 
 /* 关闭按钮 */

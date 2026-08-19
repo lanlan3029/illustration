@@ -1,13 +1,13 @@
 <template>
   <el-config-provider :locale="elementPlusLocale">
-    <div id="app" :class="{ 'has-tabbar': isMobile }">
+    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar }">
       <top-bar/>
       <login-register v-if="isMask" />
       <main class="app-main">
         <router-view />
       </main>
       <the-footer v-if="!isMobile" :class="{ 'fixed-footer': route.path==='/' }"/>
-      <mobile-tab-bar v-if="isMobile" />
+      <mobile-tab-bar v-if="isMobile && !hideMobileTabBar" />
     </div>
   </el-config-provider>
 </template>
@@ -46,6 +46,16 @@ export default {
     
     const isMask = computed(() => store.state.isMask)
 
+    // 图片编辑器自带底栏，隐藏全局 Tab，避免双底栏
+    const hideMobileTabBar = computed(() => {
+      const p = route.path || ''
+      return (
+        p === '/editorpro' ||
+        p.startsWith('/editorpro/') ||
+        p.includes('/illustration/editor')
+      )
+    })
+
     // 心情图标清单：启动时拉取 CDN PNG
     hydrateMoodAssets()
     
@@ -53,7 +63,8 @@ export default {
       elementPlusLocale,
       isMask,
       route,
-      isMobile
+      isMobile,
+      hideMobileTabBar,
     }
   }
 }

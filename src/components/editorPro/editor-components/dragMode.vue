@@ -46,6 +46,13 @@ onBeforeUnmount(() => {
   z-index: 10;
 }
 
+@media (max-width: 768px) {
+  .box {
+    right: 12px;
+    bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* 兜底样式：当全局 view-ui-plus 样式未生效时，保证组件可见 */
 .box :deep(.ivu-switch) {
   min-width: 64px;

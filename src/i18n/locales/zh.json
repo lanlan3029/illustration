@@ -945,7 +945,7 @@
       },
       "trueScenePaperCollage": {
         "artStyle": "真景纸刊拼贴",
-        "elementDetails": "大面积素纸留白；照片只占撕纸窗口；撕边贴合照片自身轮廓（山脊/天际线/主体外缘）；文字极小如注脚；至多一个小强调色。",
+        "elementDetails": "大面积素纸留白；照片只在撕窗内；手撕纤维边为唯一主交接（纤维带约短边1–4%，周长约35–70%）；结构色可越撕口；文字极小。",
         "inputTemplate": "可选补充：想保留的关系 / 文字语言 / 情绪方向"
       },
       "moodScenePaperRedraw": {

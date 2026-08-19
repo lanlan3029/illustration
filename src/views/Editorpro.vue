@@ -1,13 +1,13 @@
 <template>
-  <div class="home">
+  <div class="home" :class="{ 'editorpro--mobile': isMobileEditor }">
     <Layout>
       <!-- 头部区域 -->
       <Top v-if="state.show" :ruler="state.ruler" @update:ruler="rulerSwitch"></Top>
-      <Content style="display: flex; height: calc(100vh - 64px); position: relative">
+      <Content class="editor-content">
         <!-- 左侧区域 -->
         <Left v-if="state.show"></Left>
         <!-- 画布区域 -->
-        <div id="workspace">
+        <div id="workspace" @pointerdown="onWorkspacePointerDown">
           <div class="canvas-box">
             <div class="inside-shadow"></div>
             <canvas id="canvas" :class="state.ruler ? 'design-stage-grid' : ''"></canvas>
@@ -16,17 +16,31 @@
           </div>
         </div>
         <Right v-if="state.show"></Right>
+        <EditorBottomDock
+          v-if="isMobileEditor && state.show"
+          :items="dockItems"
+          :active-key="panel.menuActive"
+          :left-open="isLeftOpen"
+          :right-open="isRightOpen"
+          :attrs-label="attrsLabel"
+          @select-left="openLeft"
+          @select-right="openRight"
+        />
       </Content>
     </Layout>
   </div>
 </template>
 
 <script name="Home" setup>
-import { reactive, onMounted, onUnmounted, provide, nextTick } from 'vue';
+import { reactive, onMounted, onUnmounted, provide, nextTick, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { takeEditorproPendingImage } from '@/utils/editorproPendingImage';
 import Top from '@/components/editorPro/top/index.vue';
 import Left from '@/components/editorPro/left/index.vue';
 import Right from '@/components/editorPro/right/index.vue';
+import EditorBottomDock from '@/components/editorPro/mobile/EditorBottomDock.vue';
+import { useEditorMobile } from '@/composables/useEditorMobile';
+import { useEditorMobilePanel } from '@/composables/editorMobilePanel';
 
 import zoom from '@/components/editorPro/editor-components/zoom.vue';
 import dragMode from '@/components/editorPro/editor-components/dragMode.vue';
@@ -72,6 +86,28 @@ import localFonts from '@/assets/editorpro/fonts/font.js';
 import { installPhotoSlotSelectionSync } from '@/utils/editorPro/photoSlotContext';
 import { installPhotoSlotPanConstraint } from '@/utils/editorPro/pageTemplate';
 import { preloadEditorFonts } from '@/utils/editorPro/preloadFonts';
+
+const { t } = useI18n();
+const { isMobileEditor } = useEditorMobile();
+const { panel, isLeftOpen, isRightOpen, openLeft, openRight, close, isOpen } =
+  useEditorMobilePanel();
+
+const attrsLabel = computed(() => t('creation.attributes'));
+const dockItems = computed(() => [
+  { key: 'importTmpl', name: t('editorProLeft.canvas'), icon: 'md-square-outline' },
+  { key: 'pageTemplate', name: t('editorProLeft.pageTemplates'), icon: 'md-copy' },
+  { key: 'tools', name: t('editorProLeft.draw'), icon: 'md-add-circle' },
+  { key: 'material', name: t('editorProLeft.materialLibrary'), icon: 'md-flower' },
+  { key: 'layer', name: t('layers'), icon: 'md-reorder' },
+  { key: 'myMaterial', name: t('editorProLeft.myWorks'), icon: 'ios-contact-outline' },
+]);
+
+function onWorkspacePointerDown(e) {
+  if (!isMobileEditor.value || !isOpen.value) return;
+  // 缩放 / 拖拽控件不关抽屉
+  if (e.target && e.target.closest && e.target.closest('.box')) return;
+  close();
+}
 
 const state = reactive({
   show: false,
@@ -180,6 +216,7 @@ async function loadPendingIllustrationImage() {
 }
 
 onUnmounted(() => {
+  close();
   uninstallPhotoSlotSync?.();
   uninstallPhotoSlotSync = null;
   uninstallPhotoSlotPan?.();
@@ -206,6 +243,31 @@ provide('canvasEditor', canvasEditor);
 </script>
 
 <style scoped>
+.home {
+  height: 100%;
+  min-height: 0;
+}
+
+.editor-content {
+  display: flex;
+  height: calc(100vh - 64px);
+  position: relative;
+  min-height: 0;
+}
+
+.editorpro--mobile .editor-content {
+  flex-direction: column;
+  /* TopBar 50 + editor header 45 */
+  height: calc(100dvh - 50px - 45px);
+  max-height: calc(100vh - 50px - 45px);
+}
+
+.editorpro--mobile #workspace {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
 .editorpro-page {
   display: flex;
   flex-direction: column;

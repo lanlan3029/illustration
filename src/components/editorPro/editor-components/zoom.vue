@@ -42,6 +42,13 @@ const setViewport = () => {
   z-index: 10;
 }
 
+@media (max-width: 768px) {
+  .box {
+    right: 12px;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* 原来的 :deep(.ivu-btn:hover) { svg { ... } } */
 .box :deep(.ivu-btn:hover) svg {
   fill: #57a3f3;

@@ -122,6 +122,8 @@
                     <p v-if="paperPosterPlan.accent_color || paperPosterPlan.accent_hue">
                         <span>强调色：</span>{{ paperPosterPlan.accent_color || paperPosterPlan.accent_hue }}
                     </p>
+                    <p v-if="paperPosterPlan.tear_contour"><span>撕边轮廓：</span>{{ paperPosterPlan.tear_contour }}</p>
+                    <p v-if="paperPosterPlan.tear_crossing"><span>穿越：</span>{{ paperPosterPlan.tear_crossing }}</p>
                 </div>
                 <div v-if="isPhotoEditorialStyle(selectedStyle) && photoEditorialPlan" class="xiaohei-plan-card">
                     <p class="xiaohei-plan-title">{{ $t('aiPicture.photoEditorialPlanTitle') || '编页方案' }}</p>

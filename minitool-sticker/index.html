@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>贴纸工坊</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- 首页：上传 + 收藏 -->
+    <section id="view-home" class="view view-home">
+      <header class="hero">
+        <div class="hero-deco" aria-hidden="true">
+          <!-- 相机 -->
+          <svg class="hero-icon hero-icon-camera" viewBox="0 0 64 56" fill="none">
+            <rect x="4" y="14" width="56" height="38" rx="10" fill="#F5D76E" stroke="#1A1A1A" stroke-width="4"/>
+            <path d="M18 14l4.5-8h19L46 14" fill="#F5D76E" stroke="#1A1A1A" stroke-width="4" stroke-linejoin="round"/>
+            <circle cx="32" cy="33" r="12" fill="#F8F2E9" stroke="#1A1A1A" stroke-width="4"/>
+            <circle cx="32" cy="33" r="6" fill="#7FA0B8" stroke="#1A1A1A" stroke-width="3"/>
+            <circle cx="48" cy="24" r="3.5" fill="#E84B4B" stroke="#1A1A1A" stroke-width="2.5"/>
+          </svg>
+          <!-- 咖啡：外带杯（干净描边） -->
+          <svg class="hero-icon hero-icon-coffee" viewBox="0 0 56 72" fill="none">
+            <!-- 杯身（杯口略窄） -->
+            <path d="M12 24h32l-4 40H16L12 24z" fill="#F8F2E9" stroke="#1A1A1A" stroke-width="3.5" stroke-linejoin="round"/>
+            <!-- 杯盖（比杯口更宽，外探一点） -->
+            <rect x="7" y="12" width="42" height="10" rx="3.5" fill="#F8F2E9" stroke="#1A1A1A" stroke-width="3.5"/>
+            <rect x="16" y="6" width="24" height="7" rx="2.5" fill="#F8F2E9" stroke="#1A1A1A" stroke-width="3"/>
+            <!-- 杯口压线 -->
+            <path d="M12 24h32" stroke="#1A1A1A" stroke-width="3.5" stroke-linecap="round"/>
+            <!-- 杯套 -->
+            <path d="M13 28h30l-1.2 10H14.2L13 28z" fill="#C48A4A" stroke="#1A1A1A" stroke-width="3.5" stroke-linejoin="round"/>
+            <!-- 标志圆 -->
+            <circle cx="28" cy="50" r="8" fill="#F8F2E9" stroke="#1A1A1A" stroke-width="3.5"/>
+          </svg>
+          <!-- 图像 -->
+          <svg class="hero-icon hero-icon-photo" viewBox="0 0 64 52" fill="none">
+            <rect x="3" y="3" width="58" height="46" rx="8" fill="#fff" stroke="#1A1A1A" stroke-width="4"/>
+            <path d="M3 36l14-12 10 8 12-16 22 20v6a8 8 0 0 1-8 8H11a8 8 0 0 1-8-8v-6z" fill="#A8C0D0" stroke="#1A1A1A" stroke-width="3.5" stroke-linejoin="round"/>
+            <circle cx="20" cy="18" r="6" fill="#F5D76E" stroke="#1A1A1A" stroke-width="3.5"/>
+          </svg>
+          <!-- 植物（用户素材） -->
+          <img class="hero-icon hero-icon-plant" src="./assets/icons/plant.png" alt="" />
+        </div>
+        <div class="hero-brand">
+          <h1 class="hero-title">STICKERS</h1>
+          <p class="hero-arc">COLLECTION</p>
+        </div>
+        <button type="button" id="btn-upload" class="btn-upload touchable">
+          <span class="btn-upload-icon" aria-hidden="true">⬆</span>
+          <span class="btn-upload-text">上传照片</span>
+        </button>
+        <input id="file-input" type="file" accept="image/*,.heic,.heif,image/heic,image/heif" hidden />
+        <p class="hero-hint">抠图 / 套索 · 变贴纸 · 存相册</p>
+      </header>
+
+      <main class="collection">
+        <div class="collection-head">
+          <h2 class="collection-title">已收集贴纸</h2>
+          <span id="sticker-count" class="collection-count">0</span>
+        </div>
+        <div id="sticker-empty" class="empty-state">
+          <div class="empty-blob" aria-hidden="true">◎</div>
+          <p>还没有贴纸</p>
+          <p class="empty-sub">上传一张照片开始裁切吧</p>
+        </div>
+        <div id="sticker-grid" class="sticker-grid" hidden></div>
+      </main>
+    </section>
+
+    <!-- 编辑 -->
+    <section id="view-editor" class="view view-editor" hidden>
+      <div class="editor-top">
+        <button type="button" id="btn-cancel-edit" class="btn-chip touchable">返回</button>
+        <p id="editor-title" class="editor-title">制作贴纸</p>
+        <button type="button" id="btn-undo" class="btn-chip touchable">重画</button>
+      </div>
+
+      <div class="editor-stage">
+        <div id="canvas-wrap" class="canvas-wrap">
+          <canvas id="work-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="panel-scroll">
+          <div class="seg-row" role="radiogroup" aria-label="裁切方式">
+            <button type="button" class="mode-card touchable" data-mode="matte" aria-pressed="false">白底抠图</button>
+            <button type="button" class="mode-card touchable is-active" data-mode="lasso" aria-pressed="true">套索裁切</button>
+          </div>
+
+          <div id="brush-panel" class="brush-panel" hidden>
+            <div class="tool-row">
+              <div class="brush-row" role="radiogroup" aria-label="修边笔刷">
+                <button type="button" class="brush-card touchable is-active" data-brush="erase" aria-pressed="true">擦除</button>
+                <button type="button" class="brush-card touchable" data-brush="restore" aria-pressed="false">恢复</button>
+              </div>
+              <div class="brush-size-row" role="radiogroup" aria-label="笔刷大小">
+                <button type="button" class="size-chip touchable" data-size="16">小</button>
+                <button type="button" class="size-chip touchable is-active" data-size="28">中</button>
+                <button type="button" class="size-chip touchable" data-size="44">大</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stroke-block">
+            <div class="style-row" role="radiogroup" aria-label="描边样式">
+              <button type="button" class="style-card touchable is-active" data-style="sticker" aria-pressed="true">
+                <span class="style-swatch swatch-sticker"></span>
+                <span>贴纸</span>
+              </button>
+              <button type="button" class="style-card touchable" data-style="outline" aria-pressed="false">
+                <span class="style-swatch swatch-outline"></span>
+                <span>虚线</span>
+              </button>
+              <button type="button" class="style-card touchable" data-style="raw" aria-pressed="false">
+                <span class="style-swatch swatch-raw"></span>
+                <span>无</span>
+              </button>
+            </div>
+            <div id="color-panel" class="color-panel">
+              <div class="color-row" role="radiogroup" aria-label="描边颜色">
+                <button type="button" class="color-chip touchable is-active" data-color="#ffffff" aria-label="白" style="background:#ffffff" aria-pressed="true"></button>
+                <button type="button" class="color-chip touchable" data-color="#111111" aria-label="黑" style="background:#111111" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#e84b4b" aria-label="红" style="background:#e84b4b" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#ff8c42" aria-label="橙" style="background:#ff8c42" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#f5d76e" aria-label="黄" style="background:#f5d76e" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#7ec8a3" aria-label="绿" style="background:#7ec8a3" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#5b8def" aria-label="蓝" style="background:#5b8def" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#a8c0d0" aria-label="灰蓝" style="background:#a8c0d0" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#f4a4b8" aria-label="粉" style="background:#f4a4b8" aria-pressed="false"></button>
+                <button type="button" class="color-chip touchable" data-color="#c9a0dc" aria-label="紫" style="background:#c9a0dc" aria-pressed="false"></button>
+              </div>
+            </div>
+          </div>
+
+          <p id="lasso-hint" class="lasso-hint">按住拖动圈出主体，回到起点松开完成</p>
+        </div>
+
+        <div class="action-row">
+          <button type="button" id="btn-preview" class="btn-secondary touchable" disabled>预览</button>
+          <button type="button" id="btn-confirm" class="btn-primary touchable" disabled>生成贴纸</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 贴纸详情 -->
+    <section id="view-detail" class="view view-detail" hidden>
+      <div class="detail-top">
+        <button type="button" id="btn-close-detail" class="btn-chip touchable">关闭</button>
+        <p class="editor-title">贴纸预览</p>
+        <span class="btn-chip btn-chip-ghost"></span>
+      </div>
+      <div class="detail-preview">
+        <img id="detail-img" alt="贴纸预览" />
+      </div>
+      <div class="detail-actions">
+        <button type="button" id="btn-save-album" class="btn-primary touchable">保存到相册</button>
+        <button type="button" id="btn-delete-sticker" class="btn-danger touchable">删除贴纸</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <div id="zoom-modal" class="zoom-modal" hidden>
+    <button type="button" id="zoom-backdrop" class="zoom-backdrop" aria-label="关闭"></button>
+    <div class="zoom-sheet">
+      <div class="zoom-top">
+        <p class="zoom-title">描边预览</p>
+        <button type="button" id="zoom-close" class="btn-chip touchable">关闭</button>
+      </div>
+      <div class="zoom-body">
+        <img id="zoom-img" alt="放大预览" />
+      </div>
+    </div>
+  </div>
+
+  <script src="./assets/main.js"></script>
+</body>
+</html>
