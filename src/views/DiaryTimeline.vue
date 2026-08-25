@@ -55,40 +55,40 @@
               </template>
               <!-- thick + dashed spine -->
               <template v-else>
-                <rect
-                  v-if="!isPortrait"
-                  class="dt-diagram-thick"
-                  x="18"
-                  y="34"
-                  width="84"
-                  height="12"
-                  rx="6"
-                />
-                <line
-                  v-if="!isPortrait"
-                  class="dt-diagram-dash"
-                  x1="22"
-                  y1="40"
-                  x2="98"
-                  y2="40"
-                />
-                <rect
-                  v-else
-                  class="dt-diagram-thick"
-                  x="54"
-                  y="14"
-                  width="12"
-                  height="52"
-                  rx="6"
-                />
-                <line
-                  v-else
-                  class="dt-diagram-dash"
-                  x1="60"
-                  y1="18"
-                  x2="60"
-                  y2="62"
-                />
+                <template v-if="!isPortrait">
+                  <rect
+                    class="dt-diagram-thick"
+                    x="18"
+                    y="34"
+                    width="84"
+                    height="12"
+                    rx="6"
+                  />
+                  <line
+                    class="dt-diagram-dash"
+                    x1="22"
+                    y1="40"
+                    x2="98"
+                    y2="40"
+                  />
+                </template>
+                <template v-else>
+                  <rect
+                    class="dt-diagram-thick"
+                    x="54"
+                    y="14"
+                    width="12"
+                    height="52"
+                    rx="6"
+                  />
+                  <line
+                    class="dt-diagram-dash"
+                    x1="60"
+                    y1="18"
+                    x2="60"
+                    y2="62"
+                  />
+                </template>
               </template>
               <!-- nodes -->
               <g v-for="(n, i) in diagramNodes" :key="i">
