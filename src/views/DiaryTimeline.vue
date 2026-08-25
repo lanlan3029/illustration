@@ -8,31 +8,123 @@
     <div class="dt-layout">
       <section class="dt-panel">
         <p class="dt-label">{{ $t('diaryTimeline.styleTitle') }}</p>
-        <div class="dt-option-grid" role="radiogroup">
+        <div class="dt-option-grid" role="radiogroup" :aria-label="$t('diaryTimeline.styleTitle')">
           <button
             v-for="item in styleOptions"
             :key="item.value"
             type="button"
             class="dt-option"
             :class="{ active: style === item.value }"
+            :aria-label="item.aria"
+            :aria-pressed="style === item.value"
             @click="style = item.value"
           >
-            <span class="dt-option-title">{{ item.label }}</span>
-            <span class="dt-option-desc">{{ item.desc }}</span>
+            <svg
+              class="dt-diagram"
+              :class="{ 'dt-diagram--portrait': isPortrait }"
+              viewBox="0 0 120 80"
+              aria-hidden="true"
+            >
+              <!-- paper -->
+              <rect
+                class="dt-diagram-paper"
+                :x="isPortrait ? 38 : 10"
+                :y="isPortrait ? 6 : 14"
+                :width="isPortrait ? 44 : 100"
+                :height="isPortrait ? 68 : 52"
+                rx="4"
+              />
+              <!-- thin spine -->
+              <template v-if="item.value === 'horizontalAlt'">
+                <line
+                  v-if="!isPortrait"
+                  class="dt-diagram-spine"
+                  x1="18"
+                  y1="40"
+                  x2="102"
+                  y2="40"
+                />
+                <line
+                  v-else
+                  class="dt-diagram-spine"
+                  x1="60"
+                  y1="14"
+                  x2="60"
+                  y2="66"
+                />
+              </template>
+              <!-- thick + dashed spine -->
+              <template v-else>
+                <rect
+                  v-if="!isPortrait"
+                  class="dt-diagram-thick"
+                  x="18"
+                  y="34"
+                  width="84"
+                  height="12"
+                  rx="6"
+                />
+                <line
+                  v-if="!isPortrait"
+                  class="dt-diagram-dash"
+                  x1="22"
+                  y1="40"
+                  x2="98"
+                  y2="40"
+                />
+                <rect
+                  v-else
+                  class="dt-diagram-thick"
+                  x="54"
+                  y="14"
+                  width="12"
+                  height="52"
+                  rx="6"
+                />
+                <line
+                  v-else
+                  class="dt-diagram-dash"
+                  x1="60"
+                  y1="18"
+                  x2="60"
+                  y2="62"
+                />
+              </template>
+              <!-- nodes -->
+              <g v-for="(n, i) in diagramNodes" :key="i">
+                <circle class="dt-diagram-dot" :cx="n.cx" :cy="n.cy" r="3.2" />
+                <rect
+                  class="dt-diagram-card"
+                  :x="n.bx"
+                  :y="n.by"
+                  width="14"
+                  height="10"
+                  rx="2"
+                />
+              </g>
+            </svg>
           </button>
         </div>
 
         <p class="dt-label">{{ $t('diaryTimeline.ratioTitle') }}</p>
-        <div class="dt-chip-row" role="radiogroup">
+        <div class="dt-chip-row" role="radiogroup" :aria-label="$t('diaryTimeline.ratioTitle')">
           <button
             v-for="item in ratioOptions"
             :key="item.value"
             type="button"
-            class="dt-chip"
+            class="dt-ratio"
             :class="{ active: ratio === item.value }"
-            @click="ratio = item.value"
+            :aria-label="item.aria"
+            :aria-pressed="ratio === item.value"
+            @click="onRatioChange(item.value)"
           >
-            {{ item.label }}
+            <span
+              class="dt-ratio-frame"
+              :style="{
+                width: item.frameW + 'px',
+                height: item.frameH + 'px',
+              }"
+            />
           </button>
         </div>
 
@@ -109,35 +201,66 @@ import {
 } from '@/utils/diaryTimeline/api'
 
 const STYLE_OPTIONS = [
-  {
-    value: 'horizontalAlt',
-    labelKey: 'diaryTimeline.styleAlt',
-    descKey: 'diaryTimeline.styleAltDesc',
-  },
-  {
-    value: 'horizontalAbove',
-    labelKey: 'diaryTimeline.styleAbove',
-    descKey: 'diaryTimeline.styleAboveDesc',
-  },
-  {
-    value: 'ribbonCompact',
-    labelKey: 'diaryTimeline.styleCompact',
-    descKey: 'diaryTimeline.styleCompactDesc',
-  },
-  {
-    value: 'thickDashedPath',
-    labelKey: 'diaryTimeline.styleThickDashed',
-    descKey: 'diaryTimeline.styleThickDashedDesc',
-  },
+  { value: 'horizontalAlt', ariaKey: 'diaryTimeline.styleAltAria' },
+  { value: 'thickDashedPath', ariaKey: 'diaryTimeline.styleThickDashedAria' },
 ]
 
+/** value + frame size for ratio chip icon */
 const RATIO_OPTIONS = [
-  { value: '16:9', labelKey: 'diaryTimeline.ratio169' },
-  { value: '3:2', labelKey: 'diaryTimeline.ratio32' },
-  { value: '2:1', labelKey: 'diaryTimeline.ratio21' },
-  { value: '4:3', labelKey: 'diaryTimeline.ratio43' },
-  { value: '1:1', labelKey: 'diaryTimeline.ratio11' },
+  { value: '16:9', w: 16, h: 9 },
+  { value: '3:2', w: 3, h: 2 },
+  { value: '2:1', w: 2, h: 1 },
+  { value: '4:3', w: 4, h: 3 },
+  { value: '1:1', w: 1, h: 1 },
+  { value: '3:4', w: 3, h: 4 },
+  { value: '2:3', w: 2, h: 3 },
+  { value: '9:16', w: 9, h: 16 },
 ]
+
+function isPortraitRatio(ratio) {
+  const [w, h] = String(ratio || '').split(':').map(Number)
+  return Number.isFinite(w) && Number.isFinite(h) && h > w
+}
+
+function sideForIndex(i, ratio) {
+  if (isPortraitRatio(ratio)) return i % 2 === 0 ? 'Left' : 'Right'
+  return i % 2 === 0 ? 'Above' : 'Below'
+}
+
+function buildDiagramNodes(portrait) {
+  // 4 nodes alternating along spine
+  if (portrait) {
+    const ys = [22, 34, 46, 58]
+    return ys.map((cy, i) => {
+      const left = i % 2 === 0
+      return {
+        cx: 60,
+        cy,
+        bx: left ? 34 : 72,
+        by: cy - 5,
+      }
+    })
+  }
+  const xs = [30, 50, 70, 90]
+  return xs.map((cx, i) => {
+    const above = i % 2 === 0
+    return {
+      cx,
+      cy: 40,
+      bx: cx - 7,
+      by: above ? 18 : 48,
+    }
+  })
+}
+
+function ratioFrameSize(w, h) {
+  const max = 28
+  const scale = max / Math.max(w, h)
+  return {
+    frameW: Math.max(8, Math.round(w * scale)),
+    frameH: Math.max(8, Math.round(h * scale)),
+  }
+}
 
 export default {
   name: 'DiaryTimeline',
@@ -153,18 +276,27 @@ export default {
     }
   },
   computed: {
+    isPortrait() {
+      return isPortraitRatio(this.ratio)
+    },
+    diagramNodes() {
+      return buildDiagramNodes(this.isPortrait)
+    },
     styleOptions() {
       return STYLE_OPTIONS.map((o) => ({
         value: o.value,
-        label: this.$t(o.labelKey),
-        desc: this.$t(o.descKey),
+        aria: this.$t(o.ariaKey),
       }))
     },
     ratioOptions() {
-      return RATIO_OPTIONS.map((o) => ({
-        value: o.value,
-        label: this.$t(o.labelKey),
-      }))
+      return RATIO_OPTIONS.map((o) => {
+        const frame = ratioFrameSize(o.w, o.h)
+        return {
+          value: o.value,
+          aria: o.value,
+          ...frame,
+        }
+      })
     },
     canExpand() {
       return this.diary.trim().length >= 8
@@ -174,6 +306,19 @@ export default {
     },
   },
   methods: {
+    onRatioChange(value) {
+      this.ratio = value
+      if (this.plan?.nodes?.length) {
+        this.plan = {
+          ...this.plan,
+          ratio: value,
+          nodes: this.plan.nodes.map((n, i) => ({
+            ...n,
+            side: sideForIndex(i, value),
+          })),
+        }
+      }
+    },
     async onExpand() {
       if (!this.canExpand || this.expanding) return
       this.expanding = true
@@ -203,16 +348,23 @@ export default {
             ratio: this.ratio,
           })
           this.plan = data.plan || null
-        }
-        const result = await generateDiaryTimeline(
-          this.$http,
-          {
-            diary: this.diary,
+        } else {
+          this.plan = {
+            ...this.plan,
             style: this.style,
             ratio: this.ratio,
-            plan: this.plan,
+            nodes: (this.plan.nodes || []).map((n, i) => ({
+              ...n,
+              side: sideForIndex(i, this.ratio),
+            })),
           }
-        )
+        }
+        const result = await generateDiaryTimeline(this.$http, {
+          diary: this.diary,
+          style: this.style,
+          ratio: this.ratio,
+          plan: this.plan,
+        })
         this.imageUrl = result.imageUrl
         if (result.plan) this.plan = result.plan
         ElMessage.success(this.$t('diaryTimeline.generateOk'))
@@ -298,17 +450,20 @@ export default {
 
 .dt-option-grid {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
 .dt-option {
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1.5px solid var(--line);
   background: var(--paper);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 10px;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .dt-option.active {
@@ -317,18 +472,45 @@ export default {
   background: #fff;
 }
 
-.dt-option-title {
+.dt-diagram {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
   display: block;
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 4px;
 }
 
-.dt-option-desc {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.45;
+.dt-diagram-paper {
+  fill: #fffdf8;
+  stroke: #d7cec0;
+  stroke-width: 1.5;
+}
+
+.dt-diagram-spine {
+  stroke: #2c2a28;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.dt-diagram-thick {
+  fill: #d9cfc0;
+  stroke: none;
+}
+
+.dt-diagram-dash {
+  stroke: #2c2a28;
+  stroke-width: 1.4;
+  stroke-dasharray: 3 2.5;
+  stroke-linecap: round;
+}
+
+.dt-diagram-dot {
+  fill: #2c2a28;
+}
+
+.dt-diagram-card {
+  fill: #fff;
+  stroke: #2c2a28;
+  stroke-width: 1.2;
 }
 
 .dt-chip-row {
@@ -337,20 +519,31 @@ export default {
   gap: 8px;
 }
 
-.dt-chip {
+.dt-ratio {
+  width: 44px;
+  height: 44px;
   border: 1.5px solid var(--line);
   background: #fff;
-  border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  padding: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.dt-chip.active {
+.dt-ratio.active {
   border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
+  background: #f3efe8;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.dt-ratio-frame {
+  display: block;
+  border: 1.5px solid #2c2a28;
+  border-radius: 2px;
+  background: #f7f1e6;
 }
 
 .dt-actions {
