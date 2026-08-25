@@ -40,13 +40,28 @@
                         </div>
                     </el-card>
                 </router-link>
+                <router-link
+                    v-if="isAdmin"
+                    to="/user/upload/website-recommendations"
+                    class="upload-card"
+                >
+                    <el-card class="card" shadow="hover">
+                        <div class="card-content">
+                            <div class="icon-wrapper">
+                                <el-icon class="card-icon"><LinkIcon /></el-icon>
+                            </div>
+                            <h3 class="card-title">{{ $t('upload.uploadWebsiteReco') }}</h3>
+                            <p class="card-desc">{{ $t('upload.uploadWebsiteRecoDesc') }}</p>
+                        </div>
+                    </el-card>
+                </router-link>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import { Picture as UploadPictureIcon, Reading as UploadReadingIcon, Brush as BrushIcon } from '@element-plus/icons-vue'
+import { Picture as UploadPictureIcon, Reading as UploadReadingIcon, Brush as BrushIcon, Link as LinkIcon } from '@element-plus/icons-vue'
 import { isCurrentUserAdmin } from '@/utils/auth'
 
 export default {
@@ -55,6 +70,7 @@ export default {
     UploadPictureIcon,
     UploadReadingIcon,
     BrushIcon,
+    LinkIcon,
   },
   computed: {
     isAdmin() {

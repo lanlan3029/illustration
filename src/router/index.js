@@ -55,6 +55,13 @@ const routes = [{
         meta: { seoTitle: '原创插画' }
     },
     {
+        path: '/websites',
+        name: 'website-recommendations',
+        component: () =>
+            import ( /* webpackChunkName: "website-reco" */ '../views/WebsiteRecommendations.vue'),
+        meta: { seoTitle: '网站推荐' }
+    },
+    {
         path: '/books/:bookId',
         name: 'bookdetails',
         component: () =>
@@ -217,6 +224,17 @@ const routes = [{
             requiresAuth: true,
             requiresAdmin: true,
             seoTitle: '上传 AI 风格'
+        }
+    },
+    {
+        path: '/user/upload/website-recommendations',
+        name: 'upload-website-recommendations',
+        component: () =>
+            import ( /* webpackChunkName: "upload-website-reco" */ '../views/UploadWebsiteRecommendation.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            seoTitle: '上传网站推荐'
         }
     },
     {
