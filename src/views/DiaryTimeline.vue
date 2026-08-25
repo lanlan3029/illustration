@@ -90,16 +90,13 @@
                   />
                 </template>
               </template>
-              <!-- nodes -->
+              <!-- nodes: tiny bare doodles, no frames -->
               <g v-for="(n, i) in diagramNodes" :key="i">
-                <circle class="dt-diagram-dot" :cx="n.cx" :cy="n.cy" r="3.2" />
-                <rect
-                  class="dt-diagram-card"
-                  :x="n.bx"
-                  :y="n.by"
-                  width="14"
-                  height="10"
-                  rx="2"
+                <circle class="dt-diagram-dot" :cx="n.cx" :cy="n.cy" r="2.4" />
+                <path
+                  class="dt-diagram-doodle"
+                  :transform="`translate(${n.dx},${n.dy})`"
+                  :d="n.doodlePath"
                 />
               </g>
             </svg>
@@ -118,13 +115,16 @@
             :aria-pressed="ratio === item.value"
             @click="onRatioChange(item.value)"
           >
-            <span
-              class="dt-ratio-frame"
-              :style="{
-                width: item.frameW + 'px',
-                height: item.frameH + 'px',
-              }"
-            />
+            <span class="dt-ratio-paper">
+              <span
+                class="dt-ratio-frame"
+                :style="{
+                  width: item.frameW + 'px',
+                  height: item.frameH + 'px',
+                }"
+              />
+            </span>
+            <span class="dt-ratio-label">{{ item.value }}</span>
           </button>
         </div>
 
@@ -227,8 +227,19 @@ function sideForIndex(i, ratio) {
   return i % 2 === 0 ? 'Above' : 'Below'
 }
 
+const DOODLE_PATHS = [
+  // tiny star-ish mark
+  'M4 0 L5 3 L8 4 L5 5 L4 8 L3 5 L0 4 L3 3 Z',
+  // tiny cup
+  'M1 2 H7 V6 Q4 8 1 6 Z M7 3 H8.5 V5 H7',
+  // tiny house
+  'M4 1 L7 3.5 H1 Z M2 3.5 H6 V7 H2 Z',
+  // tiny moon
+  'M6 1.5 A3.2 3.2 0 1 0 6 6.5 A2.2 2.2 0 1 1 6 1.5 Z',
+]
+
 function buildDiagramNodes(portrait) {
-  // 4 nodes alternating along spine
+  // 4 nodes alternating along spine — tiny bare doodles, no frames
   if (portrait) {
     const ys = [22, 34, 46, 58]
     return ys.map((cy, i) => {
@@ -236,8 +247,9 @@ function buildDiagramNodes(portrait) {
       return {
         cx: 60,
         cy,
-        bx: left ? 34 : 72,
-        by: cy - 5,
+        dx: left ? 38 : 68,
+        dy: cy - 4,
+        doodlePath: DOODLE_PATHS[i % DOODLE_PATHS.length],
       }
     })
   }
@@ -247,8 +259,9 @@ function buildDiagramNodes(portrait) {
     return {
       cx,
       cy: 40,
-      bx: cx - 7,
-      by: above ? 18 : 48,
+      dx: cx - 4,
+      dy: above ? 22 : 46,
+      doodlePath: DOODLE_PATHS[i % DOODLE_PATHS.length],
     }
   })
 }
@@ -507,10 +520,10 @@ export default {
   fill: #2c2a28;
 }
 
-.dt-diagram-card {
-  fill: #fff;
-  stroke: #2c2a28;
-  stroke-width: 1.2;
+.dt-diagram-doodle {
+  fill: #2c2a28;
+  stroke: none;
+  opacity: 0.85;
 }
 
 .dt-chip-row {
@@ -520,16 +533,17 @@ export default {
 }
 
 .dt-ratio {
-  width: 44px;
-  height: 44px;
+  min-width: 52px;
   border: 1.5px solid var(--line);
   background: #fff;
   border-radius: 10px;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 6px;
   cursor: pointer;
-  padding: 0;
+  padding: 8px 6px 6px;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
@@ -539,11 +553,27 @@ export default {
   box-shadow: 0 0 0 1px var(--accent);
 }
 
+.dt-ratio-paper {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .dt-ratio-frame {
   display: block;
   border: 1.5px solid #2c2a28;
   border-radius: 2px;
   background: #f7f1e6;
+}
+
+.dt-ratio-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: 0.02em;
 }
 
 .dt-actions {
