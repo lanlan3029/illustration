@@ -268,6 +268,17 @@ const routes = [{
                 meta: { creationDomain: 'illustration', requiresAuth: true },
             },
             {
+                path: 'illustration/diary-timeline',
+                name: 'diary-timeline',
+                component: () =>
+                    import(/* webpackChunkName: "diary-timeline" */ '../views/DiaryTimeline.vue'),
+                meta: {
+                    creationDomain: 'illustration',
+                    requiresAuth: true,
+                    seoTitle: '日记时间线',
+                },
+            },
+            {
                 path: 'illustration/mine',
                 name: 'my-illustrations',
                 component: () =>
