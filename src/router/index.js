@@ -286,17 +286,6 @@ const routes = [{
                 meta: { creationDomain: 'illustration', requiresAuth: true },
             },
             {
-                path: 'illustration/diary-timeline',
-                name: 'diary-timeline',
-                component: () =>
-                    import(/* webpackChunkName: "diary-timeline" */ '../views/DiaryTimeline.vue'),
-                meta: {
-                    creationDomain: 'illustration',
-                    requiresAuth: true,
-                    seoTitle: '日记时间线',
-                },
-            },
-            {
                 path: 'illustration/mine',
                 name: 'my-illustrations',
                 component: () =>
@@ -401,6 +390,20 @@ const routes = [{
             requiresAuth: false,
             seoTitle: '在线插画编辑',
         },
+    },
+    {
+        path: '/diary-timeline',
+        name: 'diary-timeline',
+        component: () =>
+            import(/* webpackChunkName: "diary-timeline" */ '../views/DiaryTimeline.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '日记时间线',
+        },
+    },
+    {
+        path: '/creation-studio/illustration/diary-timeline',
+        redirect: '/diary-timeline',
     },
     {
         path: '/lasso-crop',

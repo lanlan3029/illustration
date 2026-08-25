@@ -57,6 +57,7 @@ export default {
       '/create-group-images',
       '/create-layout-illustration',
       '/editorpro',
+      '/diary-timeline',
       '/image-segmentation',
       '/lasso-crop',
       '/user/upload/compose-illustration'

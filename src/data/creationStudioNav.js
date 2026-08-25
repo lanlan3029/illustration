@@ -50,10 +50,6 @@ export const CREATION_SUB_NAV = {
       labelKey: 'nav.aiIllustration',
     },
     {
-      routeName: 'diary-timeline',
-      labelKey: 'creationStudio.diaryTimeline',
-    },
-    {
       routeName: 'my-illustrations',
       labelKey: 'creationStudio.myIllustrations',
     },

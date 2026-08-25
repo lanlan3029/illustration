@@ -463,6 +463,7 @@
     "createGroupImages": "创作组图",
     "createLayoutIllustration": "布局编辑器创作",
     "createIllustration": "图片编辑器",
+    "diaryTimeline": "日记时间线",
     "imageSegmentation": "图像分割",
     "lassoCrop": "自由裁剪贴纸",
     "composeBook": "合成绘本",
@@ -474,6 +475,7 @@
     "connection": "创作指南",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
+    "websites": "网站推荐",
     "my": "我的"
   },
   "moodDiary": {
@@ -1393,7 +1395,6 @@
     "characterGroups": "角色组图",
     "myIllustrations": "我的插画",
     "myIllustrationsDesc": "查看、编辑和下载你保存的插画作品。",
-    "diaryTimeline": "日记时间线",
     "myBooks": "我的绘本",
     "myBooksDesc": "管理已创作的绘本，阅读、编辑或删除。"
   },

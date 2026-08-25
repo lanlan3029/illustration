@@ -132,6 +132,8 @@ onMounted(() => {
     controlsAboveOverlay: true, // 超出clipPath后仍然展示控制条
     // imageSmoothingEnabled: false, // 解决文字导出后不清晰问题
     preserveObjectStacking: true, // 当选择画布中的对象时，让对象不在顶层。
+    // 默认自由缩放（边可单轴拉伸）；按住 Shift 才等比。fabric 默认 true 会导致只能比例缩放。
+    uniformScaling: false,
   });
 
   // 初始化编辑器（基于本地 kuaitu-core）

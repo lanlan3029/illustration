@@ -448,6 +448,7 @@
     "createGroupImages": "Create Group Images",
     "createLayoutIllustration": "Layout Editor Creation",
     "createIllustration": "DIY Illustration",
+    "diaryTimeline": "Diary Timeline",
     "imageSegmentation": "Image Segmentation",
     "lassoCrop": "Free-form Sticker Crop",
     "composeBook": "Compose Book",
@@ -459,6 +460,7 @@
     "connection": "Guides",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
+    "websites": "Websites",
     "my": "Mine"
   },
   "moodDiary": {
@@ -1378,7 +1380,6 @@
     "characterGroups": "Character Groups",
     "myIllustrations": "My Illustrations",
     "myIllustrationsDesc": "View, edit, and download your saved illustrations.",
-    "diaryTimeline": "Diary Timeline",
     "myBooks": "My Books",
     "myBooksDesc": "Manage your picture books — read, edit, or delete."
   },

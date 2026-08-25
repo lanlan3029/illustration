@@ -182,6 +182,7 @@ export default {
             { key: 'home', to: '/', label: 'nav.home', mobile: true },
             { key: 'upload', to: '/user/upload', label: 'common.upload', mobile: false },
             { key: 'books', to: '/books', label: 'common.books', mobile: true },
+            { key: 'websites', to: '/websites', label: 'nav.websites', mobile: true },
             { key: 'moodDiary', to: '/mood-diary', label: 'nav.moodDiary', linkClass: 'nav-link-mood-diary', mobile: true },
         ]
 
@@ -189,6 +190,7 @@ export default {
         const creationItems = [
             { to: '/creation-studio', label: 'nav.characterStudio' },
             { to: '/editorpro', label: 'nav.createIllustration' },
+            { to: '/diary-timeline', label: 'nav.diaryTimeline' },
             { to: '/image-segmentation', label: 'nav.imageSegmentation' },
             { to: '/lasso-crop', label: 'nav.lassoCrop' },
             { to: '/creation-studio/book/compose', label: 'nav.layoutExport' },
@@ -207,6 +209,7 @@ export default {
                 p.startsWith('/creation-studio') ||
                 p.startsWith('/character-studio') ||
                 p.startsWith('/editorpro') ||
+                p.startsWith('/diary-timeline') ||
                 p.startsWith('/image-segmentation') ||
                 p.startsWith('/lasso-crop') ||
                 p.startsWith('/user/upload/compose-illustration') ||
@@ -215,11 +218,13 @@ export default {
         })
 
         const isMoodDiaryRoute = computed(() => route.path.startsWith('/mood-diary'))
+        const isWebsitesRoute = computed(() => route.path.startsWith('/websites'))
 
         // 统一的「当前项是否激活」判断，桌面与手机共用
         const isNavActive = (item) => {
             if (!item) return false
             if (item.key === 'moodDiary') return isMoodDiaryRoute.value
+            if (item.key === 'websites') return isWebsitesRoute.value
             return route.path === item.to
         }
         
