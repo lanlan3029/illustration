@@ -1345,6 +1345,8 @@
     "styleAboveDesc": "Spine lower; all events hang above with more bottom margin",
     "styleCompact": "Compact ribbon",
     "styleCompactDesc": "Still alternating, tighter spacing for denser days",
+    "styleThickDashed": "Thick path + dashed center",
+    "styleThickDashedDesc": "A thick ribbon path with a thin dashed line down the middle; nodes left/right along a gentle curve",
     "ratioTitle": "Paper ratio",
     "ratio169": "16:9 landscape",
     "ratio32": "3:2",

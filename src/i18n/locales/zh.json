@@ -1360,6 +1360,8 @@
     "styleAboveDesc": "横线偏下，全部节点挂在轴上方，下方留白更多",
     "styleCompact": "紧凑横带",
     "styleCompactDesc": "仍是上下交替，间距更紧，适合内容稍多的一天",
+    "styleThickDashed": "粗线夹虚线",
+    "styleThickDashedDesc": "一根粗路径，正中间再画一条虚线；可轻微弯折，节点左右排布",
     "ratioTitle": "纸张比例",
     "ratio169": "16:9 横图",
     "ratio32": "3:2",

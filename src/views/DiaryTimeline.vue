@@ -124,6 +124,11 @@ const STYLE_OPTIONS = [
     labelKey: 'diaryTimeline.styleCompact',
     descKey: 'diaryTimeline.styleCompactDesc',
   },
+  {
+    value: 'thickDashedPath',
+    labelKey: 'diaryTimeline.styleThickDashed',
+    descKey: 'diaryTimeline.styleThickDashedDesc',
+  },
 ]
 
 const RATIO_OPTIONS = [
