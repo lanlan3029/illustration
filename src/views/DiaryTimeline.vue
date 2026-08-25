@@ -34,7 +34,7 @@
                 :height="isPortrait ? 68 : 52"
                 rx="4"
               />
-              <!-- thin spine -->
+              <!-- thin solid spine + dotted stubs (style A / 图一) -->
               <template v-if="item.value === 'horizontalAlt'">
                 <line
                   v-if="!isPortrait"
@@ -52,8 +52,17 @@
                   x2="60"
                   y2="66"
                 />
+                <line
+                  v-for="(n, i) in diagramNodes"
+                  :key="'stub-' + i"
+                  class="dt-diagram-stub"
+                  :x1="n.cx"
+                  :y1="n.cy"
+                  :x2="n.stubX"
+                  :y2="n.stubY"
+                />
               </template>
-              <!-- thick + dashed spine -->
+              <!-- thick + dashed spine (style B / 图二) -->
               <template v-else>
                 <template v-if="!isPortrait">
                   <rect
@@ -158,7 +167,7 @@
           <div class="dt-plan-head">
             <h2>{{ $t('diaryTimeline.planTitle') }}</h2>
             <p>
-              {{ plan.place_en }} · Day {{ plan.day }}
+              {{ plan.place_en }}
               <span v-if="plan.notes" class="dt-notes"> · {{ plan.notes }}</span>
             </p>
           </div>
@@ -239,7 +248,7 @@ const DOODLE_PATHS = [
 ]
 
 function buildDiagramNodes(portrait) {
-  // 4 nodes alternating along spine — tiny bare doodles, no frames
+  // 4 nodes alternating along spine — tiny bare doodles + stub endpoints
   if (portrait) {
     const ys = [22, 34, 46, 58]
     return ys.map((cy, i) => {
@@ -247,6 +256,8 @@ function buildDiagramNodes(portrait) {
       return {
         cx: 60,
         cy,
+        stubX: left ? 48 : 72,
+        stubY: cy,
         dx: left ? 38 : 68,
         dy: cy - 4,
         doodlePath: DOODLE_PATHS[i % DOODLE_PATHS.length],
@@ -259,8 +270,10 @@ function buildDiagramNodes(portrait) {
     return {
       cx,
       cy: 40,
+      stubX: cx,
+      stubY: above ? 30 : 50,
       dx: cx - 4,
-      dy: above ? 22 : 46,
+      dy: above ? 18 : 52,
       doodlePath: DOODLE_PATHS[i % DOODLE_PATHS.length],
     }
   })
@@ -501,6 +514,13 @@ export default {
 .dt-diagram-spine {
   stroke: #2c2a28;
   stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.dt-diagram-stub {
+  stroke: #2c2a28;
+  stroke-width: 1.2;
+  stroke-dasharray: 2.5 2;
   stroke-linecap: round;
 }
 
