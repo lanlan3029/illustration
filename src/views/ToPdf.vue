@@ -106,7 +106,7 @@
                     </div>
                   </div>
 
-                  <!-- 翻动页：绕书脊 rotateY -->
+                  <!-- 翻动页：绕书脊 rotateY；背面直接贴目标页，避免翻过中途露出灰纸 -->
                   <div
                     v-if="flipLeaf"
                     class="book-page-leaf"
@@ -131,7 +131,22 @@
                       <span class="book-page-leaf__gloss" aria-hidden="true" />
                     </div>
                     <div class="book-page-leaf__face book-page-leaf__back" aria-hidden="true">
-                      <span class="book-page-leaf__paper" />
+                      <div class="book-face-art">
+                        <template v-if="flipLeaf.backPage && !flipLeaf.backPage.blank && flipLeaf.backPage.src">
+                          <img :src="flipLeaf.backPage.src" alt="" />
+                        </template>
+                        <div
+                          v-else-if="flipLeaf.backSheetType === 'title'"
+                          class="book-placeholder book-placeholder--title"
+                        >
+                          <em>{{ $t('toPdf.roleTitle') }}</em>
+                          <strong>{{ form.title || $t('toPdf.bookTitlePlaceholder') }}</strong>
+                        </div>
+                        <div v-else class="book-placeholder book-placeholder--muted">
+                          <span>{{ $t('toPdf.blankPage') }}</span>
+                        </div>
+                      </div>
+                      <span class="book-page-leaf__gloss book-page-leaf__gloss--back" aria-hidden="true" />
                     </div>
                   </div>
                 </div>
@@ -603,12 +618,16 @@ export default {
       if (this.flipTimer) clearTimeout(this.flipTimer);
 
       if (isSpread(fromSheet) && isSpread(toSheet)) {
+        // 同一张纸：正面=较早展的右页，背面=较晚展的左页；下层右页=较晚展的右页
+        // 往前 A→B：正 from.right / 背 to.left / 下 to.right
+        // 往后 B→A：正 to.right / 背 from.left / 下 from.right（起始 -180 先见背面）
         if (direction === 'next') {
-          // 旧右页贴在翻动叶正面，下层换成新右页，叶从 0 → -180
           this.flipLeaf = {
             direction,
             page: fromSheet.right,
             sheetType: fromSheet.type,
+            backPage: toSheet.left,
+            backSheetType: toSheet.type,
           };
           this.flipLeafFlipped = false;
           this.rightUnderOverride = null;
@@ -619,12 +638,13 @@ export default {
             });
           });
         } else {
-          // 新右页在翻动叶正面，先藏在 -180，下层暂留旧右页，再翻到 0
           this.rightUnderOverride = fromSheet.right || { blank: true };
           this.flipLeaf = {
             direction,
             page: toSheet.right,
             sheetType: toSheet.type,
+            backPage: fromSheet.left,
+            backSheetType: fromSheet.type,
           };
           this.flipLeafFlipped = true;
           this.sheetIndex = idx;
@@ -1007,24 +1027,8 @@ export default {
 
 .book-page-leaf__back {
   transform: rotateY(180deg);
-  background:
-    linear-gradient(90deg, #d8d2c8 0%, #f4f0ea 12%, #f7f3ed 100%);
-  box-shadow: inset 12px 0 18px rgba(0, 0, 0, 0.12);
-}
-
-.book-page-leaf__paper {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 11px,
-      rgba(0, 0, 0, 0.015) 11px,
-      rgba(0, 0, 0, 0.015) 12px
-    ),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.06), transparent 18%);
+  background: #fff;
+  box-shadow: inset 12px 0 18px rgba(0, 0, 0, 0.1);
 }
 
 .book-page-leaf__gloss {
@@ -1041,8 +1045,22 @@ export default {
   transition: opacity 0.85s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
-.book-page-leaf.is-flipped .book-page-leaf__gloss {
+.book-page-leaf.is-flipped .book-page-leaf__gloss:not(.book-page-leaf__gloss--back) {
   opacity: 1;
+}
+
+.book-page-leaf__gloss--back {
+  background: linear-gradient(
+    270deg,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.04) 16%,
+    transparent 44%
+  );
+  opacity: 1;
+}
+
+.book-page-leaf.is-flipped .book-page-leaf__gloss--back {
+  opacity: 0;
 }
 
 .book-face-art {
