@@ -33,8 +33,9 @@
 
 <script name="Home" setup>
 import { reactive, onMounted, onUnmounted, provide, nextTick, computed } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { takeEditorproPendingImage } from '@/utils/editorproPendingImage';
+import { takeEditorproPendingImage, peekEditorproPendingImage } from '@/utils/editorproPendingImage';
 import Top from '@/components/editorPro/top/index.vue';
 import Left from '@/components/editorPro/left/index.vue';
 import Right from '@/components/editorPro/right/index.vue';
@@ -86,6 +87,16 @@ import localFonts from '@/assets/editorpro/fonts/font.js';
 import { installPhotoSlotSelectionSync } from '@/utils/editorPro/photoSlotContext';
 import { installPhotoSlotPanConstraint } from '@/utils/editorPro/pageTemplate';
 import { preloadEditorFonts } from '@/utils/editorPro/preloadFonts';
+import {
+  buildEditorproDraftJson,
+  canvasHasUserContent,
+  clearEditorproDraft,
+  jsonHasUserContent,
+  loadEditorproDraft,
+  saveEditorproDraft,
+  saveEditorproDraftSync,
+} from '@/utils/editorPro/localDraft';
+import { ElMessage } from 'element-plus';
 
 const { t } = useI18n();
 const { isMobileEditor } = useEditorMobile();
@@ -119,7 +130,112 @@ let canvas = null;
 const canvasEditor = new Editor();
 let uninstallPhotoSlotSync = null;
 let uninstallPhotoSlotPan = null;
+let draftSaveTimer = null;
+let draftRestoring = false;
 
+const DRAFT_AUTOSAVE_EVENTS = [
+  'object:added',
+  'object:modified',
+  'object:removed',
+  'path:created',
+  'object:skewing',
+];
+
+function scheduleDraftSave() {
+  if (!canvas || draftRestoring) return;
+  if (draftSaveTimer) clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => {
+    draftSaveTimer = null;
+    void flushDraftSave({ embedImages: false });
+  }, 900);
+}
+
+async function flushDraftSave({ embedImages = false } = {}) {
+  if (!canvas || !canvasEditor?.getJson || draftRestoring) return;
+  try {
+    if (!canvasHasUserContent(canvas)) {
+      await clearEditorproDraft();
+      return;
+    }
+    const json = embedImages
+      ? await buildEditorproDraftJson(canvas, () => canvasEditor.getJson())
+      : canvasEditor.getJson();
+    if (!jsonHasUserContent(json)) {
+      await clearEditorproDraft();
+      return;
+    }
+    await saveEditorproDraft(json);
+  } catch (e) {
+    console.warn('[editorpro] draft save failed', e);
+  }
+}
+
+function flushDraftSaveSync() {
+  if (!canvas || !canvasEditor?.getJson || draftRestoring) return;
+  try {
+    if (!canvasHasUserContent(canvas)) {
+      clearEditorproDraft();
+      return;
+    }
+    const json = canvasEditor.getJson();
+    if (jsonHasUserContent(json)) saveEditorproDraftSync(json);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function onBeforeUnload() {
+  flushDraftSaveSync();
+}
+
+function onPageHide() {
+  flushDraftSaveSync();
+  void flushDraftSave({ embedImages: true });
+}
+
+function bindDraftAutosave() {
+  if (!canvas) return;
+  DRAFT_AUTOSAVE_EVENTS.forEach((ev) => canvas.on(ev, scheduleDraftSave));
+  window.addEventListener('beforeunload', onBeforeUnload);
+  window.addEventListener('pagehide', onPageHide);
+}
+
+function unbindDraftAutosave() {
+  if (draftSaveTimer) {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = null;
+  }
+  if (canvas) {
+    DRAFT_AUTOSAVE_EVENTS.forEach((ev) => canvas.off(ev, scheduleDraftSave));
+  }
+  window.removeEventListener('beforeunload', onBeforeUnload);
+  window.removeEventListener('pagehide', onPageHide);
+}
+
+async function restoreLocalDraft() {
+  if (!canvasEditor?.loadJSON) return false;
+  try {
+    const json = await loadEditorproDraft();
+    if (!json || !jsonHasUserContent(json)) return false;
+    draftRestoring = true;
+    await new Promise((resolve) => {
+      canvasEditor.loadJSON(json, () => resolve());
+    });
+    ElMessage.success(t('toolbar.draftRestored'));
+    return true;
+  } catch (e) {
+    console.warn('[editorpro] draft restore failed', e);
+    return false;
+  } finally {
+    draftRestoring = false;
+  }
+}
+
+// 本地已自动保存，站内切路由不弹确认；离开前静默落盘即可
+onBeforeRouteLeave(async (_to, _from, next) => {
+  await flushDraftSave({ embedImages: true });
+  next();
+});
 
 onMounted(() => {
   // 一进编辑器就后台预加载自定义字体，避免点开下拉才开始下几十 MB
@@ -188,10 +304,16 @@ onMounted(() => {
   uninstallPhotoSlotSync = installPhotoSlotSelectionSync(canvasEditor);
   uninstallPhotoSlotPan = installPhotoSlotPanConstraint(canvas);
 
-  // 「我的插画」编辑入口：带入图片到画布
+  // 优先载入「待编辑插画」；否则恢复本地草稿，避免切页后画布被清空
   nextTick(() => {
-    setTimeout(() => {
-      loadPendingIllustrationImage();
+    setTimeout(async () => {
+      const pending = peekEditorproPendingImage();
+      if (pending?.url) {
+        await loadPendingIllustrationImage();
+      } else {
+        await restoreLocalDraft();
+      }
+      bindDraftAutosave();
     }, 350);
   });
 });
@@ -212,12 +334,16 @@ async function loadPendingIllustrationImage() {
     });
     const imgItem = await canvasEditor.createImgByElement(imgEl);
     canvasEditor.addBaseType(imgItem, { scale: true });
+    scheduleDraftSave();
   } catch (e) {
     console.error('[editorpro] 载入待编辑插画失败:', e);
   }
 }
 
 onUnmounted(() => {
+  unbindDraftAutosave();
+  // 路由离开时已 await 嵌入图片保存；此处仅同步兜底，避免 dispose 后异步写盘
+  flushDraftSaveSync();
   close();
   uninstallPhotoSlotSync?.();
   uninstallPhotoSlotSync = null;
@@ -225,6 +351,7 @@ onUnmounted(() => {
   uninstallPhotoSlotPan = null;
   if (canvas) {
     canvas.dispose();
+    canvas = null;
   }
 });
 const rulerSwitch = (val) => {

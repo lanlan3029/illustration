@@ -1564,7 +1564,9 @@
     "styleTransferFailedRetry": "AI optimization failed, please try again",
     "saveDraft": "Save Draft",
     "saveDraftSuccess": "Draft saved successfully!",
-    "saveDraftFailedRetry": "Draft saved failed, please try again"
+    "saveDraftFailedRetry": "Draft saved failed, please try again",
+    "leaveUnsavedConfirm": "Your canvas is auto-saved locally. Leave the image editor anyway?",
+    "draftRestored": "Restored your local unsaved edit"
   },
   "componentList": {
     "insertText": "Insert Text",

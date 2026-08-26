@@ -27,6 +27,28 @@ export function setEditorproPendingImage(url, meta = {}) {
   }
 }
 
+export function peekEditorproPendingImage() {
+  if (memoryPending?.url) {
+    return { url: memoryPending.url, meta: memoryPending.meta || null }
+  }
+  try {
+    const url = sessionStorage.getItem(IMAGE_KEY) || ''
+    if (!url) return { url: '', meta: null }
+    let meta = null
+    const raw = sessionStorage.getItem(META_KEY)
+    if (raw) {
+      try {
+        meta = JSON.parse(raw)
+      } catch (e) {
+        meta = null
+      }
+    }
+    return { url, meta }
+  } catch (e) {
+    return { url: '', meta: null }
+  }
+}
+
 export function takeEditorproPendingImage() {
   if (memoryPending?.url) {
     const out = { url: memoryPending.url, meta: memoryPending.meta || null }

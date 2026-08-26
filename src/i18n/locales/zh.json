@@ -1579,7 +1579,9 @@
     "styleTransferFailedRetry": "AI优化失败，请重试",
     "saveDraft": "保存草稿",
     "saveDraftSuccess": "草稿保存成功！",
-    "saveDraftFailedRetry": "草稿保存失败，请重试"
+    "saveDraftFailedRetry": "草稿保存失败，请重试",
+    "leaveUnsavedConfirm": "画布内容已自动保存在本地。确定离开图片编辑器吗？",
+    "draftRestored": "已恢复本地未完成的编辑"
   },
   "componentList": {
     "insertText": "插入文字",
