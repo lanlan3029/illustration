@@ -69,34 +69,34 @@
               </div>
             </transition>
 
-            <!-- 扉页 / 内页：左侧不动，仅右侧翻页 -->
+            <!-- 扉页 / 内页：左侧不动，右侧 3D 翻页 -->
             <div
               v-else
               class="book-face book-face--spread"
             >
               <div class="book-half book-half--left">
-                <transition name="book-left-fade">
-                  <div :key="`sheet-${sheetIndex}-left`" class="book-face-art">
-                    <img
-                      v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src"
-                      :src="currentSheet.left.src"
-                      alt=""
-                    />
-                    <div v-else class="book-placeholder book-placeholder--muted">
-                      <span>{{ currentSheet.leftLabel || $t('toPdf.blankPage') }}</span>
-                    </div>
+                <div :key="`sheet-${sheetIndex}-left`" class="book-face-art">
+                  <img
+                    v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src"
+                    :src="currentSheet.left.src"
+                    alt=""
+                  />
+                  <div v-else class="book-placeholder book-placeholder--muted">
+                    <span>{{ currentSheet.leftLabel || $t('toPdf.blankPage') }}</span>
                   </div>
-                </transition>
+                </div>
               </div>
               <div class="book-half book-half--right">
-                <transition :name="rightFlipTransition">
-                  <div :key="`sheet-${sheetIndex}-right`" class="book-face-art book-face-art--flip">
-                    <img
-                      v-if="currentSheet.right && !currentSheet.right.blank && currentSheet.right.src"
-                      :src="currentSheet.right.src"
-                      alt=""
-                    />
-                    <div v-else-if="currentSheet.type === 'title'" class="book-placeholder book-placeholder--title">
+                <div class="book-page-stack">
+                  <!-- 下层：翻页后露出的右页 -->
+                  <div class="book-face-art book-page-under">
+                    <template v-if="rightUnderPage && !rightUnderPage.blank && rightUnderPage.src">
+                      <img :src="rightUnderPage.src" alt="" />
+                    </template>
+                    <div
+                      v-else-if="currentSheet.type === 'title' && !(rightUnderPage && rightUnderPage.src)"
+                      class="book-placeholder book-placeholder--title"
+                    >
                       <em>{{ $t('toPdf.roleTitle') }}</em>
                       <strong>{{ form.title || $t('toPdf.bookTitlePlaceholder') }}</strong>
                       <span v-if="form.desc" class="book-title-desc">{{ form.desc }}</span>
@@ -105,7 +105,36 @@
                       <span>{{ $t('toPdf.blankPage') }}</span>
                     </div>
                   </div>
-                </transition>
+
+                  <!-- 翻动页：绕书脊 rotateY -->
+                  <div
+                    v-if="flipLeaf"
+                    class="book-page-leaf"
+                    :class="{ 'is-flipped': flipLeafFlipped }"
+                  >
+                    <div class="book-page-leaf__face book-page-leaf__front">
+                      <div class="book-face-art">
+                        <template v-if="flipLeaf.page && !flipLeaf.page.blank && flipLeaf.page.src">
+                          <img :src="flipLeaf.page.src" alt="" />
+                        </template>
+                        <div
+                          v-else-if="flipLeaf.sheetType === 'title'"
+                          class="book-placeholder book-placeholder--title"
+                        >
+                          <em>{{ $t('toPdf.roleTitle') }}</em>
+                          <strong>{{ form.title || $t('toPdf.bookTitlePlaceholder') }}</strong>
+                        </div>
+                        <div v-else class="book-placeholder book-placeholder--muted">
+                          <span>{{ $t('toPdf.blankPage') }}</span>
+                        </div>
+                      </div>
+                      <span class="book-page-leaf__gloss" aria-hidden="true" />
+                    </div>
+                    <div class="book-page-leaf__face book-page-leaf__back" aria-hidden="true">
+                      <span class="book-page-leaf__paper" />
+                    </div>
+                  </div>
+                </div>
               </div>
               <span class="book-face-badge">{{ sheetBadge }}</span>
             </div>
@@ -287,6 +316,10 @@ export default {
       isFlipping: false,
       flipDirection: 'next',
       flipTimer: null,
+      flipLeaf: null,
+      flipLeafFlipped: false,
+      /** 翻页过程中强制下层右页（上一页），避免 prev 时闪成新图 */
+      rightUnderOverride: null,
       dragIndex: null,
       dragOverIndex: null,
       form: {
@@ -342,9 +375,9 @@ export default {
     flipTransition() {
       return this.flipDirection === 'prev' ? 'book-flip-prev' : 'book-flip-next';
     },
-    /** 跨页时只翻右页，轴在书脊（右页左缘） */
-    rightFlipTransition() {
-      return this.flipDirection === 'prev' ? 'book-right-flip-prev' : 'book-right-flip-next';
+    rightUnderPage() {
+      if (this.rightUnderOverride) return this.rightUnderOverride;
+      return this.currentSheet.right || null;
     },
     totalPages() {
       return this.editablePages.length;
@@ -560,14 +593,65 @@ export default {
     },
     goSheet(idx) {
       if (idx === this.sheetIndex || this.isFlipping) return;
-      this.flipDirection = idx > this.sheetIndex ? 'next' : 'prev';
+      const direction = idx > this.sheetIndex ? 'next' : 'prev';
+      const fromSheet = this.sheets[this.sheetIndex];
+      const toSheet = this.sheets[idx];
+      const isSpread = (s) => s && (s.type === 'title' || s.type === 'spread');
+
+      this.flipDirection = direction;
       this.isFlipping = true;
-      this.sheetIndex = idx;
       if (this.flipTimer) clearTimeout(this.flipTimer);
+
+      if (isSpread(fromSheet) && isSpread(toSheet)) {
+        if (direction === 'next') {
+          // 旧右页贴在翻动叶正面，下层换成新右页，叶从 0 → -180
+          this.flipLeaf = {
+            direction,
+            page: fromSheet.right,
+            sheetType: fromSheet.type,
+          };
+          this.flipLeafFlipped = false;
+          this.rightUnderOverride = null;
+          this.sheetIndex = idx;
+          this.$nextTick(() => {
+            requestAnimationFrame(() => {
+              this.flipLeafFlipped = true;
+            });
+          });
+        } else {
+          // 新右页在翻动叶正面，先藏在 -180，下层暂留旧右页，再翻到 0
+          this.rightUnderOverride = fromSheet.right || { blank: true };
+          this.flipLeaf = {
+            direction,
+            page: toSheet.right,
+            sheetType: toSheet.type,
+          };
+          this.flipLeafFlipped = true;
+          this.sheetIndex = idx;
+          this.$nextTick(() => {
+            requestAnimationFrame(() => {
+              this.flipLeafFlipped = false;
+            });
+          });
+        }
+
+        this.flipTimer = setTimeout(() => {
+          this.flipLeaf = null;
+          this.flipLeafFlipped = false;
+          this.rightUnderOverride = null;
+          this.isFlipping = false;
+          this.flipTimer = null;
+        }, 920);
+        return;
+      }
+
+      this.flipLeaf = null;
+      this.rightUnderOverride = null;
+      this.sheetIndex = idx;
       this.flipTimer = setTimeout(() => {
         this.isFlipping = false;
         this.flipTimer = null;
-      }, 520);
+      }, 560);
     },
     prevSheet() {
       if (this.sheetIndex <= 0 || this.isFlipping) return;
@@ -849,8 +933,9 @@ export default {
   background: #ebe7f2;
   box-shadow:
     0 18px 48px rgba(40, 30, 60, 0.22);
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
+  transform-style: preserve-3d;
 }
 
 .book-half {
@@ -867,12 +952,97 @@ export default {
 .book-half--left {
   border-right: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: inset -10px 0 14px -12px rgba(0, 0, 0, 0.28);
+  border-radius: 10px 0 0 10px;
+  z-index: 1;
 }
 
 .book-half--right {
   box-shadow: inset 10px 0 14px -12px rgba(0, 0, 0, 0.28);
-  perspective: 1600px;
+  border-radius: 0 10px 10px 0;
+  perspective: 2200px;
+  overflow: visible;
   z-index: 2;
+}
+
+.book-page-stack {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.book-page-under {
+  z-index: 1;
+}
+
+.book-page-leaf {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition: transform 0.85s cubic-bezier(0.645, 0.045, 0.355, 1);
+  will-change: transform;
+  pointer-events: none;
+}
+
+.book-page-leaf.is-flipped {
+  transform: rotateY(-180deg);
+}
+
+.book-page-leaf__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  background: #fff;
+}
+
+.book-page-leaf__front {
+  box-shadow:
+    8px 0 24px rgba(0, 0, 0, 0.18),
+    inset -1px 0 0 rgba(255, 255, 255, 0.65);
+}
+
+.book-page-leaf__back {
+  transform: rotateY(180deg);
+  background:
+    linear-gradient(90deg, #d8d2c8 0%, #f4f0ea 12%, #f7f3ed 100%);
+  box-shadow: inset 12px 0 18px rgba(0, 0, 0, 0.12);
+}
+
+.book-page-leaf__paper {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 11px,
+      rgba(0, 0, 0, 0.015) 11px,
+      rgba(0, 0, 0, 0.015) 12px
+    ),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06), transparent 18%);
+}
+
+.book-page-leaf__gloss {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.22) 0%,
+    rgba(0, 0, 0, 0.05) 14%,
+    transparent 42%
+  );
+  opacity: 0;
+  transition: opacity 0.85s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.book-page-leaf.is-flipped .book-page-leaf__gloss {
+  opacity: 1;
 }
 
 .book-face-art {
@@ -959,75 +1129,35 @@ export default {
   left: 52%;
 }
 
-/* 翻页过渡：封面/封底整页 */
+/* 翻页过渡：封面/封底整页（3D 翻书） */
 .book-flip-next-enter-active,
 .book-flip-next-leave-active,
 .book-flip-prev-enter-active,
 .book-flip-prev-leave-active {
   transition:
-    transform 0.48s cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 0.36s ease;
+    transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1),
+    opacity 0.45s ease;
+  transform-origin: left center;
 }
 
 .book-flip-next-enter-from {
-  transform: perspective(1400px) rotateY(-28deg) translateX(18%) scale(0.96);
+  transform: perspective(2000px) rotateY(70deg);
   opacity: 0;
 }
 
 .book-flip-next-leave-to {
-  transform: perspective(1400px) rotateY(22deg) translateX(-14%) scale(0.97);
-  opacity: 0;
+  transform: perspective(2000px) rotateY(-90deg);
+  opacity: 0.2;
 }
 
 .book-flip-prev-enter-from {
-  transform: perspective(1400px) rotateY(28deg) translateX(-18%) scale(0.96);
+  transform: perspective(2000px) rotateY(-70deg);
   opacity: 0;
 }
 
 .book-flip-prev-leave-to {
-  transform: perspective(1400px) rotateY(-22deg) translateX(14%) scale(0.97);
-  opacity: 0;
-}
-
-/* 跨页：左侧瞬间切换（无翻页感） */
-.book-left-fade-leave-active {
-  transition: none;
-}
-.book-left-fade-enter-active {
-  transition: none;
-}
-
-/* 跨页：只翻走当前右页，新右页直接落在下方，不再做入场翻转 */
-.book-right-flip-next-leave-active,
-.book-right-flip-prev-leave-active {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  transition:
-    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 0.35s ease;
-  transform-origin: left center;
-  backface-visibility: hidden;
-  pointer-events: none;
-}
-
-.book-right-flip-next-leave-to {
-  transform: perspective(1600px) rotateY(-92deg);
-  opacity: 0.12;
-}
-
-.book-right-flip-prev-leave-to {
-  transform: perspective(1600px) rotateY(78deg);
-  opacity: 0.12;
-}
-
-.book-right-flip-next-enter-active,
-.book-right-flip-prev-enter-active,
-.book-right-flip-next-enter-from,
-.book-right-flip-prev-enter-from {
-  transition: none;
-  transform: none;
-  opacity: 1;
+  transform: perspective(2000px) rotateY(90deg);
+  opacity: 0.2;
 }
 
 .book-nav {
