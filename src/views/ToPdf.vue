@@ -41,10 +41,13 @@
           </button>
 
           <div class="book-stage-frame" :style="bookFrameStyle">
-            <transition :name="flipTransition" mode="out-in">
-              <!-- 封面 / 封底：单页 -->
+            <!-- 封面 / 封底：整页翻动 -->
+            <transition
+              v-if="currentSheet.type === 'cover' || currentSheet.type === 'back'"
+              :name="flipTransition"
+              mode="out-in"
+            >
               <div
-                v-if="currentSheet.type === 'cover' || currentSheet.type === 'back'"
                 :key="`sheet-${sheetIndex}-single`"
                 class="book-face book-face--single"
               >
@@ -64,15 +67,16 @@
                   {{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}
                 </span>
               </div>
+            </transition>
 
-              <!-- 扉页 / 内页：双页展开（每半页保持 trim 比例） -->
-              <div
-                v-else
-                :key="`sheet-${sheetIndex}-spread`"
-                class="book-face book-face--spread"
-              >
-                <div class="book-half book-half--left">
-                  <div class="book-face-art">
+            <!-- 扉页 / 内页：左侧不动，仅右侧翻页 -->
+            <div
+              v-else
+              class="book-face book-face--spread"
+            >
+              <div class="book-half book-half--left">
+                <transition name="book-left-fade" mode="out-in">
+                  <div :key="`sheet-${sheetIndex}-left`" class="book-face-art">
                     <img
                       v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src"
                       :src="currentSheet.left.src"
@@ -82,9 +86,11 @@
                       <span>{{ currentSheet.leftLabel || $t('toPdf.blankPage') }}</span>
                     </div>
                   </div>
-                </div>
-                <div class="book-half book-half--right">
-                  <div class="book-face-art">
+                </transition>
+              </div>
+              <div class="book-half book-half--right">
+                <transition :name="rightFlipTransition" mode="out-in">
+                  <div :key="`sheet-${sheetIndex}-right`" class="book-face-art book-face-art--flip">
                     <img
                       v-if="currentSheet.right && !currentSheet.right.blank && currentSheet.right.src"
                       :src="currentSheet.right.src"
@@ -99,10 +105,10 @@
                       <span>{{ $t('toPdf.blankPage') }}</span>
                     </div>
                   </div>
-                </div>
-                <span class="book-face-badge">{{ sheetBadge }}</span>
+                </transition>
               </div>
-            </transition>
+              <span class="book-face-badge">{{ sheetBadge }}</span>
+            </div>
           </div>
 
           <button
@@ -141,6 +147,10 @@
 
       <!-- 页面编辑：排序 / 增删 -->
       <div v-else class="topdf-scroll">
+        <div class="topdf-pages-toolbar">
+          <el-button size="small" @click="addBlankPage">{{ $t('toPdf.addBlankPage') }}</el-button>
+          <el-button size="small" @click="handleBack">{{ $t('toPdf.addMoreArt') }}</el-button>
+        </div>
         <div
           v-for="(page, index) in editablePages"
           :key="page.key"
@@ -181,25 +191,15 @@
       <h2 class="topdf-sidebar-title">{{ $t('toPdf.exportTitle') }}</h2>
 
       <div class="topdf-format-block">
-        <label class="topdf-format-label">{{ $t('bookExport.formatTitle') }}</label>
-        <p class="topdf-format-value">{{ $t(activeFormat.nameKey) }}</p>
-        <p class="topdf-format-meta">{{ formatMetaLabel }}</p>
-        <button type="button" class="topdf-format-change" @click="goChangeFormat">
-          {{ $t('toPdf.changeFormat') }}
-        </button>
-      </div>
-
-      <div class="topdf-page-mgmt">
-        <label class="topdf-format-label">{{ $t('toPdf.pageManage') }}</label>
-        <div class="topdf-page-mgmt-actions">
-          <el-button size="small" @click="addBlankPage">{{ $t('toPdf.addBlankPage') }}</el-button>
-          <el-button size="small" @click="handleBack">{{ $t('toPdf.addMoreArt') }}</el-button>
-          <el-button size="small" type="primary" plain @click="viewMode = 'book'">
-            {{ $t('toPdf.openBookPreview') }}
-          </el-button>
+        <div class="topdf-format-row">
+          <div>
+            <p class="topdf-format-value">{{ $t(activeFormat.nameKey) }}</p>
+            <p class="topdf-format-meta">{{ formatMetaLabel }}</p>
+          </div>
+          <button type="button" class="topdf-format-change" @click="goChangeFormat">
+            {{ $t('toPdf.changeFormat') }}
+          </button>
         </div>
-        <p class="topdf-format-meta">{{ $t('toPdf.pageManageHint') }}</p>
-        <p class="topdf-format-meta">{{ $t('toPdf.bookStructureHint') }}</p>
       </div>
 
       <el-form ref="form" :model="form" label-position="top" class="topdf-form">
@@ -221,16 +221,6 @@
             <el-option :label="$t('toPdf.catOthers')" value="others" />
           </el-select>
         </el-form-item>
-        <el-form-item :label="$t('toPdf.bookDesc')">
-          <el-input
-            v-model="form.desc"
-            type="textarea"
-            :autosize="{ minRows: 3, maxRows: 6 }"
-            maxlength="500"
-            show-word-limit
-            :placeholder="$t('toPdf.descPlaceholder')"
-          />
-        </el-form-item>
         <el-form-item>
           <el-checkbox v-model="form.authorizationConfirmed">
             {{ $t('toPdf.compliance') }}
@@ -238,17 +228,16 @@
         </el-form-item>
 
         <div class="topdf-actions">
-          <el-button type="primary" plain :disabled="exporting || !totalPages" @click="downPDF">
+          <el-button type="primary" :disabled="exporting || !totalPages" @click="downPDF">
             {{ $t('toPdf.downloadPdf') }}
           </el-button>
           <el-button :disabled="exporting || !totalPages" @click="downImages">
             {{ $t('toPdf.downloadImages') }}
           </el-button>
-          <el-button type="primary" :disabled="!publishablePages.length" @click="submit">
+          <el-button type="primary" plain :disabled="!publishablePages.length" @click="submit">
             {{ $t('toPdf.publish') }}
           </el-button>
         </div>
-        <p class="topdf-format-meta">{{ $t('toPdf.dpiHint') }}</p>
       </el-form>
     </aside>
   </div>
@@ -352,6 +341,10 @@ export default {
     },
     flipTransition() {
       return this.flipDirection === 'prev' ? 'book-flip-prev' : 'book-flip-next';
+    },
+    /** 跨页时只翻右页，轴在书脊（右页左缘） */
+    rightFlipTransition() {
+      return this.flipDirection === 'prev' ? 'book-right-flip-prev' : 'book-right-flip-next';
     },
     totalPages() {
       return this.editablePages.length;
@@ -878,6 +871,8 @@ export default {
 
 .book-half--right {
   box-shadow: inset 10px 0 14px -12px rgba(0, 0, 0, 0.28);
+  perspective: 1600px;
+  z-index: 2;
 }
 
 .book-face-art {
@@ -887,6 +882,11 @@ export default {
   align-items: center;
   justify-content: center;
   background: #f5f7fa;
+}
+
+.book-face-art--flip {
+  transform-origin: left center;
+  backface-visibility: hidden;
 }
 
 .book-face-art img {
@@ -959,7 +959,7 @@ export default {
   left: 52%;
 }
 
-/* 翻页过渡：向后翻（下一页） */
+/* 翻页过渡：封面/封底整页 */
 .book-flip-next-enter-active,
 .book-flip-next-leave-active,
 .book-flip-prev-enter-active,
@@ -986,6 +986,49 @@ export default {
 
 .book-flip-prev-leave-to {
   transform: perspective(1400px) rotateY(-22deg) translateX(14%) scale(0.97);
+  opacity: 0;
+}
+
+/* 跨页：左侧只淡入淡出，不位移 */
+.book-left-fade-enter-active,
+.book-left-fade-leave-active {
+  transition: opacity 0.28s ease;
+}
+
+.book-left-fade-enter-from,
+.book-left-fade-leave-to {
+  opacity: 0;
+}
+
+/* 跨页：仅右页绕书脊翻动 */
+.book-right-flip-next-enter-active,
+.book-right-flip-next-leave-active,
+.book-right-flip-prev-enter-active,
+.book-right-flip-prev-leave-active {
+  transition:
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.35s ease;
+  transform-origin: left center;
+  backface-visibility: hidden;
+}
+
+.book-right-flip-next-leave-to {
+  transform: perspective(1600px) rotateY(-92deg);
+  opacity: 0.15;
+}
+
+.book-right-flip-next-enter-from {
+  transform: perspective(1600px) rotateY(78deg);
+  opacity: 0;
+}
+
+.book-right-flip-prev-leave-to {
+  transform: perspective(1600px) rotateY(78deg);
+  opacity: 0.15;
+}
+
+.book-right-flip-prev-enter-from {
+  transform: perspective(1600px) rotateY(-92deg);
   opacity: 0;
 }
 
@@ -1185,23 +1228,21 @@ export default {
   color: #303133;
 }
 
-.topdf-format-block,
-.topdf-page-mgmt {
+.topdf-format-block {
   margin-bottom: 18px;
   padding-bottom: 14px;
   border-bottom: 1px solid #ebeef5;
 }
 
-.topdf-format-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
+.topdf-format-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .topdf-format-value {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 15px;
   font-weight: 600;
   color: #303133;
@@ -1209,14 +1250,15 @@ export default {
 }
 
 .topdf-format-meta {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 12px;
   color: #909399;
   line-height: 1.45;
 }
 
 .topdf-format-change {
-  margin-top: 8px;
+  flex-shrink: 0;
+  margin-top: 2px;
   padding: 0;
   border: none;
   background: transparent;
@@ -1225,12 +1267,14 @@ export default {
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
+  white-space: nowrap;
 }
 
-.topdf-page-mgmt-actions {
+.topdf-pages-toolbar {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .topdf-form :deep(.el-form-item) { margin-bottom: 16px; }

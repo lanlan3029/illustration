@@ -233,7 +233,7 @@ class ControlsPlugin implements IPluginTempl {
     // 旋转图标
     rotationControl();
 
-    // 边控点（ml/mr/mt/mb）单轴自由缩放；角点默认自由缩放，Shift 等比
+    // 默认自由缩放（边可控单轴、角点自由）；按住 Shift 等比
     this.canvas.uniformScaling = false;
 
     // 选中样式
