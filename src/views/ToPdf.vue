@@ -75,7 +75,7 @@
               class="book-face book-face--spread"
             >
               <div class="book-half book-half--left">
-                <transition name="book-left-fade" mode="out-in">
+                <transition name="book-left-fade">
                   <div :key="`sheet-${sheetIndex}-left`" class="book-face-art">
                     <img
                       v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src"
@@ -89,7 +89,7 @@
                 </transition>
               </div>
               <div class="book-half book-half--right">
-                <transition :name="rightFlipTransition" mode="out-in">
+                <transition :name="rightFlipTransition">
                   <div :key="`sheet-${sheetIndex}-right`" class="book-face-art book-face-art--flip">
                     <img
                       v-if="currentSheet.right && !currentSheet.right.blank && currentSheet.right.src"
@@ -234,7 +234,7 @@
           <el-button :disabled="exporting || !totalPages" @click="downImages">
             {{ $t('toPdf.downloadImages') }}
           </el-button>
-          <el-button type="primary" plain :disabled="!publishablePages.length" @click="submit">
+          <el-button type="primary" :disabled="!publishablePages.length" @click="submit">
             {{ $t('toPdf.publish') }}
           </el-button>
         </div>
@@ -989,47 +989,45 @@ export default {
   opacity: 0;
 }
 
-/* 跨页：左侧只淡入淡出，不位移 */
-.book-left-fade-enter-active,
+/* 跨页：左侧瞬间切换（无翻页感） */
 .book-left-fade-leave-active {
-  transition: opacity 0.28s ease;
+  transition: none;
+}
+.book-left-fade-enter-active {
+  transition: none;
 }
 
-.book-left-fade-enter-from,
-.book-left-fade-leave-to {
-  opacity: 0;
-}
-
-/* 跨页：仅右页绕书脊翻动 */
-.book-right-flip-next-enter-active,
+/* 跨页：只翻走当前右页，新右页直接落在下方，不再做入场翻转 */
 .book-right-flip-next-leave-active,
-.book-right-flip-prev-enter-active,
 .book-right-flip-prev-leave-active {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   transition:
     transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
     opacity 0.35s ease;
   transform-origin: left center;
   backface-visibility: hidden;
+  pointer-events: none;
 }
 
 .book-right-flip-next-leave-to {
   transform: perspective(1600px) rotateY(-92deg);
-  opacity: 0.15;
-}
-
-.book-right-flip-next-enter-from {
-  transform: perspective(1600px) rotateY(78deg);
-  opacity: 0;
+  opacity: 0.12;
 }
 
 .book-right-flip-prev-leave-to {
   transform: perspective(1600px) rotateY(78deg);
-  opacity: 0.15;
+  opacity: 0.12;
 }
 
+.book-right-flip-next-enter-active,
+.book-right-flip-prev-enter-active,
+.book-right-flip-next-enter-from,
 .book-right-flip-prev-enter-from {
-  transform: perspective(1600px) rotateY(-92deg);
-  opacity: 0;
+  transition: none;
+  transform: none;
+  opacity: 1;
 }
 
 .book-nav {
@@ -1305,12 +1303,31 @@ export default {
   margin: 0;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .topdf-actions :deep(.el-button--primary) {
+  --el-button-text-color: #ffffff;
+  --el-button-hover-text-color: #ffffff;
+  --el-button-active-text-color: #ffffff;
+  --el-button-disabled-text-color: rgba(255, 255, 255, 0.75);
   background-color: #8167a9;
   border-color: #8167a9;
+  color: #ffffff;
+}
+
+.topdf-actions :deep(.el-button--primary:hover),
+.topdf-actions :deep(.el-button--primary:focus) {
+  background-color: #6f5698;
+  border-color: #6f5698;
+  color: #ffffff;
+}
+
+.topdf-actions :deep(.el-button--primary.is-disabled),
+.topdf-actions :deep(.el-button--primary.is-disabled:hover) {
+  background-color: #b7a8d1;
+  border-color: #b7a8d1;
+  color: #ffffff;
 }
 
 @media (max-width: 960px) {
