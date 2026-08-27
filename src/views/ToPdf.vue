@@ -38,14 +38,12 @@
         :class="{ 'is-fullscreen': fullscreenPreview }"
       >
         <div v-if="fullscreenPreview" class="book-fs-bar">
-          <span class="book-fs-title">{{ $t('toPdf.fullscreenPreview') }}</span>
-          <span class="book-fs-progress">{{ progressLabel }}</span>
+          <span class="book-fs-progress">{{ progressShort }}</span>
           <button type="button" class="book-fs-close" @click="closeFullscreenPreview">
             {{ $t('toPdf.exitFullscreen') }}
           </button>
         </div>
-        <p class="book-stage-hint">{{ sheetHint }}</p>
-        <p v-if="oddPairHint" class="book-stage-alert">{{ oddPairHint }}</p>
+        <p v-if="!fullscreenPreview && oddPairHint" class="book-stage-alert">{{ oddPairHint }}</p>
 
         <div
           class="book-viewer"
@@ -93,7 +91,7 @@
                   <strong>{{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}</strong>
                   <span v-if="form.title">{{ form.title }}</span>
                   <div
-                    v-if="currentSheet.type === 'cover'"
+                    v-if="currentSheet.type === 'cover' && !fullscreenPreview"
                     class="book-blank-actions"
                     @click.stop
                   >
@@ -118,12 +116,8 @@
                   />
                   <div v-else class="book-placeholder book-placeholder--muted book-blank-slot">
                     <span>{{ currentSheet.leftLabel || $t('toPdf.blankPage') }}</span>
-                    <p
-                      v-if="currentSheet.type === 'title'"
-                      class="book-blank-note"
-                    >{{ $t('toPdf.blankEndpaperHint') }}</p>
                     <div
-                      v-else
+                      v-if="!fullscreenPreview && currentSheet.type !== 'title'"
                       class="book-blank-actions"
                       @click.stop
                     >
@@ -155,7 +149,11 @@
                     </div>
                     <div v-else class="book-placeholder book-placeholder--muted book-blank-slot">
                       <span>{{ $t('toPdf.blankPage') }}</span>
-                      <div class="book-blank-actions" @click.stop>
+                      <div
+                        v-if="!fullscreenPreview"
+                        class="book-blank-actions"
+                        @click.stop
+                      >
                         <button type="button" @click="onBlankInsert('right')">{{ $t('toPdf.blankInsert') }}</button>
                         <button type="button" @click="onBlankEdit('right')">{{ $t('toPdf.blankEdit') }}</button>
                         <button
@@ -276,12 +274,11 @@
           <button type="button" :disabled="sheetIndex <= 0 || isFlipping" @click="prevSheet">
             {{ $t('toPdf.prevPage') }}
           </button>
-          <span>{{ progressLabel }}</span>
+          <span v-if="!fullscreenPreview">{{ progressShort }}</span>
           <button type="button" :disabled="sheetIndex >= sheets.length - 1 || isFlipping" @click="nextSheet">
             {{ $t('toPdf.nextPage') }}
           </button>
         </div>
-        <p class="book-keyboard-hint">{{ $t('toPdf.keyboardFlipHint') }}</p>
 
         <div class="book-thumbs" v-if="sheets.length">
           <button
@@ -294,7 +291,8 @@
               'is-spread-thumb': sheet.type === 'title' || sheet.type === 'spread',
               'is-drag-over': thumbDragOver === idx,
             }"
-            :draggable="sheet.type === 'spread'"
+            :title="thumbLabel(sheet)"
+            :draggable="sheet.type === 'spread' && !fullscreenPreview"
             @click="goSheet(idx)"
             @dragstart="onThumbDragStart($event, idx)"
             @dragover="onThumbDragOver($event, idx)"
@@ -318,10 +316,9 @@
                 <em v-else class="book-thumb-empty" />
               </template>
             </span>
-            <span class="book-thumb-label">{{ thumbLabel(sheet) }}</span>
+            <span v-if="!fullscreenPreview" class="book-thumb-label">{{ thumbLabel(sheet) }}</span>
           </button>
         </div>
-        <p v-if="hasInteriorSpreads" class="book-thumb-hint">{{ $t('toPdf.thumbDragHint') }}</p>
       </div>
       </Teleport>
 
@@ -566,26 +563,10 @@ export default {
     oddPairHint() {
       return this.hasOddInteriorPair ? this.$t('toPdf.oddPairHint') : '';
     },
-    hasInteriorSpreads() {
-      return this.sheets.some((s) => s.type === 'spread');
-    },
-    currentLogicalPage() {
-      const t = this.currentSheet?.type;
-      if (t === 'cover') return 1;
-      if (t === 'title') return Math.min(2, this.totalPages || 1);
-      if (t === 'back') return this.totalPages || 1;
-      if (t === 'spread') {
-        const base = 2 + (this.sheetIndex - 2) * 2;
-        return Math.min(base + 1, this.totalPages || 1);
-      }
-      return 1;
-    },
-    progressLabel() {
-      return this.$t('toPdf.progressUnified', {
-        page: this.currentLogicalPage,
-        total: this.totalPages || 0,
-        sheet: this.sheetIndex + 1,
-        sheets: this.sheets.length || 0,
+    progressShort() {
+      return this.$t('toPdf.progressShort', {
+        current: this.sheetIndex + 1,
+        total: this.sheets.length || 0,
       });
     },
     exportChecklist() {
@@ -639,7 +620,7 @@ export default {
           type: 'title',
           left: null,
           right: pages[1] || null,
-          leftLabel: this.$t('toPdf.roleEndpaper'),
+          leftLabel: this.$t('toPdf.roleEndpaperShort'),
         },
       ];
 
@@ -656,13 +637,6 @@ export default {
     },
     currentSheet() {
       return this.sheets[this.sheetIndex] || { type: 'cover', page: null };
-    },
-    sheetHint() {
-      const t = this.currentSheet.type;
-      if (t === 'cover') return this.$t('toPdf.hintCover');
-      if (t === 'title') return this.$t('toPdf.hintTitle');
-      if (t === 'back') return this.$t('toPdf.hintBack');
-      return this.$t('toPdf.hintSpread');
     },
   },
   watch: {
@@ -1273,19 +1247,44 @@ export default {
     radial-gradient(ellipse at center, #1a1820 0%, #0e0d12 72%);
 }
 
-.book-stage.is-fullscreen .book-stage-hint,
-.book-stage.is-fullscreen .book-keyboard-hint,
-.book-stage.is-fullscreen .book-thumb-hint,
-.book-stage.is-fullscreen .book-pager {
-  color: rgba(255, 255, 255, 0.72);
-}
-
 .book-stage.is-fullscreen .book-stage-alert {
   color: #e8c48a;
 }
 
 .book-stage.is-fullscreen .book-viewer {
   max-width: min(1200px, 96vw);
+  margin-top: 8px;
+}
+
+.book-stage.is-fullscreen .book-pager {
+  margin-top: 20px;
+}
+
+.book-stage.is-fullscreen .book-pager button {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.book-stage.is-fullscreen .book-thumbs {
+  margin-top: 18px;
+}
+
+.book-stage.is-fullscreen .book-thumb {
+  width: 72px;
+  padding: 4px;
+  border-width: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.book-stage.is-fullscreen .book-thumb.is-spread-thumb {
+  width: 96px;
+}
+
+.book-stage.is-fullscreen .book-thumb.is-active {
+  border-color: #c4b0e0;
+  box-shadow: none;
 }
 
 .book-stage.is-fullscreen .book-stage-frame {
@@ -1296,7 +1295,6 @@ export default {
   );
 }
 
-.book-stage.is-fullscreen.is-spread .book-stage-frame,
 .book-stage.is-fullscreen .book-viewer.is-spread .book-stage-frame {
   width: min(
     1280px,
@@ -1311,23 +1309,19 @@ export default {
   z-index: 5;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 16px;
   width: 100%;
   max-width: 1280px;
-  margin: 0 auto 12px;
-  padding: 8px 4px;
-}
-
-.book-fs-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
+  margin: 0 auto 4px;
+  padding: 4px 0;
 }
 
 .book-fs-progress {
-  flex: 1;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
+  margin-right: auto;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .book-fs-close {
@@ -1344,14 +1338,8 @@ export default {
   background: rgba(255, 255, 255, 0.16);
 }
 
-.book-stage-hint {
-  margin: 0 0 12px;
-  font-size: 13px;
-  color: #606266;
-}
-
 .book-stage-alert {
-  margin: -4px 0 12px;
+  margin: 0 0 12px;
   max-width: 640px;
   text-align: center;
   font-size: 12px;
@@ -1812,13 +1800,6 @@ export default {
 .book-pager button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.book-keyboard-hint,
-.book-thumb-hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  color: #909399;
 }
 
 .book-thumbs {
