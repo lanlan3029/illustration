@@ -1111,7 +1111,21 @@ export default {
 
 .book-stage-frame.is-cover-closing .book-spread-veil {
   opacity: 1;
-  transition: clip-path 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* 合上时：左页立刻收掉，不要在封面左侧留一条窄页；裁剪不做过渡以免露出半截 */
+.book-stage-frame.is-cover-closing .book-spread-veil {
+  transition: none;
+}
+
+.book-stage-frame.is-cover-closing:not(.is-cover-open) .book-half--left {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.book-stage-frame.is-cover-closing.is-cover-from-back:not(.is-cover-open) .book-half--right {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .book-face {
