@@ -40,7 +40,16 @@
             ‹
           </button>
 
-          <div class="book-stage-frame" :style="bookFrameStyle">
+          <div
+            class="book-stage-frame"
+            :class="{
+              'is-cover-motion': !!coverLeaf,
+              'is-cover-open': coverLeafFlipped,
+              'is-cover-from-back': coverLeaf && coverLeaf.side === 'left',
+            }"
+            :style="bookFrameStyle"
+          >
+            <div class="book-shift-wrap">
             <!-- 封面 / 封底：静止单页（开合书时由 coverLeaf 接管） -->
             <div
               v-if="showSingleFace"
@@ -149,7 +158,7 @@
               <span class="book-face-badge">{{ sheetBadge }}</span>
             </div>
 
-            <!-- 封面/封底开合：盖在右半（或左半）页上翻转 -->
+            <!-- 封面开合：随书体右移，绕书脊翻开（封底为左移+左叶） -->
             <div
               v-if="coverLeaf"
               class="book-cover-leaf"
@@ -190,6 +199,7 @@
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
 
@@ -714,7 +724,7 @@ export default {
         return;
       }
 
-      // 封面/封底 ↔ 双页：开合书动画
+      // 封面/封底 ↔ 双页：书体平移 + 封面绕书脊翻开
       if (isSingle(fromSheet) && isSpread(toSheet)) {
         const openFromBack = fromSheet.type === 'back';
         this.coverLeaf = {
@@ -725,6 +735,7 @@ export default {
           backSheetType: toSheet.type,
           backLabel: toSheet.leftLabel,
         };
+        // 先落在「合上」位移（封面居中），再与翻页同时移到展开位
         this.coverLeafFlipped = false;
         this.sheetIndex = idx;
         this.$nextTick(() => {
@@ -739,7 +750,7 @@ export default {
           this.coverLeafFlipped = false;
           this.isFlipping = false;
           this.flipTimer = null;
-        }, 980);
+        }, 1000);
         return;
       }
 
@@ -765,7 +776,7 @@ export default {
           this.coverLeafFlipped = false;
           this.isFlipping = false;
           this.flipTimer = null;
-        }, 980);
+        }, 1000);
         return;
       }
 
@@ -1008,9 +1019,10 @@ export default {
   height: auto;
   margin: 0 auto;
   transition:
-    width 0.55s cubic-bezier(0.645, 0.045, 0.355, 1),
-    aspect-ratio 0.55s cubic-bezier(0.645, 0.045, 0.355, 1);
+    width 0.9s cubic-bezier(0.645, 0.045, 0.355, 1),
+    aspect-ratio 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
   transform-style: preserve-3d;
+  overflow: visible;
 }
 
 .book-viewer.is-spread .book-stage-frame {
@@ -1019,6 +1031,50 @@ export default {
     calc(100% - 96px),
     calc(min(58vh, 560px) * var(--frame-ar, 1))
   );
+}
+
+/* 开合书：整书平移容器（封面打开时由左偏 → 归位 = 视觉上往右移） */
+.book-shift-wrap {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
+  will-change: transform;
+}
+
+.book-stage-frame.is-cover-motion:not(.is-cover-from-back):not(.is-cover-open) .book-shift-wrap {
+  transform: translateX(-25%);
+}
+
+.book-stage-frame.is-cover-motion:not(.is-cover-from-back).is-cover-open .book-shift-wrap {
+  transform: translateX(0);
+}
+
+.book-stage-frame.is-cover-motion.is-cover-from-back:not(.is-cover-open) .book-shift-wrap {
+  transform: translateX(25%);
+}
+
+.book-stage-frame.is-cover-motion.is-cover-from-back.is-cover-open .book-shift-wrap {
+  transform: translateX(0);
+}
+
+.book-stage-frame.is-cover-motion:not(.is-cover-open):not(.is-cover-from-back) .book-half--left {
+  opacity: 0;
+}
+
+.book-stage-frame.is-cover-motion.is-cover-open .book-half--left,
+.book-stage-frame.is-cover-motion.is-cover-from-back .book-half--left {
+  opacity: 1;
+  transition: opacity 0.55s ease 0.12s;
+}
+
+.book-stage-frame.is-cover-motion:not(.is-cover-open).is-cover-from-back .book-half--right {
+  opacity: 0;
+}
+
+.book-stage-frame.is-cover-motion.is-cover-open.is-cover-from-back .book-half--right {
+  opacity: 1;
+  transition: opacity 0.55s ease 0.12s;
 }
 
 .book-face {
@@ -1172,7 +1228,7 @@ export default {
   opacity: 0;
 }
 
-/* 封面/封底开合叶：贴在展开后的右半（封面）或左半（封底） */
+/* 封面开合叶：叠在右半页，与书体右移同步绕书脊翻开 */
 .book-cover-leaf {
   position: absolute;
   top: 0;
@@ -1183,14 +1239,14 @@ export default {
   transform-origin: left center;
   transform-style: preserve-3d;
   transform: rotateY(0deg);
-  transition: transform 0.85s cubic-bezier(0.645, 0.045, 0.355, 1);
+  transition: transform 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
   will-change: transform;
   pointer-events: none;
   border-radius: 0 10px 10px 0;
 }
 
 .book-cover-leaf.is-flipped {
-  transform: rotateY(-180deg);
+  transform: rotateY(-165deg);
 }
 
 .book-cover-leaf--left {
@@ -1201,7 +1257,7 @@ export default {
 }
 
 .book-cover-leaf--left.is-flipped {
-  transform: rotateY(180deg);
+  transform: rotateY(165deg);
 }
 
 .book-cover-leaf__face {
