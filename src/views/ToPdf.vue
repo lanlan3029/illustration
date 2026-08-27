@@ -1084,6 +1084,20 @@ export default {
   clip-path: inset(0);
 }
 
+/* 开合过程中内页先藏起，避免封面下再叠一层白页 */
+.book-stage-frame.is-cover-motion:not(.is-cover-open) .book-spread-veil {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.book-stage-frame.is-cover-motion.is-cover-open .book-spread-veil {
+  opacity: 1;
+  transition:
+    clip-path 0.9s cubic-bezier(0.645, 0.045, 0.355, 1),
+    /* 等封面翻过侧立后再淡入内页，避免封面下再露一层白页 */
+    opacity 0.35s ease 0.4s;
+}
+
 .book-face {
   position: absolute;
   inset: 0;
