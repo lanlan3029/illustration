@@ -1113,12 +1113,12 @@ export default {
   opacity: 1;
 }
 
-/* 合上时：左页立刻收掉，不要在封面左侧留一条窄页；裁剪不做过渡以免露出半截 */
+/* 合上时：被封面盖住的那一侧立刻收掉，避免旁边留窄页；勿误伤另一侧内页 */
 .book-stage-frame.is-cover-closing .book-spread-veil {
   transition: none;
 }
 
-.book-stage-frame.is-cover-closing:not(.is-cover-open) .book-half--left {
+.book-stage-frame.is-cover-closing:not(.is-cover-from-back):not(.is-cover-open) .book-half--left {
   opacity: 0;
   visibility: hidden;
 }
