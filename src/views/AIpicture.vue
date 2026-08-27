@@ -322,7 +322,7 @@
                 </div>
             </div>
 
-            <!-- 生成进度 / 结果 / 空占位 -->
+            <!-- 生成进度 / 结果 / 失败 / 空占位 -->
             <div class="result-section">
                 <div v-if="generating" class="result-card">
                     <div class="result-skeleton">
@@ -334,37 +334,85 @@
                     </div>
                 </div>
 
+                <div v-else-if="generatedImageUrl && imageLoadError" class="result-card result-card--error">
+                    <div class="result-placeholder result-placeholder--error">
+                        <div class="result-placeholder-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                        </div>
+                        <p class="result-placeholder-title">{{ $t('aiPicture.loadFailedTitle') || '图片加载失败' }}</p>
+                        <p class="result-placeholder-hint">{{ $t('aiPicture.loadFailedHint') || '可能是网络问题或链接已过期，可重试生成或清除后重来' }}</p>
+                        <div class="result-actions result-actions--compact">
+                            <button type="button" class="result-btn primary" @click="retryLoadImage">
+                                <span>{{ $t('aiPicture.retryLoad') || '重新加载' }}</span>
+                            </button>
+                            <button type="button" class="result-btn ghost" :disabled="generating" @click="retryGenerate">
+                                <span>{{ $t('aiPicture.retryGenerate') || '重新生成' }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="result-btn ghost icon-only danger"
+                                :title="$t('aiPicture.clear') || '清除'"
+                                :aria-label="$t('aiPicture.clear') || '清除'"
+                                @click="clearGeneratedImage"
+                            >
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-else-if="generatedImageUrl" class="result-card">
                     <img
+                        :key="'result-img-' + imageReloadKey"
                         :src="generatedImageUrl"
-                        alt="generated"
+                        :alt="$t('aiPicture.resultImageAlt') || '生成的插画'"
                         class="result-image"
                         @load="handleImageLoad"
                         @error="handleImageError"
                     />
-                    <div class="result-actions">
+                    <div class="result-actions result-actions--compact">
                         <button type="button" class="result-btn primary" :disabled="collecting" @click="collectIllustration">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                             </svg>
                             <span>{{ collecting ? ($t('aiPicture.saving') || '收集中…') : ($t('aiPicture.collect') || '收集插画') }}</span>
                         </button>
-                        <button type="button" class="result-btn ghost" :disabled="downloading" @click="downloadIllustration">
+                        <button
+                            type="button"
+                            class="result-btn ghost icon-only"
+                            :disabled="downloading"
+                            :title="downloading ? ($t('aiPicture.downloading') || '下载中…') : ($t('aiPicture.download') || '下载到本地')"
+                            :aria-label="$t('aiPicture.download') || '下载到本地'"
+                            @click="downloadIllustration"
+                        >
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                 <polyline points="7 10 12 15 17 10" />
                                 <line x1="12" y1="15" x2="12" y2="3" />
                             </svg>
-                            <span>{{ downloading ? ($t('aiPicture.downloading') || '下载中…') : ($t('aiPicture.download') || '下载到本地') }}</span>
                         </button>
-                        <button type="button" class="result-btn ghost danger" @click="clearGeneratedImage">
+                        <button
+                            type="button"
+                            class="result-btn ghost icon-only danger"
+                            :title="$t('aiPicture.clear') || '清除'"
+                            :aria-label="$t('aiPicture.clear') || '清除'"
+                            @click="clearGeneratedImage"
+                        >
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6" />
                                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                                 <path d="M10 11v6" />
                                 <path d="M14 11v6" />
                             </svg>
-                            <span>{{ $t('aiPicture.clear') || '清除' }}</span>
                         </button>
                     </div>
                 </div>
@@ -380,6 +428,11 @@
                         </div>
                         <p class="result-placeholder-title">{{ $t('aiPicture.emptyResultTitle') || '插画预览' }}</p>
                         <p class="result-placeholder-hint">{{ $t('aiPicture.emptyResultHint') || '生成的插画将显示在这里' }}</p>
+                        <ol class="result-placeholder-steps">
+                            <li>{{ $t('aiPicture.emptyStep1') || '左侧选一个风格灵感' }}</li>
+                            <li>{{ $t('aiPicture.emptyStep2') || '用一句话描述画面' }}</li>
+                            <li>{{ $t('aiPicture.emptyStep3') || '点击发送开始生成' }}</li>
+                        </ol>
                     </div>
                 </div>
             </div>
@@ -493,6 +546,7 @@ export default {
             downloading: false,
             imageLoading: false,
             imageLoadError: false,
+            imageReloadKey: 0,
             /** 小黑 Skill：扩写方案预览 */
             xiaoheiPlan: null,
             xiaoheiExpanding: false,
@@ -1323,6 +1377,8 @@ export default {
             }
             this.generatedImageUrl = null
             this.lastGeneratedPromptSnapshot = ''
+            this.imageLoadError = false
+            this.imageLoading = false
             this.generating = true
 
             try {
@@ -1717,6 +1773,8 @@ export default {
                         this.lastGeneratedPromptSnapshot = imageData.prompt
                             ? String(imageData.prompt)
                             : ''
+                        this.imageLoading = true
+                        this.imageLoadError = false
                     }
                 }
             } catch (error) {
@@ -1727,11 +1785,27 @@ export default {
         handleImageError() {
             this.imageLoadError = true
             this.imageLoading = false
-            ElMessage.warning({ message: '图片加载失败，可能是网络问题或链接已过期', offset: 200 })
+            ElMessage.warning({
+                message: this.$t('aiPicture.imageLoadFailed') || '图片加载失败，可能是网络问题或链接已过期',
+                offset: 200
+            })
         },
         handleImageLoad() {
             this.imageLoading = false
             this.imageLoadError = false
+        },
+
+        retryLoadImage() {
+            if (!this.generatedImageUrl) return
+            this.imageLoadError = false
+            this.imageLoading = true
+            this.imageReloadKey += 1
+        },
+
+        retryGenerate() {
+            this.imageLoadError = false
+            this.generatedImageUrl = null
+            this.generateIllustration()
         },
 
         clearGeneratedImage() {
@@ -1741,9 +1815,9 @@ export default {
                 this.lastGeneratedPromptSnapshot = ''
                 this.imageLoading = false
                 this.imageLoadError = false
-                ElMessage.success({ message: '已清除插画数据', offset: 200 })
+                ElMessage.success({ message: this.$t('aiPicture.cleared') || '已清除插画数据', offset: 200 })
             } catch (error) {
-                ElMessage.error({ message: '清除失败，请重试', offset: 200 })
+                ElMessage.error({ message: this.$t('aiPicture.clearFailed') || '清除失败，请重试', offset: 200 })
             }
         },
 
@@ -1791,15 +1865,15 @@ export default {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    gap: 24px;
+    gap: 20px;
     width: 100%;
     min-height: min(70vh, 720px);
     max-height: calc(100vh - 120px);
 }
 
 .inspiration-column {
-    flex: 0 0 520px;
-    width: 520px;
+    flex: 0 0 360px;
+    width: 360px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -2269,8 +2343,8 @@ export default {
     border: 1px solid #e6e8ec;
     background: #fff;
     color: #5f6368;
-    font-size: 13px;
-    padding: 6px 14px;
+    font-size: 12px;
+    padding: 5px 11px;
     border-radius: 999px;
     cursor: pointer;
     white-space: nowrap;
@@ -2384,8 +2458,8 @@ export default {
     overflow-y: auto;
     overflow-x: hidden;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 10px;
     align-content: start;
     padding: 4px 2px 8px 0;
     scroll-behavior: smooth;
@@ -2563,10 +2637,67 @@ export default {
     font-size: 13px;
     line-height: 1.5;
     color: #9aa3b5;
+    max-width: 320px;
+}
+
+.result-placeholder-steps {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     max-width: 280px;
+    text-align: left;
+    counter-reset: step;
+}
+
+.result-placeholder-steps li {
+    position: relative;
+    padding-left: 22px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #8b93a7;
+}
+
+.result-placeholder-steps li::before {
+    content: counter(step);
+    counter-increment: step;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #eef0f4;
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+}
+
+.result-placeholder--error {
+    border-style: solid;
+    border-color: #f0d4d8;
+    background: linear-gradient(180deg, #fffbfb 0%, #f8f2f3 100%);
+    color: #9a6b73;
+}
+
+.result-placeholder--error .result-placeholder-icon {
+    color: #c0394a;
+    border-color: #f0d4d8;
+}
+
+.result-placeholder--error .result-actions {
+    margin-top: 8px;
 }
 
 .result-card--empty {
+    background: #fcfcfd;
+}
+
+.result-card--error {
     background: #fcfcfd;
 }
 
@@ -2644,6 +2775,10 @@ export default {
     justify-content: center;
 }
 
+.result-actions--compact {
+    gap: 8px;
+}
+
 .result-btn {
     display: inline-flex;
     align-items: center;
@@ -2657,6 +2792,12 @@ export default {
     font-size: 13px;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.result-btn.icon-only {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
 }
 
 .result-btn:hover:not(:disabled) {
@@ -2685,6 +2826,14 @@ export default {
 
 .result-btn.ghost.danger:hover:not(:disabled) {
     background: rgba(192, 57, 74, 0.08);
+}
+
+/* 中等宽度：再收窄灵感栏，把预览留给创作区 */
+@media (max-width: 1100px) {
+    .inspiration-column {
+        flex: 0 0 300px;
+        width: 300px;
+    }
 }
 
 /* 移动端适配（断点与全站手机端 768 对齐） */
@@ -2726,17 +2875,19 @@ export default {
         gap: 16px;
     }
 
+    .editor-column {
+        order: 1;
+        flex: none;
+        min-height: 0;
+    }
+
     .inspiration-column {
+        order: 2;
         flex: 0 0 auto;
         width: 100%;
         max-width: 100%;
         max-height: none;
         overflow: visible;
-    }
-
-    .editor-column {
-        flex: none;
-        min-height: 0;
     }
 
     .result-section {

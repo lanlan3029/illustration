@@ -1671,6 +1671,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
   display: block;
   background: #fff;
 }
@@ -1849,17 +1850,20 @@ export default {
 
 .book-thumb-preview {
   display: flex;
+  align-items: stretch;
   width: 100%;
   overflow: hidden;
   border-radius: 6px;
-  background: #f0f2f5;
+  background: #fff;
 }
 
 .book-thumb-preview > img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
+  background: #fff;
 }
 
 .book-thumb-empty {
@@ -1870,11 +1874,12 @@ export default {
 }
 
 .book-thumb-half {
-  flex: 1;
+  position: relative;
+  flex: 1 1 50%;
   min-width: 0;
   min-height: 48px;
-  background: #f5f7fa;
   overflow: hidden;
+  background: #fff;
 }
 
 .book-thumb-half + .book-thumb-half {
@@ -1882,16 +1887,20 @@ export default {
 }
 
 .book-thumb-half img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
+  background: #fff;
 }
 
 .book-thumb-half em {
+  position: absolute;
+  inset: 0;
   display: block;
-  width: 100%;
-  min-height: 48px;
   background: #f0f2f5;
 }
 
