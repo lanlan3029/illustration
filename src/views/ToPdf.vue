@@ -46,6 +46,8 @@
               'is-cover-motion': !!coverLeaf,
               'is-cover-open': coverLeafFlipped,
               'is-cover-from-back': coverLeaf && coverLeaf.side === 'left',
+              'is-cover-opening': coverLeaf && coverLeaf.mode === 'open',
+              'is-cover-closing': coverLeaf && coverLeaf.mode === 'close',
             }"
             :style="bookFrameStyle"
           >
@@ -62,7 +64,11 @@
                   :src="currentSheet.page.src"
                   alt=""
                 />
-                <div v-else class="book-placeholder">
+                <div
+                  v-else
+                  class="book-placeholder"
+                  :class="{ 'book-placeholder--muted': currentSheet.type === 'back' }"
+                >
                   <strong>{{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}</strong>
                   <span v-if="form.title">{{ form.title }}</span>
                 </div>
@@ -178,7 +184,11 @@
                     :src="coverLeaf.page.src"
                     alt=""
                   />
-                  <div v-else class="book-placeholder">
+                  <div
+                    v-else
+                    class="book-placeholder"
+                    :class="{ 'book-placeholder--muted': coverLeaf.sheetType === 'back' }"
+                  >
                     <strong>
                       {{
                         coverLeaf.sheetType === 'back'
@@ -730,6 +740,7 @@ export default {
       if (isSingle(fromSheet) && isSpread(toSheet)) {
         const openFromBack = fromSheet.type === 'back';
         this.coverLeaf = {
+          mode: 'open',
           side: openFromBack ? 'left' : 'right',
           page: fromSheet.page,
           sheetType: fromSheet.type,
@@ -759,6 +770,7 @@ export default {
       if (isSpread(fromSheet) && isSingle(toSheet)) {
         const closeToBack = toSheet.type === 'back';
         this.coverLeaf = {
+          mode: 'close',
           side: closeToBack ? 'left' : 'right',
           page: toSheet.page,
           sheetType: toSheet.type,
@@ -1084,18 +1096,22 @@ export default {
   clip-path: inset(0);
 }
 
-/* 开合过程中内页先藏起，避免封面下再叠一层白页 */
-.book-stage-frame.is-cover-motion:not(.is-cover-open) .book-spread-veil {
+/* 仅「打开封面」时藏起内页，避免封面下叠白页；合上时内页必须一直在 */
+.book-stage-frame.is-cover-opening:not(.is-cover-open) .book-spread-veil {
   opacity: 0;
   pointer-events: none;
 }
 
-.book-stage-frame.is-cover-motion.is-cover-open .book-spread-veil {
+.book-stage-frame.is-cover-opening.is-cover-open .book-spread-veil {
   opacity: 1;
   transition:
     clip-path 0.9s cubic-bezier(0.645, 0.045, 0.355, 1),
-    /* 等封面翻过侧立后再淡入内页，避免封面下再露一层白页 */
     opacity 0.35s ease 0.4s;
+}
+
+.book-stage-frame.is-cover-closing .book-spread-veil {
+  opacity: 1;
+  transition: clip-path 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
 .book-face {
