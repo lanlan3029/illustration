@@ -63,14 +63,13 @@ function intervalControl() {
   ) {
     drawImg(ctx, left, top, horizontalImgIcon, 25, 20, fabricObject.angle);
   }
-  // 中间横杠
+  // 中间横杠：单轴缩放（不用 skew 变体，避免拖边被当成倾斜）
   fabric.Object.prototype.controls.ml = new fabric.Control({
     x: -0.5,
     y: 0,
     offsetX: -1,
-    cursorStyleHandler: fabric.controlsUtils.scaleSkewCursorStyleHandler,
-    actionHandler: fabric.controlsUtils.scalingXOrSkewingY,
-    getActionName: fabric.controlsUtils.scaleOrSkewActionName,
+    cursorStyleHandler: fabric.controlsUtils.scaleCursorStyleHandler,
+    actionHandler: fabric.controlsUtils.scalingX,
     render: renderIcon,
   });
 
@@ -78,9 +77,8 @@ function intervalControl() {
     x: 0.5,
     y: 0,
     offsetX: 1,
-    cursorStyleHandler: fabric.controlsUtils.scaleSkewCursorStyleHandler,
-    actionHandler: fabric.controlsUtils.scalingXOrSkewingY,
-    getActionName: fabric.controlsUtils.scaleOrSkewActionName,
+    cursorStyleHandler: fabric.controlsUtils.scaleCursorStyleHandler,
+    actionHandler: fabric.controlsUtils.scalingX,
     render: renderIcon,
   });
 
@@ -88,9 +86,8 @@ function intervalControl() {
     x: 0,
     y: 0.5,
     offsetY: 1,
-    cursorStyleHandler: fabric.controlsUtils.scaleSkewCursorStyleHandler,
-    actionHandler: fabric.controlsUtils.scalingYOrSkewingX,
-    getActionName: fabric.controlsUtils.scaleOrSkewActionName,
+    cursorStyleHandler: fabric.controlsUtils.scaleCursorStyleHandler,
+    actionHandler: fabric.controlsUtils.scalingY,
     render: renderIconHoz,
   });
 
@@ -98,9 +95,8 @@ function intervalControl() {
     x: 0,
     y: -0.5,
     offsetY: -1,
-    cursorStyleHandler: fabric.controlsUtils.scaleSkewCursorStyleHandler,
-    actionHandler: fabric.controlsUtils.scalingYOrSkewingX,
-    getActionName: fabric.controlsUtils.scaleOrSkewActionName,
+    cursorStyleHandler: fabric.controlsUtils.scaleCursorStyleHandler,
+    actionHandler: fabric.controlsUtils.scalingY,
     render: renderIconHoz,
   });
 }
@@ -233,8 +229,11 @@ class ControlsPlugin implements IPluginTempl {
     // 旋转图标
     rotationControl();
 
-    // 默认自由缩放（边可控单轴、角点自由）；按住 Shift 等比
+    // 默认自由缩放；按住 Shift 等比（fabric scaleIsProportional）
     this.canvas.uniformScaling = false;
+    // 禁止边控倾斜，保证拖边一定是单轴缩放
+    fabric.Object.prototype.lockSkewingX = true;
+    fabric.Object.prototype.lockSkewingY = true;
 
     // 选中样式
     fabric.Object.prototype.set({

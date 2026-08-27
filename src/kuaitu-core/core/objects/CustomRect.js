@@ -15,8 +15,11 @@ fabric.Rect = fabric.util.createClass(fabric.Rect, {
   },
   _render(ctx) {
     const roundValue = this.roundValue || 0;
-    this.rx = (1 / this.scaleX) * roundValue;
-    this.ry = (1 / this.scaleY) * roundValue;
+    const nextRx = this.scaleX ? (1 / this.scaleX) * roundValue : roundValue;
+    const nextRy = this.scaleY ? (1 / this.scaleY) * roundValue : roundValue;
+    // 仅在值变化时写入，避免每帧无意义赋值
+    if (this.rx !== nextRx) this.rx = nextRx;
+    if (this.ry !== nextRy) this.ry = nextRy;
     this.callSuper('_render', ctx);
   },
 });

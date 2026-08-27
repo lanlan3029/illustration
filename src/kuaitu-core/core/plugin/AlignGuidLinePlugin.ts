@@ -121,8 +121,7 @@ class AlignGuidLinePlugin implements IPluginTempl {
       let _elReachLeft = 0; //左距离
       let _elReachTop = 0; //上距离
 
-      activeObject.set('hasControls', false);
-
+      // 不再每帧关掉 hasControls：缩放/拖动时反复显隐控制点会造成闪烁
       if (!transform) return;
 
       for (let i = canvasObjects.length; i--; ) {
@@ -396,9 +395,9 @@ class AlignGuidLinePlugin implements IPluginTempl {
     });
 
 
+    // 缩放时只显示辅助线，不强制改 scale/位置。
+    // 原先每帧 snap scale 会与 fabric 拖动手势打架，表现为缩放闪动、无法自由拉伸。
     canvas.on('object:scaling', (e) => {
-
-
       if (viewportTransform === undefined || e.target === undefined) return;
 
       const activeObject = e.target;
@@ -406,21 +405,13 @@ class AlignGuidLinePlugin implements IPluginTempl {
       const activeObjectCenter = activeObject.getCenterPoint();
       const activeObjectLeft = activeObjectCenter.x;
       const activeObjectTop = activeObjectCenter.y;
-      const activeObjectBoundingRect = activeObject.getBoundingRect();
       const activeObjectHeight = activeObject.getScaledHeight();
       const activeObjectWidth = activeObject.getScaledWidth();
       let horizontalInTheRange = false;
       let verticalInTheRange = false;
-      const transform = canvas._currentTransform;
-
-      activeObject.set('hasControls', false);
-      if (!transform) return;
 
       for (let i = canvasObjects.length; i--; ) {
-        // eslint-disable-next-line no-continue
         if (canvasObjects[i] === activeObject) continue;
-
-        // 排除辅助线
         if (
           activeObject instanceof fabric.GuideLine &&
           canvasObjects[i] instanceof fabric.GuideLine
@@ -435,12 +426,9 @@ class AlignGuidLinePlugin implements IPluginTempl {
         const objectHeight = objectBoundingRect.height / viewportTransform[3];
         const objectWidth = objectBoundingRect.width / viewportTransform[0];
 
-        // snap by the horizontal center line
-        //水平中心线
         if (isInRange(objectLeft, activeObjectLeft)) {
           verticalInTheRange = true;
-          verticalLines = [];
-          verticalLines.push({
+          verticalLines = [{
             x: objectLeft,
             y1:
               objectTop < activeObjectTop
@@ -450,15 +438,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectTop > objectTop
                 ? activeObjectTop + activeObjectHeight / 2 + aligningLineOffset
                 : activeObjectTop - activeObjectHeight / 2 - aligningLineOffset,
-          });
+          }];
         }
 
-        // snap by the left edge
-        //左边线
         if (isInRange(objectLeft - objectWidth / 2, activeObjectLeft - activeObjectWidth / 2)) {
           verticalInTheRange = true;
-          verticalLines = [];
-          verticalLines.push({
+          verticalLines = [{
             x: objectLeft - objectWidth / 2,
             y1:
               objectTop < activeObjectTop
@@ -468,38 +453,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectTop > objectTop
                 ? activeObjectTop + activeObjectHeight / 2 + aligningLineOffset
                 : activeObjectTop - activeObjectHeight / 2 - aligningLineOffset,
-          });
-
-          let leftRight = new Map([
-            ['bl', 1],
-            ['ml', 1],
-            ['tl', 1],
-          ]);
-          if (leftRight.get(e.transform.corner)) {
-            activeObject.setPositionByOrigin(
-              new fabric.Point(
-                objectLeft - objectWidth / 2 + activeObjectWidth / 2,
-                activeObjectTop
-              ),
-              'center',
-              'center'
-            );
-
-            activeObject.set(
-              'scaleX',
-              ((activeLeft - (objectLeft - objectWidth / 2) + activeWidth) * activeObject.scaleX) /
-              activeObject.getScaledWidth()
-            );
-            break;
-          }
+          }];
         }
 
-        // snap by the right edge
-        //右边线
         if (isInRange(objectLeft + objectWidth / 2, activeObjectLeft + activeObjectWidth / 2)) {
           verticalInTheRange = true;
-          verticalLines = [];
-          verticalLines.push({
+          verticalLines = [{
             x: objectLeft + objectWidth / 2,
             y1:
               objectTop < activeObjectTop
@@ -509,31 +468,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectTop > objectTop
                 ? activeObjectTop + activeObjectHeight / 2 + aligningLineOffset
                 : activeObjectTop - activeObjectHeight / 2 - aligningLineOffset,
-          });
-
-          let Right = new Map([
-            ['mr', 1],
-            ['tr', 1],
-            ['br', 1],
-          ]);
-
-          if (Right.get(e.transform.corner)) {
-            activeObject.set(
-              'scaleX',
-              ((objectLeft + objectWidth / 2 - (activeLeft + activeWidth) + activeWidth) *
-                activeObject.scaleX) /
-              activeObject.getScaledWidth()
-            );
-            break;
-          }
+          }];
         }
 
-        // snap by the vertical center line
-        //垂直中心线
         if (isInRange(objectTop, activeObjectTop)) {
           horizontalInTheRange = true;
-          horizontalLines = [];
-          horizontalLines.push({
+          horizontalLines = [{
             y: objectTop,
             x1:
               objectLeft < activeObjectLeft
@@ -543,14 +483,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectLeft > objectLeft
                 ? activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset
                 : activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset,
-          });
+          }];
         }
 
-        // snap by the top edge
         if (isInRange(objectTop - objectHeight / 2, activeObjectTop - activeObjectHeight / 2)) {
           horizontalInTheRange = true;
-          horizontalLines = [];
-          horizontalLines.push({
+          horizontalLines = [{
             y: objectTop - objectHeight / 2,
             x1:
               objectLeft < activeObjectLeft
@@ -560,38 +498,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectLeft > objectLeft
                 ? activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset
                 : activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset,
-          });
-
-          let bottomRight = new Map([
-            ['tr', 1],
-            ['tl', 1],
-            ['mt', 1],
-          ]);
-
-          if (bottomRight.get(e.transform.corner)) {
-            activeObject.setPositionByOrigin(
-              new fabric.Point(
-                activeObjectLeft,
-                objectTop - objectHeight / 2 + activeObjectHeight / 2
-              ),
-              'center',
-              'center'
-            );
-
-            activeObject.set(
-              'scaleY',
-              ((activeTop + activeHeight - (objectTop - objectHeight / 2)) * activeObject.scaleY) /
-              activeObject.getScaledHeight()
-            );
-            break;
-          }
+          }];
         }
 
-        // snap by the bottom edge
         if (isInRange(objectTop + objectHeight / 2, activeObjectTop + activeObjectHeight / 2)) {
           horizontalInTheRange = true;
-          horizontalLines = [];
-          horizontalLines.push({
+          horizontalLines = [{
             y: objectTop + objectHeight / 2,
             x1:
               objectLeft < activeObjectLeft
@@ -601,29 +513,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectLeft > objectLeft
                 ? activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset
                 : activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset,
-          });
-
-          let bottom = new Map([
-            ['mb', 1],
-            ['bl', 1],
-            ['br', 1],
-          ]);
-          if (bottom.get(e.transform.corner)) {
-            activeObject.set(
-              'scaleY',
-              ((objectTop + objectHeight / 2 - (activeTop + activeHeight) + activeHeight) *
-                activeObject.scaleY) /
-              activeObject.getScaledHeight()
-            );
-            break;
-          }
+          }];
         }
 
-        //左边线和右边线
         if (isInRange(objectLeft - objectWidth / 2, activeObjectLeft + activeObjectWidth / 2)) {
           verticalInTheRange = true;
-          verticalLines = [];
-          verticalLines.push({
+          verticalLines = [{
             x: objectLeft - objectWidth / 2,
             y1:
               objectTop < activeObjectTop
@@ -633,27 +528,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectTop > objectTop
                 ? activeObjectTop + activeObjectHeight / 2 + aligningLineOffset
                 : activeObjectTop - activeObjectHeight / 2 - aligningLineOffset,
-          });
-
-          let right = new Map([
-            ['mr', 1],
-            ['tr', 1],
-            ['br', 1],
-          ]);
-          if (right.get(e.transform.corner)) {
-            activeObject.set(
-              'scaleX',
-              ((objectLeft - objectWidth / 2 - activeObject.left) * activeObject.scaleX) /
-              activeObject.getScaledWidth()
-            );
-            break;
-          }
+          }];
         }
-        //右边线和左边线
+
         if (isInRange(objectLeft + objectWidth / 2, activeObjectLeft - activeObjectWidth / 2)) {
           verticalInTheRange = true;
-          verticalLines = [];
-          verticalLines.push({
+          verticalLines = [{
             x: objectLeft + objectWidth / 2,
             y1:
               objectTop < activeObjectTop
@@ -663,36 +543,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectTop > objectTop
                 ? activeObjectTop + activeObjectHeight / 2 + aligningLineOffset
                 : activeObjectTop - activeObjectHeight / 2 - aligningLineOffset,
-          });
-
-          let leftRight = new Map([
-            ['bl', 1],
-            ['ml', 1],
-            ['tl', 1],
-          ]);
-          if (leftRight.get(e.transform.corner)) {
-            activeObject.setPositionByOrigin(
-              new fabric.Point(
-                objectLeft + objectWidth / 2 + activeObjectWidth / 2,
-                activeObjectTop
-              ),
-              'center',
-              'center'
-            );
-
-            activeObject.set(
-              'scaleX',
-              ((activeLeft + activeWidth - (objectLeft + objectWidth / 2)) * activeObject.scaleX) /
-              activeObject.getScaledWidth()
-            );
-            break;
-          }
+          }];
         }
-        //上边线和下边线
+
         if (isInRange(objectTop - objectHeight / 2, activeObjectTop + activeObjectHeight / 2)) {
           horizontalInTheRange = true;
-          horizontalLines = [];
-          horizontalLines.push({
+          horizontalLines = [{
             y: objectTop - objectHeight / 2,
             x1:
               objectLeft < activeObjectLeft
@@ -702,27 +558,12 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectLeft > objectLeft
                 ? activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset
                 : activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset,
-          });
-
-          let bottom = new Map([
-            ['mb', 1],
-            ['bl', 1],
-            ['br', 1],
-          ]);
-          if (bottom.get(e.transform.corner)) {
-            activeObject.set(
-              'scaleY',
-              ((objectTop - objectHeight / 2 - activeObject.top) * activeObject.scaleY) /
-              activeObject.getScaledHeight()
-            );
-            break;
-          }
+          }];
         }
-        //下边线和上变线
+
         if (isInRange(objectTop + objectHeight / 2, activeObjectTop - activeObjectHeight / 2)) {
           horizontalInTheRange = true;
-          horizontalLines = [];
-          horizontalLines.push({
+          horizontalLines = [{
             y: objectTop + objectHeight / 2,
             x1:
               objectLeft < activeObjectLeft
@@ -732,43 +573,14 @@ class AlignGuidLinePlugin implements IPluginTempl {
               activeObjectLeft > objectLeft
                 ? activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset
                 : activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset,
-          });
-
-          let bottomRight = new Map([
-            ['tr', 1],
-            ['tl', 1],
-            ['mt', 1],
-          ]);
-
-          if (bottomRight.get(e.transform.corner)) {
-            activeObject.setPositionByOrigin(
-              new fabric.Point(
-                activeObjectLeft,
-                objectTop + objectHeight / 2 + activeObjectHeight / 2
-              ),
-              'center',
-              'center'
-            );
-
-            activeObject.set(
-              'scaleY',
-              ((activeTop + activeHeight - (objectTop + objectHeight / 2)) * activeObject.scaleY) /
-              activeObject.getScaledHeight()
-            );
-
-            break;
-          }
+          }];
         }
       }
 
-      if (!horizontalInTheRange) {
-        horizontalLines.length = 0;
-      }
-
-      if (!verticalInTheRange) {
-        verticalLines.length = 0;
-      }
+      if (!horizontalInTheRange) horizontalLines.length = 0;
+      if (!verticalInTheRange) verticalLines.length = 0;
     });
+
     canvas.on('after:render', () => {
       ctx.save();
       ctx.beginPath();
@@ -793,14 +605,11 @@ class AlignGuidLinePlugin implements IPluginTempl {
       horizontalLines.length = 0;
     });
 
-    canvas.on('mouse:up', (e) => {
-      const activeObject = e.target;
-      if (activeObject && activeObject.selectable && !activeObject.lockRotation) {
-        activeObject.set('hasControls', true);
-      }
+    canvas.on('mouse:up', () => {
+      // 勿强制 hasControls=true：照片槽等对象本就应保持无控制点
       verticalLines.length = 0;
       horizontalLines.length = 0;
-      canvas.renderAll();
+      canvas.requestRenderAll();
     });
   }
 

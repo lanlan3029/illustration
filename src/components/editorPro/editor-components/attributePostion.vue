@@ -132,14 +132,13 @@ onMounted(() => {
   canvasEditor.on('selectCancel', selectCancel)
   canvasEditor.on('selectOne', getObjectAttr)
   canvasEditor.canvas.on('object:modified', getObjectAttr)
-  canvasEditor.canvas.on('object:scaling', getObjectAttr)
+  // 缩放过程不刷新属性面板，避免 Vue 重绘与画布抢帧造成闪动
 })
 
 onBeforeUnmount(() => {
   canvasEditor.off('selectCancel', selectCancel)
   canvasEditor.off('selectOne', getObjectAttr)
   canvasEditor.canvas.off('object:modified', getObjectAttr)
-  canvasEditor.canvas.off('object:scaling', getObjectAttr)
 })
 </script>
 
