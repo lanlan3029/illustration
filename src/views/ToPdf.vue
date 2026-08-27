@@ -49,7 +49,6 @@
             }"
             :style="bookFrameStyle"
           >
-            <div class="book-shift-wrap">
             <!-- 封面 / 封底：静止单页（开合书时由 coverLeaf 接管） -->
             <div
               v-if="showSingleFace"
@@ -73,9 +72,12 @@
               </span>
             </div>
 
-            <!-- 扉页 / 内页：左侧不动，右侧 3D 翻页 -->
+            <!-- 扉页 / 内页：开合时单独裁剪，封面叶子不受 clip，可整页左翻 -->
             <div
               v-else-if="isSpreadView"
+              class="book-spread-veil"
+            >
+            <div
               class="book-face book-face--spread"
             >
               <div class="book-half book-half--left">
@@ -157,8 +159,9 @@
               </div>
               <span class="book-face-badge">{{ sheetBadge }}</span>
             </div>
+            </div>
 
-            <!-- 封面开合：随书体右移，绕书脊翻开（封底为左移+左叶） -->
+            <!-- 封面：宽度=整页（双页框的一半），只做整体左翻，不参与缩放 -->
             <div
               v-if="coverLeaf"
               class="book-cover-leaf"
@@ -199,7 +202,6 @@
                   </div>
                 </div>
               </div>
-            </div>
             </div>
           </div>
 
@@ -1018,9 +1020,6 @@ export default {
   aspect-ratio: var(--frame-ar, 1);
   height: auto;
   margin: 0 auto;
-  transition:
-    width 0.9s cubic-bezier(0.645, 0.045, 0.355, 1),
-    aspect-ratio 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
   transform-style: preserve-3d;
   overflow: visible;
 }
@@ -1033,48 +1032,56 @@ export default {
   );
 }
 
-/* 开合书：整书平移容器（封面打开时由左偏 → 归位 = 视觉上往右移） */
-.book-shift-wrap {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
+/*
+ * 开合书：双页框尺寸一次到位（无宽度过渡）。
+ * 框体 translateX 右移；内页用 veil clip 露出左页；封面叶子在 veil 外整页左翻。
+ */
+.book-stage-frame.is-cover-motion {
   transition: transform 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
   will-change: transform;
 }
 
-.book-stage-frame.is-cover-motion:not(.is-cover-from-back):not(.is-cover-open) .book-shift-wrap {
+.book-stage-frame.is-cover-motion:not(.is-cover-from-back):not(.is-cover-open) {
   transform: translateX(-25%);
 }
 
-.book-stage-frame.is-cover-motion:not(.is-cover-from-back).is-cover-open .book-shift-wrap {
+.book-stage-frame.is-cover-motion:not(.is-cover-from-back).is-cover-open {
   transform: translateX(0);
 }
 
-.book-stage-frame.is-cover-motion.is-cover-from-back:not(.is-cover-open) .book-shift-wrap {
+.book-stage-frame.is-cover-motion.is-cover-from-back:not(.is-cover-open) {
   transform: translateX(25%);
 }
 
-.book-stage-frame.is-cover-motion.is-cover-from-back.is-cover-open .book-shift-wrap {
+.book-stage-frame.is-cover-motion.is-cover-from-back.is-cover-open {
   transform: translateX(0);
 }
 
-.book-stage-frame.is-cover-motion:not(.is-cover-open):not(.is-cover-from-back) .book-half--left {
-  opacity: 0;
+.book-spread-veil {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
 }
 
-.book-stage-frame.is-cover-motion.is-cover-open .book-half--left,
-.book-stage-frame.is-cover-motion.is-cover-from-back .book-half--left {
-  opacity: 1;
-  transition: opacity 0.55s ease 0.12s;
+.book-stage-frame.is-cover-motion .book-spread-veil {
+  transition: clip-path 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
-.book-stage-frame.is-cover-motion:not(.is-cover-open).is-cover-from-back .book-half--right {
-  opacity: 0;
+.book-stage-frame.is-cover-motion:not(.is-cover-from-back):not(.is-cover-open) .book-spread-veil {
+  clip-path: inset(0 0 0 50%);
 }
 
-.book-stage-frame.is-cover-motion.is-cover-open.is-cover-from-back .book-half--right {
-  opacity: 1;
-  transition: opacity 0.55s ease 0.12s;
+.book-stage-frame.is-cover-motion:not(.is-cover-from-back).is-cover-open .book-spread-veil,
+.book-stage-frame:not(.is-cover-motion) .book-spread-veil {
+  clip-path: inset(0);
+}
+
+.book-stage-frame.is-cover-motion.is-cover-from-back:not(.is-cover-open) .book-spread-veil {
+  clip-path: inset(0 50% 0 0);
+}
+
+.book-stage-frame.is-cover-motion.is-cover-from-back.is-cover-open .book-spread-veil {
+  clip-path: inset(0);
 }
 
 .book-face {
@@ -1228,7 +1235,7 @@ export default {
   opacity: 0;
 }
 
-/* 封面开合叶：叠在右半页，与书体右移同步绕书脊翻开 */
+/* 封面叶子：相对双页框固定整页宽，只做整体左翻，不参与任何缩放 */
 .book-cover-leaf {
   position: absolute;
   top: 0;
@@ -1242,22 +1249,22 @@ export default {
   transition: transform 0.9s cubic-bezier(0.645, 0.045, 0.355, 1);
   will-change: transform;
   pointer-events: none;
-  border-radius: 0 10px 10px 0;
+  border-radius: 4px 10px 10px 4px;
 }
 
 .book-cover-leaf.is-flipped {
-  transform: rotateY(-165deg);
+  transform: rotateY(-180deg);
 }
 
 .book-cover-leaf--left {
   right: auto;
   left: 0;
   transform-origin: right center;
-  border-radius: 10px 0 0 10px;
+  border-radius: 10px 4px 4px 10px;
 }
 
 .book-cover-leaf--left.is-flipped {
-  transform: rotateY(165deg);
+  transform: rotateY(180deg);
 }
 
 .book-cover-leaf__face {
