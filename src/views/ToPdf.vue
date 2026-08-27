@@ -28,7 +28,7 @@
 
         <div
           class="book-viewer"
-          :class="{ 'is-spread': currentSheet.type === 'title' || currentSheet.type === 'spread' }"
+          :class="{ 'is-spread': isSpreadView }"
           @click="onBookClick"
         >
           <button
@@ -41,37 +41,32 @@
           </button>
 
           <div class="book-stage-frame" :style="bookFrameStyle">
-            <!-- 封面 / 封底：整页翻动 -->
-            <transition
-              v-if="currentSheet.type === 'cover' || currentSheet.type === 'back'"
-              :name="flipTransition"
-              mode="out-in"
+            <!-- 封面 / 封底：静止单页（开合书时由 coverLeaf 接管） -->
+            <div
+              v-if="showSingleFace"
+              :key="`sheet-${sheetIndex}-single`"
+              class="book-face book-face--single"
             >
-              <div
-                :key="`sheet-${sheetIndex}-single`"
-                class="book-face book-face--single"
-              >
-                <div class="book-face-spine" aria-hidden="true" />
-                <div class="book-face-art">
-                  <img
-                    v-if="currentSheet.page && !currentSheet.page.blank && currentSheet.page.src"
-                    :src="currentSheet.page.src"
-                    alt=""
-                  />
-                  <div v-else class="book-placeholder">
-                    <strong>{{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}</strong>
-                    <span v-if="form.title">{{ form.title }}</span>
-                  </div>
+              <div class="book-face-spine" aria-hidden="true" />
+              <div class="book-face-art">
+                <img
+                  v-if="currentSheet.page && !currentSheet.page.blank && currentSheet.page.src"
+                  :src="currentSheet.page.src"
+                  alt=""
+                />
+                <div v-else class="book-placeholder">
+                  <strong>{{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}</strong>
+                  <span v-if="form.title">{{ form.title }}</span>
                 </div>
-                <span class="book-face-badge">
-                  {{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}
-                </span>
               </div>
-            </transition>
+              <span class="book-face-badge">
+                {{ currentSheet.type === 'cover' ? $t('toPdf.roleCover') : $t('toPdf.roleBack') }}
+              </span>
+            </div>
 
             <!-- 扉页 / 内页：左侧不动，右侧 3D 翻页 -->
             <div
-              v-else
+              v-else-if="isSpreadView"
               class="book-face book-face--spread"
             >
               <div class="book-half book-half--left">
@@ -143,7 +138,7 @@
                           <strong>{{ form.title || $t('toPdf.bookTitlePlaceholder') }}</strong>
                         </div>
                         <div v-else class="book-placeholder book-placeholder--muted">
-                          <span>{{ $t('toPdf.blankPage') }}</span>
+                          <span>{{ flipLeaf.backLabel || $t('toPdf.blankPage') }}</span>
                         </div>
                       </div>
                       <span class="book-page-leaf__gloss book-page-leaf__gloss--back" aria-hidden="true" />
@@ -152,6 +147,49 @@
                 </div>
               </div>
               <span class="book-face-badge">{{ sheetBadge }}</span>
+            </div>
+
+            <!-- 封面/封底开合：盖在右半（或左半）页上翻转 -->
+            <div
+              v-if="coverLeaf"
+              class="book-cover-leaf"
+              :class="{
+                'is-flipped': coverLeafFlipped,
+                'book-cover-leaf--left': coverLeaf.side === 'left',
+              }"
+            >
+              <div class="book-cover-leaf__face book-cover-leaf__front">
+                <div class="book-face-spine" aria-hidden="true" />
+                <div class="book-face-art">
+                  <img
+                    v-if="coverLeaf.page && !coverLeaf.page.blank && coverLeaf.page.src"
+                    :src="coverLeaf.page.src"
+                    alt=""
+                  />
+                  <div v-else class="book-placeholder">
+                    <strong>
+                      {{
+                        coverLeaf.sheetType === 'back'
+                          ? $t('toPdf.roleBack')
+                          : $t('toPdf.roleCover')
+                      }}
+                    </strong>
+                    <span v-if="form.title">{{ form.title }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="book-cover-leaf__face book-cover-leaf__back" aria-hidden="true">
+                <div class="book-face-art">
+                  <img
+                    v-if="coverLeaf.backPage && !coverLeaf.backPage.blank && coverLeaf.backPage.src"
+                    :src="coverLeaf.backPage.src"
+                    alt=""
+                  />
+                  <div v-else class="book-placeholder book-placeholder--muted">
+                    <span>{{ coverLeaf.backLabel || $t('toPdf.blankPage') }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -333,6 +371,9 @@ export default {
       flipTimer: null,
       flipLeaf: null,
       flipLeafFlipped: false,
+      /** 封面/封底开合叶 */
+      coverLeaf: null,
+      coverLeafFlipped: false,
       /** 翻页过程中强制下层右页（上一页），避免 prev 时闪成新图 */
       rightUnderOverride: null,
       dragIndex: null,
@@ -368,8 +409,7 @@ export default {
     },
     bookRatioLabel() {
       const f = this.activeFormat;
-      const isSpread = this.currentSheet.type === 'title' || this.currentSheet.type === 'spread';
-      if (isSpread) {
+      if (this.isSpreadView) {
         return this.$t('toPdf.bookRatioSpread', {
           w: f.trimWidthIn,
           h: f.trimHeightIn,
@@ -380,15 +420,21 @@ export default {
     },
     /** 外框按高度锁定，宽度由单页/双页比例推导，避免被撑扁 */
     bookFrameStyle() {
-      const isSpread = this.currentSheet.type === 'title' || this.currentSheet.type === 'spread';
+      const isSpread = this.isSpreadView;
       const pageAr = this.pageAspectValue;
       const frameAr = isSpread ? pageAr * 2 : pageAr;
       return {
         '--frame-ar': String(frameAr),
       };
     },
-    flipTransition() {
-      return this.flipDirection === 'prev' ? 'book-flip-prev' : 'book-flip-next';
+    isSpreadView() {
+      const t = this.currentSheet?.type;
+      if (t === 'title' || t === 'spread') return true;
+      return !!this.coverLeaf;
+    },
+    showSingleFace() {
+      const t = this.currentSheet?.type;
+      return (t === 'cover' || t === 'back') && !this.coverLeaf;
     },
     rightUnderPage() {
       if (this.rightUnderOverride) return this.rightUnderOverride;
@@ -612,6 +658,7 @@ export default {
       const fromSheet = this.sheets[this.sheetIndex];
       const toSheet = this.sheets[idx];
       const isSpread = (s) => s && (s.type === 'title' || s.type === 'spread');
+      const isSingle = (s) => s && (s.type === 'cover' || s.type === 'back');
 
       this.flipDirection = direction;
       this.isFlipping = true;
@@ -628,6 +675,7 @@ export default {
             sheetType: fromSheet.type,
             backPage: toSheet.left,
             backSheetType: toSheet.type,
+            backLabel: toSheet.leftLabel,
           };
           this.flipLeafFlipped = false;
           this.rightUnderOverride = null;
@@ -645,6 +693,7 @@ export default {
             sheetType: toSheet.type,
             backPage: fromSheet.left,
             backSheetType: fromSheet.type,
+            backLabel: fromSheet.leftLabel,
           };
           this.flipLeafFlipped = true;
           this.sheetIndex = idx;
@@ -665,7 +714,63 @@ export default {
         return;
       }
 
+      // 封面/封底 ↔ 双页：开合书动画
+      if (isSingle(fromSheet) && isSpread(toSheet)) {
+        const openFromBack = fromSheet.type === 'back';
+        this.coverLeaf = {
+          side: openFromBack ? 'left' : 'right',
+          page: fromSheet.page,
+          sheetType: fromSheet.type,
+          backPage: openFromBack ? toSheet.right : toSheet.left,
+          backSheetType: toSheet.type,
+          backLabel: toSheet.leftLabel,
+        };
+        this.coverLeafFlipped = false;
+        this.sheetIndex = idx;
+        this.$nextTick(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.coverLeafFlipped = true;
+            });
+          });
+        });
+        this.flipTimer = setTimeout(() => {
+          this.coverLeaf = null;
+          this.coverLeafFlipped = false;
+          this.isFlipping = false;
+          this.flipTimer = null;
+        }, 980);
+        return;
+      }
+
+      if (isSpread(fromSheet) && isSingle(toSheet)) {
+        const closeToBack = toSheet.type === 'back';
+        this.coverLeaf = {
+          side: closeToBack ? 'left' : 'right',
+          page: toSheet.page,
+          sheetType: toSheet.type,
+          backPage: closeToBack ? fromSheet.right : fromSheet.left,
+          backSheetType: fromSheet.type,
+          backLabel: fromSheet.leftLabel,
+        };
+        this.coverLeafFlipped = true;
+        this.$nextTick(() => {
+          requestAnimationFrame(() => {
+            this.coverLeafFlipped = false;
+          });
+        });
+        this.flipTimer = setTimeout(() => {
+          this.sheetIndex = idx;
+          this.coverLeaf = null;
+          this.coverLeafFlipped = false;
+          this.isFlipping = false;
+          this.flipTimer = null;
+        }, 980);
+        return;
+      }
+
       this.flipLeaf = null;
+      this.coverLeaf = null;
       this.rightUnderOverride = null;
       this.sheetIndex = idx;
       this.flipTimer = setTimeout(() => {
@@ -902,6 +1007,10 @@ export default {
   aspect-ratio: var(--frame-ar, 1);
   height: auto;
   margin: 0 auto;
+  transition:
+    width 0.55s cubic-bezier(0.645, 0.045, 0.355, 1),
+    aspect-ratio 0.55s cubic-bezier(0.645, 0.045, 0.355, 1);
+  transform-style: preserve-3d;
 }
 
 .book-viewer.is-spread .book-stage-frame {
@@ -1063,6 +1172,67 @@ export default {
   opacity: 0;
 }
 
+/* 封面/封底开合叶：贴在展开后的右半（封面）或左半（封底） */
+.book-cover-leaf {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 8;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition: transform 0.85s cubic-bezier(0.645, 0.045, 0.355, 1);
+  will-change: transform;
+  pointer-events: none;
+  border-radius: 0 10px 10px 0;
+}
+
+.book-cover-leaf.is-flipped {
+  transform: rotateY(-180deg);
+}
+
+.book-cover-leaf--left {
+  right: auto;
+  left: 0;
+  transform-origin: right center;
+  border-radius: 10px 0 0 10px;
+}
+
+.book-cover-leaf--left.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.book-cover-leaf__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  background: #fff;
+  box-shadow:
+    0 18px 48px rgba(40, 30, 60, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+.book-cover-leaf__front {
+  border-radius: inherit;
+}
+
+.book-cover-leaf__back {
+  transform: rotateY(180deg);
+  background: #fff;
+}
+
+.book-cover-leaf--left .book-cover-leaf__back {
+  transform: rotateY(-180deg);
+}
+
+.book-cover-leaf .book-face-art {
+  border-radius: inherit;
+}
+
 .book-face-art {
   position: absolute;
   inset: 0;
@@ -1116,6 +1286,8 @@ export default {
 
 .book-placeholder--muted {
   color: #c0c4cc;
+  /* 环衬等空白页：纯白，不要灰白斜纹 */
+  background: #fff;
 }
 
 .book-placeholder--title {
@@ -1350,7 +1522,7 @@ export default {
   justify-content: center;
   color: #c0c4cc;
   font-size: 14px;
-  background: repeating-linear-gradient(-45deg, #fff, #fff 8px, #f5f7fa 8px, #f5f7fa 16px);
+  background: #fff;
 }
 
 .topdf-sidebar {
