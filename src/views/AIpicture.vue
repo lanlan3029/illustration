@@ -1851,7 +1851,7 @@ export default {
 }
 
 .page-main {
-    max-width: 1350px;
+    max-width: 1480px;
     width: 100%;
     margin: 0 auto;
     display: flex;
@@ -1872,8 +1872,8 @@ export default {
 }
 
 .inspiration-column {
-    flex: 0 0 360px;
-    width: 360px;
+    flex: 0 0 520px;
+    width: 520px;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -2458,8 +2458,8 @@ export default {
     overflow-y: auto;
     overflow-x: hidden;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px 8px;
     align-content: start;
     padding: 4px 2px 8px 0;
     scroll-behavior: smooth;
@@ -2828,11 +2828,22 @@ export default {
     background: rgba(192, 57, 74, 0.08);
 }
 
-/* 中等宽度：再收窄灵感栏，把预览留给创作区 */
-@media (max-width: 1100px) {
+/* 中等宽度：略收窄灵感栏，仍尽量保持三列 */
+@media (max-width: 1200px) {
     .inspiration-column {
-        flex: 0 0 300px;
-        width: 300px;
+        flex: 0 0 420px;
+        width: 420px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .inspiration-column {
+        flex: 0 0 340px;
+        width: 340px;
+    }
+
+    .style-list {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
