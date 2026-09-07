@@ -239,7 +239,7 @@ export async function planScrapbookDoodles(http, input = {}) {
           ''
       )
       const fromPrompt = prompt
-        .split(/[,，、；;]/n]/)
+        .split(/[,，、；;]/)
         .map((s) => s.replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, '').trim())
         .filter((s) => s.length >= 1 && s.length <= 8)
         .slice(0, MAX_DOODLES)
