@@ -130,16 +130,20 @@ export async function analyzeMemoryJournal(opts) {
  *   photos: string[],
  *   date?: string,
  *   name?: string,
+ *   style?: 'collection' | 'scrapbook',
+ *   doodles?: Array<{ id?: string, label?: string, transparentUrl?: string, imageUrl?: string } | string>,
  *   onStage?: (s: { key?: string, label?: string }) => void,
  *   http?: import('axios').AxiosInstance,
  *   apiBaseUrl?: string,
  * }} opts
  * photos: dataURL[]，1～9 张（全部放入 photos，不要只传一张）
+ * style: collection=收藏页；scrapbook=手账贴纸（可附带 AI 涂鸦）
  */
 export async function generateMemoryJournalPoster(opts) {
   const { diary, date, name, onStage } = opts
   const http = opts.http || axios
   const apiBase = (opts.apiBaseUrl || API_BASE).replace(/\/$/, '')
+  const style = opts.style === 'scrapbook' ? 'scrapbook' : 'collection'
 
   onStage?.({ key: 'photo', label: '正在理解你的照片' })
   const inputList = normalizeMemoryJournalPhotos(opts.photos)
@@ -156,12 +160,37 @@ export async function generateMemoryJournalPoster(opts) {
     )
   }
 
+  const doodleUrls = (Array.isArray(opts.doodles) ? opts.doodles : [])
+    .map((d) => (typeof d === 'string' ? d : (d?.transparentUrl || d?.imageUrl || '')))
+    .filter((u) => typeof u === 'string' && u.trim())
+    .slice(0, 8)
+
+  const doodleAssets = (Array.isArray(opts.doodles) ? opts.doodles : [])
+    .filter((d) => d && typeof d === 'object')
+    .map((d, i) => ({
+      id: d.id || `doodle-${i + 1}`,
+      label: String(d.label || '').trim(),
+      transparentUrl: d.transparentUrl || d.imageUrl || '',
+      imageUrl: d.imageUrl || d.transparentUrl || ''
+    }))
+    .filter((d) => d.transparentUrl || d.imageUrl)
+    .slice(0, 8)
+
   const requestBody = buildMemoryJournalBody(
     {
       diary,
       date,
       name,
-      extra: { generate: true }
+      extra: {
+        generate: true,
+        style,
+        ...(style === 'scrapbook' && doodleUrls.length
+          ? {
+              doodles: doodleUrls,
+              doodle_assets: doodleAssets.length ? doodleAssets : undefined
+            }
+          : {})
+      }
     },
     photos
   )
@@ -208,7 +237,10 @@ export async function generateMemoryJournalPoster(opts) {
     throw new Error(body.message || '未返回 task_id')
   }
 
-  onStage?.({ key: 'image', label: '正在生成收藏页' })
+  onStage?.({
+    key: 'image',
+    label: style === 'scrapbook' ? '正在拼贴手账页' : '正在生成收藏页'
+  })
   const done = await pollCreateCharacterTask(http, payload.task_id, {
     pollUrl: payload.poll_url,
     pollIntervalMs: payload.poll_interval_ms || 2000,

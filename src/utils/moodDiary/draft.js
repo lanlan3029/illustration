@@ -168,7 +168,11 @@ function defaultDraft() {
     posterGeneratingSlot: 0,
     /** 生成后暂存的本机日记条目 id（未点「保存到我的创作」前） */
     pendingLocalRecordId: null,
-    hasComposedPoster: false
+    hasComposedPoster: false,
+    /** collection | scrapbook */
+    posterStyle: 'collection',
+    /** AI 手账涂鸦图元：[{ id, label, transparentUrl, prompt }] */
+    scrapbookDoodleAssets: []
   }
 }
 

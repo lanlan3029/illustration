@@ -26,6 +26,7 @@ export function getMoodApiConfig() {
     DEFAULT_CAPTION_MOOD_RECAP
   const waitingQuotes =
     (process.env.VUE_APP_MOOD_WAITING_QUOTES || '').trim() || DEFAULT_MOOD_WAITING_QUOTES
+  const scrapbookDoodles = (process.env.VUE_APP_MOOD_SCRAPBOOK_DOODLES || '').trim()
   return {
     /** POST /caption/image-describe（multipart 或 JSON）；有图时返回描述 + 日记 + illustration_prompt */
     captionImageDescribeEndpoint: imageDescribe.trim() || null,
@@ -37,7 +38,9 @@ export function getMoodApiConfig() {
     /** POST /caption/mood-recap（JSON）；与 image-describe 同套 code/data 包装 */
     recapCompletionEndpoint: recapCompletion.trim() || null,
     /** GET 等待页句子；message 为数组 */
-    waitingQuotesEndpoint: waitingQuotes.trim() || null
+    waitingQuotesEndpoint: waitingQuotes.trim() || null,
+    /** POST /mood/scrapbook-doodles；日记 → 涂鸦主题列表（可选） */
+    scrapbookDoodlesEndpoint: scrapbookDoodles || '/mood/scrapbook-doodles'
   }
 }
 

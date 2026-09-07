@@ -61,6 +61,37 @@
         @change="onFilesPicked"
       />
 
+      <div class="mj-style-head">
+        <span class="mj-label">{{ $t('moodDiary.memoryJournal.styleLabel') }}</span>
+        <span class="mj-hint">{{ $t('moodDiary.memoryJournal.styleHint') }}</span>
+      </div>
+      <div class="mj-style-cards" role="radiogroup" :aria-label="$t('moodDiary.memoryJournal.styleLabel')">
+        <button
+          type="button"
+          class="mj-style-card"
+          role="radio"
+          :aria-checked="posterStyle === 'collection'"
+          :class="{ active: posterStyle === 'collection' }"
+          :disabled="generating"
+          @click="posterStyle = 'collection'"
+        >
+          <span class="mj-style-title">{{ $t('moodDiary.memoryJournal.styleCollectionTitle') }}</span>
+          <span class="mj-style-desc">{{ $t('moodDiary.memoryJournal.styleCollectionDesc') }}</span>
+        </button>
+        <button
+          type="button"
+          class="mj-style-card"
+          role="radio"
+          :aria-checked="posterStyle === 'scrapbook'"
+          :class="{ active: posterStyle === 'scrapbook' }"
+          :disabled="generating"
+          @click="posterStyle = 'scrapbook'"
+        >
+          <span class="mj-style-title">{{ $t('moodDiary.memoryJournal.styleScrapbookTitle') }}</span>
+          <span class="mj-style-desc">{{ $t('moodDiary.memoryJournal.styleScrapbookDesc') }}</span>
+        </button>
+      </div>
+
       <p v-if="progressLabel" class="mj-progress">{{ progressLabel }}</p>
 
       <div class="mj-actions-spacer" aria-hidden="true" />
@@ -73,7 +104,13 @@
           :disabled="!canGenerate"
           @click="runGenerate"
         >
-          {{ generating ? $t('moodDiary.generating') : $t('moodDiary.memoryJournal.generate') }}
+          {{
+            generating
+              ? $t('moodDiary.generating')
+              : posterStyle === 'scrapbook'
+                ? $t('moodDiary.memoryJournal.generateScrapbook')
+                : $t('moodDiary.memoryJournal.generate')
+          }}
         </el-button>
       </div>
     </div>
@@ -99,7 +136,7 @@
         {{ $t('moodDiary.memoryJournal.viewOriginal') }}
       </button>
 
-      <aside v-if="displayCaption || displayStoryCore || displayEmotion || displayDate" class="mj-story-card">
+      <aside v-if="displayCaption || displayStoryCore || displayEmotion || displayDate || doodleAssets.length" class="mj-story-card">
         <div v-if="displayCaption" class="mj-story-block">
           <p class="mj-story-kicker">{{ $t('moodDiary.memoryJournal.posterLineLabel') }}</p>
           <p class="mj-story-caption">「{{ displayCaption }}」</p>
@@ -110,6 +147,20 @@
         >
           {{ displayStoryCore }}
         </p>
+        <div v-if="doodleAssets.length" class="mj-doodle-strip">
+          <p class="mj-story-kicker">{{ $t('moodDiary.memoryJournal.doodleStripLabel') }}</p>
+          <div class="mj-doodle-row">
+            <div
+              v-for="d in doodleAssets"
+              :key="d.id"
+              class="mj-doodle-item"
+              :title="d.label"
+            >
+              <img :src="d.transparentUrl || d.imageUrl" :alt="d.label" />
+              <span>{{ d.label }}</span>
+            </div>
+          </div>
+        </div>
         <div v-if="displayEmotion || displayDate" class="mj-story-meta">
           <span v-if="displayEmotion" class="mj-chip">{{ displayEmotion }}</span>
           <span v-if="displayDate" class="mj-chip mj-chip--mute">{{ displayDate }}</span>
@@ -142,6 +193,7 @@ import MoodDiaryPosterResult from '@/components/moodDiary/MoodDiaryPosterResult.
 import { isMoodDiaryLoggedIn } from '@/utils/moodDiary/auth'
 import { setDraft } from '@/utils/moodDiary/draft'
 import { generateMemoryJournalPoster } from '@/utils/moodDiary/memoryJournalApi'
+import { generateScrapbookDoodlesFromDiary } from '@/utils/moodDiary/scrapbookDoodles'
 import { saveMoodPoster } from '@/utils/moodDiary/posterActions'
 import { downloadDataUrl } from '@/utils/moodDiary/sharePosterDraw'
 
@@ -164,6 +216,9 @@ export default {
     return {
       diary: '',
       photos: [],
+      /** collection = 收藏页；scrapbook = 手账贴纸（AI 涂鸦） */
+      posterStyle: 'collection',
+      doodleAssets: [],
       generating: false,
       saving: false,
       progressLabel: '',
@@ -278,14 +333,33 @@ export default {
       this.originalDiary = diaryText
 
       try {
-        // 全部照片进 photos[]，勿只传 [photos[0]]
         const allPhotos = [...this.photos].filter(Boolean)
+
+        if (this.posterStyle === 'scrapbook') {
+          this.progressLabel = this.$t('moodDiary.memoryJournal.stageDoodles')
+          const { assets } = await generateScrapbookDoodlesFromDiary(this.$http, {
+            diary: diaryText,
+            onProgress: (done, total) => {
+              this.progressLabel = this.$t('moodDiary.memoryJournal.stageDoodleProgress', {
+                done,
+                total
+              })
+            }
+          })
+          this.doodleAssets = Array.isArray(assets) ? assets : []
+        } else {
+          this.doodleAssets = []
+        }
+
+        this.progressLabel = this.$t('moodDiary.memoryJournal.stageCompose')
         const { imageUrl, analysis } = await generateMemoryJournalPoster({
           http: this.$http,
           diary: diaryText,
           photos: allPhotos,
           date: this.todayDate(),
           name: this.userName,
+          style: this.posterStyle,
+          doodles: this.posterStyle === 'scrapbook' ? this.doodleAssets : [],
           onStage: (s) => {
             this.progressLabel = s?.label || s?.key || this.progressLabel
           }
@@ -302,7 +376,9 @@ export default {
           composedPosterDataUrl: imageUrl,
           hasComposedPoster: true,
           posterMode: 'photo',
-          inputMode: 'memory_journal'
+          inputMode: 'memory_journal',
+          posterStyle: this.posterStyle,
+          scrapbookDoodleAssets: this.doodleAssets
         })
         ElMessage.success(this.$t('moodDiary.memoryJournal.generateSuccess'))
       } catch (err) {
@@ -348,6 +424,7 @@ export default {
       this.analysis = null
       this.progressLabel = ''
       this.showOriginal = true
+      this.doodleAssets = []
       if (this.originalDiary && !this.diary.trim()) {
         this.diary = this.originalDiary
       }
@@ -625,6 +702,96 @@ export default {
   margin-top: 8px;
 }
 
+.mj-style-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mj-style-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mj-style-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--md-border, #e6deef);
+  border-radius: 12px;
+  background: var(--md-card, #fffcfe);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--md-text, #5f5970);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mj-style-card:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.mj-style-card.active {
+  border-color: var(--md-accent-deep, #7ecbb8);
+  background: var(--md-accent-soft, #edf8f4);
+}
+
+.mj-style-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.mj-style-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--md-muted, #9d96a8);
+}
+
+.mj-doodle-strip {
+  margin: 0 0 12px;
+}
+
+.mj-doodle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mj-doodle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+}
+
+.mj-doodle-item img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--md-border, #e6deef);
+  border-radius: 8px;
+}
+
+.mj-doodle-item span {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--md-muted, #9d96a8);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mj-hint {
   font-size: 11px;
   color: var(--md-muted, #9d96a8);
@@ -765,6 +932,10 @@ export default {
   .mj-photos-head {
     flex-wrap: wrap;
     align-items: center;
+  }
+
+  .mj-style-cards {
+    grid-template-columns: 1fr;
   }
 
   .mj-photos {
