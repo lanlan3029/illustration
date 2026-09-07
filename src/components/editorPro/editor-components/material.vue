@@ -71,21 +71,23 @@ const { isOutsideCanvas } = useCalculate();
 const { t } = useI18n();
 
 const icons = [
-  { type: 'scene', icon: 'iconfont icon-tupian', id: 0 },
-  { type: 'people', icon: 'iconfont icon-renti', id: 1 },
-  { type: 'animal', icon: 'iconfont icon--panda', id: 2 },
-  { type: 'plant', icon: 'iconfont icon-shu3', id: 3 },
-  { type: 'food', icon: 'iconfont icon-shiwu-2', id: 4 },
-  { type: 'toy', icon: 'iconfont icon-jimu2', id: 5 },
-  { type: 'vehicle', icon: 'iconfont icon-qichepiao', id: 6 },
-  { type: 'decoration', icon: 'iconfont icon-zhuangshipin', id: 7 },
-  { type: 'furniture', icon: 'iconfont icon-shafa1', id: 8 },
-  { type: 'others', icon: 'iconfont icon-other', id: 9 },
+  { type: 'background', icon: 'iconfont icon-tupian', id: 0 },
+  { type: 'scene', icon: 'iconfont icon-scene', id: 1 },
+  { type: 'textbox', icon: 'iconfont icon-text_box', id: 2 },
+  { type: 'people', icon: 'iconfont icon-renti', id: 3 },
+  { type: 'animal', icon: 'iconfont icon--panda', id: 4 },
+  { type: 'plant', icon: 'iconfont icon-shu3', id: 5 },
+  { type: 'food', icon: 'iconfont icon-shiwu-2', id: 6 },
+  { type: 'toy', icon: 'iconfont icon-jimu2', id: 7 },
+  { type: 'vehicle', icon: 'iconfont icon-qichepiao', id: 8 },
+  { type: 'decoration', icon: 'iconfont icon-zhuangshipin', id: 9 },
+  { type: 'furniture', icon: 'iconfont icon-shafa1', id: 10 },
+  { type: 'others', icon: 'iconfont icon-other', id: 11 },
 ];
 
 // 默认选择：装饰 decoration
 const selectType = ref('decoration');
-const selectIndex = ref(7);
+const selectIndex = ref(9);
 
 const pictureArr = ref([]);
 const searchArr = ref([]);

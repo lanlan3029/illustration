@@ -76,7 +76,9 @@
                                     placeholder="选择类别" 
                                     size="small"
                                     style="width: 100%">
+                                    <el-option label="背景" value="background"></el-option>
                                     <el-option label="场景" value="scene"></el-option>
+                                    <el-option label="文本框" value="textbox"></el-option>
                                     <el-option label="人物" value="people"></el-option>
                                     <el-option label="动物" value="animal"></el-option>
                                     <el-option label="植物" value="plant"></el-option>

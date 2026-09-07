@@ -1818,7 +1818,9 @@
   },
   "leftMenu": {
     "charcter": "My Characters",
+    "background": "Background",
     "scene": "Scene",
+    "textbox": "Text Box",
     "people": "People",
     "animal": "Animal",
     "plant": "Plant",

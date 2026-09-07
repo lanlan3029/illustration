@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "10523892",
+      "name": "scene",
+      "font_class": "scene",
+      "unicode": "e653",
+      "unicode_decimal": 58963
+    },
+    {
+      "icon_id": "34861430",
+      "name": "text_box",
+      "font_class": "text_box",
+      "unicode": "e7d3",
+      "unicode_decimal": 59347
+    },
+    {
       "icon_id": "2077532",
       "name": "日历",
       "font_class": "rili",

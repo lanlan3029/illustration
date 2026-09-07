@@ -56,7 +56,9 @@ export async function saveCroppedCharacter(http, dataUrl, { character_name, char
 }
 
 export const ELEMENT_CATEGORIES = [
+  { label: '背景', value: 'background' },
   { label: '场景', value: 'scene' },
+  { label: '文本框', value: 'textbox' },
   { label: '人物', value: 'people' },
   { label: '动物', value: 'animal' },
   { label: '植物', value: 'plant' },

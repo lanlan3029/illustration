@@ -1833,7 +1833,9 @@
   },
   "leftMenu": {
     "charcter": "我的角色",
+    "background": "背景",
     "scene": "场景",
+    "textbox": "文本框",
     "people": "人物",
     "animal": "动物",
     "plant": "植物",
