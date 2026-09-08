@@ -262,8 +262,13 @@ class ServersPlugin implements IPluginTempl {
 
   saveImg() {
     this.editor.hooksEntity.hookSaveBefore.callAsync('', () => {
-      const option = this._getSaveOption();
+      const option = this._getSaveOption({
+        multiplier: 2,
+        format: 'png',
+        quality: 1,
+      });
       this.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      this.canvas.renderAll();
       const dataUrl = this.canvas.toDataURL(option);
       this.editor.hooksEntity.hookSaveAfter.callAsync(dataUrl, () => {
         downFile(dataUrl, 'png');
@@ -271,11 +276,19 @@ class ServersPlugin implements IPluginTempl {
     });
   }
 
-  preview() {
+  preview(overrides?: {
+    multiplier?: number;
+    format?: 'png' | 'jpeg';
+    quality?: number;
+  }) {
     return new Promise<string>((resolve, reject) => {
       this.editor.hooksEntity.hookSaveBefore.callAsync('', () => {
         try {
-          const option = this._getSaveOption();
+          const option = this._getSaveOption({
+            multiplier: overrides?.multiplier,
+            format: overrides?.format,
+            quality: overrides?.quality,
+          });
           this.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
           this.canvas.renderAll();
           const dataUrl = this.canvas.toDataURL(option);
@@ -322,7 +335,11 @@ class ServersPlugin implements IPluginTempl {
     };
   }
 
-  _getSaveOption() {
+  _getSaveOption(overrides?: {
+    multiplier?: number;
+    format?: 'png' | 'jpeg';
+    quality?: number;
+  }) {
     const workspace = this.canvas
       .getObjects()
       .find((item: fabric.Object) => item.id === 'workspace');
@@ -332,8 +349,10 @@ class ServersPlugin implements IPluginTempl {
     const { left, top, width, height } = workspace as fabric.Object;
     const option = {
       name: 'New Image',
-      format: 'png',
-      quality: 1,
+      format: overrides?.format ?? 'png',
+      quality: overrides?.quality ?? 1,
+      multiplier: overrides?.multiplier ?? 1,
+      enableRetinaScaling: false,
       width,
       height,
       left,

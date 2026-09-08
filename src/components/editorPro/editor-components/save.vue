@@ -68,11 +68,12 @@ import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { saveCroppedCharacter, CHARACTER_CATEGORIES } from '@/utils/saveCroppedAsset';
+import { exportCanvasForUpload } from '@/utils/editorPro/exportCanvasPreview';
 
 const { t } = useI18n();
 const { proxy } = getCurrentInstance() || {};
 
-const { canvasEditor } = useSelect();
+const { canvasEditor, fabric } = useSelect();
 const router = useRouter();
 const store = useStore();
 
@@ -93,8 +94,7 @@ const cbMap = {
   },
   async saveMyClould() {
     try {
-      // 与 Creation.vue 上传插画一致：先导出 base64，存入 store，再跳转到上传页
-      const base64 = await canvasEditor.preview();
+      const base64 = await exportCanvasForUpload(canvasEditor, { fabric });
       store.commit('uploadIllustration', base64);
       router.push('/user/upload/upload-illustration');
     } catch (error) {
@@ -108,7 +108,7 @@ const cbMap = {
         ElMessage.error(t('lassoCrop.pleaseLogin') || t('books.pleaseLogin') || '请先登录');
         return;
       }
-      const base64 = await canvasEditor.preview();
+      const base64 = await exportCanvasForUpload(canvasEditor, { fabric });
       if (!base64) {
         ElMessage.error(t('save.saveFailed') || '导出画布失败');
         return;

@@ -1607,6 +1607,50 @@
     "leaveUnsavedConfirm": "画布内容已自动保存在本地。确定离开图片编辑器吗？",
     "draftRestored": "已恢复本地未完成的编辑"
   },
+  "styleTransferPage": {
+    "scenarioLabel": "优化场景",
+    "scenarioHint": "点选即可，无需另传参考图；也可上传自定义参考图",
+    "uploadCustomRef": "上传自定义参考图",
+    "customRef": "自定义参考图",
+    "customRefSelected": "已使用自定义参考图",
+    "scenarioSelected": "已选择：{name}",
+    "scenarioFailed": "场景参考图生成失败，请重试",
+    "needContentAndScenario": "请先确认内容图，并选择一个优化场景",
+    "contentTooLarge": "图片大小不能超过 5MB",
+    "resetDone": "已重置",
+    "scenarios": {
+      "hd": {
+        "name": "画面高清",
+        "desc": "提升清晰度与细节，尽量保留原构图",
+        "tip": "风格强度较低，适合拼贴后整体锐化、去糊。"
+      },
+      "unified": {
+        "name": "风格统一",
+        "desc": "统一色调与质感，让多图拼贴更协调",
+        "tip": "适合照片、贴纸、文字混排但显得「各说各话」的页面。"
+      },
+      "scrapbook": {
+        "name": "手帐风格优化",
+        "desc": "强化纸感、胶带与治愈拼贴气质",
+        "tip": "适合心情日记、旅行手账类画布导出。"
+      },
+      "soft": {
+        "name": "柔和治愈",
+        "desc": "降低对比，偏粉彩与温柔光感",
+        "tip": "适合亲子、日常记录类插画。"
+      },
+      "vibrant": {
+        "name": "色彩增强",
+        "desc": "适度提升饱和度，让画面更鲜活",
+        "tip": "不会大幅改构图，主要统一色彩氛围。"
+      },
+      "vintage": {
+        "name": "复古胶片",
+        "desc": "轻微颗粒与暖调，像旧照片扫描",
+        "tip": "适合怀旧、旅行、回忆主题。"
+      }
+    }
+  },
   "componentList": {
     "insertText": "插入文字",
     "doubleClickEdit": "双击编辑文字",

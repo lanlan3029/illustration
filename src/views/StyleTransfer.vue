@@ -46,28 +46,50 @@
                             </el-dialog>
                         </el-form-item>
 
-                        <!-- 风格图片选择 -->
+                        <!-- 优化场景（内置参考，无需另传图） -->
                         <el-form-item required>
                             <div class="upload-item">
-                                <div class="upload-label">选择参考图</div>
-                                <div class="style-presets-container">
-                                    <div 
-                                        v-for="(preset, index) in stylePresets" 
-                                        :key="index"
-                                        class="style-preset-item-inline"
-                                        :class="{ 'selected': selectedStyleIndex === index }"
-                                        @click="selectStylePreset(preset, index)">
-                                        <div class="preset-image-wrapper">
-                                            <img :src="preset.url" :alt="preset.name" class="preset-image-inline">
-                                        </div>
-                                        <div class="preset-overlay-inline">
-                                            <i class="el-icon-check" v-if="selectedStyleIndex === index"></i>
-                                        </div>
-                                        <div class="preset-name-inline">{{ preset.name }}</div>
-                                    </div>
+                                <div class="upload-label">{{ $t('styleTransferPage.scenarioLabel') }}</div>
+                                <p class="hint-text">{{ $t('styleTransferPage.scenarioHint') }}</p>
+                                <div class="scenario-chips">
+                                    <button
+                                        v-for="s in scenarios"
+                                        :key="s.id"
+                                        type="button"
+                                        class="scenario-chip"
+                                        :class="{ active: selectedScenarioId === s.id }"
+                                        :disabled="processing"
+                                        @click="selectScenario(s)"
+                                    >
+                                        <span class="scenario-chip__name">{{ s.name }}</span>
+                                        <span class="scenario-chip__desc">{{ s.desc }}</span>
+                                    </button>
+                                </div>
+                                <p v-if="selectedScenarioDesc" class="scenario-selected-hint">
+                                    {{ selectedScenarioDesc }}
+                                </p>
+                                <div v-if="stylePreviewUrl" class="style-ref-preview">
+                                    <img :src="stylePreviewUrl" alt="" />
+                                    <span>{{ selectedStyleLabel }}</span>
+                                </div>
+                                <div class="custom-style-row">
+                                    <input
+                                        ref="customStyleInput"
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png"
+                                        class="custom-style-input"
+                                        @change="onCustomStylePicked"
+                                    />
+                                    <el-button
+                                        link
+                                        type="primary"
+                                        :disabled="processing"
+                                        @click="triggerCustomStylePick"
+                                    >
+                                        {{ $t('styleTransferPage.uploadCustomRef') }}
+                                    </el-button>
                                 </div>
                             </div>
-                            <!-- 预览弹窗 -->
                             <el-dialog v-model="styleDialogVisible" width="520px">
                                 <img width="100%" :src="stylePreviewUrl" alt="风格图片预览">
                             </el-dialog>
@@ -139,63 +161,62 @@
 
 <script>
 import { ElMessage } from 'element-plus'
+import {
+  SCENARIO_IDS,
+  SCENARIO_META,
+  buildStyleReferenceDataUrl,
+  dataUrlToFile
+} from '@/data/styleTransferPresets'
 
 export default {
     name: 'StyleTransfer',
     data() {
         return {
-            // 后端API配置
-            // 如果后端API和前端在同一域名（通过nginx代理），设置为空字符串使用相对路径
-            // 如果后端API在不同域名，设置为完整的后端地址，例如：'http://your-backend-url:3000'
-            apiBaseUrl: '', // 空字符串表示使用相对路径，通过axios的baseURL配置
-            uploadAction: '', // Element UI upload组件不需要action
-            // 内容图片
+            apiBaseUrl: '',
+            uploadAction: '',
             contentFile: null,
             contentPreviewUrl: '',
             contentDialogVisible: false,
-            contentFileList: [], // Element UI upload组件的文件列表
+            contentFileList: [],
             contentClass: {
                 uploadShow: true,
                 uploadHide: false
             },
-            // 风格图片（预设）
             styleFile: null,
             stylePreviewUrl: '',
             styleDialogVisible: false,
-            selectedStyleIndex: null, // 当前选中的预设风格索引
-            // 预设风格图片列表 - 使用占位符或移除
-            stylePresets: [
-                // 如果图片文件不存在，可以移除这些预设或使用占位符
-                // {
-                //     name: '参考图1',
-                //     url: require('@/assets/images/reference1.jpg'),
-                //     id: 'reference1'
-                // },
-                // {
-                //     name: '参考图2',
-                //     url: require('@/assets/images/reference2.jpg'),
-                //     id: 'reference2'
-                // },
-                // {
-                //     name: '参考图3',
-                //     url: require('@/assets/images/reference3.jpg'),
-                //     id: 'reference3'
-                // }
-            ],
-            // 表单数据
+            selectedScenarioId: '',
+            customStyleName: '',
             form: {
-                styleStrength: 0.5, // 风格强度，0.1-1.0
-                useOss: false // 是否使用OSS存储（如果后端未安装ali-oss，请设置为false）
+                styleStrength: 0.5,
+                useOss: false
             },
-            // 处理状态
             processing: false,
             downloading: false,
-            // 结果
             resultImageUrl: null,
-            resultImageData: null // 存储完整的响应数据
+            resultImageData: null
         };
     },
     computed: {
+        scenarios() {
+            return SCENARIO_IDS.map((id) => ({
+                id,
+                name: this.$t(`styleTransferPage.scenarios.${id}.name`),
+                desc: this.$t(`styleTransferPage.scenarios.${id}.desc`),
+                styleStrength: SCENARIO_META[id]?.styleStrength ?? 0.5
+            }))
+        },
+        selectedScenarioDesc() {
+            if (!this.selectedScenarioId) return ''
+            return this.$t(`styleTransferPage.scenarios.${this.selectedScenarioId}.tip`)
+        },
+        selectedStyleLabel() {
+            if (this.customStyleName) return this.customStyleName
+            if (this.selectedScenarioId) {
+                return this.$t(`styleTransferPage.scenarios.${this.selectedScenarioId}.name`)
+            }
+            return ''
+        },
         canProcess() {
             return this.contentFile && this.styleFile && !this.processing;
         }
@@ -247,6 +268,7 @@ export default {
                     sessionStorage.removeItem('styleTransferContentImage');
                     
                     ElMessage.success('已自动加载画布内容图片');
+                    this.applyDefaultScenarioIfNeeded();
                 } catch (error) {
                     console.error('加载内容图片失败:', error);
                     localStorage.removeItem('styleTransferContentImage');
@@ -296,6 +318,7 @@ export default {
                 // 兜底：使用已有的url或response
                 this.contentPreviewUrl = file.url || this.contentPreviewUrl;
             }
+            this.applyDefaultScenarioIfNeeded();
             return true;
         },
         handleContentRemove(file, fileList) {
@@ -310,31 +333,47 @@ export default {
             this.contentDialogVisible = true;
         },
         
-        // 选择预设风格图片
-        async selectStylePreset(preset, index) {
-            this.selectedStyleIndex = index;
-            
-            try {
-                this.stylePreviewUrl = preset.url;
-                
-                // 从本地资源URL获取图片并转换为File对象
-                // require() 返回的路径会被webpack处理，可以直接fetch
-                const response = await fetch(preset.url);
-                const blob = await response.blob();
-                const file = new File([blob], `${preset.id}.jpg`, { type: 'image/jpeg' });
-                
-                this.styleFile = file;
-                ElMessage.success(`已选择：${preset.name}`);
-            } catch (error) {
-                console.error('加载预设风格图片失败:', error);
-                ElMessage.error('加载风格图片失败，请重试');
-            }
+        triggerCustomStylePick() {
+            this.$refs.customStyleInput?.click()
         },
-        
-        // 预览风格图片（保留用于可能的预览功能）
-        handleStylePreview() {
-            if (this.stylePreviewUrl) {
-                this.styleDialogVisible = true;
+
+        applyDefaultScenarioIfNeeded() {
+            if (!this.contentFile || this.styleFile || this.selectedScenarioId) return
+            const first = this.scenarios[0]
+            if (first) this.selectScenario(first)
+        },
+
+        onCustomStylePicked(e) {
+            const file = e.target?.files?.[0]
+            e.target.value = ''
+            if (!file) return
+            const isLt5M = file.size / 1024 / 1024 < 5
+            if (!isLt5M) {
+                ElMessage.error(this.$t('styleTransferPage.contentTooLarge'))
+                return
+            }
+            this.selectedScenarioId = ''
+            this.customStyleName = file.name || this.$t('styleTransferPage.customRef')
+            this.stylePreviewUrl = URL.createObjectURL(file)
+            this.styleFile = file
+            ElMessage.success(this.$t('styleTransferPage.customRefSelected'))
+        },
+
+        selectScenario(scenario) {
+            if (!scenario?.id) return
+            this.selectedScenarioId = scenario.id
+            this.customStyleName = ''
+            this.form.styleStrength = scenario.styleStrength
+            try {
+                const dataUrl = buildStyleReferenceDataUrl(scenario.id)
+                this.stylePreviewUrl = dataUrl
+                this.styleFile = dataUrlToFile(dataUrl, `style-${scenario.id}.jpg`)
+                ElMessage.success(
+                    this.$t('styleTransferPage.scenarioSelected', { name: scenario.name })
+                )
+            } catch (error) {
+                console.error('生成内置参考图失败:', error)
+                ElMessage.error(this.$t('styleTransferPage.scenarioFailed'))
             }
         },
 
@@ -346,7 +385,7 @@ export default {
         // 处理风格迁移 - 调用后端API
         async handleProcess() {
             if (!this.canProcess) {
-                ElMessage.warning('请先上传内容图片和风格图片');
+                ElMessage.warning(this.$t('styleTransferPage.needContentAndScenario'));
                 return;
             }
 
@@ -580,17 +619,17 @@ export default {
             this.contentFileList = [];
             this.contentPreviewUrl = '';
             this.stylePreviewUrl = '';
-            this.selectedStyleIndex = null;
+            this.selectedScenarioId = '';
+            this.customStyleName = '';
             this.contentClass.uploadShow = true;
             this.contentClass.uploadHide = false;
             this.form.styleStrength = 0.5;
             
-            // 清空上传列表
             if (this.$refs['content-upload']) {
                 this.$refs['content-upload'].clearFiles();
             }
             
-            ElMessage.info('已重置');
+            ElMessage.info(this.$t('styleTransferPage.resetDone'));
         }
     }
 };
@@ -825,7 +864,98 @@ export default {
 .hint-text {
     color: #98a2b3;
     font-size: 12px;
-    margin: 0;
+    margin: 0 0 8px;
+    line-height: 1.5;
+}
+
+.scenario-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.scenario-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #e4e7ec;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    font-family: inherit;
+}
+
+.scenario-chip:hover:not(:disabled) {
+    border-color: #019AD8;
+    box-shadow: 0 2px 8px rgba(1, 154, 216, 0.12);
+}
+
+.scenario-chip.active {
+    border-color: #019AD8;
+    background: #f0f9ff;
+    box-shadow: 0 2px 10px rgba(1, 154, 216, 0.18);
+}
+
+.scenario-chip:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.scenario-chip__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #344054;
+}
+
+.scenario-chip__desc {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #667085;
+}
+
+.scenario-selected-hint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #019AD8;
+}
+
+.style-ref-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f9fafb;
+    border: 1px solid #e4e7ec;
+}
+
+.style-ref-preview img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.style-ref-preview span {
+    font-size: 13px;
+    color: #475467;
+}
+
+.custom-style-row {
+    margin-top: 10px;
+}
+
+.custom-style-input {
+    display: none;
 }
 
 

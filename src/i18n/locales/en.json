@@ -1592,6 +1592,50 @@
     "leaveUnsavedConfirm": "Your canvas is auto-saved locally. Leave the image editor anyway?",
     "draftRestored": "Restored your local unsaved edit"
   },
+  "styleTransferPage": {
+    "scenarioLabel": "Optimization scenario",
+    "scenarioHint": "Tap to apply — no reference upload needed. Or upload your own style reference.",
+    "uploadCustomRef": "Upload custom reference",
+    "customRef": "Custom reference",
+    "customRefSelected": "Using custom reference",
+    "scenarioSelected": "Selected: {name}",
+    "scenarioFailed": "Failed to build scenario reference. Please retry.",
+    "needContentAndScenario": "Confirm your content image and pick a scenario first",
+    "contentTooLarge": "Image must be under 5 MB",
+    "resetDone": "Reset",
+    "scenarios": {
+      "hd": {
+        "name": "Sharpen & HD",
+        "desc": "Boost clarity and detail while keeping layout",
+        "tip": "Lower style strength — good after collage export when the page looks soft."
+      },
+      "unified": {
+        "name": "Unified look",
+        "desc": "Harmonize color and texture across mixed elements",
+        "tip": "When photos, stickers, and text feel mismatched."
+      },
+      "scrapbook": {
+        "name": "Scrapbook polish",
+        "desc": "Paper texture, tape, cozy journal collage vibe",
+        "tip": "Mood diary and travel journal pages."
+      },
+      "soft": {
+        "name": "Soft & cozy",
+        "desc": "Lower contrast, pastel gentle light",
+        "tip": "Family and everyday life illustrations."
+      },
+      "vibrant": {
+        "name": "Color boost",
+        "desc": "Slightly richer saturation, livelier mood",
+        "tip": "Keeps composition; mainly unifies color mood."
+      },
+      "vintage": {
+        "name": "Vintage film",
+        "desc": "Warm tone with light grain, scanned-photo feel",
+        "tip": "Nostalgia, travel, and memory themes."
+      }
+    }
+  },
   "componentList": {
     "insertText": "Insert Text",
     "doubleClickEdit": "Double click to edit text",

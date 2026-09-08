@@ -12,12 +12,14 @@ import { useRouter, useRoute } from 'vue-router';
 import { uploadImg, createdTempl, getTmplInfo, updataTempl, removeTempl } from '@/components/editorPro/api/user';
 import { Modal } from 'view-ui-plus';
 import { useI18n } from 'vue-i18n';
+import { exportCanvasForUpload } from '@/utils/editorPro/exportCanvasPreview';
 
 export default function useMaterial() {
   const { t } = useI18n();
   const router = useRouter();
   const route = useRoute();
   const canvasEditor = inject('canvasEditor');
+  const fabric = inject('fabric');
 
   // 创建模板
   const createTmpl = async (width, height, parentId = '') => {
@@ -103,7 +105,7 @@ export default function useMaterial() {
           console.log(err);
         });
     };
-    const base64 = await canvasEditor.preview();
+    const base64 = await exportCanvasForUpload(canvasEditor, { fabric });
     // 上传图片
     const fileInfo = await upload(base64);
     return fileInfo;

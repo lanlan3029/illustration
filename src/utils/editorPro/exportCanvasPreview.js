@@ -1,6 +1,14 @@
 import { canvasHasUserContent } from '@/utils/editorPro/localDraft'
+import { compressDataUrlForUpload } from '@/utils/moodDiary/posterUpload'
 
 const STYLE_TRANSFER_KEY = 'styleTransferContentImage'
+
+/** 本地下载 PNG：相对逻辑画布 2 倍像素 */
+export const CANVAS_DOWNLOAD_MULTIPLIER = 2
+/** 上传 / 预览：1 倍即可，后续再压体积 */
+export const CANVAS_UPLOAD_MULTIPLIER = 1
+/** 与 /ill/、/character 等接口网关限制对齐 */
+export const CANVAS_UPLOAD_MAX_BYTES = 980 * 1024
 
 function pngDataUrlToJpeg(pngDataUrl, quality = 0.88) {
   return new Promise((resolve, reject) => {
@@ -30,8 +38,6 @@ function pngDataUrlToJpeg(pngDataUrl, quality = 0.88) {
 
 /**
  * 尝试把外链图片以 crossOrigin 重新载入，降低 canvas 污染导致 toDataURL 失败的概率
- * @param {import('fabric').Canvas} canvas
- * @param {typeof import('fabric').fabric} fabric
  */
 async function refreshCrossOriginImages(canvas, fabric) {
   if (!canvas || !fabric) return
@@ -67,13 +73,7 @@ async function refreshCrossOriginImages(canvas, fabric) {
   }
 }
 
-/**
- * 导出编辑器画布为 data URL，供 AI 优化 / 上传使用
- * @param {object} canvasEditor
- * @param {{ jpegQuality?: number, preferJpeg?: boolean, fabric?: object }} [opts]
- * @returns {Promise<string>}
- */
-export async function exportCanvasPreview(canvasEditor, opts = {}) {
+function assertCanvasExportable(canvasEditor) {
   if (!canvasEditor || typeof canvasEditor.preview !== 'function') {
     const err = new Error('EDITOR_NOT_READY')
     err.code = 'EDITOR_NOT_READY'
@@ -96,15 +96,29 @@ export async function exportCanvasPreview(canvasEditor, opts = {}) {
     err.code = 'CANVAS_EMPTY'
     throw err
   }
+  return { canvas, canvasEditor }
+}
 
+async function exportRawPng(canvasEditor, opts = {}) {
+  const { canvas } = assertCanvasExportable(canvasEditor)
   const fabricLib = opts.fabric || canvasEditor?.fabric
   if (fabricLib) {
     await refreshCrossOriginImages(canvas, fabricLib)
   }
 
-  let dataUrl
+  const multiplier = opts.multiplier ?? CANVAS_UPLOAD_MULTIPLIER
   try {
-    dataUrl = await canvasEditor.preview()
+    const dataUrl = await canvasEditor.preview({
+      multiplier,
+      format: 'png',
+      quality: 1,
+    })
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      const err = new Error('EXPORT_EMPTY')
+      err.code = 'EXPORT_EMPTY'
+      throw err
+    }
+    return dataUrl
   } catch (err) {
     const wrapped = new Error(
       err?.name === 'SecurityError' ? 'CORS_TAINTED' : 'EXPORT_FAILED'
@@ -113,32 +127,49 @@ export async function exportCanvasPreview(canvasEditor, opts = {}) {
     wrapped.cause = err
     throw wrapped
   }
-
-  if (!dataUrl || typeof dataUrl !== 'string') {
-    const err = new Error('EXPORT_EMPTY')
-    err.code = 'EXPORT_EMPTY'
-    throw err
-  }
-
-  const quality = opts.jpegQuality ?? 0.88
-  if (dataUrl.startsWith('data:image/png') && dataUrl.length > 1.5 * 1024 * 1024) {
-    try {
-      dataUrl = await pngDataUrlToJpeg(dataUrl, quality)
-    } catch (_) {
-      /* 压缩失败仍用 PNG */
-    }
-  } else if (opts.preferJpeg && dataUrl.startsWith('data:image/png')) {
-    try {
-      dataUrl = await pngDataUrlToJpeg(dataUrl, quality)
-    } catch (_) {
-      /* keep png */
-    }
-  }
-
-  return dataUrl
 }
 
-/** 写入 AI 优化跳转用的暂存图（localStorage 满则降级 sessionStorage） */
+/** 本地下载：2× PNG，清晰 */
+export async function exportCanvasForDownload(canvasEditor, opts = {}) {
+  return exportRawPng(canvasEditor, {
+    ...opts,
+    multiplier: opts.multiplier ?? CANVAS_DOWNLOAD_MULTIPLIER,
+  })
+}
+
+/** 上传服务器：1× PNG → 压 JPEG，控制体积 */
+export async function exportCanvasForUpload(canvasEditor, opts = {}) {
+  const raw = await exportRawPng(canvasEditor, {
+    ...opts,
+    multiplier: opts.multiplier ?? CANVAS_UPLOAD_MULTIPLIER,
+  })
+  const maxBytes = opts.maxBytes ?? CANVAS_UPLOAD_MAX_BYTES
+  try {
+    return await compressDataUrlForUpload(raw, maxBytes)
+  } catch (_) {
+    if (opts.preferJpeg !== false && raw.startsWith('data:image/png')) {
+      try {
+        return await pngDataUrlToJpeg(raw, opts.jpegQuality ?? 0.88)
+      } catch (e) {
+        return raw
+      }
+    }
+    return raw
+  }
+}
+
+/**
+ * 通用导出（默认走上传压缩；AI 优化等场景）
+ * @param {object} canvasEditor
+ * @param {{ purpose?: 'download'|'upload', fabric?: object, jpegQuality?: number, maxBytes?: number }} [opts]
+ */
+export async function exportCanvasPreview(canvasEditor, opts = {}) {
+  if (opts.purpose === 'download') {
+    return exportCanvasForDownload(canvasEditor, opts)
+  }
+  return exportCanvasForUpload(canvasEditor, opts)
+}
+
 export function stashStyleTransferImage(dataUrl) {
   try {
     localStorage.setItem(STYLE_TRANSFER_KEY, dataUrl)

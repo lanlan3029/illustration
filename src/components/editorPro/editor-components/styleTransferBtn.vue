@@ -39,9 +39,8 @@ function exportErrorMessage(code) {
 const toStyleTransfer = async () => {
   try {
     const base64 = await exportCanvasPreview(canvasEditor, {
-      preferJpeg: true,
-      jpegQuality: 0.88,
       fabric,
+      purpose: 'upload',
     });
     stashStyleTransferImage(base64);
     router.push('/user/upload/style-transfer');
