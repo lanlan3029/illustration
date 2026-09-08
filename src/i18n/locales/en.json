@@ -1594,45 +1594,41 @@
   },
   "styleTransferPage": {
     "scenarioLabel": "Optimization scenario",
-    "scenarioHint": "Tap to apply — no reference upload needed. Or upload your own style reference.",
+    "promptLabel": "Optimization prompt",
+    "promptPlaceholder": "Describe the effect you want, or tap a tag below to fill in",
+    "scenarioHint": "Tap a tag to fill the prompt, or edit it yourself",
     "uploadCustomRef": "Upload custom reference",
     "customRef": "Custom reference",
     "customRefSelected": "Using custom reference",
-    "scenarioSelected": "Selected: {name}",
+    "scenarioSelected": "Filled: {name}",
     "scenarioFailed": "Failed to build scenario reference. Please retry.",
-    "needContentAndScenario": "Confirm your content image and pick a scenario first",
+    "needContentAndScenario": "Confirm your content image and enter an optimization prompt",
     "contentTooLarge": "Image must be under 5 MB",
     "resetDone": "Reset",
     "scenarios": {
-      "hd": {
-        "name": "Sharpen & HD",
-        "desc": "Boost clarity and detail while keeping layout",
-        "tip": "Lower style strength — good after collage export when the page looks soft."
+      "hdRestore": {
+        "name": "HD restore",
+        "prompt": "Enhance image clarity and detail; fix blur, noise, and compression artifacts. Keep the original composition, subject, facial features, colors, and important details unchanged. Do not add new objects."
       },
-      "unified": {
-        "name": "Unified look",
-        "desc": "Harmonize color and texture across mixed elements",
-        "tip": "When photos, stickers, and text feel mismatched."
+      "colorOptimize": {
+        "name": "Color optimize",
+        "prompt": "Optimize color and white balance for a natural, harmonious, comfortable look while preserving the original atmosphere and realism."
       },
-      "scrapbook": {
-        "name": "Scrapbook polish",
-        "desc": "Paper texture, tape, cozy journal collage vibe",
-        "tip": "Mood diary and travel journal pages."
+      "autoCompose": {
+        "name": "Auto compose",
+        "prompt": "Improve photo composition without changing the subject: adjust placement, aspect ratio, whitespace, and visual balance for a more natural, pleasing layout."
       },
-      "soft": {
-        "name": "Soft & cozy",
-        "desc": "Lower contrast, pastel gentle light",
-        "tip": "Family and everyday life illustrations."
+      "photoScrapbook": {
+        "name": "Photo scrapbook",
+        "prompt": "Design the photo as a complete scrapbook memory page. Keep the original photo as the main subject with paper texture, tape, stickers, hand-drawn lines, dates, handwritten text, and minimal decor. Keep the photo natural; overall warm, relaxed, everyday feel; avoid over-decoration."
       },
-      "vibrant": {
-        "name": "Color boost",
-        "desc": "Slightly richer saturation, livelier mood",
-        "tip": "Keeps composition; mainly unifies color mood."
+      "autoDoodle": {
+        "name": "Auto doodles",
+        "prompt": "Analyze people, scene, objects, and activities in the photo. Add 3–5 small related elements not present in the photo as hand-drawn illustrations around it. Keep additions natural and restrained, related to the content; do not cover people or key subjects; no irrelevant elements."
       },
-      "vintage": {
-        "name": "Vintage film",
-        "desc": "Warm tone with light grain, scanned-photo feel",
-        "tip": "Nostalgia, travel, and memory themes."
+      "autoCollage": {
+        "name": "Auto collage",
+        "prompt": "Turn the uploaded photo into a natural, lived-in scrapbook collage page. Preserve all original photo content; do not alter faces, scenes, or important details. Reorganize position, size, and angle into a layered collage layout. Add paper, tape, stickers, handwritten text, and doodles with natural whitespace. Overall warm, relaxed, personal memory scrapbook style."
       }
     }
   },

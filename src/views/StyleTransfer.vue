@@ -46,29 +46,34 @@
                             </el-dialog>
                         </el-form-item>
 
-                        <!-- 优化场景（内置参考，无需另传图） -->
+                        <!-- 优化描述 + 场景标签 -->
                         <el-form-item required>
                             <div class="upload-item">
-                                <div class="upload-label">{{ $t('styleTransferPage.scenarioLabel') }}</div>
+                                <div class="upload-label">{{ $t('styleTransferPage.promptLabel') }}</div>
+                                <el-input
+                                    v-model="form.optimizationPrompt"
+                                    type="textarea"
+                                    :rows="3"
+                                    :placeholder="$t('styleTransferPage.promptPlaceholder')"
+                                    :disabled="processing"
+                                    resize="none"
+                                    @input="onPromptInput"
+                                />
                                 <p class="hint-text">{{ $t('styleTransferPage.scenarioHint') }}</p>
-                                <div class="scenario-chips">
+                                <div class="scenario-tags">
                                     <button
                                         v-for="s in scenarios"
                                         :key="s.id"
                                         type="button"
-                                        class="scenario-chip"
+                                        class="scenario-tag"
                                         :class="{ active: selectedScenarioId === s.id }"
                                         :disabled="processing"
-                                        @click="selectScenario(s)"
+                                        @click="selectTag(s)"
                                     >
-                                        <span class="scenario-chip__name">{{ s.name }}</span>
-                                        <span class="scenario-chip__desc">{{ s.desc }}</span>
+                                        {{ s.name }}
                                     </button>
                                 </div>
-                                <p v-if="selectedScenarioDesc" class="scenario-selected-hint">
-                                    {{ selectedScenarioDesc }}
-                                </p>
-                                <div v-if="stylePreviewUrl" class="style-ref-preview">
+                                <div v-if="stylePreviewUrl && !customStyleName" class="style-ref-preview">
                                     <img :src="stylePreviewUrl" alt="" />
                                     <span>{{ selectedStyleLabel }}</span>
                                 </div>
@@ -189,7 +194,8 @@ export default {
             customStyleName: '',
             form: {
                 styleStrength: 0.5,
-                useOss: false
+                useOss: false,
+                optimizationPrompt: ''
             },
             processing: false,
             downloading: false,
@@ -202,13 +208,9 @@ export default {
             return SCENARIO_IDS.map((id) => ({
                 id,
                 name: this.$t(`styleTransferPage.scenarios.${id}.name`),
-                desc: this.$t(`styleTransferPage.scenarios.${id}.desc`),
+                prompt: this.$t(`styleTransferPage.scenarios.${id}.prompt`),
                 styleStrength: SCENARIO_META[id]?.styleStrength ?? 0.5
             }))
-        },
-        selectedScenarioDesc() {
-            if (!this.selectedScenarioId) return ''
-            return this.$t(`styleTransferPage.scenarios.${this.selectedScenarioId}.tip`)
         },
         selectedStyleLabel() {
             if (this.customStyleName) return this.customStyleName
@@ -218,7 +220,11 @@ export default {
             return ''
         },
         canProcess() {
-            return this.contentFile && this.styleFile && !this.processing;
+            return (
+                this.contentFile &&
+                this.form.optimizationPrompt.trim() &&
+                !this.processing
+            )
         }
     },
     mounted() {
@@ -338,9 +344,45 @@ export default {
         },
 
         applyDefaultScenarioIfNeeded() {
-            if (!this.contentFile || this.styleFile || this.selectedScenarioId) return
+            if (!this.contentFile || this.form.optimizationPrompt.trim()) return
             const first = this.scenarios[0]
-            if (first) this.selectScenario(first)
+            if (first) this.selectTag(first)
+        },
+
+        onPromptInput() {
+            const text = this.form.optimizationPrompt.trim()
+            const match = this.scenarios.find((s) => s.prompt === text)
+            if (match) {
+                if (this.selectedScenarioId !== match.id) {
+                    this.selectedScenarioId = match.id
+                    this.form.styleStrength = match.styleStrength
+                    this.syncBuiltinStyleRef(match.id)
+                }
+            } else if (!this.customStyleName) {
+                this.selectedScenarioId = ''
+            }
+        },
+
+        syncBuiltinStyleRef(scenarioId) {
+            try {
+                const dataUrl = buildStyleReferenceDataUrl(scenarioId)
+                this.stylePreviewUrl = dataUrl
+                this.styleFile = dataUrlToFile(dataUrl, `style-${scenarioId}.jpg`)
+            } catch (error) {
+                console.error('生成内置参考图失败:', error)
+            }
+        },
+
+        ensureStyleFileBeforeProcess() {
+            if (this.customStyleName && this.styleFile) return true
+            const scenarioId = this.selectedScenarioId || 'hdRestore'
+            try {
+                this.syncBuiltinStyleRef(scenarioId)
+                return !!this.styleFile
+            } catch (error) {
+                ElMessage.error(this.$t('styleTransferPage.scenarioFailed'))
+                return false
+            }
         },
 
         onCustomStylePicked(e) {
@@ -359,15 +401,14 @@ export default {
             ElMessage.success(this.$t('styleTransferPage.customRefSelected'))
         },
 
-        selectScenario(scenario) {
+        selectTag(scenario) {
             if (!scenario?.id) return
             this.selectedScenarioId = scenario.id
             this.customStyleName = ''
+            this.form.optimizationPrompt = scenario.prompt
             this.form.styleStrength = scenario.styleStrength
             try {
-                const dataUrl = buildStyleReferenceDataUrl(scenario.id)
-                this.stylePreviewUrl = dataUrl
-                this.styleFile = dataUrlToFile(dataUrl, `style-${scenario.id}.jpg`)
+                this.syncBuiltinStyleRef(scenario.id)
                 ElMessage.success(
                     this.$t('styleTransferPage.scenarioSelected', { name: scenario.name })
                 )
@@ -388,6 +429,7 @@ export default {
                 ElMessage.warning(this.$t('styleTransferPage.needContentAndScenario'));
                 return;
             }
+            if (!this.ensureStyleFileBeforeProcess()) return;
 
             this.processing = true;
             this.resultImageUrl = null;
@@ -400,6 +442,7 @@ export default {
                 formData.append('style_image', this.styleFile);
                 // 添加风格强度参数（阿里云API支持）
                 formData.append('style_strength', this.form.styleStrength.toString());
+                formData.append('optimization_prompt', this.form.optimizationPrompt.trim());
                 
                 // 可选：如果后端支持use_oss参数
                 if (this.form.useOss) {
@@ -621,6 +664,7 @@ export default {
             this.stylePreviewUrl = '';
             this.selectedScenarioId = '';
             this.customStyleName = '';
+            this.form.optimizationPrompt = '';
             this.contentClass.uploadShow = true;
             this.contentClass.uploadHide = false;
             this.form.styleStrength = 0.5;
@@ -868,62 +912,48 @@ export default {
     line-height: 1.5;
 }
 
-.scenario-chips {
+.scenario-tags {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 8px;
     width: 100%;
 }
 
-.scenario-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    width: 100%;
-    padding: 10px 12px;
-    border: 1.5px solid #e4e7ec;
-    border-radius: 10px;
+.scenario-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border: 1px solid #d0d5dd;
+    border-radius: 999px;
     background: #fff;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
-    text-align: left;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
     font-family: inherit;
+    line-height: 1.4;
 }
 
-.scenario-chip:hover:not(:disabled) {
+.scenario-tag:hover:not(:disabled) {
     border-color: #019AD8;
-    box-shadow: 0 2px 8px rgba(1, 154, 216, 0.12);
-}
-
-.scenario-chip.active {
-    border-color: #019AD8;
+    color: #019AD8;
     background: #f0f9ff;
-    box-shadow: 0 2px 10px rgba(1, 154, 216, 0.18);
 }
 
-.scenario-chip:disabled {
+.scenario-tag.active {
+    border-color: #019AD8;
+    background: #019AD8;
+    color: #fff;
+}
+
+.scenario-tag:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-.scenario-chip__name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #344054;
-}
-
-.scenario-chip__desc {
-    font-size: 12px;
-    line-height: 1.45;
-    color: #667085;
-}
-
-.scenario-selected-hint {
-    margin: 10px 0 0;
-    font-size: 12px;
-    line-height: 1.5;
-    color: #019AD8;
+.prompt-textarea :deep(.el-textarea__inner) {
+    box-shadow: none !important;
 }
 
 .style-ref-preview {
