@@ -28,34 +28,17 @@ import { installChunkLoadRecovery } from '@/utils/chunkLoadRecovery'
 
 installChunkLoadRecovery();
 
-// 本站使用 hash 路由（createWebHashHistory）。正确形态应为：
-//   https://www.kidstory.cc/#/mood-diary/memory-journal
-// 若 pathname 被写成 History 风格（如 /mood-diary/...），再跳编辑器会变成：
-//   https://www.kidstory.cc/mood-diary/memory-journal#/editorpro
-// Vue 实际路由只看 hash，但脏 pathname 易造成静态资源 404、分享链接混乱。
-// 启动时统一把 pathname 收进 hash，并清掉残留 pathname。
-function normalizeHashRouteEntry() {
+// History 路由：兼容旧 #/ 链接，301 式 replace 到无 hash 路径
+function redirectLegacyHashRoutes() {
   const { origin, pathname, search, hash } = window.location
-  if (!pathname || pathname === '/') return
-  // 真实静态文件（带扩展名）不要改写
+  const hashPath = (hash || '').replace(/^#/, '').replace(/^\/?/, '')
+  if (!hashPath || hashPath === '/') return
   if (/\.[a-zA-Z0-9]+$/.test(pathname)) return
 
-  const pathOnly = pathname.replace(/\/+$/, '') || '/'
-  const hashPath = (hash || '').replace(/^#/, '')
-  const hasHashRoute = Boolean(hashPath && hashPath !== '/')
-
-  // 已有 hash 路由（如 /mood-diary/...#/editorpro）→ 以 hash 为准，丢掉 pathname
-  if (hasHashRoute) {
-    const next = `${origin}/#${hashPath.startsWith('/') ? hashPath : `/${hashPath}`}`
-    window.location.replace(next)
-    return
-  }
-
-  // 无有效 hash：把 pathname(+search) 挪进 hash
-  // 含微信回调：/wechat/callback?code=... → /#/wechat/callback?code=...
-  window.location.replace(`${origin}/#${pathOnly}${search || ''}`)
+  const path = `/${hashPath}`
+  window.location.replace(`${origin}${path}${search || ''}`)
 }
-normalizeHashRouteEntry()
+redirectLegacyHashRoutes()
 
 const app = createApp(App)
 

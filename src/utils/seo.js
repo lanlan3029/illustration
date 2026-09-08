@@ -9,8 +9,24 @@ export const SEO = {
     'KidStory,AI插画,AI绘本,儿童绘本,插画创作,绘本创作,在线编辑器,图元上传,PDF导出,心情日记,原创插画',
 }
 
+function setLinkRel(rel, href) {
+  if (typeof document === 'undefined' || !href) return
+  let el = document.querySelector(`link[rel="${rel}"]`)
+  if (!el) {
+    el = document.createElement('link')
+    el.rel = rel
+    document.head.appendChild(el)
+  }
+  el.href = href
+}
+
+function canonicalForPath(path) {
+  const p = String(path || '/').replace(/\/+$/, '') || ''
+  return p ? `${SEO.siteUrl}${p}` : `${SEO.siteUrl}/`
+}
+
 /**
- * 根据路由更新 document.title（公开页可设 meta.seoTitle）
+ * 根据路由更新 document.title 与 canonical（公开页可设 meta.seoTitle）
  * @param {import('vue-router').RouteLocationNormalized} route
  */
 export function applyRouteSeo(route) {
@@ -20,4 +36,7 @@ export function applyRouteSeo(route) {
     .find((r) => r.meta?.seoTitle)
   const seoTitle = record?.meta?.seoTitle
   document.title = seoTitle ? `${seoTitle} | ${SEO.siteName}` : SEO.defaultTitle
+  setLinkRel('canonical', canonicalForPath(route.path))
 }
+
+export { setLinkRel, canonicalForPath }

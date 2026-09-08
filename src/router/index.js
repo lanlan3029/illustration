@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
 import { applyRouteSeo } from '@/utils/seo'
 import { isChunkLoadErrorMessage, reloadForStaleChunks } from '@/utils/chunkLoadRecovery'
@@ -585,7 +585,7 @@ const routes = [{
 ]
 
 const router = createRouter({
-    history: createWebHashHistory(process.env.BASE_URL),
+    history: createWebHistory(process.env.BASE_URL),
     routes
 })
 

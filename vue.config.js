@@ -58,6 +58,7 @@ module.exports = defineConfig({
         }
     },
     devServer: {
+        historyApiFallback: true,
         // 配置 host：优先保证本机可正常启动（某些环境下读取网卡信息会报错）
         host: 'localhost',
         // 禁用 HMR 以避免 sockjs-node 连接错误

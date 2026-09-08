@@ -1,0 +1,46 @@
+# KidStory 前端 — Caddy 配置示例
+# 服务器：119.45.172.191（ubuntu）
+# 站点根目录：/home/ubuntu/www/illustration/dist
+#
+# ── 首次安装 / 更新配置 ──
+#   sudo cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak.$(date +%Y%m%d)
+#   sudo nano /etc/caddy/Caddyfile          # 合并下方 www.kidstory.cc 块
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+#   sudo systemctl status caddy
+#
+# ── 要点 ──
+#   1. @static 必须在 SPA fallback 之前，否则缺失 /js/*.js 会返回 index.html → ChunkLoadError
+#   2. try_files 支持 Vue History 路由（/books、/blog/xxx 等）
+#   3. api.kidstory.cc 由后端 Koa 单独处理，不在此文件
+
+# 裸域名 → www
+kidstory.cc {
+	redir https://www.kidstory.cc{uri} permanent
+}
+
+www.kidstory.cc {
+	root * /home/ubuntu/www/illustration/dist
+
+	# 静态资源：直接 file_server，禁止 fallback 到 index.html
+	@static path /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
+	handle @static {
+		file_server
+	}
+
+	# SPA（Vue History）：其余路径 try_files → index.html
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+
+	# 缓存：index.html 不缓存；带 contenthash 的 js/css 长期缓存
+	header /index.html Cache-Control "no-cache, no-store, must-revalidate"
+	header /js/* Cache-Control "public, max-age=604800, immutable"
+	header /css/* Cache-Control "public, max-age=604800, immutable"
+}
+
+# ── 若 api.kidstory.cc 也在同一台 Caddy，可参考（按实际后端端口修改）──
+# api.kidstory.cc {
+# 	reverse_proxy 127.0.0.1:3000
+# }

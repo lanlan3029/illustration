@@ -102,7 +102,7 @@ export default {
       setEditorproPendingImage(imageUrl, {
         title: item.character_name || item.name || '',
       });
-      navigateTo(this.$router, { name: 'editorpro' }, '#/editorpro');
+      navigateTo(this.$router, { name: 'editorpro' }, '/editorpro');
     },
     goGroupImages(item) {
       const id = item.id || item._id;
@@ -113,7 +113,7 @@ export default {
         characterId: id,
         characterName: name || undefined,
       });
-      navigateTo(this.$router, { name: 'create-group-images' }, '#/creation-studio/character/groups');
+      navigateTo(this.$router, { name: 'create-group-images' }, '/creation-studio/character/groups');
     },
     onCardClick(item) {
       if (this.pickMode) {

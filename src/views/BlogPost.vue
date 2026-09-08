@@ -38,7 +38,7 @@
 
 <script>
 import { fetchBlogPost } from '@/utils/blogApi'
-import { SEO } from '@/utils/seo'
+import { SEO, setLinkRel, canonicalForPath } from '@/utils/seo'
 
 export default {
   name: 'BlogPost',
@@ -92,14 +92,17 @@ export default {
       if (!post || typeof document === 'undefined') return
       const title = post.seoTitle || post.title
       document.title = title ? `${title} | ${SEO.siteName}` : SEO.defaultTitle
+      setLinkRel('canonical', canonicalForPath(`/blog/${post.slug}`))
       this.setMeta('description', post.metaDescription || post.excerpt || SEO.defaultDescription)
       this.setMeta('og:title', title)
       this.setMeta('og:description', post.metaDescription || post.excerpt || SEO.defaultDescription)
+      this.setMeta('og:url', canonicalForPath(`/blog/${post.slug}`))
       if (post.coverImageUrl) this.setMeta('og:image', post.coverImageUrl)
     },
     resetSeo() {
       if (typeof document === 'undefined') return
       document.title = SEO.defaultTitle
+      setLinkRel('canonical', `${SEO.siteUrl}/`)
       this.setMeta('description', SEO.defaultDescription)
     },
     setMeta(name, content) {

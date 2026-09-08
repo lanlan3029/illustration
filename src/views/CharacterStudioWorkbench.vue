@@ -535,7 +535,7 @@ export default {
         ? url
         : getImageUrl(url);
       setEditorproPendingImage(imageUrl, { title: this.characterName || '' });
-      navigateTo(this.$router, { name: 'editorpro' }, '#/editorpro');
+      navigateTo(this.$router, { name: 'editorpro' }, '/editorpro');
     },
     goGroupImages(url) {
       if (!url) return;
@@ -546,7 +546,7 @@ export default {
         characterId: this.savedCharacterId || undefined,
         characterName: (this.characterName || '').trim() || undefined,
       });
-      navigateTo(this.$router, { name: 'create-group-images' }, '#/creation-studio/character/groups');
+      navigateTo(this.$router, { name: 'create-group-images' }, '/creation-studio/character/groups');
     },
     previewImage(index) {
       this.previewIndex = index;
