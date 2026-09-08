@@ -476,6 +476,7 @@
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
     "websites": "网站推荐",
+    "blog": "博客",
     "my": "我的"
   },
   "moodDiary": {
@@ -1156,6 +1157,22 @@
     "loading": "加载中…",
     "empty": "暂无推荐，管理员上传后会出现在这里",
     "loadFailed": "加载失败"
+  },
+  "blog": {
+    "kicker": "Blog",
+    "pageTitle": "博客",
+    "pageDesc": "AI 插画、绘本创作与 SEO 内容，帮助你更好地使用 KidStory。",
+    "loading": "加载中…",
+    "empty": "暂无文章，OpenSEO 同步后会出现在这里",
+    "loadFailed": "加载失败",
+    "readMore": "阅读全文",
+    "backToList": "← 返回博客"
+  },
+  "blogPost": {
+    "loading": "加载中…",
+    "notFound": "文章不存在或尚未发布",
+    "publishedAt": "发布于",
+    "emptyContent": "暂无正文内容"
   },
   "websiteRecoAdmin": {
     "title": "上传网站推荐",

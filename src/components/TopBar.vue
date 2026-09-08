@@ -183,6 +183,7 @@ export default {
             { key: 'upload', to: '/user/upload', label: 'common.upload', mobile: false },
             { key: 'books', to: '/books', label: 'common.books', mobile: true },
             { key: 'websites', to: '/websites', label: 'nav.websites', mobile: true },
+            { key: 'blog', to: '/blog', label: 'nav.blog', mobile: true },
             { key: 'moodDiary', to: '/mood-diary', label: 'nav.moodDiary', linkClass: 'nav-link-mood-diary', mobile: true },
         ]
 
@@ -219,12 +220,14 @@ export default {
 
         const isMoodDiaryRoute = computed(() => route.path.startsWith('/mood-diary'))
         const isWebsitesRoute = computed(() => route.path.startsWith('/websites'))
+        const isBlogRoute = computed(() => route.path.startsWith('/blog'))
 
         // 统一的「当前项是否激活」判断，桌面与手机共用
         const isNavActive = (item) => {
             if (!item) return false
             if (item.key === 'moodDiary') return isMoodDiaryRoute.value
             if (item.key === 'websites') return isWebsitesRoute.value
+            if (item.key === 'blog') return isBlogRoute.value
             return route.path === item.to
         }
         

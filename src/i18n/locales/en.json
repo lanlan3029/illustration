@@ -461,6 +461,7 @@
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
     "websites": "Websites",
+    "blog": "Blog",
     "my": "Mine"
   },
   "moodDiary": {
@@ -1141,6 +1142,22 @@
     "loading": "Loading…",
     "empty": "Nothing yet — recommendations appear after admin uploads",
     "loadFailed": "Failed to load"
+  },
+  "blog": {
+    "kicker": "Blog",
+    "pageTitle": "Blog",
+    "pageDesc": "AI illustration, picture books, and SEO content to help you get more from KidStory.",
+    "loading": "Loading…",
+    "empty": "No posts yet — they appear here after OpenSEO sync",
+    "loadFailed": "Failed to load",
+    "readMore": "Read more",
+    "backToList": "← Back to blog"
+  },
+  "blogPost": {
+    "loading": "Loading…",
+    "notFound": "Post not found or not published",
+    "publishedAt": "Published",
+    "emptyContent": "No content yet"
   },
   "websiteRecoAdmin": {
     "title": "Upload Website Recommendation",

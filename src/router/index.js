@@ -62,6 +62,20 @@ const routes = [{
         meta: { seoTitle: '网站推荐' }
     },
     {
+        path: '/blog',
+        name: 'blog',
+        component: () =>
+            import ( /* webpackChunkName: "blog" */ '../views/BlogList.vue'),
+        meta: { seoTitle: '博客' }
+    },
+    {
+        path: '/blog/:slug',
+        name: 'blog-post',
+        component: () =>
+            import ( /* webpackChunkName: "blog-post" */ '../views/BlogPost.vue'),
+        props: true,
+    },
+    {
         path: '/books/:bookId',
         name: 'bookdetails',
         component: () =>
