@@ -1599,6 +1599,8 @@
     "styleTransfer": "AI优化",
     "styleTransferSuccess": "AI优化成功！已保存到\"我的创作\"",
     "styleTransferFailedRetry": "AI优化失败，请重试",
+    "styleTransferCorsFailed": "导出失败：画布含未授权外链图片，请换成本地或素材库图片后重试",
+    "styleTransferNotReady": "编辑器尚未就绪，请稍后再试",
     "saveDraft": "保存草稿",
     "saveDraftSuccess": "草稿保存成功！",
     "saveDraftFailedRetry": "草稿保存失败，请重试",

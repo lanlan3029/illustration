@@ -7,19 +7,47 @@
 <script setup name="style-transfer-btn">
 import { Message } from 'view-ui-plus';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import useSelect from '@/components/editorPro/hooks/select';
+import {
+  exportCanvasPreview,
+  stashStyleTransferImage,
+} from '@/utils/editorPro/exportCanvasPreview';
 
 const router = useRouter();
-const { canvasEditor } = useSelect();
+const { t } = useI18n();
+const { canvasEditor, fabric } = useSelect();
+
+function exportErrorMessage(code) {
+  switch (code) {
+    case 'CANVAS_EMPTY':
+      return t('toolbar.canvasNotFound') || '未找到画布内容，请先添加元素到画布';
+    case 'CORS_TAINTED':
+      return (
+        t('toolbar.styleTransferCorsFailed') ||
+        '导出失败：画布含未授权外链图片，请换成本地或素材库图片后重试'
+      );
+    case 'EDITOR_NOT_READY':
+    case 'CANVAS_MISSING':
+    case 'WORKSPACE_MISSING':
+      return t('toolbar.styleTransferNotReady') || '编辑器尚未就绪，请稍后再试';
+    default:
+      return t('creation.exportFailed') || '导出图片失败，请重试';
+  }
+}
 
 const toStyleTransfer = async () => {
   try {
-    // 与 Creation.vue 一致：写入 localStorage，然后跳转到同一路径
-    const base64 = await canvasEditor.preview();
-    localStorage.setItem('styleTransferContentImage', base64);
+    const base64 = await exportCanvasPreview(canvasEditor, {
+      preferJpeg: true,
+      jpegQuality: 0.88,
+      fabric,
+    });
+    stashStyleTransferImage(base64);
     router.push('/user/upload/style-transfer');
   } catch (e) {
-    Message.error('导出失败');
+    console.warn('[style-transfer] export failed', e?.code || e?.message || e);
+    Message.error(exportErrorMessage(e?.code));
   }
 };
 </script>
@@ -59,4 +87,3 @@ const toStyleTransfer = async () => {
   filter: brightness(0.96);
 }
 </style>
-

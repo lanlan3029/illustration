@@ -1584,6 +1584,8 @@
     "styleTransfer": "AI Optimization",
     "styleTransferSuccess": "AI optimization successful! Saved to \"My Creation\"",
     "styleTransferFailedRetry": "AI optimization failed, please try again",
+    "styleTransferCorsFailed": "Export failed: the canvas includes cross-origin images. Replace them with local or library assets and try again.",
+    "styleTransferNotReady": "Editor is not ready yet. Please try again in a moment.",
     "saveDraft": "Save Draft",
     "saveDraftSuccess": "Draft saved successfully!",
     "saveDraftFailedRetry": "Draft saved failed, please try again",

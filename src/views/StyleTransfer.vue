@@ -214,7 +214,9 @@ export default {
     methods: {
         // 从localStorage加载内容图片
         loadContentImageFromStorage() {
-            const base64Image = localStorage.getItem('styleTransferContentImage');
+            const base64Image =
+                localStorage.getItem('styleTransferContentImage') ||
+                sessionStorage.getItem('styleTransferContentImage');
             if (base64Image) {
                 try {
                     // 将base64转换为File对象
@@ -242,11 +244,13 @@ export default {
                     
                     // 清除localStorage
                     localStorage.removeItem('styleTransferContentImage');
+                    sessionStorage.removeItem('styleTransferContentImage');
                     
                     ElMessage.success('已自动加载画布内容图片');
                 } catch (error) {
                     console.error('加载内容图片失败:', error);
                     localStorage.removeItem('styleTransferContentImage');
+                    sessionStorage.removeItem('styleTransferContentImage');
                     ElMessage.warning('加载画布图片失败');
                 }
             }

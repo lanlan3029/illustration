@@ -272,15 +272,19 @@ class ServersPlugin implements IPluginTempl {
   }
 
   preview() {
-    return new Promise<string>((resolve) => {
+    return new Promise<string>((resolve, reject) => {
       this.editor.hooksEntity.hookSaveBefore.callAsync('', () => {
-        const option = this._getSaveOption();
-        this.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-        this.canvas.renderAll();
-        const dataUrl = this.canvas.toDataURL(option);
-        this.editor.hooksEntity.hookSaveAfter.callAsync(dataUrl, () => {
-          resolve(dataUrl);
-        });
+        try {
+          const option = this._getSaveOption();
+          this.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          this.canvas.renderAll();
+          const dataUrl = this.canvas.toDataURL(option);
+          this.editor.hooksEntity.hookSaveAfter.callAsync(dataUrl, () => {
+            resolve(dataUrl);
+          });
+        } catch (err) {
+          reject(err);
+        }
       });
     });
   }
@@ -322,7 +326,9 @@ class ServersPlugin implements IPluginTempl {
     const workspace = this.canvas
       .getObjects()
       .find((item: fabric.Object) => item.id === 'workspace');
-    console.log('getObjects', this.canvas.getObjects());
+    if (!workspace) {
+      throw new Error('workspace not found');
+    }
     const { left, top, width, height } = workspace as fabric.Object;
     const option = {
       name: 'New Image',
