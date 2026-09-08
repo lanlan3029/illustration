@@ -1611,18 +1611,17 @@
     "scenarioLabel": "优化场景",
     "promptLabel": "优化描述",
     "promptPlaceholder": "描述你想要的优化效果，或点击下方标签快速填入",
-    "scenarioHint": "点击标签填入描述，也可自行编辑",
-    "uploadCustomRef": "上传自定义参考图",
-    "customRef": "自定义参考图",
-    "customRefSelected": "已使用自定义参考图",
+    "scenarioHint": "点击标签填入描述，也可自行编辑；生成方式与 AI 生图相同",
     "scenarioSelected": "已填入：{name}",
-    "scenarioFailed": "场景参考图生成失败，请重试",
+    "generating": "正在生成中，请稍候…",
+    "generateSuccess": "优化成功！",
+    "generateFailed": "生成失败，请稍后重试",
     "needContentAndScenario": "请先确认内容图，并填写优化描述",
     "contentTooLarge": "图片大小不能超过 5MB",
     "resetDone": "已重置",
     "scenarios": {
       "hdRestore": {
-        "name": "提高清晰度",
+        "name": "高清修复",
         "prompt": "提升图片清晰度和细节，修复模糊、噪点和压缩痕迹。保持原始构图、主体、人物特征、颜色和重要细节不变，不添加新的物体。"
       },
       "colorOptimize": {

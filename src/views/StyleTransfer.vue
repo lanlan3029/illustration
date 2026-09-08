@@ -73,45 +73,6 @@
                                         {{ s.name }}
                                     </button>
                                 </div>
-                                <div v-if="stylePreviewUrl && !customStyleName" class="style-ref-preview">
-                                    <img :src="stylePreviewUrl" alt="" />
-                                    <span>{{ selectedStyleLabel }}</span>
-                                </div>
-                                <div class="custom-style-row">
-                                    <input
-                                        ref="customStyleInput"
-                                        type="file"
-                                        accept="image/jpeg,image/jpg,image/png"
-                                        class="custom-style-input"
-                                        @change="onCustomStylePicked"
-                                    />
-                                    <el-button
-                                        link
-                                        type="primary"
-                                        :disabled="processing"
-                                        @click="triggerCustomStylePick"
-                                    >
-                                        {{ $t('styleTransferPage.uploadCustomRef') }}
-                                    </el-button>
-                                </div>
-                            </div>
-                            <el-dialog v-model="styleDialogVisible" width="520px">
-                                <img width="100%" :src="stylePreviewUrl" alt="风格图片预览">
-                            </el-dialog>
-                        </el-form-item>
-
-                        <!-- 处理参数 -->
-                        <el-form-item>
-                            <div class="params-row">
-                                <div class="param-label">风格强度</div>
-                                <el-slider
-                                    v-model="form.styleStrength"
-                                    :min="0.1"
-                                    :max="1.0"
-                                    :step="0.1"
-                                    show-input
-                                    :format-tooltip="formatTooltip">
-                                </el-slider>
                             </div>
                         </el-form-item>
 
@@ -147,7 +108,7 @@
                         </div>
                         <div v-if="processing" class="result-loading">
                             <i class="el-icon-loading"></i>
-                            <p>正在处理中，请稍候...</p>
+                            <p>{{ $t('styleTransferPage.generating') || '正在生成中，请稍候…' }}</p>
                         </div>
                         <div v-if="resultImageUrl && !processing" class="result-image-wrapper">
                             <img :src="resultImageUrl" alt="风格迁移结果" class="result-image">
@@ -166,18 +127,14 @@
 
 <script>
 import { ElMessage } from 'element-plus'
-import {
-  SCENARIO_IDS,
-  SCENARIO_META,
-  buildStyleReferenceDataUrl,
-  dataUrlToFile
-} from '@/data/styleTransferPresets'
+import { SCENARIO_IDS } from '@/data/styleTransferPresets'
+import { generateStyleTransfer } from '@/utils/styleTransfer/api'
 
 export default {
     name: 'StyleTransfer',
     data() {
         return {
-            apiBaseUrl: '',
+            apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
             uploadAction: '',
             contentFile: null,
             contentPreviewUrl: '',
@@ -187,14 +144,8 @@ export default {
                 uploadShow: true,
                 uploadHide: false
             },
-            styleFile: null,
-            stylePreviewUrl: '',
-            styleDialogVisible: false,
             selectedScenarioId: '',
-            customStyleName: '',
             form: {
-                styleStrength: 0.5,
-                useOss: false,
                 optimizationPrompt: ''
             },
             processing: false,
@@ -209,15 +160,7 @@ export default {
                 id,
                 name: this.$t(`styleTransferPage.scenarios.${id}.name`),
                 prompt: this.$t(`styleTransferPage.scenarios.${id}.prompt`),
-                styleStrength: SCENARIO_META[id]?.styleStrength ?? 0.5
             }))
-        },
-        selectedStyleLabel() {
-            if (this.customStyleName) return this.customStyleName
-            if (this.selectedScenarioId) {
-                return this.$t(`styleTransferPage.scenarios.${this.selectedScenarioId}.name`)
-            }
-            return ''
         },
         canProcess() {
             return (
@@ -338,10 +281,6 @@ export default {
             this.contentPreviewUrl = file.url;
             this.contentDialogVisible = true;
         },
-        
-        triggerCustomStylePick() {
-            this.$refs.customStyleInput?.click()
-        },
 
         applyDefaultScenarioIfNeeded() {
             if (!this.contentFile || this.form.optimizationPrompt.trim()) return
@@ -352,259 +291,88 @@ export default {
         onPromptInput() {
             const text = this.form.optimizationPrompt.trim()
             const match = this.scenarios.find((s) => s.prompt === text)
-            if (match) {
-                if (this.selectedScenarioId !== match.id) {
-                    this.selectedScenarioId = match.id
-                    this.form.styleStrength = match.styleStrength
-                    this.syncBuiltinStyleRef(match.id)
-                }
-            } else if (!this.customStyleName) {
-                this.selectedScenarioId = ''
-            }
-        },
-
-        syncBuiltinStyleRef(scenarioId) {
-            try {
-                const dataUrl = buildStyleReferenceDataUrl(scenarioId)
-                this.stylePreviewUrl = dataUrl
-                this.styleFile = dataUrlToFile(dataUrl, `style-${scenarioId}.jpg`)
-            } catch (error) {
-                console.error('生成内置参考图失败:', error)
-            }
-        },
-
-        ensureStyleFileBeforeProcess() {
-            if (this.customStyleName && this.styleFile) return true
-            const scenarioId = this.selectedScenarioId || 'hdRestore'
-            try {
-                this.syncBuiltinStyleRef(scenarioId)
-                return !!this.styleFile
-            } catch (error) {
-                ElMessage.error(this.$t('styleTransferPage.scenarioFailed'))
-                return false
-            }
-        },
-
-        onCustomStylePicked(e) {
-            const file = e.target?.files?.[0]
-            e.target.value = ''
-            if (!file) return
-            const isLt5M = file.size / 1024 / 1024 < 5
-            if (!isLt5M) {
-                ElMessage.error(this.$t('styleTransferPage.contentTooLarge'))
-                return
-            }
-            this.selectedScenarioId = ''
-            this.customStyleName = file.name || this.$t('styleTransferPage.customRef')
-            this.stylePreviewUrl = URL.createObjectURL(file)
-            this.styleFile = file
-            ElMessage.success(this.$t('styleTransferPage.customRefSelected'))
+            this.selectedScenarioId = match ? match.id : ''
         },
 
         selectTag(scenario) {
             if (!scenario?.id) return
             this.selectedScenarioId = scenario.id
-            this.customStyleName = ''
             this.form.optimizationPrompt = scenario.prompt
-            this.form.styleStrength = scenario.styleStrength
-            try {
-                this.syncBuiltinStyleRef(scenario.id)
-                ElMessage.success(
-                    this.$t('styleTransferPage.scenarioSelected', { name: scenario.name })
-                )
-            } catch (error) {
-                console.error('生成内置参考图失败:', error)
-                ElMessage.error(this.$t('styleTransferPage.scenarioFailed'))
+            ElMessage.success(
+                this.$t('styleTransferPage.scenarioSelected', { name: scenario.name })
+            )
+        },
+
+        normalizeApiError(raw) {
+            if (raw == null || raw === '') return ''
+            if (typeof raw === 'string') return raw
+            if (typeof raw === 'object') {
+                const nested = raw.message ?? raw.msg ?? raw.error ?? raw.desc
+                if (nested != null && nested !== raw) {
+                    const s = this.normalizeApiError(nested)
+                    if (s) return s
+                }
+                try {
+                    return JSON.stringify(raw)
+                } catch (_) {
+                    return '生成失败，请重试'
+                }
             }
+            return String(raw)
         },
 
-        // 格式化工具提示
-        formatTooltip(val) {
-            return `风格强度: ${val}`;
-        },
-
-        // 处理风格迁移 - 调用后端API
         async handleProcess() {
             if (!this.canProcess) {
                 ElMessage.warning(this.$t('styleTransferPage.needContentAndScenario'));
                 return;
             }
-            if (!this.ensureStyleFileBeforeProcess()) return;
 
             this.processing = true;
             this.resultImageUrl = null;
             this.resultImageData = null;
 
             try {
-                // 构建FormData - 参照阿里云视觉开放平台API文档
-                const formData = new FormData();
-                formData.append('content_image', this.contentFile);
-                formData.append('style_image', this.styleFile);
-                // 添加风格强度参数（阿里云API支持）
-                formData.append('style_strength', this.form.styleStrength.toString());
-                formData.append('optimization_prompt', this.form.optimizationPrompt.trim());
-                
-                // 可选：如果后端支持use_oss参数
-                if (this.form.useOss) {
-                    formData.append('use_oss', 'true');
-                }
-
-                // 调用后端API（后端会调用阿里云视觉开放平台API）
-                // 如果apiBaseUrl为空，使用相对路径（通过axios的baseURL配置）
-                // 如果apiBaseUrl不为空，使用完整URL
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/style-transfer`
-                    : '/style-transfer';
-
-                const response = await this.$http.post(apiUrl, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+                const { imageUrl, message } = await generateStyleTransfer(
+                    this.$http,
+                    {
+                        imageFile: this.contentFile,
+                        prompt: this.form.optimizationPrompt.trim(),
                     },
-                    timeout: 120000 // 2分钟超时，风格迁移可能需要较长时间
-                });
+                    { apiBaseUrl: this.apiBaseUrl }
+                )
 
-                // 处理响应 - 支持两种格式：
-                // 1. 标准格式：{ code: 0, message: {...} }
-                // 2. 阿里云格式：{ desc: "success", result_url: "...", data: { ResultUrl: "..." } }
-                const responseData = response.data;
-                let imageUrl = null;
-                
-                // 检查标准格式（code === 0）
-                if (responseData && responseData.code === 0) {
-                    const resultMessage = responseData.message || responseData.data;
-                    
-                    // 优先级：OSS URL > 本地URL > base64 > 阿里云ResultUrl
-                    if (resultMessage && resultMessage.result_image_oss_url) {
-                        imageUrl = resultMessage.result_image_oss_url;
-                    } else if (resultMessage && resultMessage.result_image_url) {
-                        const baseUrl = this.apiBaseUrl || '';
-                        imageUrl = baseUrl + resultMessage.result_image_url;
-                    } else if (resultMessage && resultMessage.result_image_base64) {
-                        if (resultMessage.result_image_base64.startsWith('data:')) {
-                            imageUrl = resultMessage.result_image_base64;
-                        } else {
-                            imageUrl = `data:image/jpeg;base64,${resultMessage.result_image_base64}`;
-                        }
-                    } else if (resultMessage && resultMessage.ResultUrl) {
-                        // 阿里云API返回的ResultUrl
-                        imageUrl = resultMessage.ResultUrl;
-                    }
-                    
-                    if (imageUrl) {
-                        this.resultImageUrl = imageUrl;
-                        this.resultImageData = resultMessage;
-                        ElMessage.success('风格迁移成功！');
-                    } else {
-                        throw new Error('未获取到结果图片');
-                    }
+                if (message && typeof message === 'object' && message.points !== undefined && this.$store?.state) {
+                    this.$store.commit('setUserInfo', {
+                        ...(this.$store.state.userInfo || {}),
+                        points: message.points,
+                    })
                 }
-                // 检查阿里云格式（desc === "success"）
-                else if (responseData && responseData.desc === 'success') {
-                    // 阿里云API响应格式：{ desc: "success", result_url: "...", data: { ResultUrl: "..." } }
-                    imageUrl = responseData.result_url || (responseData.data && responseData.data.ResultUrl);
-                    
-                    if (imageUrl) {
-                        this.resultImageUrl = imageUrl;
-                        this.resultImageData = responseData.data || responseData;
-                        ElMessage.success('风格迁移成功！');
-                    } else {
-                        throw new Error('未获取到结果图片');
-                    }
-                }
-                // 处理错误
-                else {
-                    const errorMsg = responseData?.message || responseData?.desc || '处理失败';
-                    
-                    // 如果错误与OSS相关，自动禁用OSS并重试
-                    if (errorMsg.includes('ali-oss') || errorMsg.includes('OSS')) {
-                        console.warn('检测到OSS错误，自动禁用OSS并重试...');
-                        this.form.useOss = false;
-                        ElMessage.warning('OSS服务不可用，已自动切换到本地存储模式');
-                        setTimeout(() => {
-                            this.handleProcess();
-                        }, 500);
-                        return;
-                    }
-                    
-                    // 检查是否是服务连接错误
-                    let userFriendlyMsg = errorMsg;
-                    if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('127.0.0.1:5000') || errorMsg.includes('connect')) {
-                        userFriendlyMsg = '风格迁移服务未启动，请检查后端服务是否运行在 5000 端口';
-                    } else if (errorMsg.includes('InvalidParameter') || errorMsg.includes('InvalidImage')) {
-                        userFriendlyMsg = '图片参数错误，请检查图片格式和大小';
-                    } else if (errorMsg.includes('QuotaExceeded')) {
-                        userFriendlyMsg = 'API调用配额已用完，请稍后再试';
-                    }
-                    
-                    ElMessage.error(userFriendlyMsg);
-                    console.error('风格迁移失败:', responseData);
-                }
+
+                this.resultImageUrl = imageUrl
+                this.resultImageData = message
+                ElMessage.success(this.$t('styleTransferPage.generateSuccess') || '优化成功！')
             } catch (error) {
-                console.error('风格迁移错误:', error);
-                
-                let errorMessage = '处理失败，请稍后重试';
-                
+                console.error('AI优化失败:', error)
+                let errorMessage = this.$t('styleTransferPage.generateFailed') || '生成失败，请稍后重试'
+
                 if (error.response) {
-                    // 后端返回的错误
-                    const errorData = error.response.data;
-                    const errorMsg = errorData?.message || errorData?.desc || '';
-                    
-                    // 如果错误与OSS相关，自动禁用OSS并重试
-                    if (errorMsg.includes('ali-oss') || errorMsg.includes('OSS')) {
-                        console.warn('检测到OSS错误，自动禁用OSS并重试...');
-                        this.form.useOss = false;
-                        // 自动重试（不发送use_oss参数）
-                        ElMessage.warning('OSS服务不可用，已自动切换到本地存储模式');
-                        // 重新调用处理函数
-                        setTimeout(() => {
-                            this.handleProcess();
-                        }, 500);
-                        return;
-                    }
-                    
-                    // 检查是否是服务连接错误
-                    if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('127.0.0.1:5000') || errorMsg.includes('connect')) {
-                        errorMessage = '风格迁移服务未启动，请检查后端服务是否运行在 5000 端口';
-                    } else if (errorMsg.includes('InvalidParameter') || errorMsg.includes('InvalidImage')) {
-                        errorMessage = '图片参数错误，请检查图片格式和大小';
-                    } else if (errorMsg.includes('QuotaExceeded')) {
-                        errorMessage = 'API调用配额已用完，请稍后再试';
-                    } else if (errorData && errorData.message) {
-                        errorMessage = errorData.message;
-                    } else if (errorData && errorData.desc) {
-                        errorMessage = errorData.desc;
+                    const status = error.response.status
+                    const data = error.response.data
+                    if (status === 401) errorMessage = '未授权，请先登录'
+                    else if (status === 403) errorMessage = '无权限访问'
+                    else if (status === 404) errorMessage = 'API接口不存在'
+                    else {
+                        errorMessage = this.normalizeApiError(data?.message ?? data?.error) || errorMessage
                     }
                 } else if (error.code === 'ECONNABORTED') {
-                    errorMessage = '处理超时，请稍后重试';
+                    errorMessage = '生成超时，请稍后重试'
                 } else if (error.message) {
-                    errorMessage = error.message;
+                    errorMessage = error.message
                 }
-                
-                ElMessage.error(errorMessage);
+
+                ElMessage.error(errorMessage)
             } finally {
                 this.processing = false;
-            }
-        },
-        
-        // 检查服务状态（可选功能）
-        async checkServiceStatus() {
-            try {
-                const apiUrl = this.apiBaseUrl 
-                    ? `${this.apiBaseUrl}/style-transfer/status`
-                    : '/style-transfer/status';
-                
-                const response = await this.$http.get(apiUrl);
-                
-                if (response.data && response.data.code === 0) {
-                    return response.data.message;
-                } else {
-                    console.warn('服务状态检查失败:', response.data);
-                    return { available: false };
-                }
-            } catch (error) {
-                console.error('检查服务状态失败:', error);
-                return { available: false };
             }
         },
 
@@ -657,17 +425,13 @@ export default {
         // 重置
         handleReset() {
             this.contentFile = null;
-            this.styleFile = null;
             this.resultImageUrl = null;
             this.contentFileList = [];
             this.contentPreviewUrl = '';
-            this.stylePreviewUrl = '';
             this.selectedScenarioId = '';
-            this.customStyleName = '';
             this.form.optimizationPrompt = '';
             this.contentClass.uploadShow = true;
             this.contentClass.uploadHide = false;
-            this.form.styleStrength = 0.5;
             
             if (this.$refs['content-upload']) {
                 this.$refs['content-upload'].clearFiles();
