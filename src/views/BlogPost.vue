@@ -76,6 +76,9 @@ export default {
       this.loading = true
       try {
         this.post = await fetchBlogPost(this.$http, slug)
+        if (this.post?.slug && this.post.slug !== slug) {
+          this.$router.replace({ name: 'blog-post', params: { slug: this.post.slug } })
+        }
         this.applySeo(this.post)
       } catch (e) {
         this.post = null
