@@ -9,26 +9,46 @@
                 <p class="hero-subtitle">{{ $t('home.welcomeSubtitle') || '选择您想要使用的创作功能' }}</p>
             </header>
 
-            <!-- 顶部四个功能卡片 -->
-            <section class="feature-cards">
-                <button
-                    v-for="card in featureCards"
-                    :key="card.key"
-                    type="button"
-                    class="feature-card"
-                    :class="card.cls"
-                    @click="go(card.to)"
-                >
-                    <span class="feature-rings"></span>
-                    <div class="feature-text">
-                        <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
-                        <p class="feature-desc">{{ $t(card.descKey) }}</p>
-                    </div>
-                    <span class="feature-icon">
-                        <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
-                    </span>
-                </button>
-            </section>
+            <!-- 功能卡片：上排四个 + 下排三个工具入口 -->
+            <div class="feature-cards-group">
+                <section class="feature-cards">
+                    <button
+                        v-for="card in featureCards"
+                        :key="card.key"
+                        type="button"
+                        class="feature-card"
+                        :class="card.cls"
+                        @click="go(card.to)"
+                    >
+                        <span class="feature-rings"></span>
+                        <div class="feature-text">
+                            <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
+                            <p class="feature-desc">{{ $t(card.descKey) }}</p>
+                        </div>
+                        <span class="feature-icon">
+                            <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
+                        </span>
+                    </button>
+                </section>
+                <section class="feature-cards feature-cards--compact">
+                    <button
+                        v-for="card in toolCards"
+                        :key="card.key"
+                        type="button"
+                        class="feature-card feature-card--compact"
+                        :class="card.cls"
+                        @click="go(card.to)"
+                    >
+                        <span class="feature-rings"></span>
+                        <div class="feature-text">
+                            <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
+                        </div>
+                        <span class="feature-icon">
+                            <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
+                        </span>
+                    </button>
+                </section>
+            </div>
 
             <!-- 创作工作台介绍 -->
             <section class="showcase showcase--workbench">
@@ -170,6 +190,11 @@ export default {
                 { key: 'user', titleKey: 'nav.characterStudio', descKey: 'home.createCharacterDesc', to: '/creation-studio', cls: 'ic-user', img: require('@/assets/images/cards/reddit.png') },
                 { key: 'mood', titleKey: 'nav.moodDiary', descKey: 'home.moodDiaryDesc', to: '/mood-diary', cls: 'ic-mood', img: require('@/assets/images/cards/daily-health-app.png') }
             ],
+            toolCards: [
+                { key: 'editor', titleKey: 'nav.createIllustration', to: '/editorpro', cls: 'ic-editor', img: require('@/assets/images/home/guides/editor-pro.webp') },
+                { key: 'segment', titleKey: 'nav.imageSegmentation', to: '/image-segmentation', cls: 'ic-segment', img: require('@/assets/images/magic 2.svg') },
+                { key: 'lasso', titleKey: 'home.lassoCropSticker', to: '/lasso-crop', cls: 'ic-lasso', img: require('@/assets/images/window.png') }
+            ],
             styleImages: [],
         };
     },
@@ -261,12 +286,22 @@ export default {
     margin-right: auto;
 }
 
-/* ===== 四个功能卡片 ===== */
+/* ===== 功能卡片 ===== */
+.feature-cards-group {
+    --feature-card-height: 176px;
+    --feature-card-gap: 20px;
+    margin-bottom: 32px;
+}
+
 .feature-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 32px;
+    gap: var(--feature-card-gap);
+}
+
+.feature-cards--compact {
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: var(--feature-card-gap);
 }
 
 .feature-card {
@@ -275,7 +310,7 @@ export default {
     border: none;
     cursor: pointer;
     text-align: left;
-    min-height: 176px;
+    min-height: var(--feature-card-height);
     border-radius: 28px;
     padding: 24px 26px 22px;
     color: #fff;
@@ -383,6 +418,58 @@ export default {
     background: linear-gradient(135deg, #74cf86, #9bd97f);
     box-shadow: 0 16px 32px -16px rgba(90, 190, 120, 0.6);
 }
+
+/* 下排三个工具卡片：高度为上排一半，总宽与上排四卡对齐 */
+.feature-card--compact {
+    min-height: calc(var(--feature-card-height) / 2);
+    padding: 14px 18px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+}
+
+.feature-card--compact .feature-rings {
+    right: -18px;
+    top: -18px;
+    width: 88px;
+    height: 88px;
+}
+
+.feature-card--compact .feature-name {
+    font-size: 17px;
+    margin: 0;
+    max-width: calc(100% - 58px);
+}
+
+.feature-card--compact .feature-icon {
+    right: 12px;
+    bottom: auto;
+    top: 50%;
+    width: 52px;
+    height: 52px;
+    transform: translateY(-50%);
+}
+
+.feature-card--compact:hover .feature-icon {
+    transform: translateY(calc(-50% - 3px)) scale(1.06);
+}
+
+.ic-editor {
+    background: linear-gradient(135deg, #6b8cf0, #8aa8f8);
+    box-shadow: 0 12px 24px -14px rgba(90, 120, 230, 0.65);
+}
+.ic-segment {
+    background: linear-gradient(135deg, #f0a060, #f5c078);
+    box-shadow: 0 12px 24px -14px rgba(230, 140, 70, 0.6);
+}
+.ic-lasso {
+    background: linear-gradient(135deg, #b088f0, #c8a8f5);
+    box-shadow: 0 12px 24px -14px rgba(150, 110, 220, 0.6);
+}
+
+.ic-editor .feature-icon-img { transform: rotate(-4deg); }
+.ic-segment .feature-icon-img { transform: rotate(6deg); }
+.ic-lasso .feature-icon-img { transform: rotate(-6deg); }
 
 /* ===== 产品介绍区块 ===== */
 .showcase {
@@ -790,6 +877,10 @@ export default {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    .feature-cards--compact {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
     .showcase-inner {
         grid-template-columns: 1fr;
         gap: 28px;
@@ -828,10 +919,18 @@ export default {
         margin-bottom: 18px;
     }
 
+    .feature-cards-group {
+        --feature-card-height: 132px;
+        --feature-card-gap: 12px;
+        margin-bottom: 32px;
+    }
+
     .feature-cards {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        margin-bottom: 32px;
+    }
+
+    .feature-cards--compact {
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .showcase {
@@ -860,9 +959,24 @@ export default {
     }
 
     .feature-card {
-        min-height: 132px;
         border-radius: 20px;
         padding: 16px 16px 14px;
+    }
+
+    .feature-card--compact {
+        padding: 10px 12px;
+        border-radius: 16px;
+    }
+
+    .feature-card--compact .feature-name {
+        font-size: 13px;
+        max-width: calc(100% - 44px);
+    }
+
+    .feature-card--compact .feature-icon {
+        width: 40px;
+        height: 40px;
+        right: 8px;
     }
 
     .feature-icon {

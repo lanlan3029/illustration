@@ -792,7 +792,7 @@
     "recapChooseRangeFirst": "请选择统计时段后开始 AI 分析"
   },
   "home": {
-    "welcomeTitle": "您的专属插画工作台",
+    "welcomeTitle": "您的专属创作工作台",
     "welcomeSubtitle": "选择您想要使用的创作功能",
     "aiIllustrationDesc": "选择风格模版，一句话生成精美插画",
     "aiBooksDesc": "AI智能生成绘本故事",
@@ -802,6 +802,7 @@
     "createLayoutIllustrationDesc": "使用布局编辑器把控创作",
     "composeBookDesc": "将插画合成为绘本",
     "moodDiaryDesc": "记录心情，生成专属绘本",
+    "lassoCropSticker": "裁剪贴纸",
     "startCreating": "开始创作",
     "showcaseWorkbenchKicker": "创作工作台",
     "showcaseWorkbenchTitle": "管理角色，保持形象一致",
