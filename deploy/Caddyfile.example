@@ -34,8 +34,10 @@ www.kidstory.cc {
 		file_server
 	}
 
-	# 缓存：index.html 不缓存；带 contenthash 的 js/css 长期缓存
+	# 缓存：index.html / sitemap / robots 不长期缓存，便于 Google 重新抓取
 	header /index.html Cache-Control "no-cache, no-store, must-revalidate"
+	header /sitemap.xml Cache-Control "no-cache, must-revalidate"
+	header /robots.txt Cache-Control "no-cache, must-revalidate"
 	header /js/* Cache-Control "public, max-age=604800, immutable"
 	header /css/* Cache-Control "public, max-age=604800, immutable"
 }

@@ -103,11 +103,16 @@ const getObjectAttr = (e) => {
   }
 }
 
+const ARROW_TYPES = ['arrow', 'thinTailArrow']
+
 const changeCommon = (key, value) => {
   const activeObject = canvasEditor.canvas.getActiveObjects()[0]
   if (activeObject) {
     activeObject.set(key, value)
     activeObject.set('strokeUniform', true)
+    if (key === 'stroke' && ARROW_TYPES.includes(activeObject.type)) {
+      activeObject.set('fill', value)
+    }
     canvasEditor.canvas.renderAll()
   }
 }

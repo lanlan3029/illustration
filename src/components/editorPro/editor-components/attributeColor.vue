@@ -30,6 +30,11 @@ const update = getCurrentInstance();
 const { fabric, selectType, canvasEditor, isOne } = useSelect();
 const angleKey = 'gradientAngle';
 
+/** 颜色由 stroke 而非 fill 控制的元素（画笔路径、直线、箭头等） */
+const STROKE_BASED_TYPES = ['path', 'line', 'arrow', 'thinTailArrow'];
+
+const isStrokeBasedType = (type) => STROKE_BASED_TYPES.includes(type);
+
 /** 绘本常用色卡（色卡 Tab 中小格点击即设为 fill） */
 const pictureBookSwatches = [
   { label: '奶油白（纸张感）', hex: '#FFFDF5' },
@@ -64,6 +69,13 @@ const getObjectAttr = (e) => {
   // 不是当前obj，跳过
   if (e && e.target && e.target !== activeObject) return;
   if (activeObject && isOne) {
+    if (isStrokeBasedType(activeObject.type)) {
+      const stroke = activeObject.get('stroke');
+      if (typeof stroke === 'string' && stroke) {
+        baseAttr.fill = stroke;
+      }
+      return;
+    }
     const fill = activeObject.get('fill');
     if (typeof fill === 'string') {
       baseAttr.fill = fill;
@@ -75,22 +87,36 @@ const getObjectAttr = (e) => {
 
 const colorChange = (value) => {
   const activeObject = canvasEditor.canvas.getActiveObjects()[0];
-  if (activeObject) {
-    const color = String(value.color).replace('NaN', '');
+  if (!activeObject) return;
+
+  const color = String(value.color).replace('NaN', '');
+  const strokeBased = isStrokeBasedType(activeObject.type);
+
+  if (strokeBased) {
     if (value.mode === '纯色' || value.mode === '色卡') {
-      activeObject.set('fill', color);
-    } else if (value.mode === '渐变') {
-      const currentGradient = cssToFabricGradient(
-        toRaw(value.stops),
-        activeObject.width,
-        activeObject.height,
-        value.angle
-      );
-      activeObject.set('fill', currentGradient, value.angle);
-      activeObject.set(angleKey, value.angle);
+      activeObject.set('stroke', color);
+      // 箭头类元素箭头头部使用 fill 渲染，需同步
+      if (activeObject.type === 'arrow' || activeObject.type === 'thinTailArrow') {
+        activeObject.set('fill', color);
+      }
     }
     canvasEditor.canvas.renderAll();
+    return;
   }
+
+  if (value.mode === '纯色' || value.mode === '色卡') {
+    activeObject.set('fill', color);
+  } else if (value.mode === '渐变') {
+    const currentGradient = cssToFabricGradient(
+      toRaw(value.stops),
+      activeObject.width,
+      activeObject.height,
+      value.angle
+    );
+    activeObject.set('fill', currentGradient, value.angle);
+    activeObject.set(angleKey, value.angle);
+  }
+  canvasEditor.canvas.renderAll();
 };
 
 const dropColor = (value) => {

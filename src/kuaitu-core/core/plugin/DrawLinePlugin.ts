@@ -124,6 +124,9 @@ class DrawLinePlugin implements IPluginTempl {
     canvas.on('mouse:up', () => {
       if (!this.isDrawingLine) return;
       this.lineToDraw.setCoords();
+      this.lineToDraw.selectable = true;
+      this.lineToDraw.evented = true;
+      this.lineToDraw.hasControls = true;
       this.isDrawingLine = false;
       canvas.discardActiveObject();
       canvas.renderAll();

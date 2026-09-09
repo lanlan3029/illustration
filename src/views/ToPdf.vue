@@ -417,6 +417,16 @@
             <el-option :label="$t('toPdf.catOthers')" value="others" />
           </el-select>
         </el-form-item>
+        <el-form-item :label="$t('toPdf.bookDesc')">
+          <el-input
+            v-model="form.desc"
+            type="textarea"
+            :autosize="{ minRows: 3, maxRows: 6 }"
+            maxlength="500"
+            show-word-limit
+            :placeholder="$t('toPdf.descPlaceholder')"
+          />
+        </el-form-item>
         <el-form-item>
           <el-checkbox v-model="form.authorizationConfirmed">
             {{ $t('toPdf.compliance') }}
@@ -1229,10 +1239,10 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 20px 20px;
+  padding: 12px 20px 16px;
   background:
     radial-gradient(ellipse at center, #f7f5fb 0%, #e8ebf1 70%);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .book-stage.is-fullscreen {
@@ -1339,7 +1349,8 @@ export default {
 }
 
 .book-stage-alert {
-  margin: 0 0 12px;
+  flex-shrink: 0;
+  margin: 0 0 8px;
   max-width: 640px;
   text-align: center;
   font-size: 12px;
@@ -1349,8 +1360,10 @@ export default {
 
 .book-viewer {
   position: relative;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  max-width: 920px;
+  max-width: 1040px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1364,9 +1377,9 @@ export default {
   position: relative;
   /* 同时受视口高度与宽度限制，始终保持 trim / 双页比例 */
   width: min(
-    860px,
+    980px,
     calc(100% - 96px),
-    calc(min(58vh, 560px) * var(--frame-ar, 1))
+    calc(min(72vh, 680px) * var(--frame-ar, 1))
   );
   aspect-ratio: var(--frame-ar, 1);
   height: auto;
@@ -1377,9 +1390,9 @@ export default {
 
 .book-viewer.is-spread .book-stage-frame {
   width: min(
-    920px,
-    calc(100% - 96px),
-    calc(min(58vh, 560px) * var(--frame-ar, 1))
+    1040px,
+    calc(100% - 80px),
+    calc(min(72vh, 680px) * var(--frame-ar, 1))
   );
 }
 
@@ -1784,7 +1797,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 16px;
+  flex-shrink: 0;
+  margin-top: 8px;
   font-size: 13px;
   color: #606266;
 }
@@ -1808,15 +1822,17 @@ export default {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
-  margin-top: 14px;
-  max-width: 920px;
-  padding: 0 8px;
+  flex-shrink: 0;
+  margin-top: 12px;
+  max-width: 1040px;
+  padding: 0 8px 4px;
 }
 
 .book-thumb {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 6px;
   width: 88px;
   border: 2px solid #e4e7ed;
@@ -1829,7 +1845,7 @@ export default {
 }
 
 .book-thumb.is-spread-thumb {
-  width: 120px;
+  width: 128px;
 }
 
 .book-thumb[draggable='true'] {
@@ -1851,6 +1867,7 @@ export default {
 .book-thumb-preview {
   display: flex;
   align-items: stretch;
+  justify-content: center;
   width: 100%;
   overflow: hidden;
   border-radius: 6px;
@@ -1874,8 +1891,10 @@ export default {
 }
 
 .book-thumb-half {
-  position: relative;
   flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
   min-height: 48px;
   overflow: hidden;
@@ -1887,10 +1906,10 @@ export default {
 }
 
 .book-thumb-half img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   object-position: center;
   display: block;
@@ -1898,15 +1917,22 @@ export default {
 }
 
 .book-thumb-half em {
-  position: absolute;
-  inset: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
   display: block;
+  width: 100%;
+  min-height: 48px;
   background: #f0f2f5;
 }
 
 .book-thumb-label {
-  line-height: 1.2;
+  display: block;
+  width: 100%;
+  line-height: 1.25;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* —— 页面列表编辑 —— */
@@ -2207,7 +2233,7 @@ export default {
 
   .book-stage-frame {
     width: min(100%, calc(100% - 72px));
-    max-height: min(50vh, 420px);
+    max-height: min(58vh, 520px);
   }
 
   .book-nav {

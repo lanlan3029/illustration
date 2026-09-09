@@ -128,28 +128,28 @@
             type="primary"
             plain
             :disabled="!resultUrl || segmenting"
-            @click="showCharacterForm = true"
+            @click="showElementForm = true"
           >
-            {{ $t('imageSegmentation.saveToMyCharacter') }}
+            {{ $t('imageSegmentation.saveToMyElement') }}
           </el-button>
         </div>
       </template>
     </el-card>
 
     <el-dialog
-      v-model="showCharacterForm"
-      :title="$t('imageSegmentation.saveToMyCharacter')"
+      v-model="showElementForm"
+      :title="$t('imageSegmentation.saveToMyElement')"
       width="440px"
       destroy-on-close
     >
       <el-form label-width="80px">
-        <el-form-item :label="$t('imageSegmentation.characterName')" required>
-          <el-input v-model="characterForm.name" maxlength="30" show-word-limit />
+        <el-form-item :label="$t('imageSegmentation.elementName')" required>
+          <el-input v-model="elementForm.name" maxlength="30" show-word-limit />
         </el-form-item>
         <el-form-item :label="$t('imageSegmentation.category')" required>
-          <el-select v-model="characterForm.category" style="width: 100%">
+          <el-select v-model="elementForm.category" style="width: 100%">
             <el-option
-              v-for="item in characterCategories"
+              v-for="item in elementCategories"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -157,18 +157,18 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('imageSegmentation.description')">
-          <el-input v-model="characterForm.desc" type="textarea" :rows="3" />
+          <el-input v-model="elementForm.desc" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item :label="$t('imageSegmentation.isPublic')">
-          <el-radio-group v-model="characterForm.is_public">
+          <el-radio-group v-model="elementForm.is_public">
             <el-radio :label="1">{{ $t('imageSegmentation.public') }}</el-radio>
             <el-radio :label="0">{{ $t('imageSegmentation.private') }}</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCharacterForm = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSaveCharacter">
+        <el-button @click="showElementForm = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSaveElement">
           {{ $t('common.confirm') }}
         </el-button>
       </template>
@@ -189,7 +189,7 @@ import {
   DEFAULT_REMBG_MODES,
 } from '@/utils/imageSegmentation';
 import { suggestRembgMode } from '@/utils/imageSegmentationHint';
-import { saveCroppedCharacter, CHARACTER_CATEGORIES } from '@/utils/saveCroppedAsset';
+import { uploadPictureElement, ELEMENT_CATEGORIES } from '@/utils/saveCroppedAsset';
 import MyIllustrationPicker from '@/components/MyIllustrationPicker.vue';
 
 export default {
@@ -203,14 +203,14 @@ export default {
       resultUrl: '',
       resultModeLabel: '',
       segmenting: false,
-      showCharacterForm: false,
+      showElementForm: false,
       saving: false,
       modeOptions: DEFAULT_REMBG_MODES.slice(),
       selectedMode: readStoredRembgMode(),
       modeHint: null,
       modeHintDismissed: false,
-      characterCategories: CHARACTER_CATEGORIES,
-      characterForm: {
+      elementCategories: ELEMENT_CATEGORIES,
+      elementForm: {
         name: '',
         category: '',
         desc: '',
@@ -369,23 +369,35 @@ export default {
         ElMessage.success(this.$t('imageSegmentation.downloaded'));
       }
     },
-    async handleSaveCharacter() {
+    async resolveResultDataUrl(url) {
+      if (String(url || '').startsWith('data:')) return url;
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    },
+    async handleSaveElement() {
       if (!this.resultUrl) return;
-      if (!this.characterForm.name || !this.characterForm.category) {
+      if (!this.elementForm.name || !this.elementForm.category) {
         ElMessage.warning(this.$t('imageSegmentation.fillNameAndCategory'));
         return;
       }
       this.saving = true;
       try {
-        await saveCroppedCharacter(this.$http, this.resultUrl, {
-          character_name: this.characterForm.name,
-          character_type: this.characterForm.category,
-          description: this.characterForm.desc,
-          is_public: this.characterForm.is_public,
+        const dataUrl = await this.resolveResultDataUrl(this.resultUrl);
+        await uploadPictureElement(this.$http, dataUrl, {
+          title: this.elementForm.name,
+          type: this.elementForm.category,
+          desc: this.elementForm.desc,
+          is_public: this.elementForm.is_public,
         });
-        ElMessage.success(this.$t('imageSegmentation.characterSaved'));
-        this.showCharacterForm = false;
-        this.$router.push('/creation-studio/character');
+        ElMessage.success(this.$t('imageSegmentation.elementSaved'));
+        this.showElementForm = false;
       } catch (e) {
         ElMessage.error(e.message || this.$t('imageSegmentation.saveFailed'));
       } finally {

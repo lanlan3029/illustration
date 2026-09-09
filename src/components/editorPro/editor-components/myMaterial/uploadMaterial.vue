@@ -1,15 +1,15 @@
 
-
 <template>
   <div class="my-material">
     <Button icon="md-cloud-upload" @click="uploadImgHandule" long type="primary">
       {{ $t('myMaterial.uploadBtn') }}
     </Button>
-    <div class="img-group" v-if="fileList.length">
+    <div v-if="loading && fileList.length === 0" class="tip">{{ $t('common.loading') }}</div>
+    <div class="img-group" v-else-if="fileList.length">
       <Tooltip
         :content="info.name"
         v-for="(info, i) in fileList"
-        :key="`${i}-bai1-button`"
+        :key="`${info.id}-${i}`"
         placement="top"
       >
         <div class="tmpl-img-box">
@@ -30,19 +30,20 @@
         </div>
       </Tooltip>
     </div>
-    <div class="tip" v-else>暂无素材</div>
+    <div class="tip" v-else>{{ $t('editorProLeft.noElements') }}</div>
   </div>
 </template>
 
 <script setup name="ImportTmpl">
-const APP_APIHOST = process.env.VUE_APP_APP_APIHOST || process.env.VUE_APP_API_BASE_URL || '';
-import { getFileList, uploadImg, createdMaterial, removeMaterial } from '@/components/editorPro/api/user';
-import { inject, ref } from 'vue';
+import { uploadPictureElement } from '@/utils/saveCroppedAsset';
+import { readFileAsDataUrl } from '@/utils/lassoCrop';
+import { inject, ref, onMounted, getCurrentInstance } from 'vue';
 import { Message } from 'view-ui-plus';
 import { useI18n } from 'vue-i18n';
 import { tryFillActivePhotoSlot } from '@/utils/editorPro/photoSlotContext';
 
 const { t } = useI18n();
+const { proxy } = getCurrentInstance();
 
 function selectFiles({ accept, multiple = false } = {}) {
   return new Promise((resolve) => {
@@ -58,56 +59,74 @@ function selectFiles({ accept, multiple = false } = {}) {
 const canvasEditor = inject('canvasEditor');
 
 const fileList = ref([]);
-const isLogin = ref(false);
-const getFileListHandle = () => {
-  // 获取素材列表
-  getFileList()
-    .then((res) => {
-      fileList.value = res.data.data.map((item) => {
-        return {
-          id: item.id,
-          name: item.attributes.name,
-          imgUrl: APP_APIHOST + item.attributes.img.data.attributes.url,
-        };
-      });
-      isLogin.value = true;
-    })
-    .catch(() => {
-      isLogin.value = false;
+const loading = ref(false);
+
+function resolvePictureUrl(item) {
+  if (!item) return '';
+  let content = item.content;
+  if (Array.isArray(content)) content = content[0];
+  if (typeof content === 'string' && (content.startsWith('http://') || content.startsWith('https://'))) {
+    return content;
+  }
+  return `https://static.kidstory.cc/${content || ''}`;
+}
+
+async function fetchMyElements() {
+  const userId = localStorage.getItem('id');
+  const token = localStorage.getItem('token') || '';
+  if (!userId || !token) {
+    fileList.value = [];
+    return;
+  }
+  loading.value = true;
+  try {
+    const res = await proxy.$http.get('/picture/', {
+      params: {
+        ownerid: userId,
+        sort_param: 'createdAt',
+        sort_num: 'desc',
+        page: 1,
+      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-};
+    const list = res?.data?.message || res?.data?.data || res?.data?.list || [];
+    fileList.value = (Array.isArray(list) ? list : []).map((item) => ({
+      id: item._id || item.id,
+      name: item.title || t('editorProLeft.unnamedElement'),
+      imgUrl: resolvePictureUrl(item),
+    }));
+  } catch (e) {
+    console.error('[uploadMaterial] load picture elements failed', e);
+    fileList.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
 
-getFileListHandle();
+onMounted(fetchMyElements);
 
-// 上传素材
 const uploadImgHandule = () => {
-  selectFiles({
-    accept: 'image/*',
-  }).then((fileList) => {
-    const formData = new FormData();
-    const time = new Date();
-    const [file] = fileList;
-    formData.append('files', file, `${time.getTime()}`);
-    uploadImg(formData)
-      .then((res) => {
-        const [info] = res.data;
-        createdH(info.id, file.name);
-      })
-      .catch((err) => {
-        console.log(err);
+  selectFiles({ accept: 'image/*' }).then(async (files) => {
+    const [file] = files || [];
+    if (!file) return;
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const baseName = (file.name || 'element').replace(/\.[^.]+$/, '') || 'element';
+      await uploadPictureElement(proxy.$http, dataUrl, {
+        title: baseName,
+        type: 'others',
+        desc: '',
+        is_public: 1,
       });
+      Message.success(t('editorProLeft.elementUploaded'));
+      await fetchMyElements();
+    } catch (err) {
+      console.error(err);
+      Message.error(err?.message || t('editorProLeft.elementUploadFailed'));
+    }
   });
 };
-// 创建素材
-const createdH = (id, fileName) => {
-  createdMaterial({
-    data: {
-      img: id,
-      name: fileName,
-    },
-  }).finally(getFileListHandle);
-};
-// 添加素材到画布
+
 const addImgByElement = async (e) => {
   const src = e?.target?.src || e?.target?.currentSrc;
   if (src && (await tryFillActivePhotoSlot(src, canvasEditor))) {
@@ -120,9 +139,19 @@ const addImgByElement = async (e) => {
   });
 };
 
-// 删除素材
-const removeMaterialHandle = (id) => {
-  removeMaterial(id).finally(getFileListHandle);
+const removeMaterialHandle = async (id) => {
+  if (!id) return;
+  const token = localStorage.getItem('token') || '';
+  try {
+    await proxy.$http.delete(`/picture/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    Message.success(t('editorProLeft.elementDeleted'));
+    await fetchMyElements();
+  } catch (err) {
+    console.error(err);
+    Message.error(t('editorProLeft.elementDeleteFailed'));
+  }
 };
 </script>
 
