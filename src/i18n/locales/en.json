@@ -788,6 +788,8 @@
     "composeBookDesc": "Compose illustrations into storybooks",
     "moodDiaryDesc": "Record your mood and turn it into a storybook",
     "lassoCropSticker": "Sticker Crop",
+    "imageSegmentationDesc": "Remove backgrounds in one click",
+    "lassoCropStickerDesc": "Lasso crop and save as sticker",
     "startCreating": "Start Creating",
     "showcaseWorkbenchKicker": "Creation Studio",
     "showcaseWorkbenchTitle": "Manage characters, keep them consistent",

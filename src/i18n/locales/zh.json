@@ -803,6 +803,8 @@
     "composeBookDesc": "将插画合成为绘本",
     "moodDiaryDesc": "记录心情，生成专属绘本",
     "lassoCropSticker": "裁剪贴纸",
+    "imageSegmentationDesc": "一键抠图，生成透明背景",
+    "lassoCropStickerDesc": "圈选裁剪，保存贴纸图元",
     "startCreating": "开始创作",
     "showcaseWorkbenchKicker": "创作工作台",
     "showcaseWorkbenchTitle": "管理角色，保持形象一致",

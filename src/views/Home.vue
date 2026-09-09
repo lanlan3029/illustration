@@ -42,10 +42,8 @@
                         <span class="feature-rings"></span>
                         <div class="feature-text">
                             <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
+                            <p class="feature-desc">{{ $t(card.descKey) }}</p>
                         </div>
-                        <span class="feature-icon">
-                            <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
-                        </span>
                     </button>
                 </section>
             </div>
@@ -191,9 +189,9 @@ export default {
                 { key: 'mood', titleKey: 'nav.moodDiary', descKey: 'home.moodDiaryDesc', to: '/mood-diary', cls: 'ic-mood', img: require('@/assets/images/cards/daily-health-app.png') }
             ],
             toolCards: [
-                { key: 'editor', titleKey: 'nav.createIllustration', to: '/editorpro', cls: 'ic-editor', img: require('@/assets/images/home/guides/editor-pro.webp') },
-                { key: 'segment', titleKey: 'nav.imageSegmentation', to: '/image-segmentation', cls: 'ic-segment', img: require('@/assets/images/magic 2.svg') },
-                { key: 'lasso', titleKey: 'home.lassoCropSticker', to: '/lasso-crop', cls: 'ic-lasso', img: require('@/assets/images/window.png') }
+                { key: 'editor', titleKey: 'nav.createIllustration', descKey: 'home.createIllustrationDesc', to: '/editorpro', cls: 'ic-editor' },
+                { key: 'segment', titleKey: 'nav.imageSegmentation', descKey: 'home.imageSegmentationDesc', to: '/image-segmentation', cls: 'ic-segment' },
+                { key: 'lasso', titleKey: 'home.lassoCropSticker', descKey: 'home.lassoCropStickerDesc', to: '/lasso-crop', cls: 'ic-lasso' }
             ],
             styleImages: [],
         };
@@ -419,39 +417,16 @@ export default {
     box-shadow: 0 16px 32px -16px rgba(90, 190, 120, 0.6);
 }
 
-/* 下排三个工具卡片：高度为上排一半，总宽与上排四卡对齐 */
+/* 下排三个工具卡片：高度为上排一半，无配图，文字样式与上排一致 */
 .feature-card--compact {
     min-height: calc(var(--feature-card-height) / 2);
-    padding: 14px 18px;
-    border-radius: 22px;
+    padding: 18px 26px;
     display: flex;
     align-items: center;
 }
 
-.feature-card--compact .feature-rings {
-    right: -18px;
-    top: -18px;
-    width: 88px;
-    height: 88px;
-}
-
-.feature-card--compact .feature-name {
-    font-size: 17px;
-    margin: 0;
-    max-width: calc(100% - 58px);
-}
-
-.feature-card--compact .feature-icon {
-    right: 12px;
-    bottom: auto;
-    top: 50%;
-    width: 52px;
-    height: 52px;
-    transform: translateY(-50%);
-}
-
-.feature-card--compact:hover .feature-icon {
-    transform: translateY(calc(-50% - 3px)) scale(1.06);
+.feature-card--compact .feature-desc {
+    max-width: 100%;
 }
 
 .ic-editor {
@@ -466,10 +441,6 @@ export default {
     background: linear-gradient(135deg, #b088f0, #c8a8f5);
     box-shadow: 0 12px 24px -14px rgba(150, 110, 220, 0.6);
 }
-
-.ic-editor .feature-icon-img { transform: rotate(-4deg); }
-.ic-segment .feature-icon-img { transform: rotate(6deg); }
-.ic-lasso .feature-icon-img { transform: rotate(-6deg); }
 
 /* ===== 产品介绍区块 ===== */
 .showcase {
@@ -964,19 +935,7 @@ export default {
     }
 
     .feature-card--compact {
-        padding: 10px 12px;
-        border-radius: 16px;
-    }
-
-    .feature-card--compact .feature-name {
-        font-size: 13px;
-        max-width: calc(100% - 44px);
-    }
-
-    .feature-card--compact .feature-icon {
-        width: 40px;
-        height: 40px;
-        right: 8px;
+        padding: 12px 16px;
     }
 
     .feature-icon {
