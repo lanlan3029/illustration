@@ -279,91 +279,95 @@
             {{ $t('toPdf.nextPage') }}
           </button>
         </div>
-
-        <div class="book-thumbs" v-if="sheets.length">
-          <button
-            v-for="(sheet, idx) in sheets"
-            :key="`sheet-thumb-${idx}`"
-            type="button"
-            class="book-thumb"
-            :class="{
-              'is-active': idx === sheetIndex,
-              'is-spread-thumb': sheet.type === 'title' || sheet.type === 'spread',
-              'is-drag-over': thumbDragOver === idx,
-            }"
-            :title="thumbLabel(sheet)"
-            :draggable="sheet.type === 'spread' && !fullscreenPreview"
-            @click="goSheet(idx)"
-            @dragstart="onThumbDragStart($event, idx)"
-            @dragover="onThumbDragOver($event, idx)"
-            @dragleave="onThumbDragLeave"
-            @drop="onThumbDrop($event, idx)"
-            @dragend="onThumbDragEnd"
-          >
-            <span class="book-thumb-preview" :style="{ aspectRatio: thumbAspect(sheet) }">
-              <template v-if="sheet.type === 'title' || sheet.type === 'spread'">
-                <span class="book-thumb-half">
-                  <img v-if="sheet.left && sheet.left.src" :src="sheet.left.src" alt="" />
-                  <em v-else />
-                </span>
-                <span class="book-thumb-half">
-                  <img v-if="sheet.right && sheet.right.src" :src="sheet.right.src" alt="" />
-                  <em v-else />
-                </span>
-              </template>
-              <template v-else>
-                <img v-if="sheet.page && sheet.page.src" :src="sheet.page.src" alt="" />
-                <em v-else class="book-thumb-empty" />
-              </template>
-            </span>
-            <span v-if="!fullscreenPreview" class="book-thumb-label">{{ thumbLabel(sheet) }}</span>
-          </button>
-        </div>
+        <p v-if="!fullscreenPreview" class="book-flip-hint">{{ $t('toPdf.keyboardFlipHint') }}</p>
       </div>
       </Teleport>
 
-      <!-- 页面编辑：排序 / 增删 -->
+      <!-- 页面编辑：替换 / 排序 -->
       <div
         v-show="viewMode === 'pages' && !fullscreenPreview"
         class="topdf-scroll"
       >
         <div class="topdf-pages-toolbar">
-          <el-button size="small" @click="addBlankPage">{{ $t('toPdf.addBlankPage') }}</el-button>
-          <el-button size="small" @click="handleBack">{{ $t('toPdf.addMoreArt') }}</el-button>
+          <p class="topdf-pages-hint">{{ $t('toPdf.pageEditHint') }}</p>
+          <div class="topdf-pages-toolbar-actions">
+            <el-button size="small" @click="addBlankPage">{{ $t('toPdf.addBlankPage') }}</el-button>
+            <el-button size="small" @click="handleBack">{{ $t('toPdf.addMoreArt') }}</el-button>
+          </div>
         </div>
-        <div
-          v-for="(page, index) in editablePages"
-          :key="page.key"
-          class="topdf-page-card"
-          :class="{
-            'is-dragging': dragIndex === index,
-            'is-drag-over': dragOverIndex === index && dragIndex !== index,
-          }"
-          :style="pageCardStyle"
-          draggable="true"
-          @dragstart="onDragStart($event, index)"
-          @dragover="onDragOver($event, index)"
-          @dragleave="onDragLeave"
-          @drop="onDrop($event, index)"
-          @dragend="onDragEnd"
-        >
-          <div class="topdf-page-toolbar">
-            <span class="topdf-page-label">
-              {{ roleLabel(index) }}
-              <em>{{ $t('toPdf.pageLabel', { n: index + 1 }) }}</em>
-            </span>
-            <div class="topdf-page-actions">
+        <div class="topdf-pages-grid">
+          <div
+            v-for="(page, index) in editablePages"
+            :key="page.key"
+            class="topdf-page-card"
+            :class="{
+              'is-dragging': dragIndex === index,
+              'is-drag-over': dragOverIndex === index && dragIndex !== index,
+            }"
+            :style="pageCardStyle"
+            draggable="true"
+            @dragstart="onDragStart($event, index)"
+            @dragover="onDragOver($event, index)"
+            @dragleave="onDragLeave"
+            @drop="onDrop($event, index)"
+            @dragend="onDragEnd"
+          >
+            <div class="topdf-page-toolbar">
+              <span class="topdf-page-label">
+                {{ roleLabel(index) }}
+                <em>{{ $t('toPdf.pageLabel', { n: index + 1 }) }}</em>
+              </span>
+              <span class="topdf-page-drag-hint" aria-hidden="true">⋮⋮</span>
+            </div>
+
+            <div
+              class="topdf-page-stage"
+              :class="{ 'is-empty': page.blank || !page.src }"
+              :style="pageStageStyle"
+            >
+              <div v-if="page.blank || !page.src" class="topdf-page-blank">
+                {{ $t('toPdf.blankPage') }}
+              </div>
+              <el-image v-else :src="page.src" fit="contain" class="topdf-page-img" />
+              <div class="topdf-page-hover">
+                <el-button size="small" type="primary" @click.stop="openReplacePicker(index)">
+                  {{ page.blank || !page.src ? $t('toPdf.pickIllustration') : $t('toPdf.replaceIllustration') }}
+                </el-button>
+                <el-button
+                  v-if="!page.blank && page.src"
+                  size="small"
+                  @click.stop="editPageInEditor(index)"
+                >
+                  {{ $t('toPdf.editInEditor') }}
+                </el-button>
+              </div>
+            </div>
+
+            <div class="topdf-page-footer">
               <button type="button" :disabled="index === 0" @click.stop="movePage(index, -1)">↑</button>
-              <button type="button" :disabled="index === editablePages.length - 1" @click.stop="movePage(index, 1)">↓</button>
-              <button type="button" class="is-danger" @click.stop="removePage(index)">{{ $t('toPdf.deletePage') }}</button>
+              <button
+                type="button"
+                :disabled="index === editablePages.length - 1"
+                @click.stop="movePage(index, 1)"
+              >↓</button>
+              <button
+                type="button"
+                class="is-danger"
+                :disabled="editablePages.length <= 1"
+                @click.stop="removePage(index)"
+              >
+                {{ $t('toPdf.deletePage') }}
+              </button>
             </div>
           </div>
-
-          <div class="topdf-page-stage" :style="pageStageStyle">
-            <div v-if="page.blank" class="topdf-page-blank">{{ $t('toPdf.blankPage') }}</div>
-            <el-image v-else :src="page.src" fit="cover" class="topdf-page-img" />
-          </div>
         </div>
+
+        <MyIllustrationPicker
+          ref="illPicker"
+          class="topdf-hidden-picker"
+          :dialog-title="replaceDialogTitle"
+          @select="onReplaceIllustration"
+        />
       </div>
       </template>
     </section>
@@ -463,6 +467,7 @@ import {
 } from '@/utils/bookExport/renderBookPage';
 import { getLayoutExportFormatId, readLayoutExportSession, writeLayoutExportSession } from '@/utils/layoutExportSession';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
+import MyIllustrationPicker from '@/components/MyIllustrationPicker.vue';
 
 function pageKey(item, index) {
   if (item?.blank) return item._id || `blank-${index}`;
@@ -486,6 +491,7 @@ function toStorePage(item) {
 }
 
 export default {
+  components: { MyIllustrationPicker },
   data() {
     return {
       exporting: false,
@@ -502,8 +508,7 @@ export default {
       rightUnderOverride: null,
       dragIndex: null,
       dragOverIndex: null,
-      thumbDragIndex: null,
-      thumbDragOver: null,
+      replacingPageIndex: null,
       fullscreenPreview: false,
       form: {
         title: '',
@@ -577,6 +582,12 @@ export default {
       return this.$t('toPdf.progressShort', {
         current: this.sheetIndex + 1,
         total: this.sheets.length || 0,
+      });
+    },
+    replaceDialogTitle() {
+      if (this.replacingPageIndex == null) return '';
+      return this.$t('toPdf.replaceDialogTitle', {
+        role: this.roleLabel(this.replacingPageIndex),
       });
     },
     exportChecklist() {
@@ -662,7 +673,6 @@ export default {
       }
     },
     viewMode(mode) {
-      if (mode === 'book') this.sheetIndex = 0;
       if (mode === 'pages') this.closeFullscreenPreview();
     },
   },
@@ -721,17 +731,6 @@ export default {
       }
       return this.$t('toPdf.roleInterior');
     },
-    thumbLabel(sheet) {
-      if (sheet.type === 'cover') return this.$t('toPdf.roleCover');
-      if (sheet.type === 'title') return this.$t('toPdf.roleTitle');
-      if (sheet.type === 'back') return this.$t('toPdf.roleBack');
-      return this.$t('toPdf.roleSpread');
-    },
-    thumbAspect(sheet) {
-      const ar = this.pageAspectValue;
-      if (sheet.type === 'title' || sheet.type === 'spread') return String(ar * 2);
-      return String(ar);
-    },
     /** 当前展开面某侧对应 editablePages 下标；环衬 / 越界返回 -1 */
     resolvePageIndex(side) {
       const sheet = this.currentSheet;
@@ -750,71 +749,68 @@ export default {
       if (idx < 0 || idx >= this.editablePages.length) return false;
       return !!this.editablePages[idx]?.blank;
     },
-    onBlankInsert() {
+    onBlankInsert(side) {
+      if (side === 'cover') {
+        this.openReplacePicker(0);
+        return;
+      }
+      const idx = this.resolvePageIndex(side);
+      if (idx >= 0) {
+        this.openReplacePicker(idx);
+        return;
+      }
       this.handleBack();
     },
     onBlankEdit(side) {
-      const idx = this.resolvePageIndex(side);
-      const page = idx >= 0 && idx < this.editablePages.length ? this.editablePages[idx] : null;
-      if (page && !page.blank && page.src) {
-        setEditorproPendingImage(page.src, { title: page.title || '' });
-        this.$router.push({ name: 'editorpro' });
+      const idx = side === 'cover' ? 0 : this.resolvePageIndex(side);
+      if (idx >= 0) {
+        this.editPageInEditor(idx);
         return;
       }
       this.viewMode = 'pages';
       ElMessage.info(this.$t('toPdf.blankEditHint'));
+    },
+    openReplacePicker(index) {
+      this.replacingPageIndex = index;
+      this.$refs.illPicker?.open();
+    },
+    onReplaceIllustration({ item, url }) {
+      const index = this.replacingPageIndex;
+      this.replacingPageIndex = null;
+      if (index == null || index < 0) return;
+      this.applyIllustrationToPage(index, item, url);
+      ElMessage.success(this.$t('toPdf.replaceSuccess'));
+    },
+    applyIllustrationToPage(index, item, url) {
+      const page = this.editablePages[index];
+      if (!page || !url) return;
+      let content = item?.content || '';
+      if (!content && url.includes('static.kidstory.cc/')) {
+        content = url.split('static.kidstory.cc/')[1] || '';
+      }
+      page.blank = false;
+      page._id = item?._id || page._id;
+      page.id = item?._id || page.id;
+      page.content = content || page.content;
+      page.src = url;
+      page.title = item?.title || page.title || '';
+      page.key = pageKey(page, index);
+      this.persistPages();
+    },
+    editPageInEditor(index) {
+      const page = this.editablePages[index];
+      if (!page || page.blank || !page.src) {
+        this.openReplacePicker(index);
+        return;
+      }
+      setEditorproPendingImage(page.src, { title: page.title || '' });
+      this.$router.push({ name: 'editorpro' });
     },
     onBlankDelete(side) {
       const idx = this.resolvePageIndex(side);
       if (idx >= 0 && this.editablePages[idx]?.blank) {
         this.removePage(idx);
       }
-    },
-    onThumbDragStart(event, index) {
-      if (this.sheets[index]?.type !== 'spread') {
-        event.preventDefault();
-        return;
-      }
-      this.thumbDragIndex = index;
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', String(index));
-    },
-    onThumbDragOver(event, index) {
-      if (this.thumbDragIndex === null) return;
-      if (this.sheets[index]?.type !== 'spread') return;
-      event.preventDefault();
-      this.thumbDragOver = index;
-    },
-    onThumbDragLeave() {
-      this.thumbDragOver = null;
-    },
-    onThumbDrop(event, toIdx) {
-      event.preventDefault();
-      const fromIdx = this.thumbDragIndex;
-      this.thumbDragOver = null;
-      this.thumbDragIndex = null;
-      if (fromIdx === null || fromIdx === toIdx) return;
-      if (this.sheets[fromIdx]?.type !== 'spread' || this.sheets[toIdx]?.type !== 'spread') return;
-      const head = this.editablePages.slice(0, 2);
-      const rest = this.editablePages.slice(2);
-      const pairs = [];
-      for (let i = 0; i < rest.length; i += 2) {
-        pairs.push(rest.slice(i, i + 2));
-      }
-      const fi = fromIdx - 2;
-      const ti = toIdx - 2;
-      if (fi < 0 || ti < 0 || fi >= pairs.length || ti >= pairs.length) return;
-      const tmp = pairs[fi];
-      pairs[fi] = pairs[ti];
-      pairs[ti] = tmp;
-      this.editablePages = head.concat(pairs.flat());
-      this.persistPages();
-      if (this.sheetIndex === fromIdx) this.sheetIndex = toIdx;
-      else if (this.sheetIndex === toIdx) this.sheetIndex = fromIdx;
-    },
-    onThumbDragEnd() {
-      this.thumbDragIndex = null;
-      this.thumbDragOver = null;
     },
     goChangeFormat() {
       this.$router.push({ name: 'compose-illustration', query: { edit: 'format' } });
@@ -1032,7 +1028,7 @@ export default {
       this.goSheet(this.sheetIndex + 1);
     },
     onBookClick(event) {
-      if (event.target.closest('.book-nav') || event.target.closest('.book-thumb')) return;
+      if (event.target.closest('.book-nav') || event.target.closest('.book-blank-actions')) return;
       const frame = event.currentTarget.querySelector('.book-stage-frame') || event.currentTarget;
       const rect = frame.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -1274,27 +1270,6 @@ export default {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.22);
   color: rgba(255, 255, 255, 0.88);
-}
-
-.book-stage.is-fullscreen .book-thumbs {
-  margin-top: 18px;
-}
-
-.book-stage.is-fullscreen .book-thumb {
-  width: 72px;
-  padding: 4px;
-  border-width: 2px;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.book-stage.is-fullscreen .book-thumb.is-spread-thumb {
-  width: 96px;
-}
-
-.book-stage.is-fullscreen .book-thumb.is-active {
-  border-color: #c4b0e0;
-  box-shadow: none;
 }
 
 .book-stage.is-fullscreen .book-stage-frame {
@@ -1798,9 +1773,16 @@ export default {
   align-items: center;
   gap: 16px;
   flex-shrink: 0;
-  margin-top: 8px;
+  margin-top: 12px;
   font-size: 13px;
   color: #606266;
+}
+
+.book-flip-hint {
+  flex-shrink: 0;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #909399;
 }
 
 .book-pager button {
@@ -1817,147 +1799,45 @@ export default {
   cursor: not-allowed;
 }
 
-.book-thumbs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 12px;
-  max-width: 1040px;
-  padding: 0 8px 4px;
-}
-
-.book-thumb {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 6px;
-  width: 88px;
-  border: 2px solid #e4e7ed;
-  background: #fff;
-  border-radius: 10px;
-  padding: 6px;
-  font-size: 11px;
-  color: #606266;
-  cursor: pointer;
-}
-
-.book-thumb.is-spread-thumb {
-  width: 128px;
-}
-
-.book-thumb[draggable='true'] {
-  cursor: grab;
-}
-
-.book-thumb.is-active {
-  border-color: #8167a9;
-  box-shadow: 0 0 0 1px rgba(129, 103, 169, 0.25);
-  color: #8167a9;
-  font-weight: 600;
-}
-
-.book-thumb.is-drag-over {
-  border-color: #8167a9;
-  background: #f3eef9;
-}
-
-.book-thumb-preview {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 6px;
-  background: #fff;
-}
-
-.book-thumb-preview > img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-  background: #fff;
-}
-
-.book-thumb-empty {
-  display: block;
-  width: 100%;
-  min-height: 48px;
-  background: #f0f2f5;
-}
-
-.book-thumb-half {
-  flex: 1 1 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  min-height: 48px;
-  overflow: hidden;
-  background: #fff;
-}
-
-.book-thumb-half + .book-thumb-half {
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.book-thumb-half img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-  background: #fff;
-}
-
-.book-thumb-half em {
-  flex: 1 1 auto;
-  align-self: stretch;
-  display: block;
-  width: 100%;
-  min-height: 48px;
-  background: #f0f2f5;
-}
-
-.book-thumb-label {
-  display: block;
-  width: 100%;
-  line-height: 1.25;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* —— 页面列表编辑 —— */
 .topdf-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px 32px 32px;
+  padding: 16px 20px 24px;
   background: linear-gradient(180deg, #f0f2f6 0%, #e4e7ed 100%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 24px;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.topdf-pages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.topdf-hidden-picker {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .topdf-page-card {
   position: relative;
   width: 100%;
-  max-width: min(720px, 100%);
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   flex-shrink: 0;
   border: 2px solid transparent;
+  cursor: grab;
 }
 
 .topdf-page-card.is-drag-over { border-color: #8167a9; }
@@ -1980,35 +1860,65 @@ export default {
 }
 
 .topdf-page-label em {
-  margin-left: 8px;
+  margin-left: 6px;
   font-style: normal;
   font-weight: 500;
   color: #909399;
 }
 
-.topdf-page-actions {
-  display: flex;
-  gap: 6px;
+.topdf-page-drag-hint {
+  color: #c0c4cc;
+  font-size: 14px;
+  letter-spacing: -2px;
+  user-select: none;
 }
 
-.topdf-page-actions button {
+.topdf-page-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 8px 8px;
+  border-top: 1px solid #ebeef5;
+  background: #fafbfc;
+}
+
+.topdf-page-footer button {
   border: 1px solid #dcdfe6;
   background: #fff;
   border-radius: 6px;
-  padding: 2px 8px;
+  padding: 2px 10px;
   font-size: 12px;
   cursor: pointer;
   color: #606266;
 }
 
-.topdf-page-actions button:disabled {
+.topdf-page-footer button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.topdf-page-actions button.is-danger {
+.topdf-page-footer button.is-danger {
   color: #f56c6c;
   border-color: #f5c6c6;
+}
+
+.topdf-page-hover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.topdf-page-stage:hover .topdf-page-hover,
+.topdf-page-stage.is-empty .topdf-page-hover {
+  opacity: 1;
 }
 
 .topdf-page-stage {
@@ -2026,7 +1936,7 @@ export default {
 .topdf-page-img :deep(.el-image__inner) {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .topdf-page-blank {
@@ -2161,8 +2071,23 @@ export default {
 .topdf-pages-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.topdf-pages-hint {
+  margin: 0;
+  flex: 1 1 240px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #606266;
+}
+
+.topdf-pages-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 14px;
 }
 
 .topdf-form :deep(.el-form-item) { margin-bottom: 16px; }
