@@ -145,6 +145,10 @@
   "stickerLab": {
     "heroHint": "Lasso / matting · make stickers · save locally",
     "uploadPhoto": "Upload photo",
+    "uploadSub": "or click to upload · JPG, PNG supported",
+    "generatePng": "Generate sticker PNG",
+    "tabCrop": "Free crop",
+    "tabWorkshop": "Sticker lab",
     "cropMode": "Crop mode",
     "modeLasso": "Lasso",
     "modeMatte": "Remove background",

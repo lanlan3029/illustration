@@ -1,11 +1,11 @@
 <template>
-  <section class="sticker-collection" :class="{ 'is-sidebar': variant === 'sidebar' }">
+  <section class="sticker-collection" :class="[`variant-${variant}`]">
     <header class="collection-head">
       <div>
         <h2 class="collection-title">{{ $t('stickerLab.collectionTitle') }}</h2>
-        <p v-if="variant === 'sidebar'" class="collection-desc">{{ $t('stickerLab.collectionSubtitle') }}</p>
+        <p class="collection-desc">{{ $t('stickerLab.collectionSubtitle') }}</p>
       </div>
-      <span class="collection-count">{{ stickers.length }}/{{ maxCount }}</span>
+      <span class="collection-count">{{ stickers.length }} / {{ maxCount }}</span>
     </header>
 
     <div v-if="!stickers.length" class="collection-empty">
@@ -35,7 +35,7 @@
       width="min(480px, 92vw)"
       align-center
     >
-      <div v-if="active" class="detail-preview checker-bg">
+      <div v-if="active" class="detail-preview">
         <img :src="active.dataUrl" alt="" />
       </div>
       <template #footer>
@@ -117,57 +117,49 @@ defineExpose({ refresh, maxCount });
 
 <style scoped>
 .sticker-collection {
-  --accent: #8167a9;
-  --accent-soft: #f5f0fa;
-  --border: #e8e0f4;
-  --text: #1c345e;
-  --muted: #6b7280;
+  --ink: #3d3229;
+  --muted: #8a7f72;
+  --dash: #d4c4b0;
+  --cream: #f5efe1;
 }
 
 .collection-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .collection-title {
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .collection-desc {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 12px;
   color: var(--muted);
-  line-height: 1.45;
+  line-height: 1.55;
+  max-width: 280px;
 }
 
 .collection-count {
   flex-shrink: 0;
-  min-width: 44px;
-  height: 26px;
-  padding: 0 8px;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid #d4c6ea;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--dash);
+  color: var(--muted);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .collection-empty {
+  padding: 40px 16px;
   text-align: center;
-  padding: 32px 12px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  background: #fcfbfd;
   color: var(--muted);
   font-size: 13px;
 }
@@ -177,18 +169,20 @@ defineExpose({ refresh, maxCount });
 }
 
 .empty-sub {
-  margin-top: 6px !important;
+  margin-top: 8px !important;
   font-size: 12px;
+  opacity: 0.85;
 }
 
 .sticker-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 16px;
 }
 
-.is-sidebar .sticker-grid {
+.variant-sidebar .sticker-grid {
   grid-template-columns: repeat(2, 1fr);
+  gap: 14px 12px;
 }
 
 .sticker-cell {
@@ -207,22 +201,26 @@ defineExpose({ refresh, maxCount });
 .sticker-btn img {
   width: 100%;
   height: auto;
-  max-height: 100px;
+  max-height: 88px;
   object-fit: contain;
   display: block;
   margin: 0 auto;
-  filter: drop-shadow(0 4px 10px rgba(28, 52, 94, 0.12));
-  transition: transform 0.15s ease;
+  filter: drop-shadow(0 5px 12px rgba(61, 50, 41, 0.12));
+  transition: transform 0.18s ease;
+}
+
+.variant-gallery .sticker-btn img {
+  max-height: 96px;
 }
 
 .sticker-cell:hover .sticker-btn img {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.03);
 }
 
 .sticker-actions {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: -6px;
+  right: -6px;
   display: flex;
   gap: 4px;
   opacity: 0;
@@ -236,52 +234,52 @@ defineExpose({ refresh, maxCount });
 .action-btn {
   width: 24px;
   height: 24px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--text);
+  border: 1px solid var(--dash);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(28, 52, 94, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .action-btn.danger {
-  color: #e84b4b;
-}
-
-.checker-bg {
-  background:
-    linear-gradient(45deg, #ececf0 25%, transparent 25%) 0 0 / 10px 10px,
-    linear-gradient(-45deg, #ececf0 25%, transparent 25%) 0 0 / 10px 10px,
-    #fafbfc;
-  background-position: 0 0, 0 5px, 0 0;
+  color: #c97652;
 }
 
 .detail-preview {
-  padding: 24px 16px;
-  border-radius: 12px;
+  padding: 28px 16px;
   display: flex;
   justify-content: center;
-  min-height: 200px;
+  min-height: 220px;
+  background: var(--cream);
+  border-radius: 12px;
 }
 
 .detail-preview img {
   max-width: 100%;
   max-height: 50vh;
   object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(61, 50, 41, 0.15));
 }
 
-@media (max-width: 960px) {
-  .is-sidebar .sticker-grid {
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+@media (max-width: 860px) {
+  .variant-gallery .sticker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 16px 12px;
   }
 
   .sticker-actions {
     opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .variant-gallery .sticker-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 </style>
