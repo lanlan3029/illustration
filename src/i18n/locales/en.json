@@ -143,6 +143,8 @@
     "modePlain": "Plain"
   },
   "stickerLab": {
+    "heroHint": "Lasso / matting · make stickers · save locally",
+    "uploadPhoto": "Upload photo",
     "cropMode": "Crop mode",
     "modeLasso": "Lasso",
     "modeMatte": "Remove background",

@@ -114,6 +114,7 @@ defineExpose({ refresh, maxCount });
   --cream: #f8f2e9;
   --ink: #1a1a1a;
   --yellow: #f5d76e;
+  padding-top: 4px;
 }
 
 .collection-head {

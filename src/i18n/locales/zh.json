@@ -143,6 +143,8 @@
     "modePlain": "透明底"
   },
   "stickerLab": {
+    "heroHint": "套索 / 抠图 · 变贴纸 · 存本地",
+    "uploadPhoto": "上传照片",
     "cropMode": "裁切方式",
     "modeLasso": "套索裁切",
     "modeMatte": "删除背景",
