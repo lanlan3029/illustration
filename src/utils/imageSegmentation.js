@@ -1,4 +1,5 @@
 import { DEFAULT_API_ORIGIN, resolveApiOrigin } from '@/utils/createCharacterTask'
+import { loadImage } from '@/utils/lassoCrop'
 
 export const REMBG_PATH = '/image-segmentation/rembg'
 export const REMBG_STATUS_PATH = '/image-segmentation/status'
@@ -216,6 +217,35 @@ export function formatRembgRequestError(error, fallback = '抠图失败，请重
   }
   if (error?.message) return error.message
   return fallback
+}
+
+function imageToCanvas(img) {
+  const canvas = document.createElement('canvas')
+  canvas.width = img.naturalWidth || img.width
+  canvas.height = img.naturalHeight || img.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas 不可用')
+  ctx.drawImage(img, 0, 0)
+  return canvas
+}
+
+/** rembg 结果 URL → 可编辑 canvas（兼容 CORS） */
+export async function rembgResultToCanvas(imageUrl) {
+  try {
+    const img = await loadImage(imageUrl)
+    return imageToCanvas(img)
+  } catch (firstErr) {
+    const res = await fetch(imageUrl, { mode: 'cors' })
+    if (!res.ok) throw firstErr
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    try {
+      const img = await loadImage(objectUrl)
+      return imageToCanvas(img)
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }
 }
 
 export { DEFAULT_API_ORIGIN }

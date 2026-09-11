@@ -2,7 +2,12 @@
   <div class="matte-brush-canvas">
     <div class="matte-stage" ref="stageRef">
       <div class="matte-frame checker-bg">
+        <div v-if="segmenting" class="matte-loading">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>{{ $t('stickerLab.segmenting') }}</span>
+        </div>
         <canvas
+          v-show="!segmenting"
           ref="canvasRef"
           class="matte-canvas"
           @pointerdown.prevent="onPointerDown"
@@ -14,18 +19,33 @@
     </div>
     <div class="matte-tools">
       <div class="tool-row">
-        <el-radio-group v-model="brush" size="small">
+        <span class="tool-label">{{ $t('stickerLab.rembgMode') }}</span>
+        <el-radio-group v-model="rembgMode" size="small" :disabled="segmenting">
+          <el-radio-button
+            v-for="item in modeOptions"
+            :key="item.value"
+            :label="item.value"
+          >
+            {{ item.label }}
+          </el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="tool-row">
+        <el-radio-group v-model="brush" size="small" :disabled="!ready || segmenting">
           <el-radio-button label="erase">{{ $t('stickerLab.brushErase') }}</el-radio-button>
           <el-radio-button label="restore">{{ $t('stickerLab.brushRestore') }}</el-radio-button>
         </el-radio-group>
-        <el-radio-group v-model="brushSize" size="small" class="size-group">
+        <el-radio-group v-model="brushSize" size="small" class="size-group" :disabled="!ready || segmenting">
           <el-radio-button :label="16">{{ $t('stickerLab.brushSmall') }}</el-radio-button>
           <el-radio-button :label="28">{{ $t('stickerLab.brushMedium') }}</el-radio-button>
           <el-radio-button :label="44">{{ $t('stickerLab.brushLarge') }}</el-radio-button>
         </el-radio-group>
       </div>
       <p class="matte-hint">{{ $t('stickerLab.matteHint') }}</p>
-      <el-button type="primary" size="small" :disabled="!ready" @click="generate">
+      <el-button size="small" :loading="segmenting" @click="runSegment">
+        {{ $t('stickerLab.retrySegment') }}
+      </el-button>
+      <el-button type="primary" size="small" :disabled="!ready || segmenting" @click="generate">
         {{ $t('stickerLab.generateSticker') }}
       </el-button>
     </div>
@@ -38,11 +58,18 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, getCurrentInstance } from 'vue';
 import { ElMessage } from 'element-plus';
+import { Loading } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
 import { loadImage, fitDisplaySize, canvasToDataUrl } from '@/utils/lassoCrop';
-import { mattingWhiteBackground } from '@/utils/canvasMatting';
+import {
+  rembgFromImageSource,
+  rembgResultToCanvas,
+  fetchRembgModes,
+  formatRembgRequestError,
+  DEFAULT_REMBG_MODES,
+} from '@/utils/imageSegmentation';
 import { cleanAlphaDebris, finishWithStyle } from '@/utils/stickerLab/stickerStyles';
 
 const props = defineProps({
@@ -54,11 +81,15 @@ const props = defineProps({
 const emit = defineEmits(['cropped']);
 
 const { t } = useI18n();
+const { proxy } = getCurrentInstance() || {};
 
 const stageRef = ref(null);
 const canvasRef = ref(null);
 const brush = ref('erase');
 const brushSize = ref(28);
+const rembgMode = ref('background');
+const modeOptions = ref(DEFAULT_REMBG_MODES.slice());
+const segmenting = ref(false);
 const ready = ref(false);
 const previewUrl = ref('');
 const previewOpen = ref(false);
@@ -69,6 +100,7 @@ let painting = false;
 let lastPaint = null;
 let display = { w: 0, h: 0, scale: 1 };
 let resizeObserver = null;
+let segmentToken = 0;
 
 function getCtx() {
   return canvasRef.value?.getContext('2d');
@@ -115,20 +147,53 @@ function layoutCanvas() {
   redrawDisplay();
 }
 
-async function initMatte() {
+async function loadModeOptions() {
+  if (!proxy?.$http) return;
+  try {
+    const modes = await fetchRembgModes(proxy.$http);
+    if (modes.length) {
+      modeOptions.value = modes;
+      if (!modes.some((m) => m.value === rembgMode.value)) {
+        rembgMode.value = modes.some((m) => m.value === 'background')
+          ? 'background'
+          : modes[0].value;
+      }
+    }
+  } catch (e) {
+    console.warn('[sticker] fetch rembg modes failed', e);
+  }
+}
+
+async function runSegment() {
   if (!props.imageSrc) return;
+  if (!proxy?.$http) {
+    ElMessage.error(t('common.error'));
+    return;
+  }
+
+  const token = ++segmentToken;
+  segmenting.value = true;
   ready.value = false;
   previewUrl.value = '';
+
   try {
     sourceImage = await loadImage(props.imageSrc);
-    const result = mattingWhiteBackground(sourceImage, { sticker: false, floodFromEdges: true });
-    matteCanvas = cleanAlphaDebris(result);
+    const result = await rembgFromImageSource(proxy.$http, props.imageSrc, {
+      mode: rembgMode.value,
+    });
+    if (token !== segmentToken) return;
+
+    const rawCanvas = await rembgResultToCanvas(result.imageURL);
+    matteCanvas = cleanAlphaDebris(rawCanvas);
     ready.value = true;
     await nextTick();
     layoutCanvas();
   } catch (e) {
+    if (token !== segmentToken) return;
     console.error(e);
-    ElMessage.error(t('stickerLab.matteFailed'));
+    ElMessage.error(formatRembgRequestError(e, t('stickerLab.matteFailed')));
+  } finally {
+    if (token === segmentToken) segmenting.value = false;
   }
 }
 
@@ -191,7 +256,7 @@ function paintStroke(from, to) {
 }
 
 function onPointerDown(e) {
-  if (!ready.value) return;
+  if (!ready.value || segmenting.value) return;
   canvasRef.value?.setPointerCapture?.(e.pointerId);
   painting = true;
   lastPaint = imagePoint(canvasPoint(e));
@@ -233,10 +298,15 @@ function generate() {
 }
 
 watch(() => props.imageSrc, () => {
-  initMatte();
+  runSegment();
 }, { immediate: true });
 
-onMounted(() => {
+watch(rembgMode, (mode, prev) => {
+  if (prev !== undefined && props.imageSrc) runSegment();
+});
+
+onMounted(async () => {
+  await loadModeOptions();
   if (stageRef.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => layoutCanvas());
     resizeObserver.observe(stageRef.value);
@@ -244,6 +314,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  segmentToken += 1;
   resizeObserver?.disconnect();
 });
 </script>
@@ -266,7 +337,24 @@ onBeforeUnmount(() => {
   padding: 12px;
   display: flex;
   justify-content: center;
+  align-items: center;
   min-height: 280px;
+  position: relative;
+}
+
+.matte-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #606266;
+  font-size: 14px;
+  padding: 40px 16px;
+}
+
+.matte-loading .el-icon {
+  font-size: 28px;
+  color: #409eff;
 }
 
 .matte-canvas {
@@ -285,6 +373,12 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.tool-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
 }
 
 .size-group {
