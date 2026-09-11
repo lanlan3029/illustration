@@ -19,18 +19,6 @@
     </div>
     <div class="matte-tools">
       <div class="tool-row">
-        <span class="tool-label">{{ $t('stickerLab.rembgMode') }}</span>
-        <el-radio-group v-model="rembgMode" size="small" :disabled="segmenting">
-          <el-radio-button
-            v-for="item in modeOptions"
-            :key="item.value"
-            :label="item.value"
-          >
-            {{ item.label }}
-          </el-radio-button>
-        </el-radio-group>
-      </div>
-      <div class="tool-row">
         <el-radio-group v-model="brush" size="small" :disabled="!ready || segmenting">
           <el-radio-button label="erase">{{ $t('stickerLab.brushErase') }}</el-radio-button>
           <el-radio-button label="restore">{{ $t('stickerLab.brushRestore') }}</el-radio-button>
@@ -42,12 +30,17 @@
         </el-radio-group>
       </div>
       <p class="matte-hint">{{ $t('stickerLab.matteHint') }}</p>
-      <el-button size="small" :loading="segmenting" @click="runSegment">
-        {{ $t('stickerLab.retrySegment') }}
-      </el-button>
-      <el-button type="primary" size="small" :disabled="!ready || segmenting" @click="generate">
-        {{ $t('stickerLab.generateSticker') }}
-      </el-button>
+      <div class="tool-actions">
+        <el-button size="small" :loading="segmenting" @click="runSegment">
+          {{ $t('stickerLab.retrySegment') }}
+        </el-button>
+        <el-button size="small" :disabled="!ready || segmenting" @click="openPreview">
+          {{ $t('stickerLab.preview') }}
+        </el-button>
+        <el-button type="primary" size="small" :disabled="!ready || segmenting" @click="generate">
+          {{ $t('stickerLab.generateSticker') }}
+        </el-button>
+      </div>
     </div>
     <el-dialog v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" align-center>
       <div class="preview-frame checker-bg">
@@ -66,9 +59,7 @@ import { loadImage, fitDisplaySize, canvasToDataUrl } from '@/utils/lassoCrop';
 import {
   rembgFromImageSource,
   rembgResultToCanvas,
-  fetchRembgModes,
   formatRembgRequestError,
-  DEFAULT_REMBG_MODES,
 } from '@/utils/imageSegmentation';
 import { cleanAlphaDebris, finishWithStyle } from '@/utils/stickerLab/stickerStyles';
 
@@ -87,8 +78,7 @@ const stageRef = ref(null);
 const canvasRef = ref(null);
 const brush = ref('erase');
 const brushSize = ref(28);
-const rembgMode = ref('background');
-const modeOptions = ref(DEFAULT_REMBG_MODES.slice());
+const REMBG_MODE = 'background';
 const segmenting = ref(false);
 const ready = ref(false);
 const previewUrl = ref('');
@@ -147,23 +137,6 @@ function layoutCanvas() {
   redrawDisplay();
 }
 
-async function loadModeOptions() {
-  if (!proxy?.$http) return;
-  try {
-    const modes = await fetchRembgModes(proxy.$http);
-    if (modes.length) {
-      modeOptions.value = modes;
-      if (!modes.some((m) => m.value === rembgMode.value)) {
-        rembgMode.value = modes.some((m) => m.value === 'background')
-          ? 'background'
-          : modes[0].value;
-      }
-    }
-  } catch (e) {
-    console.warn('[sticker] fetch rembg modes failed', e);
-  }
-}
-
 async function runSegment() {
   if (!props.imageSrc) return;
   if (!proxy?.$http) {
@@ -179,7 +152,7 @@ async function runSegment() {
   try {
     sourceImage = await loadImage(props.imageSrc);
     const result = await rembgFromImageSource(proxy.$http, props.imageSrc, {
-      mode: rembgMode.value,
+      mode: REMBG_MODE,
     });
     if (token !== segmentToken) return;
 
@@ -280,16 +253,30 @@ function onPointerUp() {
   redrawDisplay();
 }
 
-function generate() {
-  if (!matteCanvas) return;
+function buildStyledSticker() {
+  if (!matteCanvas) return null;
   const styled = finishWithStyle(matteCanvas, props.stickerStyle, props.borderColor);
-  const dataUrl = canvasToDataUrl(styled);
-  previewUrl.value = dataUrl;
+  return {
+    styled,
+    dataUrl: canvasToDataUrl(styled),
+  };
+}
+
+function openPreview() {
+  const result = buildStyledSticker();
+  if (!result) return;
+  previewUrl.value = result.dataUrl;
   previewOpen.value = true;
+}
+
+function generate() {
+  const result = buildStyledSticker();
+  if (!result) return;
+  previewUrl.value = result.dataUrl;
   emit('cropped', {
-    dataUrl,
-    width: styled.width,
-    height: styled.height,
+    dataUrl: result.dataUrl,
+    width: result.styled.width,
+    height: result.styled.height,
     style: props.stickerStyle,
     borderColor: props.borderColor,
     mode: 'matte',
@@ -297,16 +284,13 @@ function generate() {
   });
 }
 
+defineExpose({ openPreview });
+
 watch(() => props.imageSrc, () => {
   runSegment();
 }, { immediate: true });
 
-watch(rembgMode, (mode, prev) => {
-  if (prev !== undefined && props.imageSrc) runSegment();
-});
-
-onMounted(async () => {
-  await loadModeOptions();
+onMounted(() => {
   if (stageRef.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => layoutCanvas());
     resizeObserver.observe(stageRef.value);
@@ -390,6 +374,12 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: #909399;
   line-height: 1.5;
+}
+
+.tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .checker-bg {

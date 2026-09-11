@@ -32,6 +32,11 @@
       </el-button>
       <el-button v-if="hasPath" size="small" @click="resetDraw">{{ $t('lassoCrop.redraw') }}</el-button>
     </div>
+    <el-dialog v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" align-center>
+      <div class="preview-frame checker-bg">
+        <img v-if="previewUrl" :src="previewUrl" alt="" />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -83,6 +88,7 @@ const points = ref([]);
 const drawing = ref(false);
 const closed = ref(false);
 const previewUrl = ref('');
+const previewOpen = ref(false);
 
 const hasPath = computed(() => points.value.length > 0);
 const canFinish = computed(
@@ -309,6 +315,19 @@ function completeCrop() {
   finishPath();
 }
 
+async function openPreview() {
+  if (previewUrl.value) {
+    previewOpen.value = true;
+    return;
+  }
+  if (!canCompletePath(points.value, displaySize.value)) return;
+  closed.value = true;
+  drawing.value = false;
+  redrawOverlay();
+  await applyCrop({ source: 'preview' });
+  if (previewUrl.value) previewOpen.value = true;
+}
+
 function onPointerDown(e) {
   if (closed.value || previewUrl.value) return;
   drawRef.value?.setPointerCapture?.(e.pointerId);
@@ -392,6 +411,7 @@ defineExpose({
   resetDraw,
   getResult: () => previewUrl.value,
   resize: () => resizeCanvas(),
+  openPreview,
 });
 
 onMounted(() => {
@@ -511,6 +531,30 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: #999;
   text-align: center;
+}
+
+.checker-bg {
+  background:
+    linear-gradient(45deg, #ececf0 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(-45deg, #ececf0 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(45deg, transparent 75%, #ececf0 75%) 0 0 / 12px 12px,
+    linear-gradient(-45deg, transparent 75%, #ececf0 75%) 0 0 / 12px 12px,
+    #fafbfc;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+}
+
+.preview-frame {
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.preview-frame img {
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: contain;
 }
 
 @media (max-width: 768px) {

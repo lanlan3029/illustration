@@ -229,10 +229,10 @@ export function applyDashedBorder(sourceCanvas, color = '#111111') {
   let smooth = softenOnce(softenOnce(pts, true, 0.34), true, 0.22);
 
   const shortEdge = Math.min(sourceCanvas.width, sourceCanvas.height);
-  const lineW = Math.max(2.2, Math.min(16, shortEdge * 0.007));
-  const dash = Math.max(8, Math.min(36, shortEdge * 0.02));
-  const gap = Math.max(6, Math.min(28, dash * 0.78));
-  const inflate = Math.max(1.6, Math.min(10, lineW * 0.85));
+  const lineW = Math.max(4.5, Math.min(22, shortEdge * 0.015));
+  const dash = Math.max(12, Math.min(48, shortEdge * 0.028));
+  const gap = Math.max(8, Math.min(36, dash * 0.78));
+  const inflate = Math.max(2.5, Math.min(14, lineW * 0.85));
   smooth = inflateContour(smooth, inflate);
   const pad = Math.ceil(lineW * 3 + inflate + 8);
 
@@ -249,7 +249,7 @@ export function applyDashedBorder(sourceCanvas, color = '#111111') {
   ctx.closePath();
   ctx.strokeStyle = color || '#111111';
   ctx.globalAlpha = 0.16;
-  ctx.lineWidth = Math.max(1.2, lineW * 0.55);
+  ctx.lineWidth = Math.max(2, lineW * 0.65);
   ctx.lineJoin = 'round';
   ctx.stroke();
   ctx.globalAlpha = 1;

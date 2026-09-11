@@ -115,6 +115,7 @@
             />
             <MatteBrushCanvas
               v-else
+              ref="matteRef"
               :image-src="imageSrc"
               :sticker-style="stickerStyle"
               :border-color="borderColor"
@@ -122,14 +123,24 @@
             />
           </div>
 
-          <button
-            type="button"
-            class="btn-generate"
-            :disabled="!resultUrl"
-            @click="handleDownload"
-          >
-            {{ $t('stickerLab.generatePng') }}
-          </button>
+          <div class="action-row">
+            <button
+              type="button"
+              class="btn-preview"
+              :disabled="!imageSrc"
+              @click="handlePreview"
+            >
+              {{ $t('stickerLab.preview') }}
+            </button>
+            <button
+              type="button"
+              class="btn-generate"
+              :disabled="!resultUrl"
+              @click="handleDownload"
+            >
+              {{ $t('stickerLab.generatePng') }}
+            </button>
+          </div>
 
           <div class="extra-actions">
             <button type="button" class="text-action" :disabled="!resultUrl" @click="saveToLocal">
@@ -302,7 +313,7 @@ export default {
     setCropMode(mode) {
       if (this.cropMode === mode) return;
       this.cropMode = mode;
-      this.onCropModeChange();
+      this.clearResult();
     },
     async onFileChange(file) {
       const raw = file.raw;
@@ -342,9 +353,6 @@ export default {
         this.clearResult();
       }
     },
-    onCropModeChange() {
-      this.clearResult();
-    },
     clearResult() {
       this.resultUrl = '';
       this.lastCropMeta = null;
@@ -372,6 +380,13 @@ export default {
       }
       this.imageSrc = '';
       this.clearResult();
+    },
+    handlePreview() {
+      if (this.cropMode === 'matte') {
+        this.$refs.matteRef?.openPreview?.();
+      } else {
+        this.$refs.lassoRef?.openPreview?.();
+      }
     },
     handleDownload() {
       if (!this.resultUrl) return;
@@ -643,9 +658,40 @@ export default {
   color: var(--ink);
 }
 
-.btn-generate {
-  width: 100%;
+.action-row {
+  display: flex;
+  gap: 10px;
   margin-top: 20px;
+}
+
+.btn-preview {
+  flex: 0 0 auto;
+  padding: 14px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--dash);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.btn-preview:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--terra);
+  color: var(--terra);
+}
+
+.btn-preview:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-generate {
+  flex: 1;
+  min-width: 0;
   padding: 14px 24px;
   border: none;
   border-radius: 999px;
