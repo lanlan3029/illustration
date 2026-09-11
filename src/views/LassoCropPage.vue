@@ -1,128 +1,109 @@
 <template>
-  <div class="sticker-lab-page">
-    <header class="lab-hero" :class="{ 'is-editing': imageSrc }">
-      <div class="hero-brand">
-        <p class="hero-eyebrow">STICKER LAB</p>
-        <h1>{{ $t('lassoCrop.pageTitle') }}</h1>
-        <p class="hero-hint">{{ $t('stickerLab.heroHint') }}</p>
-      </div>
-
-      <div v-if="!imageSrc" class="hero-upload">
-        <el-upload
-          :auto-upload="false"
-          :show-file-list="false"
-          accept="image/*"
-          :on-change="onFileChange"
-          class="upload-trigger"
-        >
-          <button type="button" class="btn-upload">
-            <span class="btn-upload-icon" aria-hidden="true">⬆</span>
-            <span>{{ $t('stickerLab.uploadPhoto') }}</span>
-          </button>
-        </el-upload>
-        <p class="upload-tip">{{ $t('lassoCrop.uploadTip') }}</p>
-        <div class="upload-or">{{ $t('myIllustrationPicker.or') }}</div>
-        <MyIllustrationPicker class="ill-picker" @select="onPickIllustration" />
-      </div>
-
-      <button v-else type="button" class="btn-chip" @click="resetImage">
-        {{ $t('lassoCrop.changeImage') }}
-      </button>
+  <div class="lasso-page">
+    <header class="lasso-page-header">
+      <h1>{{ $t('lassoCrop.pageTitle') }}</h1>
+      <p>{{ $t('lassoCrop.pageDesc') }}</p>
     </header>
 
-    <main class="lab-main">
-      <section v-if="imageSrc" class="editor-section">
-        <div class="panel-block">
-          <p class="panel-label">{{ $t('stickerLab.cropMode') }}</p>
-          <div class="chip-row">
-            <button
-              type="button"
-              class="mode-chip"
-              :class="{ active: cropMode === 'lasso' }"
-              @click="setCropMode('lasso')"
-            >
-              {{ $t('stickerLab.modeLasso') }}
-            </button>
-            <button
-              type="button"
-              class="mode-chip"
-              :class="{ active: cropMode === 'matte' }"
-              @click="setCropMode('matte')"
-            >
-              {{ $t('stickerLab.modeMatte') }}
-            </button>
+    <div class="lasso-layout">
+      <el-card class="work-panel" shadow="never">
+        <div v-if="!imageSrc" class="upload-zone">
+          <el-upload
+            drag
+            :auto-upload="false"
+            :show-file-list="false"
+            accept="image/*"
+            :on-change="onFileChange"
+          >
+            <el-icon class="upload-icon"><UploadFilled /></el-icon>
+            <div class="el-upload__text">{{ $t('lassoCrop.uploadHint') }}</div>
+            <template #tip>
+              <div class="el-upload__tip">{{ $t('lassoCrop.uploadTip') }}</div>
+            </template>
+          </el-upload>
+          <div class="upload-divider">
+            <span>{{ $t('myIllustrationPicker.or') }}</span>
           </div>
+          <MyIllustrationPicker @select="onPickIllustration" />
         </div>
 
-        <div class="panel-block">
-          <p class="panel-label">{{ $t('stickerLab.borderStyle') }}</p>
-          <div class="chip-row">
-            <button
-              v-for="s in styleOptions"
-              :key="s.value"
-              type="button"
-              class="mode-chip"
-              :class="{ active: stickerStyle === s.value }"
-              @click="stickerStyle = s.value"
-            >
-              {{ s.label }}
-            </button>
+        <template v-else>
+          <div class="editor-toolbar">
+            <div class="toolbar-group">
+              <p class="group-label">{{ $t('stickerLab.cropMode') }}</p>
+              <el-radio-group v-model="cropMode" size="small" @change="onCropModeChange">
+                <el-radio-button label="lasso">{{ $t('stickerLab.modeLasso') }}</el-radio-button>
+                <el-radio-button label="matte">{{ $t('stickerLab.modeMatte') }}</el-radio-button>
+              </el-radio-group>
+            </div>
+            <div class="toolbar-group">
+              <p class="group-label">{{ $t('stickerLab.borderStyle') }}</p>
+              <el-radio-group v-model="stickerStyle" size="small">
+                <el-radio-button label="sticker">{{ $t('stickerLab.styleSticker') }}</el-radio-button>
+                <el-radio-button label="outline">{{ $t('stickerLab.styleOutline') }}</el-radio-button>
+                <el-radio-button label="raw">{{ $t('stickerLab.styleRaw') }}</el-radio-button>
+              </el-radio-group>
+            </div>
+            <div v-if="stickerStyle !== 'raw'" class="toolbar-group toolbar-group--colors">
+              <p class="group-label">{{ $t('stickerLab.borderColor') }}</p>
+              <div class="color-row">
+                <button
+                  v-for="c in borderColors"
+                  :key="c"
+                  type="button"
+                  class="color-chip"
+                  :class="{ active: borderColor === c }"
+                  :style="{ background: c }"
+                  :aria-label="c"
+                  @click="borderColor = c"
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div v-if="stickerStyle !== 'raw'" class="panel-block">
-          <p class="panel-label">{{ $t('stickerLab.borderColor') }}</p>
-          <div class="color-row">
-            <button
-              v-for="c in borderColors"
-              :key="c"
-              type="button"
-              class="color-chip"
-              :class="{ active: borderColor === c }"
-              :style="{ background: c }"
-              :aria-label="c"
-              @click="borderColor = c"
+          <div class="canvas-wrap">
+            <LassoCropCanvas
+              v-if="cropMode === 'lasso'"
+              ref="lassoRef"
+              :image-src="imageSrc"
+              :sticker-style="stickerStyle"
+              :border-color="borderColor"
+              @cropped="onCropped"
+              @reset="clearResult"
+            />
+            <MatteBrushCanvas
+              v-else
+              :image-src="imageSrc"
+              :sticker-style="stickerStyle"
+              :border-color="borderColor"
+              @cropped="onCropped"
             />
           </div>
-        </div>
 
-        <div class="canvas-panel">
-          <LassoCropCanvas
-            v-if="cropMode === 'lasso'"
-            ref="lassoRef"
-            :image-src="imageSrc"
-            :sticker-style="stickerStyle"
-            :border-color="borderColor"
-            @cropped="onCropped"
-            @reset="clearResult"
-          />
-          <MatteBrushCanvas
-            v-else
-            :image-src="imageSrc"
-            :sticker-style="stickerStyle"
-            :border-color="borderColor"
-            @cropped="onCropped"
-          />
-        </div>
+          <div class="work-actions">
+            <el-button @click="resetImage">{{ $t('lassoCrop.changeImage') }}</el-button>
+            <el-button :disabled="!resultUrl" @click="handleDownload">
+              {{ $t('lassoCrop.download') }}
+            </el-button>
+            <el-button :disabled="!resultUrl" @click="saveToLocal">
+              {{ $t('stickerLab.saveToCollection') }}
+            </el-button>
+            <el-button :disabled="!resultUrl" @click="showCharacterForm = true">
+              {{ $t('lassoCrop.saveToMyCharacter') }}
+            </el-button>
+            <el-button type="primary" :disabled="!resultUrl" @click="showElementForm = true">
+              {{ $t('lassoCrop.saveAsElement') }}
+            </el-button>
+          </div>
+        </template>
+      </el-card>
 
-        <div class="action-row">
-          <button type="button" class="btn-chip" :disabled="!resultUrl" @click="handleDownload">
-            {{ $t('lassoCrop.download') }}
-          </button>
-          <button type="button" class="btn-chip" :disabled="!resultUrl" @click="saveToLocal">
-            {{ $t('stickerLab.saveToCollection') }}
-          </button>
-          <button type="button" class="btn-chip" :disabled="!resultUrl" @click="showCharacterForm = true">
-            {{ $t('lassoCrop.saveToMyCharacter') }}
-          </button>
-          <button type="button" class="btn-primary" :disabled="!resultUrl" @click="showElementForm = true">
-            {{ $t('lassoCrop.saveAsElement') }}
-          </button>
-        </div>
-      </section>
-
-      <StickerCollection ref="collectionRef" />
-    </main>
+      <aside class="collection-panel">
+        <el-card class="collection-card" shadow="never">
+          <StickerCollection ref="collectionRef" variant="sidebar" />
+        </el-card>
+      </aside>
+    </div>
 
     <el-dialog
       v-model="showElementForm"
@@ -203,6 +184,7 @@
 </template>
 
 <script>
+import { UploadFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import LassoCropCanvas from '@/components/editorPro/editor-components/LassoCropCanvas.vue';
 import MatteBrushCanvas from '@/components/sticker/MatteBrushCanvas.vue';
@@ -224,6 +206,7 @@ export default {
     LassoCropCanvas,
     MatteBrushCanvas,
     StickerCollection,
+    UploadFilled,
     MyIllustrationPicker,
   },
   data() {
@@ -255,15 +238,6 @@ export default {
       },
     };
   },
-  computed: {
-    styleOptions() {
-      return [
-        { value: 'sticker', label: this.$t('stickerLab.styleSticker') },
-        { value: 'outline', label: this.$t('stickerLab.styleOutline') },
-        { value: 'raw', label: this.$t('stickerLab.styleRaw') },
-      ];
-    },
-  },
   beforeUnmount() {
     if (this.objectUrl) {
       URL.revokeObjectURL(this.objectUrl);
@@ -271,11 +245,6 @@ export default {
     }
   },
   methods: {
-    setCropMode(mode) {
-      if (this.cropMode === mode) return;
-      this.cropMode = mode;
-      this.onCropModeChange();
-    },
     async onFileChange(file) {
       const raw = file.raw;
       if (!raw || !raw.type.startsWith('image/')) {
@@ -414,214 +383,164 @@ export default {
 </script>
 
 <style scoped>
-.sticker-lab-page {
-  --blue: #a8c0d0;
-  --cream: #f8f2e9;
-  --ink: #1a1a1a;
-  --yellow: #f5d76e;
-  width: 100%;
-  min-height: calc(100vh - 50px);
-  background: var(--cream);
-  color: var(--ink);
-  padding-bottom: 48px;
-}
-
-.lab-hero {
-  background: var(--blue);
-  border-bottom: 4px solid var(--ink);
-  padding: 32px 20px 28px;
-  text-align: center;
-}
-
-.lab-hero.is-editing {
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.lasso-page {
+  --accent: #8167a9;
+  --accent-soft: #f5f0fa;
+  --border: #e8e0f4;
+  --text: #1c345e;
+  --muted: #6b7280;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 16px 56px;
   text-align: left;
 }
 
-.lab-hero.is-editing .hero-brand {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
+.lasso-page-header {
+  text-align: center;
+  margin-bottom: 24px;
 }
 
-.lab-hero.is-editing .hero-eyebrow,
-.lab-hero.is-editing .hero-hint {
-  display: none;
-}
-
-.lab-hero.is-editing h1 {
-  font-size: 18px;
-  margin: 0;
-}
-
-.hero-brand {
-  position: relative;
-  z-index: 1;
-  margin-bottom: 20px;
-}
-
-.hero-eyebrow {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  opacity: 0.65;
-}
-
-.lab-hero h1 {
-  margin: 8px 0 0;
-  font-size: clamp(28px, 6vw, 36px);
-  font-weight: 900;
+.lasso-page-header h1 {
+  margin: 0 0 10px;
+  font-size: 26px;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  color: var(--text);
 }
 
-.hero-hint {
-  margin: 10px 0 0;
-  font-size: 13px;
-  opacity: 0.72;
-  line-height: 1.5;
-}
-
-.hero-upload {
-  position: relative;
-  z-index: 1;
-}
-
-.upload-trigger :deep(.el-upload) {
-  display: inline-block;
-}
-
-.btn-upload {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 28px;
-  border: 4px solid var(--ink);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 17px;
-  font-weight: 800;
-  box-shadow: 4px 4px 0 var(--ink);
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.btn-upload:active {
-  transform: translateY(1px);
-  box-shadow: 2px 2px 0 var(--ink);
-}
-
-.btn-upload-icon {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid var(--ink);
-  border-radius: 50%;
-  background: var(--yellow);
-  font-size: 14px;
-}
-
-.upload-tip {
-  margin: 12px 0 0;
-  font-size: 12px;
-  opacity: 0.6;
-}
-
-.upload-or {
-  margin: 18px 0 12px;
-  font-size: 13px;
-  opacity: 0.55;
-}
-
-.ill-picker :deep(.el-button) {
-  border: 3px solid var(--ink);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  font-weight: 700;
-  box-shadow: 2px 2px 0 var(--ink);
-  padding: 10px 20px;
-}
-
-.ill-picker :deep(.el-button:hover) {
-  background: var(--cream);
-  color: var(--ink);
-  border-color: var(--ink);
-}
-
-.btn-chip {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  border: 3px solid var(--ink);
-  border-radius: 999px;
-  background: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  box-shadow: 2px 2px 0 var(--ink);
-  cursor: pointer;
-  font-family: inherit;
-  color: var(--ink);
-}
-
-.btn-chip:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.lab-main {
-  max-width: 720px;
+.lasso-page-header p {
   margin: 0 auto;
-  padding: 20px 16px 0;
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
 }
 
-.editor-section {
-  margin-bottom: 8px;
+.lasso-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
 }
 
-.panel-block {
-  margin-bottom: 14px;
+.work-panel,
+.collection-card {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(28, 52, 94, 0.06);
 }
 
-.panel-label {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  opacity: 0.55;
-  text-transform: uppercase;
+.work-panel :deep(.el-card__body),
+.collection-card :deep(.el-card__body) {
+  padding: 24px;
 }
 
-.chip-row {
+.collection-panel {
+  position: sticky;
+  top: 62px;
+  max-height: calc(100vh - 78px);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.collection-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.collection-card :deep(.el-card__body) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-zone :deep(.el-upload) {
+  width: 100%;
+}
+
+.upload-zone :deep(.el-upload-dragger) {
+  width: 100%;
+  padding: 36px 20px;
+  border-radius: 12px;
+  border-color: #d9d0e6;
+  background: #fcfbfd;
+}
+
+.upload-zone :deep(.el-upload-dragger:hover) {
+  border-color: var(--accent);
+  background: #faf7fd;
+}
+
+.upload-zone :deep(.el-upload__tip) {
+  margin-top: 8px;
+  color: #9ca3af;
+}
+
+.upload-icon {
+  font-size: 44px;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 320px;
+  margin: 20px 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #f0ecf6;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0ecf6;
+}
+
+.toolbar-group {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.mode-chip {
-  padding: 10px 14px;
-  border: 3px solid var(--ink);
-  border-radius: 14px;
-  background: #fff;
+.group-label {
+  margin: 0;
   font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  color: var(--ink);
-  box-shadow: 2px 2px 0 rgba(26, 26, 26, 0.12);
+  font-weight: 600;
+  color: var(--text);
 }
 
-.mode-chip.active {
-  background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+.editor-toolbar :deep(.el-radio-button__inner) {
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.editor-toolbar :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background: var(--accent-soft);
+  border-color: #c4b5dc;
+  color: var(--accent);
+  box-shadow: none;
 }
 
 .color-row {
@@ -631,88 +550,88 @@ export default {
 }
 
 .color-chip {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 2.5px solid transparent;
+  border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .color-chip.active {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 2px var(--yellow);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.25);
 }
 
-.canvas-panel {
-  margin: 18px 0;
-  padding: 12px;
-  border: 3px solid var(--ink);
-  border-radius: 16px;
-  background: #d7e3eb;
-  box-shadow: 3px 3px 0 rgba(26, 26, 26, 0.15);
+.canvas-wrap {
+  min-height: 280px;
 }
 
-.canvas-panel :deep(.lasso-crop-canvas),
-.canvas-panel :deep(.matte-brush-canvas) {
-  display: block;
+.canvas-wrap :deep(.lasso-crop-canvas) {
+  flex-direction: column;
 }
 
-.canvas-panel :deep(.lasso-side) {
-  background: var(--cream);
-  border-radius: 12px;
-  padding: 12px;
+.canvas-wrap :deep(.lasso-side) {
+  width: 100%;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-.canvas-panel :deep(.matte-tools) {
-  background: var(--cream);
-  border-radius: 12px;
-  padding: 12px;
+.canvas-wrap :deep(.matte-brush-canvas) {
+  grid-template-columns: 1fr;
 }
 
-.action-row {
+.work-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 24px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0ecf6;
 }
 
-.btn-primary {
-  padding: 10px 18px;
-  border: 3px solid var(--ink);
-  border-radius: 999px;
-  background: var(--ink);
-  color: #fff;
-  font-weight: 800;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: inherit;
-  box-shadow: 3px 3px 0 rgba(26, 26, 26, 0.25);
+.work-actions :deep(.el-button--primary) {
+  --el-button-bg-color: var(--accent);
+  --el-button-border-color: var(--accent);
+  --el-button-hover-bg-color: #705592;
+  --el-button-hover-border-color: #705592;
 }
 
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  box-shadow: none;
+@media (max-width: 960px) {
+  .lasso-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .collection-card :deep(.el-card__body) {
+    overflow: visible;
+  }
 }
 
 @media (max-width: 640px) {
-  .lab-hero.is-editing {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
+  .lasso-page {
+    padding: 16px 12px 40px;
   }
 
-  .action-row .btn-chip,
-  .action-row .btn-primary {
+  .work-panel :deep(.el-card__body),
+  .collection-card :deep(.el-card__body) {
+    padding: 16px;
+  }
+
+  .work-actions {
+    justify-content: stretch;
+  }
+
+  .work-actions :deep(.el-button) {
     flex: 1 1 calc(50% - 5px);
-    text-align: center;
-  }
-
-  .canvas-panel :deep(.lasso-crop-canvas),
-  .canvas-panel :deep(.matte-brush-canvas) {
-    grid-template-columns: 1fr;
+    margin: 0;
   }
 }
 </style>

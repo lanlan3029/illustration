@@ -1,8 +1,11 @@
 <template>
-  <section class="sticker-collection">
+  <section class="sticker-collection" :class="{ 'is-sidebar': variant === 'sidebar' }">
     <header class="collection-head">
-      <h2 class="collection-title">{{ $t('stickerLab.collectionTitle') }}</h2>
-      <span class="collection-count">{{ stickers.length }}</span>
+      <div>
+        <h2 class="collection-title">{{ $t('stickerLab.collectionTitle') }}</h2>
+        <p v-if="variant === 'sidebar'" class="collection-desc">{{ $t('stickerLab.collectionSubtitle') }}</p>
+      </div>
+      <span class="collection-count">{{ stickers.length }}/{{ maxCount }}</span>
     </header>
 
     <div v-if="!stickers.length" class="collection-empty">
@@ -31,9 +34,8 @@
       :title="$t('stickerLab.detailTitle')"
       width="min(480px, 92vw)"
       align-center
-      class="sticker-detail-dialog"
     >
-      <div v-if="active" class="detail-preview">
+      <div v-if="active" class="detail-preview checker-bg">
         <img :src="active.dataUrl" alt="" />
       </div>
       <template #footer>
@@ -51,6 +53,10 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { loadLocalStickers, removeLocalSticker } from '@/utils/stickerLab/stickerStorage';
 import { downloadDataUrl } from '@/utils/lassoCrop';
+
+defineProps({
+  variant: { type: String, default: 'default' },
+});
 
 const maxCount = 24;
 
@@ -111,63 +117,78 @@ defineExpose({ refresh, maxCount });
 
 <style scoped>
 .sticker-collection {
-  --cream: #f8f2e9;
-  --ink: #1a1a1a;
-  --yellow: #f5d76e;
-  padding-top: 4px;
+  --accent: #8167a9;
+  --accent-soft: #f5f0fa;
+  --border: #e8e0f4;
+  --text: #1c345e;
+  --muted: #6b7280;
 }
 
 .collection-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 0 2px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .collection-title {
   margin: 0;
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--ink);
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.collection-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .collection-count {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 10px;
-  border: 2.5px solid var(--ink);
+  flex-shrink: 0;
+  min-width: 44px;
+  height: 26px;
+  padding: 0 8px;
   border-radius: 999px;
-  background: var(--yellow);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid #d4c6ea;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 13px;
-  color: var(--ink);
+  font-weight: 700;
+  font-size: 12px;
 }
 
 .collection-empty {
   text-align: center;
-  padding: 48px 16px 32px;
-  color: rgba(26, 26, 26, 0.5);
+  padding: 32px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #fcfbfd;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .collection-empty p {
   margin: 0;
-  font-size: 14px;
 }
 
 .empty-sub {
-  margin-top: 8px !important;
-  font-size: 13px;
+  margin-top: 6px !important;
+  font-size: 12px;
 }
 
 .sticker-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px 14px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 12px;
+}
+
+.is-sidebar .sticker-grid {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .sticker-cell {
@@ -186,23 +207,22 @@ defineExpose({ refresh, maxCount });
 .sticker-btn img {
   width: 100%;
   height: auto;
-  max-height: 132px;
+  max-height: 100px;
   object-fit: contain;
   display: block;
   margin: 0 auto;
-  filter: drop-shadow(0 6px 14px rgba(26, 26, 26, 0.14));
-  transition: transform 0.18s ease, filter 0.18s ease;
+  filter: drop-shadow(0 4px 10px rgba(28, 52, 94, 0.12));
+  transition: transform 0.15s ease;
 }
 
 .sticker-cell:hover .sticker-btn img {
-  transform: translateY(-3px) scale(1.02);
-  filter: drop-shadow(0 10px 22px rgba(26, 26, 26, 0.18));
+  transform: translateY(-2px);
 }
 
 .sticker-actions {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -4px;
+  right: -4px;
   display: flex;
   gap: 4px;
   opacity: 0;
@@ -214,16 +234,16 @@ defineExpose({ refresh, maxCount });
 }
 
 .action-btn {
-  width: 26px;
-  height: 26px;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   background: #fff;
-  color: var(--ink);
-  font-size: 14px;
+  color: var(--text);
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 2px 2px 0 rgba(26, 26, 26, 0.12);
+  box-shadow: 0 2px 6px rgba(28, 52, 94, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,48 +253,31 @@ defineExpose({ refresh, maxCount });
   color: #e84b4b;
 }
 
+.checker-bg {
+  background:
+    linear-gradient(45deg, #ececf0 25%, transparent 25%) 0 0 / 10px 10px,
+    linear-gradient(-45deg, #ececf0 25%, transparent 25%) 0 0 / 10px 10px,
+    #fafbfc;
+  background-position: 0 0, 0 5px, 0 0;
+}
+
 .detail-preview {
-  padding: 32px 20px;
+  padding: 24px 16px;
+  border-radius: 12px;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 240px;
-  background: var(--cream);
-  border-radius: 12px;
+  min-height: 200px;
 }
 
 .detail-preview img {
   max-width: 100%;
-  max-height: 52vh;
+  max-height: 50vh;
   object-fit: contain;
-  filter: drop-shadow(0 12px 28px rgba(26, 26, 26, 0.16));
 }
 
-@media (min-width: 640px) {
-  .sticker-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 22px 18px;
-  }
-
-  .sticker-btn img {
-    max-height: 148px;
-  }
-}
-
-@media (min-width: 900px) {
-  .sticker-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .sticker-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px 10px;
-  }
-
-  .sticker-btn img {
-    max-height: 108px;
+@media (max-width: 960px) {
+  .is-sidebar .sticker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
   }
 
   .sticker-actions {
