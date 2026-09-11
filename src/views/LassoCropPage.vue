@@ -95,11 +95,11 @@
           </div>
         </template>
       </section>
-
-      <div class="section-divider" />
-
-      <StickerCollection ref="collectionRef" embedded />
     </el-card>
+
+    <section class="gallery-section">
+      <StickerCollection ref="collectionRef" />
+    </section>
 
     <el-dialog
       v-model="showElementForm"
@@ -412,9 +412,10 @@ export default {
 }
 
 .lasso-card {
-  border-radius: 16px;
   border: 1px solid var(--border);
-  box-shadow: 0 8px 28px rgba(28, 52, 94, 0.06);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  box-shadow: none;
 }
 
 .lasso-card :deep(.el-card__body) {
@@ -557,10 +558,14 @@ export default {
   box-shadow: 0 0 0 2px rgba(129, 103, 169, 0.25);
 }
 
-.section-divider {
-  height: 1px;
-  background: #f0ecf6;
-  margin: 28px 0;
+.gallery-section {
+  margin-top: 0;
+  padding: 24px 20px 36px;
+  background: #f8f2e9;
+  border-radius: 0 0 16px 16px;
+  border: 1px solid #e8e0f4;
+  border-top: none;
+  box-shadow: 0 8px 28px rgba(28, 52, 94, 0.06);
 }
 
 .lasso-page-actions {
@@ -587,6 +592,11 @@ export default {
 
   .lasso-card :deep(.el-card__body) {
     padding: 20px 16px;
+  }
+
+  .gallery-section {
+    padding: 20px 14px 28px;
+    border-radius: 0 0 12px 12px;
   }
 
   .editor-toolbar {
