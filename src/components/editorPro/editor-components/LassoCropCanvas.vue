@@ -23,13 +23,15 @@
     </div>
     <div class="lasso-side">
       <p class="lasso-hint">{{ hintText }}</p>
-      <div v-if="previewUrl" class="lasso-preview">
-        <img :src="previewUrl" alt="preview" />
-        <p class="preview-label">{{ $t('lassoCrop.preview') }}</p>
-      </div>
-      <el-button v-if="canFinish" size="small" type="primary" @click="completeCrop">
-        {{ $t('lassoCrop.completeCrop') }}
-      </el-button>
+      <template v-if="!embedded">
+        <div v-if="previewUrl" class="lasso-preview">
+          <img :src="previewUrl" alt="preview" />
+          <p class="preview-label">{{ $t('lassoCrop.preview') }}</p>
+        </div>
+        <el-button v-if="canFinish" size="small" type="primary" @click="completeCrop">
+          {{ $t('lassoCrop.completeCrop') }}
+        </el-button>
+      </template>
       <el-button v-if="hasPath" size="small" @click="resetDraw">{{ $t('lassoCrop.redraw') }}</el-button>
     </div>
     <el-dialog v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" align-center>
@@ -67,6 +69,7 @@ const props = defineProps({
   naturalHeight: { type: Number, default: 0 },
   stickerStyle: { type: String, default: 'sticker' },
   borderColor: { type: String, default: '#ffffff' },
+  embedded: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['cropped', 'reset']);
@@ -96,6 +99,11 @@ const canFinish = computed(
 );
 
 const hintText = computed(() => {
+  if (props.embedded) {
+    if (previewUrl.value) return t('lassoCrop.hintDoneEmbedded');
+    if (drawing.value) return t('lassoCrop.hintDrawingEmbedded');
+    return t('lassoCrop.hintStartEmbedded');
+  }
   if (previewUrl.value) return t('lassoCrop.hintDone');
   if (drawing.value) return t('lassoCrop.hintDrawing');
   return t('lassoCrop.hintStart');
@@ -412,6 +420,7 @@ defineExpose({
   getResult: () => previewUrl.value,
   resize: () => resizeCanvas(),
   openPreview,
+  generate: completeCrop,
 });
 
 onMounted(() => {

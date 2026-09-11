@@ -1,15 +1,6 @@
 <template>
   <div class="sticker-workshop">
     <header class="workshop-hero">
-      <div class="hero-top">
-        <div class="nav-pills">
-          <span class="pill active">{{ $t('stickerLab.tabCrop') }}</span>
-          <span class="pill">{{ $t('stickerLab.tabWorkshop') }}</span>
-        </div>
-        <div class="hero-deco" aria-hidden="true">
-          <span /><span /><span />
-        </div>
-      </div>
       <h1>{{ $t('lassoCrop.pageTitle') }}</h1>
       <p class="hero-desc">{{ $t('lassoCrop.pageDesc') }}</p>
     </header>
@@ -31,17 +22,11 @@
                 <el-icon><UploadFilled /></el-icon>
               </span>
               <p class="upload-title">{{ $t('lassoCrop.uploadHint') }}</p>
-              <p class="upload-sub">{{ $t('stickerLab.uploadSub') }}</p>
+              <p class="upload-sub">{{ $t('stickerLab.uploadFormats') }}</p>
             </div>
           </el-upload>
 
-          <div class="upload-or"><span>{{ $t('myIllustrationPicker.or') }}</span></div>
-
           <MyIllustrationPicker class="picker-btn" @select="onPickIllustration" />
-
-          <button type="button" class="btn-generate" disabled>
-            {{ $t('stickerLab.generatePng') }}
-          </button>
         </div>
 
         <div v-else class="editor-panel">
@@ -107,6 +92,7 @@
             <LassoCropCanvas
               v-if="cropMode === 'lasso'"
               ref="lassoRef"
+              embedded
               :image-src="imageSrc"
               :sticker-style="stickerStyle"
               :border-color="borderColor"
@@ -116,6 +102,7 @@
             <MatteBrushCanvas
               v-else
               ref="matteRef"
+              embedded
               :image-src="imageSrc"
               :sticker-style="stickerStyle"
               :border-color="borderColor"
@@ -135,21 +122,24 @@
             <button
               type="button"
               class="btn-generate"
-              :disabled="!resultUrl"
-              @click="handleDownload"
+              :disabled="!imageSrc"
+              @click="handleGenerate"
             >
-              {{ $t('stickerLab.generatePng') }}
+              {{ $t('stickerLab.generateSticker') }}
             </button>
           </div>
 
-          <div class="extra-actions">
-            <button type="button" class="text-action" :disabled="!resultUrl" @click="saveToLocal">
+          <div v-if="resultUrl" class="extra-actions">
+            <button type="button" class="text-action" @click="handleDownload">
+              {{ $t('lassoCrop.download') }}
+            </button>
+            <button type="button" class="text-action" @click="saveToLocal">
               {{ $t('stickerLab.saveToCollection') }}
             </button>
-            <button type="button" class="text-action" :disabled="!resultUrl" @click="showElementForm = true">
+            <button type="button" class="text-action" @click="showElementForm = true">
               {{ $t('lassoCrop.saveAsElement') }}
             </button>
-            <button type="button" class="text-action" :disabled="!resultUrl" @click="showCharacterForm = true">
+            <button type="button" class="text-action" @click="showCharacterForm = true">
               {{ $t('lassoCrop.saveToMyCharacter') }}
             </button>
           </div>
@@ -388,6 +378,13 @@ export default {
         this.$refs.lassoRef?.openPreview?.();
       }
     },
+    handleGenerate() {
+      if (this.cropMode === 'matte') {
+        this.$refs.matteRef?.generate?.();
+      } else {
+        this.$refs.lassoRef?.generate?.();
+      }
+    },
     handleDownload() {
       if (!this.resultUrl) return;
       downloadDataUrl(this.resultUrl, `sticker-${Date.now()}.png`);
@@ -480,52 +477,6 @@ export default {
   margin: 0 auto 28px;
 }
 
-.hero-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.nav-pills {
-  display: flex;
-  gap: 8px;
-}
-
-.pill {
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(212, 196, 176, 0.6);
-}
-
-.pill.active {
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.85);
-  border-color: var(--dash);
-}
-
-.hero-deco {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.hero-deco span {
-  display: block;
-  height: 2px;
-  background: var(--dash);
-  border-radius: 1px;
-}
-
-.hero-deco span:nth-child(1) { width: 28px; }
-.hero-deco span:nth-child(2) { width: 20px; opacity: 0.7; }
-.hero-deco span:nth-child(3) { width: 12px; opacity: 0.5; }
-
 .workshop-hero h1 {
   margin: 0 0 10px;
   font-family: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
@@ -538,9 +489,9 @@ export default {
 
 .hero-desc {
   margin: 0;
-  max-width: 520px;
+  max-width: 420px;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--muted);
 }
 
@@ -561,7 +512,7 @@ export default {
 .editor-panel {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 14px;
 }
 
 .upload-el {
@@ -578,12 +529,14 @@ export default {
   border: none;
   background: transparent;
   height: auto;
+  display: block;
+  overflow: hidden;
 }
 
 .upload-drop {
   border: 1.5px dashed var(--dash);
   border-radius: 16px;
-  padding: 40px 20px 36px;
+  padding: 32px 16px 28px;
   text-align: center;
   background: rgba(255, 255, 255, 0.35);
   transition: border-color 0.2s, background 0.2s;
@@ -622,21 +575,12 @@ export default {
   line-height: 1.5;
 }
 
-.upload-or {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0 16px;
-  color: var(--muted);
-  font-size: 13px;
+.picker-btn {
+  width: 100%;
 }
 
-.upload-or::before,
-.upload-or::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--dash);
+.picker-btn :deep(.my-ill-picker) {
+  width: 100%;
 }
 
 .picker-btn :deep(.el-button) {
@@ -660,13 +604,15 @@ export default {
 
 .action-row {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 4px;
 }
 
 .btn-preview {
-  flex: 0 0 auto;
+  width: 100%;
   padding: 14px 20px;
+  box-sizing: border-box;
   border-radius: 999px;
   border: 1.5px solid var(--dash);
   background: rgba(255, 255, 255, 0.55);
@@ -690,9 +636,9 @@ export default {
 }
 
 .btn-generate {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   padding: 14px 24px;
+  box-sizing: border-box;
   border: none;
   border-radius: 999px;
   background: linear-gradient(180deg, var(--terra-light) 0%, var(--terra) 100%);

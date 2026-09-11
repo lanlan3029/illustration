@@ -29,17 +29,20 @@
           <el-radio-button :label="44">{{ $t('stickerLab.brushLarge') }}</el-radio-button>
         </el-radio-group>
       </div>
-      <p class="matte-hint">{{ $t('stickerLab.matteHint') }}</p>
+      <p v-if="embedded" class="matte-hint">{{ $t('stickerLab.matteHintEmbedded') }}</p>
+      <p v-else class="matte-hint">{{ $t('stickerLab.matteHint') }}</p>
       <div class="tool-actions">
         <el-button size="small" :loading="segmenting" @click="runSegment">
           {{ $t('stickerLab.retrySegment') }}
         </el-button>
-        <el-button size="small" :disabled="!ready || segmenting" @click="openPreview">
-          {{ $t('stickerLab.preview') }}
-        </el-button>
-        <el-button type="primary" size="small" :disabled="!ready || segmenting" @click="generate">
-          {{ $t('stickerLab.generateSticker') }}
-        </el-button>
+        <template v-if="!embedded">
+          <el-button size="small" :disabled="!ready || segmenting" @click="openPreview">
+            {{ $t('stickerLab.preview') }}
+          </el-button>
+          <el-button type="primary" size="small" :disabled="!ready || segmenting" @click="generate">
+            {{ $t('stickerLab.generateSticker') }}
+          </el-button>
+        </template>
       </div>
     </div>
     <el-dialog v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" align-center>
@@ -67,6 +70,8 @@ const props = defineProps({
   imageSrc: { type: String, default: '' },
   stickerStyle: { type: String, default: 'sticker' },
   borderColor: { type: String, default: '#ffffff' },
+  /** 嵌入贴纸页时隐藏预览/生成，由页面统一操作 */
+  embedded: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['cropped']);
@@ -284,7 +289,7 @@ function generate() {
   });
 }
 
-defineExpose({ openPreview });
+defineExpose({ openPreview, generate });
 
 watch(() => props.imageSrc, () => {
   runSegment();

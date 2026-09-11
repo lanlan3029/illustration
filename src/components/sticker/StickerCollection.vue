@@ -1,11 +1,11 @@
 <template>
   <section class="sticker-collection" :class="[`variant-${variant}`]">
     <header class="collection-head">
-      <div>
-        <h2 class="collection-title">{{ $t('stickerLab.collectionTitle') }}</h2>
-        <p class="collection-desc">{{ $t('stickerLab.collectionSubtitle') }}</p>
-      </div>
-      <span class="collection-count">{{ stickers.length }} / {{ maxCount }}</span>
+      <h2 class="collection-title">
+        {{ $t('stickerLab.collectionTitle') }}
+        <span class="collection-count">{{ stickers.length }}/{{ maxCount }}</span>
+      </h2>
+      <p class="collection-desc">{{ $t('stickerLab.collectionSubtitle') }}</p>
     </header>
 
     <div v-if="!stickers.length" class="collection-empty">
@@ -124,11 +124,7 @@ defineExpose({ refresh, maxCount });
 }
 
 .collection-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .collection-title {
@@ -136,24 +132,26 @@ defineExpose({ refresh, maxCount });
   font-size: 16px;
   font-weight: 700;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .collection-desc {
   margin: 6px 0 0;
   font-size: 12px;
   color: var(--muted);
-  line-height: 1.55;
-  max-width: 280px;
+  line-height: 1.5;
 }
 
 .collection-count {
-  flex-shrink: 0;
-  padding: 5px 12px;
+  padding: 2px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--dash);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
