@@ -25,23 +25,113 @@
       </div>
 
       <template v-else>
+        <div class="editor-toolbar">
+          <div class="toolbar-block">
+            <span class="toolbar-label">{{ $t('stickerLab.cropMode') }}</span>
+            <el-radio-group v-model="cropMode" size="small" @change="onCropModeChange">
+              <el-radio-button label="lasso">{{ $t('stickerLab.modeLasso') }}</el-radio-button>
+              <el-radio-button label="matte">{{ $t('stickerLab.modeMatte') }}</el-radio-button>
+            </el-radio-group>
+          </div>
+          <div class="toolbar-block">
+            <span class="toolbar-label">{{ $t('stickerLab.borderStyle') }}</span>
+            <el-radio-group v-model="stickerStyle" size="small">
+              <el-radio-button label="sticker">{{ $t('stickerLab.styleSticker') }}</el-radio-button>
+              <el-radio-button label="outline">{{ $t('stickerLab.styleOutline') }}</el-radio-button>
+              <el-radio-button label="raw">{{ $t('stickerLab.styleRaw') }}</el-radio-button>
+            </el-radio-group>
+          </div>
+          <div v-if="stickerStyle !== 'raw'" class="toolbar-block color-block">
+            <span class="toolbar-label">{{ $t('stickerLab.borderColor') }}</span>
+            <div class="color-row">
+              <button
+                v-for="c in borderColors"
+                :key="c"
+                type="button"
+                class="color-chip"
+                :class="{ active: borderColor === c }"
+                :style="{ background: c }"
+                :aria-label="c"
+                @click="borderColor = c"
+              />
+            </div>
+          </div>
+        </div>
+
         <LassoCropCanvas
-          ref="canvasRef"
+          v-if="cropMode === 'lasso'"
+          ref="lassoRef"
           :image-src="imageSrc"
+          :sticker-style="stickerStyle"
+          :border-color="borderColor"
           @cropped="onCropped"
-          @reset="resultUrl = ''"
+          @reset="clearResult"
         />
+        <MatteBrushCanvas
+          v-else
+          :image-src="imageSrc"
+          :sticker-style="stickerStyle"
+          :border-color="borderColor"
+          @cropped="onCropped"
+        />
+
         <div class="lasso-page-actions">
           <el-button @click="resetImage">{{ $t('lassoCrop.changeImage') }}</el-button>
           <el-button :disabled="!resultUrl" @click="handleDownload">
             {{ $t('lassoCrop.download') }}
           </el-button>
-          <el-button type="primary" :disabled="!resultUrl" @click="showCharacterForm = true">
+          <el-button :disabled="!resultUrl" @click="saveToLocal">
+            {{ $t('stickerLab.saveToCollection') }}
+          </el-button>
+          <el-button type="primary" :disabled="!resultUrl" @click="showElementForm = true">
+            {{ $t('lassoCrop.saveAsElement') }}
+          </el-button>
+          <el-button :disabled="!resultUrl" @click="showCharacterForm = true">
             {{ $t('lassoCrop.saveToMyCharacter') }}
           </el-button>
         </div>
       </template>
     </el-card>
+
+    <StickerCollection ref="collectionRef" />
+
+    <el-dialog
+      v-model="showElementForm"
+      :title="$t('lassoCrop.saveAsElement')"
+      width="440px"
+      destroy-on-close
+    >
+      <el-form label-width="80px">
+        <el-form-item :label="$t('lassoCrop.elementName')" required>
+          <el-input v-model="elementForm.name" maxlength="30" show-word-limit />
+        </el-form-item>
+        <el-form-item :label="$t('lassoCrop.category')" required>
+          <el-select v-model="elementForm.category" style="width: 100%">
+            <el-option
+              v-for="item in elementCategories"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('lassoCrop.description')">
+          <el-input v-model="elementForm.desc" type="textarea" :rows="3" />
+        </el-form-item>
+        <el-form-item :label="$t('lassoCrop.isPublic')">
+          <el-radio-group v-model="elementForm.is_public">
+            <el-radio :label="1">{{ $t('lassoCrop.public') }}</el-radio>
+            <el-radio :label="0">{{ $t('lassoCrop.private') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showElementForm = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSaveElement">
+          {{ $t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog
       v-model="showCharacterForm"
@@ -87,21 +177,49 @@
 import { UploadFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import LassoCropCanvas from '@/components/editorPro/editor-components/LassoCropCanvas.vue';
+import MatteBrushCanvas from '@/components/sticker/MatteBrushCanvas.vue';
+import StickerCollection from '@/components/sticker/StickerCollection.vue';
 import { readFileAsDataUrl, downloadDataUrl } from '@/utils/lassoCrop';
-import { saveCroppedCharacter, CHARACTER_CATEGORIES } from '@/utils/saveCroppedAsset';
+import {
+  uploadPictureElement,
+  saveCroppedCharacter,
+  ELEMENT_CATEGORIES,
+  CHARACTER_CATEGORIES,
+} from '@/utils/saveCroppedAsset';
+import { STICKER_BORDER_COLORS } from '@/utils/stickerLab/stickerStyles';
+import { addLocalSticker } from '@/utils/stickerLab/stickerStorage';
 import MyIllustrationPicker from '@/components/MyIllustrationPicker.vue';
 
 export default {
   name: 'LassoCropPage',
-  components: { LassoCropCanvas, UploadFilled, MyIllustrationPicker },
+  components: {
+    LassoCropCanvas,
+    MatteBrushCanvas,
+    StickerCollection,
+    UploadFilled,
+    MyIllustrationPicker,
+  },
   data() {
     return {
       imageSrc: '',
       objectUrl: '',
       resultUrl: '',
+      cropMode: 'lasso',
+      stickerStyle: 'sticker',
+      borderColor: '#ffffff',
+      borderColors: STICKER_BORDER_COLORS,
+      lastCropMeta: null,
+      showElementForm: false,
       showCharacterForm: false,
       saving: false,
+      elementCategories: ELEMENT_CATEGORIES,
       characterCategories: CHARACTER_CATEGORIES,
+      elementForm: {
+        name: '',
+        category: '',
+        desc: '',
+        is_public: 1,
+      },
       characterForm: {
         name: '',
         category: '',
@@ -125,7 +243,7 @@ export default {
       }
       try {
         this.imageSrc = await readFileAsDataUrl(raw);
-        this.resultUrl = '';
+        this.clearResult();
       } catch (e) {
         ElMessage.error(this.$t('lassoCrop.loadFailed'));
       }
@@ -139,7 +257,6 @@ export default {
     },
     async loadRemoteIllustration(url) {
       try {
-        // 转成本地 blob URL，避免跨域 canvas 污染导致圈选无法导出预览
         const res = await fetch(url, { mode: 'cors' });
         if (!res.ok) throw new Error('fetch failed');
         const blob = await res.blob();
@@ -149,15 +266,35 @@ export default {
         }
         this.objectUrl = URL.createObjectURL(blob);
         this.imageSrc = this.objectUrl;
-        this.resultUrl = '';
+        this.clearResult();
       } catch (e) {
         console.warn('[lasso] fetch illustration as blob failed, fallback to url', e);
         this.imageSrc = url;
-        this.resultUrl = '';
+        this.clearResult();
       }
     },
-    onCropped({ dataUrl }) {
-      this.resultUrl = dataUrl;
+    onCropModeChange() {
+      this.clearResult();
+    },
+    clearResult() {
+      this.resultUrl = '';
+      this.lastCropMeta = null;
+    },
+    async onCropped(payload) {
+      this.resultUrl = payload.dataUrl;
+      this.lastCropMeta = payload;
+      if (payload.source !== 'generate') return;
+      try {
+        await addLocalSticker(payload.dataUrl, {
+          style: payload.style || this.stickerStyle,
+          borderColor: payload.borderColor || this.borderColor,
+          mode: payload.mode || this.cropMode,
+        });
+        await this.$refs.collectionRef?.refresh?.();
+        ElMessage.success(this.$t('stickerLab.addedToCollection'));
+      } catch (e) {
+        console.warn('[sticker] local save failed', e);
+      }
     },
     resetImage() {
       if (this.objectUrl) {
@@ -165,12 +302,48 @@ export default {
         this.objectUrl = '';
       }
       this.imageSrc = '';
-      this.resultUrl = '';
+      this.clearResult();
     },
     handleDownload() {
       if (!this.resultUrl) return;
-      downloadDataUrl(this.resultUrl, `character-sticker-${Date.now()}.png`);
+      downloadDataUrl(this.resultUrl, `sticker-${Date.now()}.png`);
       ElMessage.success(this.$t('lassoCrop.downloaded'));
+    },
+    async saveToLocal() {
+      if (!this.resultUrl) return;
+      try {
+        await addLocalSticker(this.resultUrl, {
+          style: this.lastCropMeta?.style || this.stickerStyle,
+          borderColor: this.lastCropMeta?.borderColor || this.borderColor,
+          mode: this.lastCropMeta?.mode || this.cropMode,
+        });
+        await this.$refs.collectionRef?.refresh?.();
+        ElMessage.success(this.$t('stickerLab.savedToCollection'));
+      } catch (e) {
+        ElMessage.error(this.$t('stickerLab.saveFailed'));
+      }
+    },
+    async handleSaveElement() {
+      if (!this.resultUrl) return;
+      if (!this.elementForm.name || !this.elementForm.category) {
+        ElMessage.warning(this.$t('lassoCrop.fillNameAndCategory'));
+        return;
+      }
+      this.saving = true;
+      try {
+        await uploadPictureElement(this.$http, this.resultUrl, {
+          title: this.elementForm.name,
+          type: this.elementForm.category,
+          desc: this.elementForm.desc,
+          is_public: this.elementForm.is_public,
+        });
+        ElMessage.success(this.$t('lassoCrop.elementSaved'));
+        this.showElementForm = false;
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('lassoCrop.saveFailed'));
+      } finally {
+        this.saving = false;
+      }
     },
     async handleSaveCharacter() {
       if (!this.resultUrl) return;
@@ -249,6 +422,48 @@ export default {
   margin-bottom: 8px;
 }
 
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.toolbar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
+}
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.color-chip.active {
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.25);
+}
+
 .lasso-page-actions {
   display: flex;
   flex-wrap: wrap;
@@ -262,6 +477,11 @@ export default {
 @media (max-width: 768px) {
   .lasso-page {
     padding: 16px 12px 32px;
+  }
+
+  .editor-toolbar {
+    flex-direction: column;
+    gap: 14px;
   }
 }
 </style>

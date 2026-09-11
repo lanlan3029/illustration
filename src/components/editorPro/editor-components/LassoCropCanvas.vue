@@ -22,13 +22,6 @@
       </div>
     </div>
     <div class="lasso-side">
-      <div class="lasso-export-mode">
-        <span class="lasso-export-label">{{ $t('lassoCrop.exportMode') }}</span>
-        <el-radio-group v-model="exportMode" size="small" class="lasso-export-radios">
-          <el-radio-button label="sticker">{{ $t('lassoCrop.modeSticker') }}</el-radio-button>
-          <el-radio-button label="plain">{{ $t('lassoCrop.modePlain') }}</el-radio-button>
-        </el-radio-group>
-      </div>
       <p class="lasso-hint">{{ hintText }}</p>
       <div v-if="previewUrl" class="lasso-preview">
         <img :src="previewUrl" alt="preview" />
@@ -61,11 +54,14 @@ import {
   shouldClosePath,
   canCompletePath,
 } from '@/utils/lassoCrop';
+import { finishWithStyle } from '@/utils/stickerLab/stickerStyles';
 
 const props = defineProps({
   imageSrc: { type: String, default: '' },
   naturalWidth: { type: Number, default: 0 },
   naturalHeight: { type: Number, default: 0 },
+  stickerStyle: { type: String, default: 'sticker' },
+  borderColor: { type: String, default: '#ffffff' },
 });
 
 const emit = defineEmits(['cropped', 'reset']);
@@ -87,7 +83,6 @@ const points = ref([]);
 const drawing = ref(false);
 const closed = ref(false);
 const previewUrl = ref('');
-const exportMode = ref('sticker');
 
 const hasPath = computed(() => points.value.length > 0);
 const canFinish = computed(
@@ -254,7 +249,7 @@ function pushPoint(p) {
   redrawOverlay();
 }
 
-async function applyCrop() {
+async function applyCrop({ source = 'generate' } = {}) {
   if (points.value.length < MIN_LASSO_POINTS) return;
   try {
     resizeCanvas({ scalePoints: false });
@@ -277,12 +272,19 @@ async function applyCrop() {
       naturalWidth: layout.naturalWidth,
       naturalHeight: layout.naturalHeight,
     });
-    const canvas = cropImageByLasso(img, imagePoints, {
-      sticker: exportMode.value === 'sticker',
-    });
+    const raw = cropImageByLasso(img, imagePoints, { sticker: false });
+    const canvas = finishWithStyle(raw, props.stickerStyle, props.borderColor);
     const dataUrl = canvasToDataUrl(canvas);
     previewUrl.value = dataUrl;
-    emit('cropped', { dataUrl, width: canvas.width, height: canvas.height, mode: exportMode.value });
+    emit('cropped', {
+      dataUrl,
+      width: canvas.width,
+      height: canvas.height,
+      style: props.stickerStyle,
+      borderColor: props.borderColor,
+      mode: 'lasso',
+      source,
+    });
   } catch (e) {
     console.error('[lasso] crop failed:', e);
     // 保留圈选路径，便于重试；不要清空让用户以为「一松手就没了」
@@ -377,11 +379,14 @@ watch(
   }
 );
 
-watch(exportMode, () => {
-  if (closed.value && points.value.length >= MIN_LASSO_POINTS) {
-    applyCrop();
+watch(
+  () => [props.stickerStyle, props.borderColor],
+  () => {
+    if (closed.value && points.value.length >= MIN_LASSO_POINTS) {
+      applyCrop({ source: 'styleUpdate' });
+    }
   }
-});
+);
 
 defineExpose({
   resetDraw,

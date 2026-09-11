@@ -111,6 +111,7 @@
                     />
                   </div>
                 </div>
+                <p class="register-bonus-hint">{{ $t('loginRegister.registerBonusHint') }}</p>
                 <button
                   @click="register"
                   class="btn btn-primary"
@@ -847,6 +848,14 @@ export default {
 
 .register-link:hover::after {
   width: 100%;
+}
+
+.register-bonus-hint {
+  margin: 4px 0 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #8167a9;
+  font-weight: 600;
 }
 
 .toregister {
