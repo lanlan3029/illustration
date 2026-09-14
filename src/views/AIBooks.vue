@@ -82,46 +82,48 @@
                             :placeholder="$t('aibooks.characterCardPlaceholder')"
                             class="character-card-textarea"
                         />
-                        <div class="character-ref-row character-my-picker">
-                            <span class="character-ref-label">{{ $t('aibooks.pickMyCharacter') }}</span>
+                        <p class="character-ref-section-title">{{ $t('aibooks.characterRefOptional') }}</p>
+                        <p class="character-ref-section-hint">{{ $t('aibooks.protagonistRefHint') }}</p>
+                        <div
+                            v-for="slot in [1, 2]"
+                            :key="slot"
+                            class="character-ref-row character-my-picker"
+                        >
+                            <span class="character-ref-label">{{ protagonistSlotLabel(slot) }}</span>
                             <el-select
-                                v-model="selectedCharacterId"
+                                v-model="protagonistRefs[slot].characterId"
                                 clearable
                                 filterable
                                 size="small"
                                 class="character-select"
-                                :placeholder="$t('aibooks.pickMyCharacterPlaceholder')"
+                                :placeholder="$t('aibooks.protagonistPickPlaceholder')"
                                 :loading="loadingMyCharacters"
-                                @change="onMyCharacterChange"
+                                @change="(id) => onProtagonistChange(slot, id)"
                             >
                                 <el-option
                                     v-for="c in myCharacters"
                                     :key="c.id || c._id"
                                     :label="c.character_name || $t('characterStudio.unnamed')"
                                     :value="String(c.id || c._id)"
+                                    :disabled="isCharacterDisabledForSlot(c, slot)"
                                 />
                             </el-select>
                         </div>
-                        <div class="character-ref-row">
-                            <span class="character-ref-label">{{ $t('aibooks.characterRefOptional') }}</span>
-                            <el-upload
-                                :auto-upload="false"
-                                :show-file-list="false"
-                                accept="image/*"
-                                :on-change="onCharacterRefChange"
+                        <div v-if="hasProtagonistReference()" class="character-ref-previews">
+                            <div
+                                v-for="slot in [1, 2]"
+                                :key="'preview-' + slot"
+                                v-show="protagonistRefs[slot].preview"
+                                class="character-ref-preview-item"
                             >
-                                <el-button size="small">{{ $t('aibooks.uploadCharacterRef') }}</el-button>
-                            </el-upload>
-                            <el-button
-                                v-if="characterReferencePreview"
-                                size="small"
-                                type="danger"
-                                link
-                                @click="clearCharacterReference"
-                            >{{ $t('aibooks.clearCharacterRef') }}</el-button>
-                        </div>
-                        <div v-if="characterReferencePreview" class="character-ref-preview">
-                            <img :src="characterReferencePreview" alt="character reference" />
+                                <div class="character-ref-preview">
+                                    <img
+                                        :src="protagonistRefs[slot].preview"
+                                        :alt="protagonistSlotLabel(slot)"
+                                    />
+                                </div>
+                                <span class="character-ref-preview-caption">{{ protagonistSlotLabel(slot) }}</span>
+                            </div>
                         </div>
                         <p class="consistency-hint">{{ $t('aibooks.consistencyHint') }}</p>
                     </div>
@@ -376,9 +378,10 @@ export default {
             promptSceneIndexes: [],
             characterProfiles: [],
             characterCard: '',
-            characterReferenceBase64: '',
-            characterReferencePreview: '',
-            selectedCharacterId: '',
+            protagonistRefs: {
+                1: { characterId: '', preview: '', base64: '' },
+                2: { characterId: '', preview: '', base64: '' },
+            },
             myCharacters: [],
             loadingMyCharacters: false,
             inpaintSceneIndex: -1,
@@ -518,7 +521,7 @@ export default {
             this.characterCard = ''
             this.imagePrompts = []
             this.promptSceneIndexes = []
-            this.clearCharacterReference()
+            this.clearProtagonistRefs()
             
             try {
                 // 步骤1: 调用 doubao-seed-1.6 生成故事
@@ -771,12 +774,57 @@ export default {
                 this.myCharacters = []
             } finally {
                 this.loadingMyCharacters = false
+                await this.reloadProtagonistRefsFromIds()
             }
         },
 
-        async onMyCharacterChange(characterId) {
+        protagonistStoryName(slot) {
+            const profiles = this.characterProfiles?.length
+                ? this.characterProfiles
+                : parseCharacterCardText(this.characterCard)
+            return profiles?.[slot - 1]?.name?.trim() || ''
+        },
+
+        protagonistSlotLabel(slot) {
+            const name = this.protagonistStoryName(slot)
+            const key = slot === 1 ? 'aibooks.protagonist1' : 'aibooks.protagonist2'
+            const base = this.$t(key)
+            return name ? `${base}（${name}）` : base
+        },
+
+        isCharacterDisabledForSlot(character, slot) {
+            const id = String(character?.id || character?._id || '')
+            if (!id) return false
+            const otherSlot = slot === 1 ? 2 : 1
+            return String(this.protagonistRefs[otherSlot].characterId) === id
+        },
+
+        hasProtagonistReference() {
+            return Boolean(this.protagonistRefs[1]?.characterId || this.protagonistRefs[2]?.characterId)
+        },
+
+        getCharacterIdsForApi() {
+            return [1, 2]
+                .map((slot) => String(this.protagonistRefs[slot]?.characterId || '').trim())
+                .filter(Boolean)
+        },
+
+        clearProtagonistSlot(slot) {
+            if (!this.protagonistRefs[slot]) return
+            this.protagonistRefs[slot].characterId = ''
+            this.protagonistRefs[slot].preview = ''
+            this.protagonistRefs[slot].base64 = ''
+        },
+
+        clearProtagonistRefs() {
+            this.clearProtagonistSlot(1)
+            this.clearProtagonistSlot(2)
+        },
+
+        async onProtagonistChange(slot, characterId, { silent = false } = {}) {
             if (!characterId) {
-                this.clearCharacterReference()
+                this.clearProtagonistSlot(slot)
+                if (!silent) this.saveToLocalStorage()
                 return
             }
             const item = this.myCharacters.find(
@@ -785,19 +833,25 @@ export default {
             if (!item) return
             const imageUrl = getImageUrl(item.image_url || item.character_image_url)
             if (!imageUrl) {
-                ElMessage.warning(this.$t('aibooks.myCharacterNoImage'))
-                this.selectedCharacterId = ''
+                if (!silent) ElMessage.warning(this.$t('aibooks.myCharacterNoImage'))
+                this.clearProtagonistSlot(slot)
                 return
             }
-            try {
-                const dataUrl = await this.imageToBase64(imageUrl)
-                this.characterReferenceBase64 = dataUrl
-                this.characterReferencePreview = imageUrl.startsWith('data:') ? dataUrl : imageUrl
-                ElMessage.success(this.$t('aibooks.myCharacterSelected'))
-            } catch (e) {
-                console.error('my character ref load failed:', e)
-                ElMessage.error(this.$t('aibooks.characterRefFailed'))
-                this.selectedCharacterId = ''
+            this.protagonistRefs[slot].characterId = String(characterId)
+            this.protagonistRefs[slot].base64 = ''
+            this.protagonistRefs[slot].preview = imageUrl
+            if (!silent) {
+                ElMessage.success(this.$t('aibooks.protagonistSelected', { label: this.protagonistSlotLabel(slot) }))
+                this.saveToLocalStorage()
+            }
+        },
+
+        async reloadProtagonistRefsFromIds() {
+            if (!this.myCharacters?.length) return
+            for (const slot of [1, 2]) {
+                const id = this.protagonistRefs[slot]?.characterId
+                if (!id || this.protagonistRefs[slot]?.preview) continue
+                await this.onProtagonistChange(slot, id, { silent: true })
             }
         },
 
@@ -838,7 +892,7 @@ export default {
                 return;
             }
 
-            if (!this.characterCard?.trim() && !this.characterReferenceBase64) {
+            if (!this.characterCard?.trim() && !this.hasProtagonistReference()) {
                 ElMessage.warning(this.$t('aibooks.characterCardOrRefRequired'));
                 return;
             }
@@ -971,20 +1025,30 @@ export default {
                 profiles: allProfiles,
             })
 
+            const characterIds = this.getCharacterIdsForApi()
+            const withReferenceImage = characterIds.length > 0 || Boolean(referenceImage)
+
             const requestData = {
                 prompt: buildPageImagePrompt({
                     scenePrompt: String(scenePrompt || '').trim(),
                     characterCard: pageCharacterCard,
                     characterNames: pageCharacterNames,
                     styleInfo,
-                    withReferenceImage: Boolean(referenceImage),
+                    withReferenceImage,
                 }),
                 size: '1280x960',
                 watermark: false,
             }
 
+            if (characterIds.length) {
+                requestData.character_ids = characterIds
+            }
+
             if (referenceImage) {
-                requestData.image = referenceImage
+                const slotsLeft = Math.max(0, 2 - characterIds.length)
+                if (slotsLeft > 0) {
+                    requestData.image = referenceImage
+                }
             }
 
             const responseData = await postCreateCharacter(
@@ -1034,7 +1098,6 @@ export default {
         },
 
         async pickAnchorImageBase64(excludeSceneIndexes = []) {
-            if (this.characterReferenceBase64) return this.characterReferenceBase64
             const exclude = new Set(excludeSceneIndexes)
             const images = this.bookData?.images || []
             for (let i = 0; i < images.length; i++) {
@@ -1113,12 +1176,12 @@ export default {
             }
 
             const regenIndexes = jobList.map((j) => j.sceneIndex)
-            let anchorImageBase64 = await this.pickAnchorImageBase64(regenIndexes)
+            const anchorImageBase64 = await this.pickAnchorImageBase64(regenIndexes)
+            const hasProtagonistRefs = this.getCharacterIdsForApi().length > 0
 
-            if (anchorImageBase64 || this.characterReferenceBase64) {
-                const ref = this.characterReferenceBase64 || anchorImageBase64
+            if (anchorImageBase64 || hasProtagonistRefs) {
                 this.progressText = `正在并行生成 ${total} 张图片...`
-                await Promise.all(jobList.map((job) => runJob(job, ref)))
+                await Promise.all(jobList.map((job) => runJob(job, anchorImageBase64 || '')))
                 return this.bookData.images
             }
 
@@ -1180,30 +1243,6 @@ export default {
             return imageUrl || ''
         },
 
-        async onCharacterRefChange(uploadFile) {
-            const file = uploadFile?.raw
-            if (!file || !file.type.startsWith('image/')) {
-                ElMessage.warning(this.$t('aibooks.invalidCharacterRef'))
-                return
-            }
-            try {
-                const dataUrl = await this.fileToBase64(file, true)
-                this.selectedCharacterId = ''
-                this.characterReferenceBase64 = dataUrl
-                this.characterReferencePreview = dataUrl
-                ElMessage.success(this.$t('aibooks.characterRefReady'))
-            } catch (e) {
-                console.error('角色参考图读取失败:', e)
-                ElMessage.error(this.$t('aibooks.characterRefFailed'))
-            }
-        },
-
-        clearCharacterReference() {
-            this.selectedCharacterId = ''
-            this.characterReferenceBase64 = ''
-            this.characterReferencePreview = ''
-        },
-        
         // 收集插画（只保存纯插画；图下文案仅在「下载全部」时拼接）
         async collectIllustration(imageUrl, index) {
             if (!imageUrl) {
@@ -1359,19 +1398,22 @@ export default {
                         if (data.characterCard) {
                             this.characterCard = data.characterCard;
                         }
-                        if (data.characterReferencePreview) {
-                            this.characterReferencePreview = data.characterReferencePreview;
-                            this.characterReferenceBase64 = data.characterReferencePreview;
+                        if (data.protagonistRefs) {
+                            this.protagonistRefs = {
+                                1: { characterId: '', preview: '', base64: '', ...data.protagonistRefs[1] },
+                                2: { characterId: '', preview: '', base64: '', ...data.protagonistRefs[2] },
+                            }
+                        } else if (data.selectedCharacterId || data.characterReferencePreview) {
+                            this.protagonistRefs[1].characterId = data.selectedCharacterId || ''
+                            this.protagonistRefs[1].preview = data.characterReferencePreview || ''
+                            this.protagonistRefs[1].base64 = data.characterReferencePreview || ''
                         }
-                        
+
                         // 恢复生成的绘本数据
                         if (data.bookData) {
                             this.bookData = data.bookData;
                             initPageVersionsFromImages(this.bookData);
                             syncImagesFromCurrentVersions(this.bookData);
-                        }
-                        if (data.selectedCharacterId) {
-                            this.selectedCharacterId = data.selectedCharacterId;
                         }
 
                         console.log('已从本地存储恢复AI绘本数据');
@@ -1399,8 +1441,16 @@ export default {
                     promptSceneIndexes: this.promptSceneIndexes,
                     characterProfiles: this.characterProfiles,
                     characterCard: this.characterCard,
-                    characterReferencePreview: this.characterReferencePreview || '',
-                    selectedCharacterId: this.selectedCharacterId || '',
+                    protagonistRefs: {
+                        1: {
+                            characterId: this.protagonistRefs[1]?.characterId || '',
+                            preview: this.protagonistRefs[1]?.preview || '',
+                        },
+                        2: {
+                            characterId: this.protagonistRefs[2]?.characterId || '',
+                            preview: this.protagonistRefs[2]?.preview || '',
+                        },
+                    },
                     bookData: this.bookData,
                     timestamp: Date.now()
                 };
@@ -1421,8 +1471,16 @@ export default {
                         promptSceneIndexes: this.promptSceneIndexes,
                         characterProfiles: this.characterProfiles,
                         characterCard: this.characterCard,
-                        characterReferencePreview: this.characterReferencePreview || '',
-                        selectedCharacterId: this.selectedCharacterId || '',
+                        protagonistRefs: {
+                            1: {
+                                characterId: this.protagonistRefs[1]?.characterId || '',
+                                preview: this.protagonistRefs[1]?.preview || '',
+                            },
+                            2: {
+                                characterId: this.protagonistRefs[2]?.characterId || '',
+                                preview: this.protagonistRefs[2]?.preview || '',
+                            },
+                        },
                         bookData: this.bookData,
                         timestamp: Date.now()
                     };
@@ -1453,9 +1511,9 @@ export default {
                 debounceSave();
             });
 
-            this.$watch('characterReferencePreview', () => {
+            this.$watch('protagonistRefs', () => {
                 debounceSave();
-            });
+            }, { deep: true });
             
             // 监听提示词编辑变化
             this.$watch('imagePrompts', () => {
@@ -1614,10 +1672,37 @@ export default {
     color: #606266;
 }
 
-.character-ref-preview {
+.character-ref-section-title {
+    margin: 14px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.character-ref-section-hint {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: #909399;
+    line-height: 1.45;
+}
+
+.character-ref-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-top: 10px;
-    width: 88px;
-    height: 88px;
+}
+
+.character-ref-preview-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.character-ref-preview {
+    width: 72px;
+    height: 72px;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid #e4e7ed;
@@ -1629,6 +1714,14 @@ export default {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+.character-ref-preview-caption {
+    font-size: 11px;
+    color: #606266;
+    text-align: center;
+    max-width: 88px;
+    line-height: 1.3;
 }
 
 .prompts-editor {

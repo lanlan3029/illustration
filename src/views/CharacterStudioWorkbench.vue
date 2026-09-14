@@ -1,6 +1,5 @@
 <template>
   <div class="cs-workbench">
-    <!-- 左侧配置区 -->
     <aside class="cs-panel">
       <button type="button" class="cs-back" @click="goDashboard">
         ← {{ $t('characterStudio.backToProjects') }}
@@ -13,12 +12,10 @@
             class="cs-name-input"
             :placeholder="$t('characterStudio.characterName')"
           />
-          <div class="cs-guide-links">
-            <router-link
-              :to="{ name: 'prompt-fill', query: { return: $route.fullPath } }"
-              class="cs-guide-link"
-            >{{ $t('characterStudio.promptGuide') }}</router-link>
-          </div>
+          <router-link
+            :to="{ name: 'prompt-fill', query: { return: $route.fullPath } }"
+            class="cs-guide-link"
+          >{{ $t('characterStudio.promptGuide') }}</router-link>
         </div>
       </div>
 
@@ -93,89 +90,104 @@
       <el-button
         type="primary"
         class="cs-generate-btn"
-        :loading="generating"
-        @click="handleGenerate"
+        :loading="generatingView === 'front'"
+        @click="generateView('front')"
       >
-        {{ generating ? $t('characterStudio.generating') : $t('characterStudio.generate') }}
+        {{ generatingView === 'front' ? $t('characterStudio.generating') : $t('characterStudio.generate') }}
       </el-button>
       <p class="cs-points-hint">{{ $t('createCharacter.pointsHint') }}</p>
     </aside>
 
-    <!-- 右侧结果区 -->
     <main class="cs-gallery">
       <div class="cs-gallery-toolbar">
         <span class="cs-gallery-title">{{ $t('characterStudio.generations') }}</span>
-        <div class="cs-view-toggle">
-          <button
-            type="button"
-            class="cs-view-btn"
-            :class="{ active: galleryView === 'grid' }"
-            :title="$t('characterStudio.viewGrid')"
-            @click="galleryView = 'grid'"
-          >
-            ▦
-          </button>
-          <button
-            type="button"
-            class="cs-view-btn"
-            :class="{ active: galleryView === 'list' }"
-            :title="$t('characterStudio.viewList')"
-            @click="galleryView = 'list'"
-          >
-            ☰
-          </button>
-        </div>
       </div>
 
-      <div v-if="generations.length === 0 && !generating" class="cs-empty">
-        <div class="cs-empty-art">
-          <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
-            <rect x="20" y="30" width="80" height="60" rx="8" fill="#f3f0f8" stroke="#8167a9" stroke-width="2"/>
-            <circle cx="45" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
-            <circle cx="75" cy="52" r="6" fill="#8167a9" opacity="0.6"/>
-            <path d="M42 68 Q60 78 78 68" stroke="#8167a9" stroke-width="2" fill="none" opacity="0.6"/>
-          </svg>
-        </div>
-        <p>{{ $t('characterStudio.noGenerations') }}</p>
-      </div>
-
-      <div v-if="generating" class="cs-generating">
+      <div v-if="generatingView" class="cs-generating">
         <el-icon class="is-loading"><Loading /></el-icon>
         <p>{{ $t('characterStudio.generatingWait') }}</p>
       </div>
 
-      <div v-if="generations.length" class="cs-gen-grid" :class="{ 'cs-gen-grid--list': galleryView === 'list' }">
-        <div
-          v-for="(gen, idx) in generations"
-          :key="gen.id"
-          class="cs-gen-card"
-          :class="{ 'is-saved': isGenSaved(gen) }"
-        >
-          <img :src="gen.url" alt="generation" @click="previewImage(idx)" />
-          <div class="cs-gen-actions" @click.stop>
-            <span v-if="isGenSaved(gen)" class="cs-saved-badge">
-              {{ $t('characterStudio.savedToMyCharacters') }}
-            </span>
+      <!-- 正面 -->
+      <section class="cs-view-card">
+        <div class="cs-view-head">
+          <span class="cs-view-label">{{ $t('characterStudio.viewFront') }}</span>
+          <span v-if="views.front.collected" class="cs-view-badge">{{ $t('characterStudio.collected') }}</span>
+        </div>
+        <div v-if="!views.front.preview && !generatingView" class="cs-view-empty">
+          {{ $t('characterStudio.noGenerations') }}
+        </div>
+        <div v-if="views.front.preview" class="cs-view-body">
+          <img :src="views.front.preview" alt="front" class="cs-view-img" @click="previewUrl(views.front.preview)" />
+          <div class="cs-view-actions">
             <el-button
-              v-else
-              size="small"
+              v-if="!views.front.collected"
               type="primary"
-              :loading="savingGenId === gen.id"
-              @click="saveToMyCharacters(gen)"
+              :loading="collectingView === 'front'"
+              @click="collectView('front')"
             >
-              {{ savedCharacterId ? $t('characterStudio.setAsCharacter') : $t('characterStudio.saveCharacter') }}
+              {{ $t('characterStudio.collectCharacter') }}
             </el-button>
-            <el-button size="small" @click="downloadImage(gen.url)">{{ $t('characterStudio.download') }}</el-button>
-            <el-button size="small" @click="openEditorPro(gen.url)">{{ $t('characterStudio.editInEditor') }}</el-button>
-            <el-button size="small" @click="goGroupImages(gen.url)">{{ $t('characterStudio.createGroup') }}</el-button>
+            <template v-else>
+              <el-button size="small" @click="downloadImage(views.front.preview)">{{ $t('characterStudio.download') }}</el-button>
+              <el-button size="small" @click="openEditorPro(views.front.preview)">{{ $t('characterStudio.editInEditor') }}</el-button>
+              <el-button size="small" @click="goGroupImages(views.front.preview)">{{ $t('characterStudio.createGroup') }}</el-button>
+            </template>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- 收集正面后：侧面 / 背面 -->
+      <section v-if="views.front.collected" class="cs-extra-views">
+        <p class="cs-extra-hint">{{ $t('characterStudio.extraViewsHint') }}</p>
+
+        <div
+          v-for="viewKey in ['side', 'back']"
+          :key="viewKey"
+          class="cs-view-card cs-view-card--compact"
+        >
+          <div class="cs-view-head">
+            <span class="cs-view-label">{{ $t(`characterStudio.view${viewKey.charAt(0).toUpperCase()}${viewKey.slice(1)}`) }}</span>
+            <span v-if="views[viewKey].collected" class="cs-view-badge">{{ $t('characterStudio.collected') }}</span>
+          </div>
+          <el-input
+            v-model="views[viewKey].prompt"
+            type="textarea"
+            :rows="2"
+            :placeholder="$t('characterStudio.viewPromptPlaceholder')"
+            class="cs-view-prompt"
+          />
+          <div class="cs-view-actions">
+            <el-button
+              size="small"
+              :loading="generatingView === viewKey"
+              @click="generateView(viewKey)"
+            >
+              {{ $t(`characterStudio.generate${viewKey.charAt(0).toUpperCase()}${viewKey.slice(1)}`) }}
+            </el-button>
+            <el-button
+              v-if="views[viewKey].preview && !views[viewKey].collected"
+              type="primary"
+              size="small"
+              :loading="collectingView === viewKey"
+              @click="collectView(viewKey)"
+            >
+              {{ $t('characterStudio.collectCharacter') }}
+            </el-button>
+          </div>
+          <img
+            v-if="views[viewKey].preview"
+            :src="views[viewKey].preview"
+            :alt="viewKey"
+            class="cs-view-img cs-view-img--compact"
+            @click="previewUrl(views[viewKey].preview)"
+          />
+        </div>
+      </section>
 
       <el-image-viewer
         v-if="previewVisible"
-        :url-list="previewUrls"
-        :initial-index="previewIndex"
+        :url-list="[previewTarget]"
         teleported
         @close="previewVisible = false"
       />
@@ -188,24 +200,25 @@ import { useIllustrationStyles } from '@/composables/useIllustrationStyles';
 import { ElMessage } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { ElImageViewer } from 'element-plus';
-import {
-  postCreateCharacter,
-  isCreateCharacterResponseOk,
-  resolveGenerationImageUrl,
-} from '@/utils/createCharacterTask';
+import { generateCharacterImage, saveCharacterView } from '@/utils/characterStudioApi';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
 import { navigateTo } from '@/utils/navigate';
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_ACTION,
+  DEFAULT_VIEW_PROMPTS,
   buildCharacterStudioPrompt,
+  buildViewPrompt,
   resolveStyleInfo,
   getImageUrl,
   INSPIRE_PROMPTS,
 } from '@/utils/characterStudioPrompt';
 import { takePromptFillPending } from '@/utils/promptFillHandoff';
-import { rembgFromImageSource } from '@/utils/imageSegmentation';
+import { clearLegacyCharacterDrafts } from '@/utils/legacyCharacterStorage';
+function emptyViewState(prompt = '') {
+  return { preview: '', collected: false, prompt };
+}
 
 export default {
   name: 'CharacterStudioWorkbench',
@@ -225,23 +238,23 @@ export default {
       aspectRatio: '1024x1024',
       referenceBase64: '',
       referencePreview: '',
-      anchorUrl: '',
-      anchorBase64: '',
-      loadedCharacter: null,
-      generating: false,
-      generations: [],
-      galleryView: 'grid',
-      previewVisible: false,
-      previewIndex: 0,
       savedCharacterId: '',
-      savedImageUrl: '',
-      savingGenId: null,
+      views: {
+        front: emptyViewState(''),
+        side: emptyViewState(DEFAULT_VIEW_PROMPTS.side),
+        back: emptyViewState(DEFAULT_VIEW_PROMPTS.back),
+      },
+      generatingView: null,
+      collectingView: null,
+      previewVisible: false,
+      previewTarget: '',
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
     };
   },
   computed: {
-    previewUrls() {
-      return this.generations.map((g) => g.url);
+    storageKey() {
+      const id = this.characterId || this.$route.params.characterId || 'new';
+      return `character_studio_${id}`;
     },
     selectedStyleLabel() {
       const s = this.styles.find((x) => x.key === this.artStyleKey);
@@ -251,17 +264,22 @@ export default {
       const s = this.styles.find((x) => x.key === this.artStyleKey);
       return s?.image || null;
     },
-    storageKey() {
-      const id = this.characterId || this.$route.params.characterId || 'new';
-      return `character_studio_${id}`;
-    },
   },
   mounted() {
+    clearLegacyCharacterDrafts();
     this.loadSession();
     this.applyPendingPrompt();
     if (this.characterId && this.characterId !== 'new') {
       this.loadCharacter(this.characterId);
     }
+  },
+  watch: {
+    '$route.params.characterId'(id) {
+      if (id && id !== 'new') {
+        this.loadCharacter(id);
+        this.$nextTick(() => this.saveSession());
+      }
+    },
   },
   methods: {
     applyPendingPrompt() {
@@ -283,10 +301,14 @@ export default {
         if (data.description) this.description = data.description;
         if (data.artStyleKey) this.artStyleKey = data.artStyleKey;
         if (data.aspectRatio) this.aspectRatio = data.aspectRatio;
-        if (data.anchorUrl) this.anchorUrl = data.anchorUrl;
-        if (Array.isArray(data.generations)) this.generations = data.generations;
         if (data.savedCharacterId) this.savedCharacterId = data.savedCharacterId;
-        if (data.savedImageUrl) this.savedImageUrl = data.savedImageUrl;
+        if (data.views) {
+          ['front', 'side', 'back'].forEach((key) => {
+            if (data.views[key]) {
+              this.views[key] = { ...this.views[key], ...data.views[key] };
+            }
+          });
+        }
       } catch {
         /* ignore */
       }
@@ -299,10 +321,8 @@ export default {
           description: this.description,
           artStyleKey: this.artStyleKey,
           aspectRatio: this.aspectRatio,
-          anchorUrl: this.anchorUrl,
-          generations: this.generations,
           savedCharacterId: this.savedCharacterId,
-          savedImageUrl: this.savedImageUrl,
+          views: this.views,
         })
       );
     },
@@ -315,24 +335,23 @@ export default {
         });
         const char = res?.data?.data || res?.data?.message || res?.data;
         if (!char) return;
-        this.loadedCharacter = char;
         this.savedCharacterId = String(char.id || char._id || '');
         this.characterName = char.character_name || char.name || '';
-        const url = getImageUrl(char.image_url || char.character_image_url);
-        if (url) {
-          this.savedImageUrl = url;
+        if (!this.description && char.description) this.description = char.description;
+
+        const frontUrl = getImageUrl(char.image_url || char.character_image_url);
+        if (frontUrl) {
+          this.views.front = { ...this.views.front, preview: frontUrl, collected: true };
         }
-        if (url && !this.anchorUrl) {
-          this.anchorUrl = url;
-          try {
-            this.anchorBase64 = await this.urlToBase64(url);
-          } catch {
-            this.anchorBase64 = '';
-          }
+        const sideUrl = getImageUrl(char.view_side_url);
+        if (sideUrl) {
+          this.views.side = { ...this.views.side, preview: sideUrl, collected: true };
         }
-        if (!this.description && char.description) {
-          this.description = char.description;
+        const backUrl = getImageUrl(char.view_back_url);
+        if (backUrl) {
+          this.views.back = { ...this.views.back, preview: backUrl, collected: true };
         }
+        this.saveSession();
       } catch (e) {
         console.warn('load character failed', e);
       }
@@ -345,9 +364,7 @@ export default {
       this.referencePreview = dataUrl;
     },
     inspireMe() {
-      const pool = INSPIRE_PROMPTS;
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      this.description = pick;
+      this.description = INSPIRE_PROMPTS[Math.floor(Math.random() * INSPIRE_PROMPTS.length)];
       ElMessage.success(this.$t('characterStudio.inspireApplied'));
     },
     clearReference() {
@@ -362,72 +379,43 @@ export default {
         reader.readAsDataURL(file);
       });
     },
-    async urlToBase64(url) {
-      if (url.startsWith('data:')) return url;
-      const res = await fetch(url);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+    buildPromptForView(viewKey) {
+      const styleInfo = resolveStyleInfo(this.styles, this.artStyleKey);
+      if (viewKey === 'front') {
+        return buildCharacterStudioPrompt({
+          description: (this.description || '').trim(),
+          action: DEFAULT_ACTION,
+          styleInfo,
+          withReferenceImage: Boolean(this.referenceBase64),
+        });
+      }
+      return buildViewPrompt({
+        view: viewKey,
+        customPrompt: this.views[viewKey].prompt,
+        styleInfo,
       });
     },
-    resolveImageFromResult(result) {
-      let imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl);
-      if (!imageUrl && result?.character_image_url) imageUrl = result.character_image_url;
-      if (!imageUrl && result?.image_base64) {
-        let b = result.image_base64.trim();
-        if (!b.startsWith('data:')) b = `data:image/jpeg;base64,${b.replace(/\s/g, '')}`;
-        imageUrl = b;
-      }
-      return imageUrl || '';
-    },
-    async handleGenerate() {
-      const desc = (this.description || '').trim();
-      if (!desc && !this.referenceBase64 && !this.anchorBase64) {
-        ElMessage.warning(this.$t('characterStudio.needDescriptionOrRef'));
+    async generateView(viewKey) {
+      if (viewKey === 'front') {
+        const desc = (this.description || '').trim();
+        if (!desc && !this.referenceBase64) {
+          ElMessage.warning(this.$t('characterStudio.needDescriptionOrRef'));
+          return;
+        }
+      } else if (!this.views.front.collected) {
+        ElMessage.warning(this.$t('characterStudio.collectFrontFirst'));
         return;
       }
 
-      this.generating = true;
+      this.generatingView = viewKey;
       try {
-        const styleInfo = resolveStyleInfo(this.styles, this.artStyleKey);
-        const refImage = this.referenceBase64 || this.anchorBase64 || '';
-        const prompt = buildCharacterStudioPrompt({
-          description: desc,
-          action: DEFAULT_ACTION,
-          styleInfo,
-          withReferenceImage: Boolean(refImage),
-        });
-
-        const requestData = {
-          prompt,
-          size: this.aspectRatio,
-          watermark: false,
-        };
-        if (refImage) requestData.image = refImage;
-
-        const responseData = await postCreateCharacter(this.$http, requestData, {
+        const { imageUrl, result } = await generateCharacterImage(this.$http, {
           apiBaseUrl: this.apiBaseUrl,
+          prompt: this.buildPromptForView(viewKey),
+          size: this.aspectRatio,
+          referenceImage: viewKey === 'front' ? this.referenceBase64 : '',
+          characterIds: viewKey !== 'front' ? [this.savedCharacterId] : [],
         });
-
-        if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
-          throw new Error(responseData?.desc || this.$t('characterStudio.generateFailed'));
-        }
-
-        const result = responseData.message;
-        let imageUrl = this.resolveImageFromResult(result);
-        if (!imageUrl) throw new Error(this.$t('characterStudio.noImageUrl'));
-
-        try {
-          const seg = await rembgFromImageSource(this.$http, imageUrl, {
-            apiBaseUrl: this.apiBaseUrl,
-          });
-          imageUrl = seg.imageURL;
-        } catch (matErr) {
-          console.warn('rembg 抠图失败，使用原图:', matErr);
-        }
 
         if (result.points !== undefined && this.$store?.state) {
           this.$store.commit('setUserInfo', {
@@ -436,98 +424,62 @@ export default {
           });
         }
 
-        const gen = { id: `${Date.now()}`, url: imageUrl, prompt };
-        this.generations.unshift(gen);
-        if (!this.anchorUrl) {
-          await this.setAnchor(gen, { silent: true });
-        }
-        const saved = await this.saveToMyCharacters(gen, { silent: true });
+        this.views[viewKey].preview = imageUrl;
+        this.views[viewKey].collected = false;
         this.saveSession();
-        ElMessage.success(
-          saved
-            ? this.$t('characterStudio.generateAndSaveSuccess')
-            : this.$t('characterStudio.generateSuccess')
-        );
+        ElMessage.success(this.$t('characterStudio.generateSuccess'));
       } catch (e) {
         ElMessage.error(e.message || this.$t('characterStudio.generateFailed'));
       } finally {
-        this.generating = false;
+        this.generatingView = null;
       }
     },
-    async setAnchor(gen, { silent = false } = {}) {
-      this.anchorUrl = gen.url;
+    async collectView(viewKey) {
+      const preview = this.views[viewKey]?.preview;
+      if (!preview) {
+        ElMessage.warning(this.$t('characterStudio.noImageToCollect'));
+        return;
+      }
+
+      this.collectingView = viewKey;
       try {
-        this.anchorBase64 = gen.url.startsWith('data:') ? gen.url : await this.urlToBase64(gen.url);
-      } catch {
-        this.anchorBase64 = '';
-      }
-      this.saveSession();
-      if (!silent) {
-        ElMessage.success(this.$t('characterStudio.anchorUpdated'));
-      }
-    },
-    isGenSaved(gen) {
-      if (!gen?.url || !this.savedCharacterId || !this.savedImageUrl) return false;
-      return gen.url === this.savedImageUrl;
-    },
-    async saveToMyCharacters(gen, { silent = false } = {}) {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        if (!silent) ElMessage.error(this.$t('characterStudio.pleaseLogin'));
-        return false;
-      }
-      const name = (this.characterName || '').trim() || this.$t('characterStudio.unnamed');
-      const apiUrl = this.apiBaseUrl ? `${this.apiBaseUrl}/character` : '/character';
-      this.savingGenId = gen.id;
-      try {
-        let imageUrl = gen.url;
-        if (imageUrl.startsWith('data:')) {
-          imageUrl = gen.url;
-        } else if (!imageUrl.startsWith('http')) {
-          imageUrl = getImageUrl(imageUrl);
-        }
-        const payload = {
-          character_name: name,
-          image_url: imageUrl,
-          description: (this.description || '').trim() || undefined,
-          is_public: 1,
-        };
-        if (this.savedCharacterId) {
-          payload.character_id = this.savedCharacterId;
-        }
-        Object.keys(payload).forEach((k) => {
-          if (payload[k] === undefined) delete payload[k];
+        const name = (this.characterName || '').trim() || this.$t('characterStudio.unnamed');
+        const saved = await saveCharacterView(this.$http, {
+          apiBaseUrl: this.apiBaseUrl,
+          characterId: this.savedCharacterId,
+          viewType: viewKey,
+          imageUrl: preview,
+          characterName: name,
+          description: (this.description || '').trim(),
         });
-        const res = await this.$http.post(apiUrl, payload, {
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        if (res.data?.code === 0 || res.data?.code === '0') {
-          const saved = res.data.data || res.data.message || res.data;
-          const id = saved?.id || saved?._id;
-          if (id) {
-            this.savedCharacterId = String(id);
-            if (this.characterId === 'new') {
-              this.$router.replace({ name: 'character-studio-workbench', params: { characterId: id } });
-            }
-          }
-          this.savedImageUrl = gen.url;
-          this.saveSession();
-          if (!silent) {
-            ElMessage.success(
-              this.savedCharacterId && payload.character_id
-                ? this.$t('characterStudio.updateSuccess')
-                : this.$t('characterStudio.saveSuccess')
-            );
-          }
-          return true;
+
+        if (!saved?.id) {
+          ElMessage.error(this.$t('characterStudio.pleaseLogin'));
+          return;
         }
-        throw new Error(res.data?.message || 'save failed');
+
+        this.savedCharacterId = saved.id;
+        this.views[viewKey].collected = true;
+
+        if (this.characterId === 'new' && viewKey === 'front') {
+          await this.$router.replace({
+            name: 'character-studio-workbench',
+            params: { characterId: saved.id },
+          });
+          await this.$nextTick();
+        }
+
+        this.saveSession();
+        ElMessage.success(this.$t('characterStudio.collectSuccess'));
       } catch (e) {
-        if (!silent) ElMessage.error(e.message || this.$t('characterStudio.saveFailed'));
-        return false;
+        ElMessage.error(e.message || this.$t('characterStudio.collectFailed'));
       } finally {
-        this.savingGenId = null;
+        this.collectingView = null;
       }
+    },
+    previewUrl(url) {
+      this.previewTarget = url;
+      this.previewVisible = true;
     },
     openEditorPro(url) {
       if (!url) return;
@@ -547,10 +499,6 @@ export default {
         characterName: (this.characterName || '').trim() || undefined,
       });
       navigateTo(this.$router, { name: 'create-group-images' }, '/creation-studio/character/groups');
-    },
-    previewImage(index) {
-      this.previewIndex = index;
-      this.previewVisible = true;
     },
     async downloadImage(url) {
       if (!url) return;
@@ -618,11 +566,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.cs-guide-links {
-  display: flex;
-  gap: 12px;
 }
 
 .cs-guide-link {
@@ -778,55 +721,7 @@ export default {
 }
 
 .cs-gallery-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.cs-view-toggle {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-.cs-view-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 14px;
-  color: #606266;
-}
-
-.cs-view-btn.active {
-  border-color: #8167a9;
-  background: #ede8f5;
-  color: #8167a9;
-}
-
-.cs-gen-grid--list {
-  grid-template-columns: 1fr;
-}
-
-.cs-gen-grid--list .cs-gen-card {
-  display: flex;
-  flex-direction: row;
-}
-
-.cs-gen-grid--list .cs-gen-card img {
-  width: 200px;
-  flex-shrink: 0;
-  aspect-ratio: auto;
-  min-height: 160px;
-}
-
-.cs-gen-grid--list .cs-gen-actions {
-  flex: 1;
-  align-content: center;
+  margin-bottom: 16px;
 }
 
 .cs-gallery-title {
@@ -835,70 +730,92 @@ export default {
   color: #1f1f1f;
 }
 
-.cs-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 360px;
-  color: #909399;
-}
-
-.cs-empty-art {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
 .cs-generating {
   text-align: center;
-  padding: 48px;
+  padding: 24px;
   color: #666;
 }
 
-.cs-gen-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-}
-
-.cs-gen-card {
+.cs-view-card {
   background: #fff;
   border-radius: 12px;
-  overflow: hidden;
-  border: 2px solid transparent;
+  padding: 16px;
+  margin-bottom: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.cs-gen-card.is-saved {
-  border-color: #67c23a;
+.cs-view-card--compact {
+  margin-bottom: 12px;
 }
 
-.cs-saved-badge {
-  display: inline-flex;
+.cs-view-head {
+  display: flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cs-view-label {
+  font-size: 14px;
   font-weight: 600;
+  color: #303133;
+}
+
+.cs-view-badge {
+  font-size: 12px;
   color: #529b2e;
   background: #f0f9eb;
-  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 
-.cs-gen-card img {
+.cs-view-empty {
+  color: #909399;
+  font-size: 13px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.cs-view-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cs-view-img {
   width: 100%;
+  max-width: 360px;
   aspect-ratio: 1;
   object-fit: contain;
   background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
-.cs-gen-actions {
-  padding: 10px;
+.cs-view-img--compact {
+  max-width: 240px;
+  margin-top: 12px;
+}
+
+.cs-view-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+}
+
+.cs-view-prompt {
+  margin-bottom: 8px;
+}
+
+.cs-extra-views {
+  margin-top: 8px;
+}
+
+.cs-extra-hint {
+  font-size: 13px;
+  color: #606266;
+  margin: 0 0 12px;
+  line-height: 1.5;
 }
 
 @media (max-width: 900px) {

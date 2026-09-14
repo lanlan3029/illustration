@@ -38,7 +38,11 @@ export function sleep(ms) {
 }
 
 export function hasReferenceImages(requestData) {
-  const img = requestData && requestData.image
+  if (!requestData) return false
+  const ids = requestData.character_ids
+  if (Array.isArray(ids) && ids.length > 0) return true
+  if (requestData.character_id) return true
+  const img = requestData.image
   if (!img) return false
   if (Array.isArray(img)) return img.length > 0
   return Boolean(img)

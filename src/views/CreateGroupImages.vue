@@ -41,15 +41,12 @@
                                 
                                 <!-- 从我的角色页面导入 -->
                                 <div class="import-section">
-                                    <el-button 
-                                        type="primary" 
+                                    <el-button
+                                        type="primary"
                                         plain
-                                            @click="goToMyCharacters">
-                                           {{ $t('createGroupImages.importFromCharacters') }}
+                                        @click="goToMyCharacters">
+                                        {{ $t('createGroupImages.importFromCharacters') }}
                                     </el-button>
-                                    <div v-if="!hasCharacterImage" class="import-tip">
-                                        {{ $t('createGroupImages.noCharacters') }}
-                                    </div>
                                 </div>
                             </div>
                             
@@ -251,12 +248,6 @@ export default {
             // 至少有一个参考图和一个prompt
             return this.referenceImageUrl && this.prompts.some(p => p && p.trim());
         },
-        hasCharacterImage() {
-            // 检查localStorage中是否有创作角色的图片
-            const characterImage = localStorage.getItem('characterImage');
-            console.log('检查是否有角色图片:', characterImage ? '存在' : '不存在');
-            return !!characterImage;
-        },
         // 过滤掉已收集的插画（现在直接从resultImages中删除，所以直接返回resultImages）
         filteredResultImages() {
             return this.resultImages || [];
@@ -323,17 +314,14 @@ export default {
                 }
                 return;
             }
-            this.checkCharacterImage();
+            this.applyStoredReferenceFallback();
         },
-        // 检查创作角色页面的图片，如果有则自动导入
-        checkCharacterImage() {
+        /** 工作台 handoff 未命中时，读 lastCharacterId 对应的 characterImage 缓存 */
+        applyStoredReferenceFallback() {
             const characterImage = localStorage.getItem('characterImage');
             if (characterImage && !this.referenceImageUrl) {
-                // 自动导入创作角色的图片
-                // characterImage 可能是 base64 格式（data:image/...）或外部URL
-                console.log('从localStorage导入的图片格式:', characterImage.startsWith('data:') ? 'Base64' : 'URL', characterImage.substring(0, 50) + '...');
                 this.referenceImageUrl = characterImage;
-                this.referenceFile = null; // 导入的图片没有文件对象
+                this.referenceFile = null;
             }
         },
         
@@ -441,29 +429,6 @@ export default {
             }
         },
         
-        // 从创作角色页面导入图片
-        importFromCreateCharacter() {
-            const characterImage = localStorage.getItem('characterImage');
-            console.log('尝试导入角色图片，localStorage中的characterImage:', characterImage ? '存在' : '不存在');
-            
-            if (characterImage) {
-                // 直接赋值即可触发响应式（Vue 3）
-                this.referenceImageUrl = characterImage;
-                this.referenceFile = null; // 导入的图片没有文件对象
-                
-                // 等待下一个 tick 确保视图更新
-                this.$nextTick(() => {
-                    console.log('导入后的 referenceImageUrl:', this.referenceImageUrl ? '已设置' : '未设置');
-                    console.log('导入的图片格式:', characterImage.startsWith('data:') ? 'Base64' : 'URL');
-                    console.log('导入的图片预览:', characterImage.substring(0, 100) + '...');
-                    ElMessage.success(this.$t('createGroupImages.importSuccess'));
-                });
-            } else {
-                ElMessage.warning(this.$t('createGroupImages.noCharacterImage'));
-                console.warn('localStorage中没有characterImage，请检查是否已生成角色并保存');
-            }
-        },
-        
         // 处理参考图上传
         handleReferenceChange(file, fileList) {
             const isImage = file.raw.type.startsWith('image/');
@@ -544,17 +509,17 @@ export default {
                     .filter(p => p && p.trim())
                     .map(p => `${prefix}${separator}${p.trim()}${stylePart}`);
                 
-                // 将参考图转换为Base64（带压缩）
+                const characterId =
+                    localStorage.getItem('lastCharacterId') ||
+                    localStorage.getItem('viewCharacterId');
+                const useCharacterId = Boolean(characterId && !this.referenceFile);
+
                 let referenceImageBase64 = null;
-                
-                if (this.referenceImageUrl) {
+                if (!useCharacterId && this.referenceImageUrl) {
                     if (this.referenceImageUrl.startsWith('data:')) {
-                        // 已经是base64格式（从localStorage导入的通常是这种格式），需要压缩
-                        // 先转换为blob再压缩
                         const response = await fetch(this.referenceImageUrl);
                         const blob = await response.blob();
                         const file = new File([blob], 'image.jpg', { type: blob.type });
-                        
                         const compressedBlob = await this.compressImage(file);
                         const reader = new FileReader();
                         referenceImageBase64 = await new Promise((resolve, reject) => {
@@ -563,20 +528,21 @@ export default {
                             reader.readAsDataURL(compressedBlob);
                         });
                     } else if (this.referenceFile) {
-                        // 上传的文件，转换为base64（带压缩）
                         referenceImageBase64 = await this.fileToBase64(this.referenceFile, true);
                     } else {
-                        // 从URL获取的图片（可能是外部URL），需要转换为base64（带压缩）
                         referenceImageBase64 = await this.imageUrlToBase64(this.referenceImageUrl, true);
                     }
                 }
-                
-                // 构建请求数据
+
                 const requestData = {
                     prompts: validPrompts,
-                    size: '1280x960', // 固定使用 1280x960 尺寸
-                    reference_image: referenceImageBase64, // base64格式的参考图
+                    size: '1280x960',
                 };
+                if (useCharacterId) {
+                    requestData.character_id = characterId;
+                } else {
+                    requestData.reference_image = referenceImageBase64;
+                }
                 
                 // 不再使用参考图的原始尺寸，始终使用固定的 1280x960
                 

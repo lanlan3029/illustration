@@ -1547,7 +1547,7 @@ export default {
         
         // 跳转到创建角色页面
         goToCreateCharacter() {
-            this.$router.push('/creation-studio');
+            this.$router.push({ name: 'character-studio-workbench', params: { characterId: 'new' } });
         },
         
         // ========== 图片处理方法（从 CreateGroupImages 复制） ==========

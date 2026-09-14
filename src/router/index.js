@@ -300,6 +300,17 @@ const routes = [{
                 meta: { creationDomain: 'illustration', requiresAuth: true },
             },
             {
+                path: 'illustration/multi-character',
+                name: 'multi-character-scene',
+                component: () =>
+                    import(/* webpackChunkName: "multi-character-scene" */ '../views/MultiCharacterScene.vue'),
+                meta: {
+                    creationDomain: 'illustration',
+                    requiresAuth: true,
+                    seoTitle: '多角色场景生图',
+                },
+            },
+            {
                 path: 'illustration/mine',
                 name: 'my-illustrations',
                 component: () =>
@@ -353,11 +364,8 @@ const routes = [{
     {
         path: '/create-character',
         name: 'create-character',
-        component: () =>
-            import ( /* webpackChunkName: "create-character" */ '../views/CreateCharacter.vue'),
-        meta: {
-            requiresAuth: true
-        }
+        redirect: '/creation-studio/character/generate/new',
+        meta: { requiresAuth: true },
     },
     {
         path: '/create-group-images',

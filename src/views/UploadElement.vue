@@ -1,14 +1,12 @@
 <template>
     <div class="container">
         <div class="header">
-            <p v-if="!isCharacterMode">上传 PNG 图元，用于创作页面左侧元素库。请确保画布透明；单文件不超过 1MB，超过将自动压缩（保留 PNG 透明）。可一次上传多个图元，并逐个编辑信息。</p>
-            <p v-else>确认角色信息并保存到"我的角色"。您可以修改名称、分类和描述等信息。</p>
+            <p>上传 PNG 图元，用于创作页面左侧元素库。请确保画布透明；单文件不超过 1MB，超过将自动压缩（保留 PNG 透明）。可一次上传多个图元，并逐个编辑信息。</p>
         </div>
 
         <el-card class="card" shadow="hover">
             <el-form ref="form" :model="form" :rules="rules" label-width="96px">
-                <!-- 图元模式：上传文件 -->
-                <el-form-item v-if="!isCharacterMode" label="图元文件">
+                <el-form-item label="图元文件">
                     <div class="upload-row">
                         <el-upload
                             ref="element-upload"
@@ -34,20 +32,7 @@
                     </div>
                 </el-form-item>
 
-                <!-- 角色模式：显示生成的图片 -->
-                <el-form-item v-if="isCharacterMode" label="角色图片">
-                    <div class="character-image-preview">
-                        <el-image 
-                            :src="characterImageUrl" 
-                            fit="contain"
-                            class="character-preview-image"
-                            :preview-src-list="[characterImageUrl]">
-                        </el-image>
-                    </div>
-                </el-form-item>
-
-                <!-- 图元模式：表格显示 -->
-                <template v-if="!isCharacterMode && elements.length > 0">
+                <template v-if="elements.length > 0">
                     <el-divider content-position="left">图元列表</el-divider>
                     <el-table 
                         :data="elements" 
@@ -127,49 +112,6 @@
                     </el-table>
                 </template>
 
-                <!-- 角色模式：单个角色编辑表单 -->
-                <template v-if="isCharacterMode">
-                    <el-form-item :label="'角色名称'" prop="name">
-                        <el-input v-model="form.name" maxlength="30" show-word-limit :placeholder="'请输入角色名称'"></el-input>
-                    </el-form-item>
-
-                    <el-form-item label="类别" prop="category">
-                        <el-select v-model="form.category" :placeholder="'请选择角色分类'" class="full">
-                            <el-option label="人物" value="people"></el-option>
-                            <el-option label="动物" value="animal"></el-option>
-                            <el-option label="植物" value="plant"></el-option>
-                            <el-option label="食物" value="food"></el-option>
-                            <el-option label="玩具" value="toy"></el-option>
-                            <el-option label="交通工具" value="vehicle"></el-option>
-                            <el-option label="装饰" value="decoration"></el-option>
-                            <el-option label="家居" value="furniture"></el-option>
-                            <el-option label="其它" value="others"></el-option>
-                        </el-select>
-                    </el-form-item>
-
-                    <el-form-item :label="'角色描述'">
-                        <el-input type="textarea" :rows="3" v-model="form.desc" :placeholder="'可选，描述角色的特征或风格'"></el-input>
-                    </el-form-item>
-                    <el-form-item label="是否公开">
-                        <el-radio-group v-model="form.is_public">
-                            <el-radio :label="1">公开</el-radio>
-                            <el-radio :label="0">不公开</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                </template>
-
-                <div class="actions" v-if="isCharacterMode">
-                    <el-button 
-                        class="btn" 
-                        type="primary" 
-                        :loading="disabled" 
-                        @click="onSubmit">
-                        <span>保存角色</span>
-                    </el-button>
-                    <el-button class="btn" @click="handleDelete">
-                        <i class="el-icon-delete"></i> 清空
-                    </el-button>
-                </div>
             </el-form>
         </el-card>
     </div>
@@ -189,10 +131,6 @@
             dialogImageUrl: '',
             dialogVisible: false,
             disabled:false,
-            isCharacterMode: false, // 是否为角色模式
-            characterImageUrl: '', // 角色图片URL
-            characterImagePath: '', // 保存角色时提交给后端的 image_url（优先 localPath）
-            characterData: null, // 角色数据
             form: {
               name: '',
               desc: '',
@@ -211,37 +149,18 @@
             compressingUids: new Set(),
           };
         },
-        mounted() {
-            // 检查是否是角色模式
-            if (this.$route.query.mode === 'character') {
-                this.isCharacterMode = true;
-                this.loadCharacterData();
+        beforeRouteEnter(to, from, next) {
+            if (to.query.mode === 'character') {
+                next({
+                    name: 'character-studio-workbench',
+                    params: { characterId: 'new' },
+                    replace: true,
+                });
+                return;
             }
+            next();
         },
         methods: {
-          loadCharacterData() {
-            // 从 localStorage 加载角色数据
-            const storedData = localStorage.getItem('pendingCharacterData');
-            if (storedData) {
-              try {
-                this.characterData = JSON.parse(storedData);
-                this.characterImagePath = this.characterData.image_url || '';
-                this.characterImageUrl = this.characterData.preview_url || this.characterImagePath || '';
-                this.form.name = this.characterData.character_name || '';
-                this.form.category = this.characterData.character_type || '';
-                this.form.desc = this.characterData.description || '';
-                // 清理 localStorage
-                localStorage.removeItem('pendingCharacterData');
-              } catch (error) {
-                console.error('加载角色数据失败:', error);
-                ElMessage.error('加载角色数据失败，请重新生成角色');
-                this.$router.push('/create-character');
-              }
-            } else {
-              ElMessage.warning('未找到角色数据，请重新生成角色');
-              this.$router.push('/create-character');
-            }
-          },
           handleRemove(file) {
             // 从 elements 数组中移除对应的图元
             const index = this.elements.findIndex(el => el.uid === file.uid);
@@ -399,159 +318,6 @@
               ElMessage.error(`图元 "${element.name}" 上传失败: ${errorMsg}`);
             }
           },
-          onSubmit(){
-            if (this.isCharacterMode) {
-              // 角色模式：保存角色到 /character 接口
-              this.saveCharacter();
-            } else {
-              // 图元模式：上传图元到 /picture/ 接口
-              this.uploadElement();
-            }
-          },
-          async saveCharacter() {
-            const hasName = !!this.form.name;
-            const hasCategory = !!this.form.category;
-            const hasImage = !!this.characterImagePath;
-
-            if (!hasName || !hasCategory || !hasImage) {
-              ElMessage({
-                message: '角色名称、类别和图片不能为空',
-                type: 'warning',
-                offset: '300'
-              });
-              return;
-            }
-
-            this.disabled = true;
-
-            try {
-              const token = localStorage.getItem('token') || '';
-              let imageUrl = this.characterImagePath;
-              // 后端要求：Base64 或有效的 http/https 图片 URL。localPath（如 upload/xxx.png）需要转换为可访问 URL。
-              if (imageUrl && !imageUrl.startsWith('data:') && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-                const normalized = String(imageUrl).replace(/^\/+/, '');
-                imageUrl = `https://static.kidstory.cc/${normalized}`;
-              }
-              const isBase64 = imageUrl.startsWith('data:');
-              
-              // 步骤1：先创建角色（使用占位图或原图）
-              let characterId = null;
-              
-              // 创建接口要求传 Base64 或有效 URL，这里使用规范化后的 imageUrl 作为占位图
-              let placeholderImageUrl = imageUrl;
-              if (isBase64 && this.characterData && this.characterData.full_response) {
-                const fullResponse = this.characterData.full_response;
-                if (fullResponse.data && Array.isArray(fullResponse.data) && fullResponse.data.length > 0) {
-                  placeholderImageUrl = fullResponse.data[0].url || fullResponse.data[0].ResultUrl || imageUrl;
-                } else {
-                  placeholderImageUrl = fullResponse.result_url || fullResponse.ResultUrl || fullResponse.url || imageUrl;
-                }
-              }
-              
-              // 创建角色
-              const createData = {
-                character_name: this.form.name,
-                image_url: placeholderImageUrl, // 先使用占位图
-                character_type: this.form.category,
-                description: this.form.desc || undefined,
-                is_public: this.form.is_public !== undefined ? this.form.is_public : 1
-              };
-
-              // 移除 undefined 的字段
-              Object.keys(createData).forEach(key => {
-                if (createData[key] === undefined) {
-                  delete createData[key];
-                }
-              });
-
-              const createResponse = await this.$http.post('/character', createData, {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer ' + token
-                }
-              });
-
-              if (createResponse.data && (createResponse.data.code === 0 || createResponse.data.code === '0')) {
-                const characterData = createResponse.data.data || createResponse.data.message || createResponse.data;
-                characterId = characterData.id || characterData._id || createResponse.data.id;
-              } else {
-                throw new Error(createResponse.data?.message || '创建角色失败');
-              }
-
-              // 步骤2：抠图后的 PNG（base64）直接更新角色，不走阿里云
-              if (isBase64 && characterId) {
-                const updateResponse = await this.$http.post('/character', {
-                  character_id: characterId,
-                  image_url: imageUrl,
-                  character_name: this.form.name,
-                  character_type: this.form.category,
-                  description: this.form.desc || undefined,
-                  is_public: this.form.is_public !== undefined ? this.form.is_public : 1,
-                }, {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                  },
-                });
-
-                if (!(updateResponse.data && (updateResponse.data.code === 0 || updateResponse.data.code === '0'))) {
-                  console.warn('角色已创建，抠图更新失败:', updateResponse.data?.message);
-                }
-                ElMessage({ message: '角色保存成功', type: 'success' });
-                this.$router.push('/creation-studio/character');
-              } else {
-                // 如果图片不是base64，直接提示成功
-                ElMessage({ message: '角色保存成功', type: 'success' });
-                this.$router.push('/creation-studio/character');
-              }
-            } catch (error) {
-              console.error('保存角色失败:', error);
-              ElMessage.error(error.response?.data?.message || error.message || '保存角色失败，请重试');
-            } finally {
-              this.disabled = false;
-            }
-          },
-          uploadElement() {
-            // 图元模式现在使用单个上传，这个方法保留用于兼容
-            // 实际的上传逻辑在 uploadSingleElement 中
-            ElMessage.info('请使用表格中的"上传"按钮逐个上传图元');
-          },
-          handleDelete() {
-            this.$confirm('确定要清空所有数据吗？清空后数据将无法恢复。', '提示', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }).then(() => {
-              // 清除表单数据
-              this.form.name = '';
-              this.form.desc = '';
-              this.form.category = '';
-              this.form.is_public = 1;
-              
-              // 清除所有图元
-              this.elements = [];
-              
-              // 清除上传的文件
-              if (this.$refs['element-upload']) {
-                this.$refs['element-upload'].clearFiles();
-              }
-              
-              // 清除角色数据
-              if (this.isCharacterMode) {
-                this.characterImageUrl = '';
-                this.characterData = null;
-                // 清理 localStorage 中的角色数据
-                localStorage.removeItem('pendingCharacterData');
-                // 返回角色创建页面
-                this.$router.push('/create-character');
-              } else {
-                // 图元模式，只清除数据，留在当前页面
-                ElMessage.success('已清空');
-              }
-            }).catch(() => {
-              // 用户取消删除
-            });
-          }
         }
     }
     </script>
@@ -683,21 +449,6 @@
     .card  :deep(.el-select .el-input__inner) {
         box-shadow: none !important;
     }
-    /* 角色图片预览 */
-    .character-image-preview {
-        width: 100%;
-        max-width: 400px;
-        border: 1px solid #e4e7ed;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #f5f7fa;
-    }
-    .character-preview-image {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-    
     /* 多个图元编辑样式 */
     .element-item {
         margin-bottom: 24px;

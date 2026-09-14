@@ -41,13 +41,17 @@ export const CREATION_SUB_NAV = {
     },
     {
       routeName: 'create-group-images',
-      labelKey: 'creationStudio.characterGroups',
+      labelKey: 'creationStudio.singleCharacterGroups',
     },
   ],
   illustration: [
     {
       routeName: 'AIPicture',
       labelKey: 'nav.aiIllustration',
+    },
+    {
+      routeName: 'multi-character-scene',
+      labelKey: 'creationStudio.multiCharacterScene',
     },
     {
       routeName: 'my-illustrations',
@@ -87,6 +91,7 @@ export const ROUTE_DOMAIN_MAP = {
   'character-studio': 'character',
   'character-studio-workbench': 'character',
   'create-group-images': 'character',
+  'multi-character-scene': 'illustration',
   AIPicture: 'illustration',
   'my-illustrations': 'illustration',
   editorpro: 'illustration',

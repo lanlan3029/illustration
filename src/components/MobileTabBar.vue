@@ -53,7 +53,7 @@ export default {
       '/AIbooks',
       '/creation-studio',
       '/character-studio',
-      '/create-character',
+      '/creation-studio/character/generate',
       '/create-group-images',
       '/create-layout-illustration',
       '/editorpro',
