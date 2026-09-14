@@ -914,6 +914,7 @@
     "inpaintMaskRequired": "Mark the area to edit with the brush first",
     "inpaintSuccess": "Inpaint done — saved as a new version",
     "inpaintFailed": "Inpaint failed, please try again",
+    "inpaintLoading": "Loading image…",
     "inpaintLoadFailed": "Failed to load page image",
     "inpaintNoImage": "Generate this page illustration first",
     "startGenerate": "Start Generating Book",
@@ -1500,10 +1501,10 @@
     "sizeMedium": "medium size"
   },
   "multiCharacterScene": {
-    "title": "Multi-Character Scene",
+    "title": "Multi-Character Illustration",
     "desc": "Pick 1–2 protagonist references, describe one scene, and generate a single illustration with multiple characters. No full story required.",
     "refTitle": "Character references (optional, up to 2)",
-    "refHint": "Pick from My Characters for each slot; one is enough. Unlike single-character sets, this produces one multi-character scene.",
+    "refHint": "Pick from My Characters for each slot; one is enough. Unlike single-character sets, this produces one multi-character illustration.",
     "roleName": "Lead {slot} name",
     "roleNamePlaceholder": "e.g. Dora (optional label)",
     "scenePrompt": "Scene description",
@@ -1515,7 +1516,7 @@
     "generateFailed": "Generation failed",
     "noImageUrl": "No image URL in response",
     "previewEmpty": "Pick characters and describe the scene, then generate",
-    "collectTitle": "Multi-character scene",
+    "collectTitle": "Multi-character illustration",
     "collectSuccess": "Saved to My Illustrations",
     "collectFailed": "Save failed"
   },
@@ -1528,7 +1529,7 @@
     "generateCharacter": "Generate Character",
     "characterGroups": "Character Groups",
     "singleCharacterGroups": "Single-Character Sets",
-    "multiCharacterScene": "Multi-Character Scene",
+    "multiCharacterScene": "Multi-Character Illustration",
     "myIllustrations": "My Illustrations",
     "myIllustrationsDesc": "View, edit, and download your saved illustrations.",
     "myBooks": "My Books",

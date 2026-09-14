@@ -9,7 +9,12 @@
   >
     <p class="inpaint-hint">{{ $t('aibooks.inpaintHint') }}</p>
     <div class="inpaint-stage" ref="stageRef">
+      <div v-if="imageLoading" class="inpaint-loading">
+        <el-icon class="is-loading inpaint-loading-icon"><Loading /></el-icon>
+        <p>{{ $t('aibooks.inpaintLoading') }}</p>
+      </div>
       <canvas
+        v-show="!imageLoading"
         ref="canvasRef"
         class="inpaint-canvas"
         @pointerdown.prevent="onPointerDown"
@@ -19,16 +24,16 @@
       />
     </div>
     <div class="inpaint-tools">
-      <el-radio-group v-model="brushMode" size="small">
+      <el-radio-group v-model="brushMode" size="small" :disabled="imageLoading">
         <el-radio-button label="mark">{{ $t('aibooks.inpaintBrushMark') }}</el-radio-button>
         <el-radio-button label="erase">{{ $t('aibooks.inpaintBrushErase') }}</el-radio-button>
       </el-radio-group>
-      <el-radio-group v-model="brushSize" size="small">
+      <el-radio-group v-model="brushSize" size="small" :disabled="imageLoading">
         <el-radio-button :label="18">{{ $t('stickerLab.brushSmall') }}</el-radio-button>
         <el-radio-button :label="32">{{ $t('stickerLab.brushMedium') }}</el-radio-button>
         <el-radio-button :label="48">{{ $t('stickerLab.brushLarge') }}</el-radio-button>
       </el-radio-group>
-      <el-button size="small" @click="clearMask">{{ $t('aibooks.inpaintClearMask') }}</el-button>
+      <el-button size="small" :disabled="imageLoading" @click="clearMask">{{ $t('aibooks.inpaintClearMask') }}</el-button>
     </div>
     <el-input
       v-model="editPrompt"
@@ -39,7 +44,7 @@
     />
     <template #footer>
       <el-button @click="visible = false">{{ $t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">
+      <el-button type="primary" :loading="submitting" :disabled="imageLoading" @click="submit">
         {{ $t('aibooks.inpaintSubmit') }}
       </el-button>
     </template>
@@ -47,17 +52,20 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onBeforeUnmount, getCurrentInstance } from 'vue';
+import { ref, nextTick, onBeforeUnmount, getCurrentInstance } from 'vue';
 import { ElMessage } from 'element-plus';
+import { Loading } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
 import { postImageInpaint } from '@/api/imageEditApi';
 import { handleInsufficientPointsError } from '@/utils/insufficientPoints';
 import { useRouter } from 'vue-router';
+import { loadImageBlob } from '@/utils/canvasImageCompose';
 import {
   createEmptyKeepMask,
   applyBrushStrokesToMask,
   maskCanvasToDataUrl,
   loadImageNaturalSize,
+  blobToDataUrl,
   displayPointToImage,
   brushRadiusImage,
   strokeBetween,
@@ -74,6 +82,7 @@ const router = useRouter();
 const { proxy } = getCurrentInstance() || {};
 
 const visible = ref(false);
+const imageLoading = ref(false);
 const submitting = ref(false);
 const editPrompt = ref('');
 const brushMode = ref('mark');
@@ -82,8 +91,10 @@ const brushSize = ref(32);
 const stageRef = ref(null);
 const canvasRef = ref(null);
 
-let sourceUrl = '';
 let imageSrcForApi = '';
+let sourceBlob = null;
+let loadedImage = null;
+let previewObjectUrl = '';
 let naturalW = 0;
 let naturalH = 0;
 let display = { w: 0, h: 0 };
@@ -93,6 +104,13 @@ let painting = false;
 let lastPoint = null;
 let resizeObserver = null;
 
+function revokePreviewUrl() {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = '';
+  }
+}
+
 function fitDisplay(nw, nh, maxW, maxH) {
   const ratio = Math.min(maxW / nw, maxH / nh, 1);
   return { width: Math.round(nw * ratio), height: Math.round(nh * ratio) };
@@ -101,30 +119,24 @@ function fitDisplay(nw, nh, maxW, maxH) {
 function redraw() {
   const canvas = canvasRef.value;
   const ctx = canvas?.getContext('2d');
-  if (!canvas || !ctx || !sourceUrl) return;
+  if (!canvas || !ctx || !loadedImage) return;
 
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    ctx.clearRect(0, 0, display.w, display.h);
-    ctx.drawImage(img, 0, 0, display.w, display.h);
-    if (maskStrokes.length) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 80, 80, 0.45)';
-      maskStrokes.forEach(({ x, y, r, erase }) => {
-        if (erase) return;
-        const dx = (x / naturalW) * display.w;
-        const dy = (y / naturalH) * display.h;
-        const dr = (r / naturalW) * display.w;
-        ctx.beginPath();
-        ctx.arc(dx, dy, dr, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    }
-  };
-  img.onerror = () => {};
-  img.src = sourceUrl;
+  ctx.clearRect(0, 0, display.w, display.h);
+  ctx.drawImage(loadedImage, 0, 0, display.w, display.h);
+  if (maskStrokes.length) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 80, 80, 0.45)';
+    maskStrokes.forEach(({ x, y, r, erase }) => {
+      if (erase) return;
+      const dx = (x / naturalW) * display.w;
+      const dy = (y / naturalH) * display.h;
+      const dr = (r / naturalW) * display.w;
+      ctx.beginPath();
+      ctx.arc(dx, dy, dr, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
 }
 
 function layout() {
@@ -163,6 +175,7 @@ function paintAt(displayX, displayY) {
 }
 
 function onPointerDown(e) {
+  if (imageLoading.value) return;
   canvasRef.value?.setPointerCapture?.(e.pointerId);
   painting = true;
   const p = canvasPoint(e);
@@ -172,7 +185,7 @@ function onPointerDown(e) {
 }
 
 function onPointerMove(e) {
-  if (!painting) return;
+  if (!painting || imageLoading.value) return;
   const p = canvasPoint(e);
   const r = brushRadiusImage(brushSize.value, display.w, naturalW);
   const from = displayPointToImage(lastPoint.x, lastPoint.y, display.w, display.h, naturalW, naturalH);
@@ -202,12 +215,22 @@ async function open({ imageUrl, imageBase64 = '' }) {
   editPrompt.value = '';
   brushMode.value = 'mark';
   maskStrokes = [];
+  loadedImage = null;
+  sourceBlob = null;
+  revokePreviewUrl();
+  imageSrcForApi = imageBase64 || imageUrl;
   visible.value = true;
+  imageLoading.value = true;
   await nextTick();
   try {
-    sourceUrl = imageUrl || imageBase64;
-    imageSrcForApi = imageBase64 || imageUrl;
-    const { width, height } = await loadImageNaturalSize(sourceUrl);
+    const src = imageBase64 || imageUrl;
+    const { img, width, height, blob, objectUrl } = await loadImageNaturalSize(src, {
+      http: proxy?.$http,
+      apiBaseUrl: props.apiBaseUrl,
+    });
+    loadedImage = img;
+    sourceBlob = blob;
+    if (objectUrl) previewObjectUrl = objectUrl;
     naturalW = width;
     naturalH = height;
     maskCanvas = createEmptyKeepMask(naturalW, naturalH);
@@ -220,27 +243,27 @@ async function open({ imageUrl, imageBase64 = '' }) {
   } catch (e) {
     ElMessage.error(t('aibooks.inpaintLoadFailed'));
     visible.value = false;
+  } finally {
+    imageLoading.value = false;
   }
-}
-
-async function imageUrlToBase64(url) {
-  if (!url || url.startsWith('data:')) return url;
-  const res = await fetch(url, { mode: 'cors' });
-  if (!res.ok) throw new Error('fetch image failed');
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }
 
 function hasMarkedArea() {
   return maskStrokes.some((s) => !s.erase);
 }
 
+async function resolveImagePayload() {
+  if (imageSrcForApi.startsWith('data:')) return imageSrcForApi;
+  if (sourceBlob) return blobToDataUrl(sourceBlob);
+  const blob = await loadImageBlob(imageSrcForApi, {
+    http: proxy?.$http,
+    apiBaseUrl: props.apiBaseUrl,
+  });
+  return blobToDataUrl(blob);
+}
+
 async function submit() {
+  if (imageLoading.value) return;
   if (!editPrompt.value.trim()) {
     ElMessage.warning(t('aibooks.inpaintPromptRequired'));
     return;
@@ -251,10 +274,7 @@ async function submit() {
   }
   submitting.value = true;
   try {
-    let imagePayload = imageSrcForApi;
-    if (!imagePayload.startsWith('data:')) {
-      imagePayload = await imageUrlToBase64(imagePayload);
-    }
+    const imagePayload = await resolveImagePayload();
     const maskPayload = maskCanvasToDataUrl(maskCanvas);
     const result = await postImageInpaint(proxy?.$http, {
       image: imagePayload,
@@ -287,13 +307,17 @@ async function submit() {
 }
 
 function onClosed() {
-  sourceUrl = '';
+  imageSrcForApi = '';
+  sourceBlob = null;
+  loadedImage = null;
   maskStrokes = [];
+  revokePreviewUrl();
   resizeObserver?.disconnect();
   resizeObserver = null;
 }
 
 onBeforeUnmount(() => {
+  revokePreviewUrl();
   resizeObserver?.disconnect();
 });
 
@@ -315,6 +339,24 @@ defineExpose({ open });
   background: repeating-conic-gradient(#ececf0 0% 25%, #fff 0% 50%) 50% / 16px 16px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.inpaint-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: #606266;
+  font-size: 13px;
+}
+
+.inpaint-loading-icon {
+  font-size: 28px;
+  color: #8167a9;
 }
 
 .inpaint-canvas {

@@ -307,7 +307,7 @@ const routes = [{
                 meta: {
                     creationDomain: 'illustration',
                     requiresAuth: true,
-                    seoTitle: '多角色场景生图',
+                    seoTitle: '多角色插画',
                 },
             },
             {

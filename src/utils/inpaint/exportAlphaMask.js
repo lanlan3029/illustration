@@ -3,6 +3,8 @@
  * 规则：alpha=255 保留，alpha=0 为待重绘区域
  */
 
+import { loadImageBlob, loadHtmlImage } from '@/utils/canvasImageCompose';
+
 export function createEmptyKeepMask(width, height) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -38,17 +40,49 @@ export function maskCanvasToDataUrl(maskCanvas) {
   return maskCanvas.toDataURL('image/png');
 }
 
-export async function loadImageNaturalSize(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve({
+/**
+ * 加载原图尺寸与 Image 对象（供 canvas 绘制缓存，避免 redraw 重复请求）
+ * @param {string} src data:/blob: URL 或远程 URL
+ * @param {{ http?: import('axios').AxiosInstance, apiBaseUrl?: string }} [opts] 远程图走 loadImageBlob（直连→代理）
+ */
+export async function loadImageNaturalSize(src, opts = {}) {
+  const url = String(src || '').trim();
+  if (!url) throw new Error('image load failed');
+
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    const img = await loadHtmlImage(url);
+    return {
       img,
       width: img.naturalWidth,
       height: img.naturalHeight,
-    });
-    img.onerror = () => reject(new Error('image load failed'));
-    img.src = src;
+      blob: null,
+      objectUrl: '',
+    };
+  }
+
+  const blob = await loadImageBlob(url, opts);
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const img = await loadHtmlImage(objectUrl);
+    return {
+      img,
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      blob,
+      objectUrl,
+    };
+  } catch (e) {
+    URL.revokeObjectURL(objectUrl);
+    throw e;
+  }
+}
+
+export function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
 }
 

@@ -929,6 +929,7 @@
     "inpaintMaskRequired": "请先用画笔标记要修改的区域",
     "inpaintSuccess": "局部重绘完成，已保存为新版本",
     "inpaintFailed": "局部重绘失败，请重试",
+    "inpaintLoading": "正在加载图片…",
     "inpaintLoadFailed": "页面图片加载失败",
     "inpaintNoImage": "请先生成该页插画",
     "startGenerate": "开始生成绘本",
@@ -1515,10 +1516,10 @@
     "sizeMedium": "中等尺寸"
   },
   "multiCharacterScene": {
-    "title": "多角色场景生图",
+    "title": "多角色插画",
     "desc": "选 1～2 位主角参考图，写一句场景描述，生成多角色同框插画。无需写完整故事。",
     "refTitle": "角色参考图（可选，最多 2 位）",
-    "refHint": "从「我的角色」分别选择；可只选一位。与「单角色组图」不同，这里产出一张多角色场景图。",
+    "refHint": "从「我的角色」分别选择；可只选一位。与「单角色组图」不同，这里产出一张多角色插画。",
     "roleName": "主角{slot}称呼",
     "roleNamePlaceholder": "如：朵朵（可选，便于识别）",
     "scenePrompt": "场景描述",
@@ -1530,7 +1531,7 @@
     "generateFailed": "生成失败，请重试",
     "noImageUrl": "生成成功但未返回图片地址",
     "previewEmpty": "选择角色并填写场景后，点击生成",
-    "collectTitle": "多角色场景插画",
+    "collectTitle": "多角色插画",
     "collectSuccess": "已保存到「我的插画」",
     "collectFailed": "保存失败"
   },
@@ -1543,7 +1544,7 @@
     "generateCharacter": "生成角色",
     "characterGroups": "角色组图",
     "singleCharacterGroups": "单角色组图",
-    "multiCharacterScene": "多角色场景",
+    "multiCharacterScene": "多角色插画",
     "myIllustrations": "我的插画",
     "myIllustrationsDesc": "查看、编辑和下载你保存的插画作品。",
     "myBooks": "我的绘本",

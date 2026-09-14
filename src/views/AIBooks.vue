@@ -724,20 +724,15 @@ export default {
             }
         },
 
-        async openInpaintDialog(sceneIndex) {
+        openInpaintDialog(sceneIndex) {
             const url = getPageDisplayUrl(this.bookData, sceneIndex)
             if (!url) {
                 ElMessage.warning(this.$t('aibooks.inpaintNoImage'))
                 return
             }
             this.inpaintSceneIndex = sceneIndex
-            let imageBase64 = ''
-            try {
-                imageBase64 = await this.imageToBase64(url)
-            } catch (e) {
-                console.warn('inpaint source image base64 failed:', e)
-            }
-            this.$refs.inpaintDialogRef?.open({ imageUrl: url, imageBase64 })
+            // 立即打开弹窗；图片在弹窗内异步加载，避免点击后长时间无反馈
+            this.$refs.inpaintDialogRef?.open({ imageUrl: url })
         },
 
         onInpaintSuccess({ imageUrl, prompt }) {
