@@ -1,3 +1,9 @@
+import {
+  extractErrorMessage,
+  isInsufficientPointsError,
+  throwIfInsufficientPointsResponse,
+} from '@/utils/insufficientPoints';
+
 // 统一处理 /create-character 的异步任务模式。
 //
 // 成功判定：只读 res.data.message（不用外层 statuscode / desc 判断任务是否完成）
@@ -284,15 +290,28 @@ export async function postCreateCharacter(http, requestData, opts = {}) {
       : SYNC_POST_TIMEOUT_TEXT_ONLY_MS)
     : ASYNC_SUBMIT_TIMEOUT_MS
 
-  const response = await http.post(url, body, {
-    headers: buildAuthHeaders(opts.headers),
-    timeout,
-    ...(opts.axiosConfig || {})
-  })
+  try {
+    const response = await http.post(url, body, {
+      headers: buildAuthHeaders(opts.headers),
+      timeout,
+      ...(opts.axiosConfig || {})
+    })
 
-  return resolveCreateCharacterResult(http, response.data, {
-    apiBaseUrl: opts.apiBaseUrl,
-    headers: opts.headers,
-    debug: opts.debug
-  })
+    throwIfInsufficientPointsResponse(response.data)
+
+    return resolveCreateCharacterResult(http, response.data, {
+      apiBaseUrl: opts.apiBaseUrl,
+      headers: opts.headers,
+      debug: opts.debug
+    })
+  } catch (e) {
+    if (e?.insufficientPoints) throw e
+    const msg = extractErrorMessage(e)
+    if (isInsufficientPointsError(msg)) {
+      const err = new Error(msg)
+      err.insufficientPoints = true
+      throw err
+    }
+    throw e
+  }
 }

@@ -331,6 +331,7 @@ import {
 } from '@/utils/aibooksPageVersions'
 import { getImageUrl } from '@/utils/characterStudioPrompt'
 import AibooksInpaintDialog from '@/components/aibooks/AibooksInpaintDialog.vue'
+import { handleInsufficientPointsError, extractApiErrorMessage } from '@/utils/insufficientPoints'
 
 
 export default {
@@ -426,6 +427,17 @@ export default {
         }
     },
     methods: {
+        async notifyApiError(error, fallbackMessage) {
+            const handled = await handleInsufficientPointsError(error, {
+                router: this.$router,
+                t: this.$t.bind(this),
+            })
+            if (!handled) {
+                ElMessage.error(error?.message || fallbackMessage || '操作失败，请重试')
+            }
+            return handled
+        },
+
         getPreviewInitialIndex(pageIndex) {
             const images = this.bookData?.images || [];
             let previewIndex = 0;
@@ -882,7 +894,7 @@ export default {
                 this.progressStatus = 'exception'
                 this.progressText = '生成失败，请重试'
                 this.saveToLocalStorage()
-                ElMessage.error(error.message || '生成失败，请重试')
+                await this.notifyApiError(error, '生成失败，请重试')
             } finally {
                 this.generatingImages = false
             }
@@ -983,8 +995,8 @@ export default {
             }
 
             if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
-                const errorMsg = responseData.desc || responseData.message?.error || `code: ${responseData.code}`
-                throw new Error(`生成图片失败: ${errorMsg}`)
+                const errorMsg = extractApiErrorMessage(responseData) || `code: ${responseData.code}`
+                throw new Error(errorMsg)
             }
 
             const result = responseData.message
@@ -1087,6 +1099,7 @@ export default {
                     console.error(`生成第 ${sceneIndex + 1} 张图片失败:`, error)
                     this.setPageImage(sceneIndex, null)
                     bumpProgress(sceneIndex + 1)
+                    if (error?.insufficientPoints) throw error
                     return null
                 }
             }

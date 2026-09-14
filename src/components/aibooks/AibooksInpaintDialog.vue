@@ -51,6 +51,8 @@ import { ref, watch, nextTick, onBeforeUnmount, getCurrentInstance } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { postImageInpaint } from '@/api/imageEditApi';
+import { handleInsufficientPointsError } from '@/utils/insufficientPoints';
+import { useRouter } from 'vue-router';
 import {
   createEmptyKeepMask,
   applyBrushStrokesToMask,
@@ -68,6 +70,7 @@ const props = defineProps({
 const emit = defineEmits(['success']);
 
 const { t } = useI18n();
+const router = useRouter();
 const { proxy } = getCurrentInstance() || {};
 
 const visible = ref(false);
@@ -270,7 +273,10 @@ async function submit() {
     visible.value = false;
     ElMessage.success(t('aibooks.inpaintSuccess'));
   } catch (e) {
-    ElMessage.error(e.message || t('aibooks.inpaintFailed'));
+    const handled = await handleInsufficientPointsError(e, { router, t });
+    if (!handled) {
+      ElMessage.error(e.message || t('aibooks.inpaintFailed'));
+    }
   } finally {
     submitting.value = false;
   }
