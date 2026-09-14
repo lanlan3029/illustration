@@ -331,7 +331,11 @@ import {
 } from '@/utils/aibooksPageVersions'
 import { getImageUrl } from '@/utils/characterStudioPrompt'
 import AibooksInpaintDialog from '@/components/aibooks/AibooksInpaintDialog.vue'
-import { handleInsufficientPointsError, extractApiErrorMessage } from '@/utils/insufficientPoints'
+import {
+    handleInsufficientPointsError,
+    extractApiErrorMessage,
+    markInsufficientPointsError,
+} from '@/utils/insufficientPoints'
 
 
 export default {
@@ -428,12 +432,16 @@ export default {
     },
     methods: {
         async notifyApiError(error, fallbackMessage) {
+            if (error?.insufficientPoints) {
+                return true
+            }
             const handled = await handleInsufficientPointsError(error, {
                 router: this.$router,
                 t: this.$t.bind(this),
             })
             if (!handled) {
-                ElMessage.error(error?.message || fallbackMessage || '操作失败，请重试')
+                const msg = extractApiErrorMessage(error?.response?.data) || error?.message
+                ElMessage.error(msg || fallbackMessage || '操作失败，请重试')
             }
             return handled
         },
@@ -545,7 +553,7 @@ export default {
                 console.error('生成绘本失败:', error)
                 this.progressStatus = 'exception'
                 this.progressText = '生成失败，请重试'
-                ElMessage.error(error.message || '生成失败，请重试')
+                await this.notifyApiError(error, '生成失败，请重试')
             } finally {
                 this.generating = false
             }
@@ -617,8 +625,8 @@ export default {
                 || responseData.statuscode === 'success'
             
             if (!isSuccess) {
-                const errorMsg = responseData.desc || responseData.message || `code: ${responseData.code}`
-                throw new Error(`生成故事失败: ${errorMsg}`)
+                const errorMsg = extractApiErrorMessage(responseData) || `code: ${responseData.code}`
+                throw markInsufficientPointsError(new Error(errorMsg), errorMsg)
             }
             
             // 提取故事数据（支持多种响应格式）
@@ -996,7 +1004,7 @@ export default {
 
             if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
                 const errorMsg = extractApiErrorMessage(responseData) || `code: ${responseData.code}`
-                throw new Error(errorMsg)
+                throw markInsufficientPointsError(new Error(errorMsg), errorMsg)
             }
 
             const result = responseData.message

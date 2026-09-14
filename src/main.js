@@ -25,6 +25,12 @@ import '@/assets/editorpro/fonts/font.css';
 import '@/assets/lefticon/iconfont.css'
 import axios from 'axios'
 import { installChunkLoadRecovery } from '@/utils/chunkLoadRecovery'
+import {
+  extractErrorMessage,
+  isInsufficientPointsErrorObject,
+  rejectIfApiPointsError,
+  scheduleInsufficientPointsDialog,
+} from '@/utils/insufficientPoints'
 
 installChunkLoadRecovery();
 
@@ -71,19 +77,28 @@ axios.interceptors.request.use(
   }
 )
 
-// 添加响应拦截器：处理 token 过期等情况
+// 添加响应拦截器：积分不足引导充值 + token 过期
 axios.interceptors.response.use(
-  response => {
-    // 正常响应直接返回
+  (response) => {
+    const pointsErr = rejectIfApiPointsError(response, {
+      router,
+      t: i18n.global.t,
+    })
+    if (pointsErr) return Promise.reject(pointsErr)
     return response
   },
-  error => {
-    // 如果返回 401 未授权，可能是 token 过期，清除登录状态
+  (error) => {
+    if (isInsufficientPointsErrorObject(error)) {
+      scheduleInsufficientPointsDialog({
+        message: extractErrorMessage(error),
+        router,
+        t: i18n.global.t,
+      })
+      error.insufficientPoints = true
+    }
     if (error.response && error.response.status === 401) {
-    
       localStorage.removeItem('token')
       localStorage.removeItem('id')
-      // 可以在这里触发登出逻辑
     }
     return Promise.reject(error)
   }

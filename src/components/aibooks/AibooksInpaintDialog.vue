@@ -273,9 +273,13 @@ async function submit() {
     visible.value = false;
     ElMessage.success(t('aibooks.inpaintSuccess'));
   } catch (e) {
-    const handled = await handleInsufficientPointsError(e, { router, t });
-    if (!handled) {
-      ElMessage.error(e.message || t('aibooks.inpaintFailed'));
+    if (e?.insufficientPoints) {
+      // 全局 axios 拦截器已弹出充值引导
+    } else {
+      const handled = await handleInsufficientPointsError(e, { router, t });
+      if (!handled) {
+        ElMessage.error(e.message || t('aibooks.inpaintFailed'));
+      }
     }
   } finally {
     submitting.value = false;
