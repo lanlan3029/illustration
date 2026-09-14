@@ -92,11 +92,11 @@
         <el-button
           type="primary"
           class="cs-generate-btn"
-          :loading="generatingView === 'front'"
-          :disabled="Boolean(generatingView && generatingView !== 'front')"
+          :loading="viewGenerating.front"
+          :disabled="isAnyViewGenerating && !viewGenerating.front"
           @click="generateView('front')"
         >
-          {{ generatingView === 'front' ? $t('characterStudio.generating') : $t('characterStudio.generateFront') }}
+          {{ viewGenerating.front ? $t('characterStudio.generating') : $t('characterStudio.generateFront') }}
         </el-button>
         <p class="cs-points-hint">{{ $t('createCharacter.pointsHint') }}</p>
       </div>
@@ -157,7 +157,7 @@
               v-if="!views.front.collected"
               type="primary"
               size="default"
-              :loading="collectingView === 'front'"
+              :loading="viewCollecting.front"
               @click="collectView('front')"
             >
               {{ $t('characterStudio.collectCharacter') }}
@@ -171,7 +171,7 @@
               v-if="!views.front.collected"
               size="small"
               link
-              :disabled="Boolean(generatingView)"
+              :disabled="isAnyViewGenerating"
               @click="generateView('front')"
             >
               {{ $t('characterStudio.regenerate') }}
@@ -234,7 +234,7 @@
                   v-if="views[viewKey].preview && !views[viewKey].collected"
                   type="primary"
                   size="small"
-                  :loading="collectingView === viewKey"
+                  :loading="viewCollecting[viewKey]"
                   @click="collectView(viewKey)"
                 >
                   {{ $t('characterStudio.collectCharacter') }}
@@ -308,8 +308,10 @@ export default {
         side: emptyViewState(DEFAULT_VIEW_PROMPTS.side),
         back: emptyViewState(DEFAULT_VIEW_PROMPTS.back),
       },
-      generatingView: null,
-      collectingView: null,
+      viewGenerating: { front: false, side: false, back: false },
+      viewCollecting: { front: false, side: false, back: false },
+      generateSeq: { front: 0, side: 0, back: 0 },
+      collectSeq: { front: 0, side: 0, back: 0 },
       previewVisible: false,
       previewTarget: '',
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
@@ -333,6 +335,9 @@ export default {
     },
     extraViewKeys() {
       return ['side', 'back'];
+    },
+    isAnyViewGenerating() {
+      return this.viewKeys.some((k) => this.viewGenerating[k]);
     },
   },
   mounted() {
@@ -374,16 +379,32 @@ export default {
       return this.$t('characterStudio.generatingView', { view: this.viewLabel(viewKey) });
     },
     isViewGenerating(viewKey) {
-      return this.generatingView === viewKey;
+      return Boolean(this.viewGenerating[viewKey]);
+    },
+    isGenerateStale(viewKey, seq) {
+      return this.generateSeq[viewKey] !== seq;
+    },
+    isCollectStale(viewKey, seq) {
+      return this.collectSeq[viewKey] !== seq;
+    },
+    finishViewGenerating(viewKey, seq) {
+      if (this.generateSeq[viewKey] === seq) {
+        this.viewGenerating[viewKey] = false;
+      }
+    },
+    finishViewCollecting(viewKey, seq) {
+      if (this.collectSeq[viewKey] === seq) {
+        this.viewCollecting[viewKey] = false;
+      }
     },
     viewProgressClass(viewKey) {
       if (this.views[viewKey]?.collected) return 'is-done';
+      if (this.viewGenerating[viewKey]) return 'is-active';
       if (viewKey === 'front' && this.views.front.preview) return 'is-active';
       if (viewKey !== 'front' && this.views.front.collected) {
         if (this.views[viewKey]?.preview) return 'is-active';
         return 'is-ready';
       }
-      if (viewKey === 'front' && this.generatingView === 'front') return 'is-active';
       return '';
     },
     loadSession() {
@@ -501,7 +522,8 @@ export default {
         return;
       }
 
-      this.generatingView = viewKey;
+      const seq = ++this.generateSeq[viewKey];
+      this.viewGenerating[viewKey] = true;
       try {
         const { imageUrl, result } = await generateCharacterImage(this.$http, {
           apiBaseUrl: this.apiBaseUrl,
@@ -510,6 +532,8 @@ export default {
           referenceImage: viewKey === 'front' ? this.referenceBase64 : '',
           characterIds: viewKey !== 'front' ? [this.savedCharacterId] : [],
         });
+
+        if (this.isGenerateStale(viewKey, seq)) return;
 
         if (result.points !== undefined && this.$store?.state) {
           this.$store.commit('setUserInfo', {
@@ -523,9 +547,10 @@ export default {
         this.saveSession();
         ElMessage.success(this.$t('characterStudio.generateSuccess'));
       } catch (e) {
+        if (this.isGenerateStale(viewKey, seq)) return;
         ElMessage.error(e.message || this.$t('characterStudio.generateFailed'));
       } finally {
-        this.generatingView = null;
+        this.finishViewGenerating(viewKey, seq);
       }
     },
     async collectView(viewKey) {
@@ -535,7 +560,8 @@ export default {
         return;
       }
 
-      this.collectingView = viewKey;
+      const seq = ++this.collectSeq[viewKey];
+      this.viewCollecting[viewKey] = true;
       try {
         const name = (this.characterName || '').trim() || this.$t('characterStudio.unnamed');
         const saved = await saveCharacterView(this.$http, {
@@ -546,6 +572,8 @@ export default {
           characterName: name,
           description: (this.description || '').trim(),
         });
+
+        if (this.isCollectStale(viewKey, seq)) return;
 
         if (!saved?.id) {
           ElMessage.error(this.$t('characterStudio.pleaseLogin'));
@@ -566,9 +594,10 @@ export default {
         this.saveSession();
         ElMessage.success(this.$t('characterStudio.collectSuccess'));
       } catch (e) {
+        if (this.isCollectStale(viewKey, seq)) return;
         ElMessage.error(e.message || this.$t('characterStudio.collectFailed'));
       } finally {
-        this.collectingView = null;
+        this.finishViewCollecting(viewKey, seq);
       }
     },
     previewUrl(url) {
