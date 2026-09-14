@@ -82,6 +82,26 @@
                             :placeholder="$t('aibooks.characterCardPlaceholder')"
                             class="character-card-textarea"
                         />
+                        <div class="character-ref-row character-my-picker">
+                            <span class="character-ref-label">{{ $t('aibooks.pickMyCharacter') }}</span>
+                            <el-select
+                                v-model="selectedCharacterId"
+                                clearable
+                                filterable
+                                size="small"
+                                class="character-select"
+                                :placeholder="$t('aibooks.pickMyCharacterPlaceholder')"
+                                :loading="loadingMyCharacters"
+                                @change="onMyCharacterChange"
+                            >
+                                <el-option
+                                    v-for="c in myCharacters"
+                                    :key="c.id || c._id"
+                                    :label="c.character_name || $t('characterStudio.unnamed')"
+                                    :value="String(c.id || c._id)"
+                                />
+                            </el-select>
+                        </div>
                         <div class="character-ref-row">
                             <span class="character-ref-label">{{ $t('aibooks.characterRefOptional') }}</span>
                             <el-upload
@@ -205,8 +225,8 @@
                                 shadow="hover">
                                 <div class="card-image">
                                     <el-image
-                                        v-if="bookData.images && bookData.images[index]"
-                                        :src="bookData.images[index]"
+                                        v-if="getPageImageUrl(index)"
+                                        :src="getPageImageUrl(index)"
                                         fit="cover"
                                         class="story-image"
                                         :preview-src-list="bookPreviewImages"
@@ -220,13 +240,27 @@
                                         <template #placeholder>
                                             <div class="image-loading">
                                                 <i class="el-icon-loading"></i>
-                                                <p>加载中...</p>
+                                                <p>{{ $t('aibooks.loading') }}</p>
                                             </div>
                                         </template>
                                     </el-image>
                                     <div v-else class="image-placeholder">
                                         <i class="el-icon-picture-outline"></i>
-                                        <p>{{ generatingImages ? '图片生成中...' : '图片未生成' }}</p>
+                                        <p>{{ generatingImages ? $t('aibooks.imageGenerating') : $t('aibooks.imageMissing') }}</p>
+                                    </div>
+                                    <div
+                                        v-if="pageVersionList(index).length > 1"
+                                        class="page-version-strip"
+                                    >
+                                        <button
+                                            v-for="(ver, vi) in pageVersionList(index)"
+                                            :key="vi"
+                                            type="button"
+                                            class="page-version-btn"
+                                            :class="{ active: vi === pageCurrentVersionIndex(index) }"
+                                            :title="ver.source === 'inpaint' ? $t('aibooks.versionInpaint') : $t('aibooks.versionGenerate')"
+                                            @click="switchPageVersion(index, vi)"
+                                        >V{{ vi + 1 }}</button>
                                     </div>
                                 </div>
                                 <div class="card-content">
@@ -234,9 +268,15 @@
                                     <p class="scene-text">{{ scene }}</p>
                                     <div class="card-actions">
                                         <el-button
+                                            v-if="getPageImageUrl(index)"
+                                            size="small"
+                                            @click="openInpaintDialog(index)">
+                                            {{ $t('aibooks.aiEdit') }}
+                                        </el-button>
+                                        <el-button
                                             type="primary"
                                             size="small"
-                                            @click="collectIllustration(bookData.images[index], index)">
+                                            @click="collectIllustration(getPageImageUrl(index), index)">
                                             {{ $t('aibooks.collectIllustration') }}
                                         </el-button>
                                     </div>
@@ -247,6 +287,12 @@
                 </el-scrollbar>
             </div>
         </main>
+
+        <AibooksInpaintDialog
+            ref="inpaintDialogRef"
+            :api-base-url="apiBaseUrl"
+            @success="onInpaintSuccess"
+        />
     </div>
 </template>
 
@@ -274,6 +320,17 @@ import {
     getStyleInfoText,
     STORY_JSON_SCHEMA_GUIDE,
 } from '@/utils/aibooksPrompts'
+import {
+    getPageDisplayUrl,
+    getPageVersions,
+    getPageCurrentVersionIndex,
+    setPageCurrentVersion,
+    pushPageVersion,
+    initPageVersionsFromImages,
+    syncImagesFromCurrentVersions,
+} from '@/utils/aibooksPageVersions'
+import { getImageUrl } from '@/utils/characterStudioPrompt'
+import AibooksInpaintDialog from '@/components/aibooks/AibooksInpaintDialog.vue'
 
 
 export default {
@@ -283,6 +340,7 @@ export default {
         DocumentCopy,
         Reading,
         Download,
+        AibooksInpaintDialog,
     },
     setup() {
         const { proxy } = getCurrentInstance()
@@ -315,6 +373,10 @@ export default {
             characterCard: '',
             characterReferenceBase64: '',
             characterReferencePreview: '',
+            selectedCharacterId: '',
+            myCharacters: [],
+            loadingMyCharacters: false,
+            inpaintSceneIndex: -1,
             generatingImages: false,
             // API 配置（模型名称由前端使用，具体 API 地址和密钥在后端配置）
             doubaoSeedModel: 'doubao-seed-1-6',
@@ -353,6 +415,7 @@ export default {
     mounted() {
         // 页面加载时从本地存储恢复数据
         this.loadFromLocalStorage();
+        this.fetchMyCharacters();
         // 设置自动保存
         this.setupAutoSave();
     },
@@ -462,7 +525,8 @@ export default {
                 }
                 
                 ElMessage.success('故事创作完成！请确认角色设定卡并编辑分镜提示词')
-                
+                this.fetchMyCharacters()
+
                 // 保存到本地存储
                 this.saveToLocalStorage()
             } catch (error) {
@@ -616,7 +680,105 @@ export default {
         },
         
         hasPageImage(sceneIndex) {
-            return Boolean(this.bookData?.images?.[sceneIndex])
+            return Boolean(getPageDisplayUrl(this.bookData, sceneIndex))
+        },
+
+        getPageImageUrl(sceneIndex) {
+            return getPageDisplayUrl(this.bookData, sceneIndex)
+        },
+
+        pageVersionList(sceneIndex) {
+            return getPageVersions(this.bookData, sceneIndex)
+        },
+
+        pageCurrentVersionIndex(sceneIndex) {
+            return getPageCurrentVersionIndex(this.bookData, sceneIndex)
+        },
+
+        switchPageVersion(sceneIndex, versionIndex) {
+            if (setPageCurrentVersion(this.bookData, sceneIndex, versionIndex)) {
+                this.saveToLocalStorage()
+            }
+        },
+
+        async openInpaintDialog(sceneIndex) {
+            const url = getPageDisplayUrl(this.bookData, sceneIndex)
+            if (!url) {
+                ElMessage.warning(this.$t('aibooks.inpaintNoImage'))
+                return
+            }
+            this.inpaintSceneIndex = sceneIndex
+            let imageBase64 = ''
+            try {
+                imageBase64 = await this.imageToBase64(url)
+            } catch (e) {
+                console.warn('inpaint source image base64 failed:', e)
+            }
+            this.$refs.inpaintDialogRef?.open({ imageUrl: url, imageBase64 })
+        },
+
+        onInpaintSuccess({ imageUrl, prompt }) {
+            const sceneIndex = this.inpaintSceneIndex
+            if (sceneIndex < 0 || !imageUrl) return
+            pushPageVersion(this.bookData, sceneIndex, {
+                url: imageUrl,
+                source: 'inpaint',
+                prompt: prompt || '',
+            })
+            this.inpaintSceneIndex = -1
+            this.saveToLocalStorage()
+        },
+
+        async fetchMyCharacters() {
+            const userId = localStorage.getItem('id')
+            const token = localStorage.getItem('token')
+            if (!userId || !token) {
+                this.myCharacters = []
+                return
+            }
+            this.loadingMyCharacters = true
+            try {
+                const apiUrl = this.apiBaseUrl
+                    ? `${this.apiBaseUrl}/character`
+                    : '/character'
+                const res = await this.$http.get(apiUrl, {
+                    params: { user_id: userId },
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                const list = res?.data?.data || res?.data?.message || res?.data?.list || []
+                this.myCharacters = Array.isArray(list) ? list : []
+            } catch (e) {
+                this.myCharacters = []
+            } finally {
+                this.loadingMyCharacters = false
+            }
+        },
+
+        async onMyCharacterChange(characterId) {
+            if (!characterId) {
+                this.clearCharacterReference()
+                return
+            }
+            const item = this.myCharacters.find(
+                (c) => String(c.id || c._id) === String(characterId)
+            )
+            if (!item) return
+            const imageUrl = getImageUrl(item.image_url || item.character_image_url)
+            if (!imageUrl) {
+                ElMessage.warning(this.$t('aibooks.myCharacterNoImage'))
+                this.selectedCharacterId = ''
+                return
+            }
+            try {
+                const dataUrl = await this.imageToBase64(imageUrl)
+                this.characterReferenceBase64 = dataUrl
+                this.characterReferencePreview = imageUrl.startsWith('data:') ? dataUrl : imageUrl
+                ElMessage.success(this.$t('aibooks.myCharacterSelected'))
+            } catch (e) {
+                console.error('my character ref load failed:', e)
+                ElMessage.error(this.$t('aibooks.characterRefFailed'))
+                this.selectedCharacterId = ''
+            }
         },
 
         removeImagePrompt(index) {
@@ -841,9 +1003,13 @@ export default {
             return imageUrl
         },
 
-        setPageImage(index, imageUrl) {
+        setPageImage(index, imageUrl, { source = 'generate', prompt = '' } = {}) {
             if (!this.bookData || !Array.isArray(this.bookData.images)) return
-            this.bookData.images[index] = imageUrl
+            if (imageUrl) {
+                pushPageVersion(this.bookData, index, { url: imageUrl, source, prompt })
+            } else {
+                this.bookData.images[index] = null
+            }
             this.saveToLocalStorage()
         },
 
@@ -1001,6 +1167,7 @@ export default {
             }
             try {
                 const dataUrl = await this.fileToBase64(file, true)
+                this.selectedCharacterId = ''
                 this.characterReferenceBase64 = dataUrl
                 this.characterReferencePreview = dataUrl
                 ElMessage.success(this.$t('aibooks.characterRefReady'))
@@ -1011,6 +1178,7 @@ export default {
         },
 
         clearCharacterReference() {
+            this.selectedCharacterId = ''
             this.characterReferenceBase64 = ''
             this.characterReferencePreview = ''
         },
@@ -1178,8 +1346,13 @@ export default {
                         // 恢复生成的绘本数据
                         if (data.bookData) {
                             this.bookData = data.bookData;
+                            initPageVersionsFromImages(this.bookData);
+                            syncImagesFromCurrentVersions(this.bookData);
                         }
-                        
+                        if (data.selectedCharacterId) {
+                            this.selectedCharacterId = data.selectedCharacterId;
+                        }
+
                         console.log('已从本地存储恢复AI绘本数据');
                     } else {
                         // 数据已过期，清除
@@ -1206,10 +1379,11 @@ export default {
                     characterProfiles: this.characterProfiles,
                     characterCard: this.characterCard,
                     characterReferencePreview: this.characterReferencePreview || '',
+                    selectedCharacterId: this.selectedCharacterId || '',
                     bookData: this.bookData,
                     timestamp: Date.now()
                 };
-                
+
                 localStorage.setItem('aibooks_data', JSON.stringify(dataToSave));
             } catch (error) {
                 console.error('保存AI绘本数据到本地存储失败:', error);
@@ -1227,6 +1401,7 @@ export default {
                         characterProfiles: this.characterProfiles,
                         characterCard: this.characterCard,
                         characterReferencePreview: this.characterReferencePreview || '',
+                        selectedCharacterId: this.selectedCharacterId || '',
                         bookData: this.bookData,
                         timestamp: Date.now()
                     };
@@ -1657,15 +1832,17 @@ export default {
     overflow: hidden;
     background-color: #f5f7fa;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     border-radius: 8px 8px 0 0;
     flex-shrink: 0;
 }
 
 .story-image {
     width: 100%;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
 .image-slot,
@@ -1739,6 +1916,44 @@ export default {
     margin-top: auto;
     padding-top: 12px;
     border-top: 1px solid #ebeef5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.character-my-picker {
+    margin-bottom: 8px;
+}
+
+.character-select {
+    flex: 1;
+    min-width: 0;
+}
+
+.page-version-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.92);
+    border-top: 1px solid #ebeef5;
+}
+
+.page-version-btn {
+    border: 1px solid #dcdfe6;
+    background: #fff;
+    color: #606266;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.page-version-btn.active {
+    border-color: #409eff;
+    background: #ecf5ff;
+    color: #409eff;
 }
 
 @media (max-width: 1200px) {
@@ -1838,8 +2053,8 @@ export default {
 /* 风格选择（带预览图） */
 .style-picker-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
     margin-top: 8px;
     width: 100%;
 }
@@ -1849,8 +2064,8 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
-    padding: 8px;
+    gap: 4px;
+    padding: 6px;
     border-radius: 10px;
     border: 1px solid #ececf0;
     background: #fff;
@@ -1897,8 +2112,8 @@ export default {
 }
 
 .style-picker-label {
-    font-size: 12px;
-    line-height: 1.35;
+    font-size: 11px;
+    line-height: 1.3;
     color: #303133;
     font-weight: 500;
     display: -webkit-box;
@@ -1906,12 +2121,6 @@ export default {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-@media (max-width: 768px) {
-    .style-picker-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
 }
 
 @media (max-width: 420px) {
