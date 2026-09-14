@@ -27,6 +27,7 @@
           :rows="5"
           :placeholder="$t('characterStudio.describePlaceholder')"
         />
+        <p class="cs-field-hint">{{ $t('characterStudio.describeHint') }}</p>
         <div class="cs-prompt-toolbar">
           <div class="cs-prompt-toolbar-left">
             <el-upload
@@ -87,42 +88,75 @@
         </section>
       </div>
 
-      <el-button
-        type="primary"
-        class="cs-generate-btn"
-        :loading="generatingView === 'front'"
-        @click="generateView('front')"
-      >
-        {{ generatingView === 'front' ? $t('characterStudio.generating') : $t('characterStudio.generate') }}
-      </el-button>
-      <p class="cs-points-hint">{{ $t('createCharacter.pointsHint') }}</p>
+      <div class="cs-panel-footer">
+        <el-button
+          type="primary"
+          class="cs-generate-btn"
+          :loading="generatingView === 'front'"
+          :disabled="Boolean(generatingView && generatingView !== 'front')"
+          @click="generateView('front')"
+        >
+          {{ generatingView === 'front' ? $t('characterStudio.generating') : $t('characterStudio.generateFront') }}
+        </el-button>
+        <p class="cs-points-hint">{{ $t('createCharacter.pointsHint') }}</p>
+      </div>
     </aside>
 
     <main class="cs-gallery">
-      <div class="cs-gallery-toolbar">
-        <span class="cs-gallery-title">{{ $t('characterStudio.generations') }}</span>
-      </div>
-
-      <div v-if="generatingView" class="cs-generating">
-        <el-icon class="is-loading"><Loading /></el-icon>
-        <p>{{ $t('characterStudio.generatingWait') }}</p>
-      </div>
-
-      <!-- 正面 -->
-      <section class="cs-view-card">
-        <div class="cs-view-head">
-          <span class="cs-view-label">{{ $t('characterStudio.viewFront') }}</span>
-          <span v-if="views.front.collected" class="cs-view-badge">{{ $t('characterStudio.collected') }}</span>
+      <header class="cs-gallery-header">
+        <div>
+          <h2 class="cs-gallery-title">{{ $t('characterStudio.generations') }}</h2>
+          <p class="cs-gallery-sub">{{ $t('characterStudio.workflowSubtitle') }}</p>
         </div>
-        <div v-if="!views.front.preview && !generatingView" class="cs-view-empty">
-          {{ $t('characterStudio.noGenerations') }}
+        <div class="cs-progress" role="list">
+          <div
+            v-for="viewKey in viewKeys"
+            :key="'progress-' + viewKey"
+            class="cs-progress-item"
+            :class="viewProgressClass(viewKey)"
+            role="listitem"
+          >
+            <span class="cs-progress-dot" />
+            <span class="cs-progress-label">{{ viewLabel(viewKey) }}</span>
+          </div>
         </div>
-        <div v-if="views.front.preview" class="cs-view-body">
-          <img :src="views.front.preview" alt="front" class="cs-view-img" @click="previewUrl(views.front.preview)" />
-          <div class="cs-view-actions">
+      </header>
+
+      <div class="cs-views-layout">
+        <!-- 正面：主卡片 -->
+        <article
+          class="cs-view-card cs-view-card--hero"
+          :class="{ 'is-collected': views.front.collected }"
+        >
+          <div class="cs-view-head">
+            <span class="cs-view-label">{{ $t('characterStudio.viewFront') }}</span>
+            <span v-if="views.front.collected" class="cs-view-badge">{{ $t('characterStudio.collected') }}</span>
+            <span v-else-if="views.front.preview" class="cs-view-badge cs-view-badge--pending">{{ $t('characterStudio.pendingCollect') }}</span>
+          </div>
+
+          <div class="cs-view-stage">
+            <div v-if="isViewGenerating('front')" class="cs-view-loading">
+              <el-icon class="is-loading cs-view-loading-icon"><Loading /></el-icon>
+              <p>{{ $t('characterStudio.generatingWait') }}</p>
+            </div>
+            <img
+              v-else-if="views.front.preview"
+              :src="views.front.preview"
+              alt="front"
+              class="cs-view-img"
+              @click="previewUrl(views.front.preview)"
+            />
+            <div v-else class="cs-view-empty">
+              <span class="cs-view-empty-icon">👤</span>
+              <p>{{ $t('characterStudio.noGenerations') }}</p>
+            </div>
+          </div>
+
+          <div v-if="views.front.preview && !isViewGenerating('front')" class="cs-view-actions">
             <el-button
               v-if="!views.front.collected"
               type="primary"
+              size="default"
               :loading="collectingView === 'front'"
               @click="collectView('front')"
             >
@@ -131,59 +165,90 @@
             <template v-else>
               <el-button size="small" @click="downloadImage(views.front.preview)">{{ $t('characterStudio.download') }}</el-button>
               <el-button size="small" @click="openEditorPro(views.front.preview)">{{ $t('characterStudio.editInEditor') }}</el-button>
-              <el-button size="small" @click="goGroupImages(views.front.preview)">{{ $t('characterStudio.createGroup') }}</el-button>
+              <el-button size="small" type="primary" plain @click="goGroupImages(views.front.preview)">{{ $t('characterStudio.createGroup') }}</el-button>
             </template>
-          </div>
-        </div>
-      </section>
-
-      <!-- 收集正面后：侧面 / 背面 -->
-      <section v-if="views.front.collected" class="cs-extra-views">
-        <p class="cs-extra-hint">{{ $t('characterStudio.extraViewsHint') }}</p>
-
-        <div
-          v-for="viewKey in ['side', 'back']"
-          :key="viewKey"
-          class="cs-view-card cs-view-card--compact"
-        >
-          <div class="cs-view-head">
-            <span class="cs-view-label">{{ $t(`characterStudio.view${viewKey.charAt(0).toUpperCase()}${viewKey.slice(1)}`) }}</span>
-            <span v-if="views[viewKey].collected" class="cs-view-badge">{{ $t('characterStudio.collected') }}</span>
-          </div>
-          <el-input
-            v-model="views[viewKey].prompt"
-            type="textarea"
-            :rows="2"
-            :placeholder="$t('characterStudio.viewPromptPlaceholder')"
-            class="cs-view-prompt"
-          />
-          <div class="cs-view-actions">
             <el-button
+              v-if="!views.front.collected"
               size="small"
-              :loading="generatingView === viewKey"
-              @click="generateView(viewKey)"
+              link
+              :disabled="Boolean(generatingView)"
+              @click="generateView('front')"
             >
-              {{ $t(`characterStudio.generate${viewKey.charAt(0).toUpperCase()}${viewKey.slice(1)}`) }}
-            </el-button>
-            <el-button
-              v-if="views[viewKey].preview && !views[viewKey].collected"
-              type="primary"
-              size="small"
-              :loading="collectingView === viewKey"
-              @click="collectView(viewKey)"
-            >
-              {{ $t('characterStudio.collectCharacter') }}
+              {{ $t('characterStudio.regenerate') }}
             </el-button>
           </div>
-          <img
-            v-if="views[viewKey].preview"
-            :src="views[viewKey].preview"
-            :alt="viewKey"
-            class="cs-view-img cs-view-img--compact"
-            @click="previewUrl(views[viewKey].preview)"
-          />
+        </article>
+
+        <!-- 侧面 / 背面 -->
+        <div class="cs-extra-grid" :class="{ 'is-unlocked': views.front.collected }">
+          <article
+            v-for="viewKey in extraViewKeys"
+            :key="viewKey"
+            class="cs-view-card cs-view-card--extra"
+            :class="{
+              'is-collected': views[viewKey].collected,
+              'is-locked': !views.front.collected,
+            }"
+          >
+            <div class="cs-view-head">
+              <span class="cs-view-label">{{ viewLabel(viewKey) }}</span>
+              <span v-if="views[viewKey].collected" class="cs-view-badge">{{ $t('characterStudio.collected') }}</span>
+            </div>
+
+            <template v-if="views.front.collected">
+              <el-input
+                v-model="views[viewKey].prompt"
+                type="textarea"
+                :rows="2"
+                :placeholder="$t('characterStudio.viewPromptPlaceholder')"
+                class="cs-view-prompt"
+                :disabled="isViewGenerating(viewKey)"
+              />
+
+              <div class="cs-view-stage cs-view-stage--compact">
+                <div v-if="isViewGenerating(viewKey)" class="cs-view-loading">
+                  <el-icon class="is-loading cs-view-loading-icon"><Loading /></el-icon>
+                  <p>{{ generatingLabel(viewKey) }}</p>
+                </div>
+                <img
+                  v-else-if="views[viewKey].preview"
+                  :src="views[viewKey].preview"
+                  :alt="viewKey"
+                  class="cs-view-img"
+                  @click="previewUrl(views[viewKey].preview)"
+                />
+                <div v-else class="cs-view-empty cs-view-empty--compact">
+                  <p>{{ $t('characterStudio.extraViewEmpty') }}</p>
+                </div>
+              </div>
+
+              <div class="cs-view-actions">
+                <el-button
+                  size="small"
+                  :loading="isViewGenerating(viewKey)"
+                  @click="generateView(viewKey)"
+                >
+                  {{ generateLabel(viewKey) }}
+                </el-button>
+                <el-button
+                  v-if="views[viewKey].preview && !views[viewKey].collected"
+                  type="primary"
+                  size="small"
+                  :loading="collectingView === viewKey"
+                  @click="collectView(viewKey)"
+                >
+                  {{ $t('characterStudio.collectCharacter') }}
+                </el-button>
+              </div>
+            </template>
+
+            <div v-else class="cs-view-locked">
+              <span class="cs-view-locked-icon">🔒</span>
+              <p>{{ $t('characterStudio.viewLocked') }}</p>
+            </div>
+          </article>
         </div>
-      </section>
+      </div>
 
       <el-image-viewer
         v-if="previewVisible"
@@ -206,7 +271,6 @@ import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff'
 import { navigateTo } from '@/utils/navigate';
 import {
   ASPECT_RATIO_OPTIONS,
-  DEFAULT_ACTION,
   DEFAULT_VIEW_PROMPTS,
   buildCharacterStudioPrompt,
   buildViewPrompt,
@@ -264,6 +328,12 @@ export default {
       const s = this.styles.find((x) => x.key === this.artStyleKey);
       return s?.image || null;
     },
+    viewKeys() {
+      return ['front', 'side', 'back'];
+    },
+    extraViewKeys() {
+      return ['side', 'back'];
+    },
   },
   mounted() {
     clearLegacyCharacterDrafts();
@@ -291,6 +361,30 @@ export default {
     },
     goDashboard() {
       this.$router.push({ name: 'character-studio' });
+    },
+    viewLabel(viewKey) {
+      const key = `characterStudio.view${viewKey.charAt(0).toUpperCase()}${viewKey.slice(1)}`;
+      return this.$t(key);
+    },
+    generateLabel(viewKey) {
+      const key = `characterStudio.generate${viewKey.charAt(0).toUpperCase()}${viewKey.slice(1)}`;
+      return this.$t(key);
+    },
+    generatingLabel(viewKey) {
+      return this.$t('characterStudio.generatingView', { view: this.viewLabel(viewKey) });
+    },
+    isViewGenerating(viewKey) {
+      return this.generatingView === viewKey;
+    },
+    viewProgressClass(viewKey) {
+      if (this.views[viewKey]?.collected) return 'is-done';
+      if (viewKey === 'front' && this.views.front.preview) return 'is-active';
+      if (viewKey !== 'front' && this.views.front.collected) {
+        if (this.views[viewKey]?.preview) return 'is-active';
+        return 'is-ready';
+      }
+      if (viewKey === 'front' && this.generatingView === 'front') return 'is-active';
+      return '';
     },
     loadSession() {
       try {
@@ -384,9 +478,9 @@ export default {
       if (viewKey === 'front') {
         return buildCharacterStudioPrompt({
           description: (this.description || '').trim(),
-          action: DEFAULT_ACTION,
           styleInfo,
           withReferenceImage: Boolean(this.referenceBase64),
+          referenceFrontSheet: true,
         });
       }
       return buildViewPrompt({
@@ -540,8 +634,18 @@ export default {
   flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #ececf0;
-  padding: 20px 18px 32px;
+  padding: 20px 18px 16px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cs-panel-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #fff 80%, rgba(255, 255, 255, 0));
 }
 
 .cs-back {
@@ -613,6 +717,13 @@ export default {
   font-weight: 600;
   color: #303133;
   margin-bottom: 8px;
+}
+
+.cs-field-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.45;
 }
 
 .cs-ref-preview {
@@ -716,36 +827,114 @@ export default {
 
 .cs-gallery {
   flex: 1;
-  padding: 24px;
+  padding: 24px 28px 32px;
   overflow-y: auto;
+  background: #f5f6f8;
 }
 
-.cs-gallery-toolbar {
-  margin-bottom: 16px;
+.cs-gallery-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .cs-gallery-title {
-  font-size: 18px;
+  margin: 0 0 4px;
+  font-size: 20px;
   font-weight: 700;
   color: #1f1f1f;
 }
 
-.cs-generating {
-  text-align: center;
-  padding: 24px;
-  color: #666;
+.cs-gallery-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #909399;
+  line-height: 1.45;
+}
+
+.cs-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.cs-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+.cs-progress-item:not(:last-child)::after {
+  content: '›';
+  margin-left: 6px;
+  color: #dcdfe6;
+  font-size: 14px;
+}
+
+.cs-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dcdfe6;
+  flex-shrink: 0;
+}
+
+.cs-progress-item.is-active {
+  color: #8167a9;
+  font-weight: 600;
+}
+
+.cs-progress-item.is-active .cs-progress-dot {
+  background: #8167a9;
+  box-shadow: 0 0 0 3px rgba(129, 103, 169, 0.2);
+}
+
+.cs-progress-item.is-ready {
+  color: #606266;
+}
+
+.cs-progress-item.is-ready .cs-progress-dot {
+  background: #b8a8d4;
+}
+
+.cs-progress-item.is-done {
+  color: #529b2e;
+}
+
+.cs-progress-item.is-done .cs-progress-dot {
+  background: #67c23a;
+}
+
+.cs-views-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .cs-view-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 16px 18px 18px;
+  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
+  border: 1px solid #eef0f4;
 }
 
-.cs-view-card--compact {
-  margin-bottom: 12px;
+.cs-view-card.is-collected {
+  border-color: #b3e19d;
+}
+
+.cs-view-card--hero {
+  max-width: 520px;
 }
 
 .cs-view-head {
@@ -756,76 +945,170 @@ export default {
 }
 
 .cs-view-label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: #303133;
 }
 
 .cs-view-badge {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: #529b2e;
   background: #f0f9eb;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
 }
 
-.cs-view-empty {
-  color: #909399;
-  font-size: 13px;
-  padding: 24px 0;
-  text-align: center;
+.cs-view-badge--pending {
+  color: #b88230;
+  background: #fdf6ec;
 }
 
-.cs-view-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.cs-view-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: repeating-conic-gradient(#ececef 0% 25%, #fafafa 0% 50%) 50% / 18px 18px;
+  border: 1px dashed #e4e7ed;
+}
+
+.cs-view-stage--compact {
+  max-height: 220px;
+  aspect-ratio: 1;
 }
 
 .cs-view-img {
   width: 100%;
-  max-width: 360px;
-  aspect-ratio: 1;
+  height: 100%;
   object-fit: contain;
-  background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 50% / 16px 16px;
-  border-radius: 8px;
   cursor: pointer;
+  display: block;
 }
 
-.cs-view-img--compact {
-  max-width: 240px;
-  margin-top: 12px;
+.cs-view-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  color: #606266;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.cs-view-loading-icon {
+  font-size: 28px;
+  color: #8167a9;
+}
+
+.cs-view-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  color: #909399;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cs-view-empty--compact {
+  padding: 16px;
+  font-size: 12px;
+}
+
+.cs-view-empty-icon {
+  font-size: 36px;
+  opacity: 0.35;
+  margin-bottom: 8px;
 }
 
 .cs-view-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  margin-top: 14px;
 }
 
 .cs-view-prompt {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.cs-extra-views {
-  margin-top: 8px;
+.cs-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  opacity: 0.55;
+  filter: grayscale(0.15);
+  transition: opacity 0.25s ease, filter 0.25s ease;
 }
 
-.cs-extra-hint {
+.cs-extra-grid.is-unlocked {
+  opacity: 1;
+  filter: none;
+}
+
+.cs-view-card--extra.is-locked {
+  min-height: 160px;
+}
+
+.cs-view-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 20px;
+  text-align: center;
+  color: #909399;
   font-size: 13px;
-  color: #606266;
-  margin: 0 0 12px;
-  line-height: 1.5;
+  background: #fafbfc;
+  border-radius: 10px;
+  border: 1px dashed #e4e7ed;
+}
+
+.cs-view-locked-icon {
+  font-size: 22px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+@media (max-width: 1100px) {
+  .cs-extra-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
   .cs-workbench {
     flex-direction: column;
   }
+
   .cs-panel {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #ececf0;
+  }
+
+  .cs-view-card--hero {
+    max-width: none;
+  }
+
+  .cs-gallery-header {
+    flex-direction: column;
+  }
+
+  .cs-progress {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 }
 </style>
