@@ -570,14 +570,11 @@ export default {
 
 .now-mood-hero {
   flex-shrink: 0;
-  margin-bottom: 18px;
-  padding: 18px 14px 16px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.03),
-    0 8px 24px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+  padding: 4px 0 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .now-primary-moods {
@@ -607,30 +604,31 @@ export default {
 }
 
 .now-mood-btn-ring {
-  width: clamp(52px, 11vw, 64px);
-  height: clamp(52px, 11vw, 64px);
-  border-radius: 50%;
+  width: clamp(48px, 10vw, 56px);
+  height: clamp(48px, 10vw, 56px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 6px 16px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.25s ease, background 0.25s ease;
-}
-
-.now-mood-btn--picked .now-mood-btn-ring,
-.now-panel--has-mood .now-mood-btn:hover .now-mood-btn-ring {
-  box-shadow:
-    0 0 0 3px var(--now-mood-soft, rgba(255, 255, 255, 0.5)),
-    0 0 0 5px var(--now-mood-accent, var(--md-accent));
+  background: transparent;
+  box-shadow: none;
 }
 
 .now-mood-btn img {
-  width: clamp(38px, 8vw, 46px);
-  height: clamp(38px, 8vw, 46px);
+  width: clamp(44px, 9vw, 52px);
+  height: clamp(44px, 9vw, 52px);
   object-fit: contain;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.now-mood-btn--picked img,
+.now-panel--has-mood .now-mood-btn:hover img {
+  transform: scale(1.06);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.12));
+}
+
+.now-mood-btn--picked .now-mood-btn-label {
+  color: var(--now-mood-accent, var(--md-accent));
+  font-weight: 600;
 }
 
 .now-mood-btn-label {
@@ -679,14 +677,15 @@ export default {
 
 .now-more-btn {
   display: block;
-  margin: 14px auto 0;
+  margin: 10px auto 0;
   border: none;
-  background: rgba(255, 255, 255, 0.6);
-  padding: 6px 14px;
-  font-size: 11px;
+  background: transparent;
+  padding: 6px 0;
+  font-size: 12px;
   color: var(--md-muted);
-  border-radius: 999px;
   cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .now-extra-moods {
@@ -929,10 +928,9 @@ export default {
 
 .now-panel--dialog .now-mood-hero {
   margin-bottom: 4px;
-  padding: 14px 12px 12px;
-  border-radius: 22px;
-  background: var(--md-surface, #f8fafc);
-  border: 1px solid var(--md-border);
+  padding: 4px 0 8px;
+  background: transparent;
+  border: none;
   box-shadow: none;
 }
 
