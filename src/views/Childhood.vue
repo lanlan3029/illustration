@@ -1,32 +1,28 @@
 <template>
   <div class="moment-page">
-    <nav class="moment-nav">
-      <router-link to="/newyear/gallery" class="moment-nav__link">
-        {{ $t('childhoodMoments.viewWall') }}
-      </router-link>
-    </nav>
+    <MuseumSceneBackground :playing="!prefersReducedMotion" />
 
-    <section class="moment-hero">
-      <div class="moment-hero__clouds" aria-hidden="true">
-        <svg class="moment-cloud moment-cloud--a" viewBox="0 0 120 40" fill="none">
-          <path
-            d="M20 28C8 28 2 22 8 16C10 8 22 6 28 10C32 4 44 2 52 8C58 4 70 6 74 14C86 12 94 20 88 28H20Z"
-            stroke="#111"
-            stroke-width="2"
-            fill="#fff"
-          />
-        </svg>
-        <svg class="moment-cloud moment-cloud--b" viewBox="0 0 100 36" fill="none">
-          <path
-            d="M16 24C6 24 2 18 8 12C12 6 24 4 30 8C34 4 46 2 52 8C60 4 72 8 74 16C84 14 90 22 82 24H16Z"
-            stroke="#111"
-            stroke-width="1.8"
-            fill="#fff"
-          />
-        </svg>
-      </div>
+    <button
+      type="button"
+      class="moment-museum-entry"
+      :aria-label="$t('childhoodMoments.museumEnterHint')"
+      @click="goToGallery"
+    >
+      <span class="moment-museum-entry__veil" />
+      <span class="moment-museum-entry__content">
+        <span class="moment-museum-entry__icon">→</span>
+        <span class="moment-museum-entry__text">{{ $t('childhoodMoments.museumEnterHint') }}</span>
+      </span>
+    </button>
 
-      <div class="moment-hero__inner">
+    <div class="moment-body">
+      <nav class="moment-nav">
+        <router-link to="/childhood/gallery" class="moment-nav__link">
+          {{ $t('childhoodMoments.viewWall') }}
+        </router-link>
+      </nav>
+
+      <section class="moment-hero">
         <div class="moment-hero__copy">
           <p class="moment-kicker">{{ $t('childhoodMoments.eyebrow') }}</p>
           <h1 class="moment-title">
@@ -36,12 +32,7 @@
           <p class="moment-lead">{{ $t('childhoodMoments.lead') }}</p>
           <p class="moment-tagline">{{ $t('childhoodMoments.tagline') }}</p>
         </div>
-
-        <div class="moment-hero__scene">
-          <ChildrenCuateIllustration variant="hero" :playing="!prefersReducedMotion" />
-        </div>
-      </div>
-    </section>
+      </section>
 
     <section class="moment-workspace">
       <div class="moment-workspace__grid">
@@ -113,7 +104,7 @@
     <section v-if="recentItems.length" class="moment-recent">
       <div class="moment-recent__head">
         <h2>{{ $t('childhoodMoments.recentWall') }}</h2>
-        <router-link to="/newyear/gallery">{{ $t('childhoodMoments.seeAll') }}</router-link>
+        <router-link to="/childhood/gallery">{{ $t('childhoodMoments.seeAll') }}</router-link>
       </div>
       <div class="moment-recent__grid">
         <button
@@ -142,13 +133,14 @@
         class="moment-preview-image"
       />
     </el-dialog>
+    </div>
   </div>
 </template>
 
 <script>
 import { ElMessage } from 'element-plus'
 import PolaroidFrame from '@/components/childhood/PolaroidFrame.vue'
-import ChildrenCuateIllustration from '@/components/childhood/ChildrenCuateIllustration.vue'
+import MuseumSceneBackground from '@/components/childhood/MuseumSceneBackground.vue'
 import submitImage from '@/assets/images/submit.webp'
 import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 import {
@@ -161,8 +153,8 @@ import {
 } from '@/utils/childhoodMoments'
 
 export default {
-  name: 'NewYear',
-  components: { PolaroidFrame, ChildrenCuateIllustration },
+  name: 'Childhood',
+  components: { PolaroidFrame, MuseumSceneBackground },
   data() {
     return {
       subjectScene: '',
@@ -203,6 +195,10 @@ export default {
     this.initWeChatShare()
   },
   methods: {
+    goToGallery() {
+      this.$router.push('/childhood/gallery')
+    },
+
     getImageUrl(item) {
       if (!item) return ''
       let picture = item.content || item.picture || item.image_url || item.url || item.image
@@ -471,10 +467,97 @@ export default {
 
 <style scoped>
 .moment-page {
+  position: relative;
   min-height: 100vh;
   background: #fff;
   color: #111;
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
+}
+
+.moment-museum-entry {
+  position: absolute;
+  top: 0;
+  left: 38%;
+  right: 0;
+  height: clamp(300px, 56vh, 560px);
+  z-index: 2;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.moment-museum-entry__veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.35s ease;
+}
+
+.moment-museum-entry:hover .moment-museum-entry__veil,
+.moment-museum-entry:focus-visible .moment-museum-entry__veil {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.moment-museum-entry__content {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.moment-museum-entry__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  font-size: 20px;
+  animation: museum-pulse 2.4s ease-in-out infinite;
+}
+
+.moment-museum-entry__text {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.moment-museum-entry:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: -4px;
+}
+
+@keyframes museum-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+  }
+}
+
+.moment-body {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.moment-body > * {
+  pointer-events: auto;
 }
 
 .moment-nav {
@@ -497,46 +580,17 @@ export default {
 }
 
 .moment-hero {
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(300px, 56vh, 560px);
+  padding: 0 clamp(16px, 4vw, 48px) clamp(20px, 4vh, 36px);
+  box-sizing: border-box;
+}
+
+.moment-hero__copy {
   position: relative;
-  padding: 12px clamp(16px, 4vw, 48px) 0;
-  overflow: hidden;
-}
-
-.moment-hero__clouds {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.moment-cloud {
-  position: absolute;
-  opacity: 0.9;
-}
-
-.moment-cloud--a {
-  top: 8%;
-  left: 6%;
-  width: min(140px, 22vw);
-  animation: cloud-drift-a 28s linear infinite;
-}
-
-.moment-cloud--b {
-  top: 14%;
-  right: 10%;
-  width: min(110px, 18vw);
-  animation: cloud-drift-b 34s linear infinite;
-}
-
-.moment-hero__inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 46%);
-  gap: clamp(16px, 4vw, 40px);
-  align-items: end;
-  max-width: 1080px;
-  margin: 0 auto;
+  z-index: 3;
+  max-width: min(540px, 100%);
 }
 
 .moment-kicker {
@@ -544,7 +598,8 @@ export default {
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #666;
+  color: #444;
+  text-shadow: 0 1px 16px rgba(255, 255, 255, 0.95);
 }
 
 .moment-title {
@@ -553,6 +608,7 @@ export default {
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.02em;
+  text-shadow: 0 2px 20px rgba(255, 255, 255, 0.92);
 }
 
 .moment-title span {
@@ -564,7 +620,8 @@ export default {
   max-width: 28em;
   font-size: clamp(15px, 2.2vw, 18px);
   line-height: 1.75;
-  color: #333;
+  color: #222;
+  text-shadow: 0 1px 14px rgba(255, 255, 255, 0.9);
 }
 
 .moment-tagline {
@@ -572,16 +629,13 @@ export default {
   max-width: 26em;
   font-size: 14px;
   line-height: 1.8;
-  color: #666;
-}
-
-.moment-hero__scene {
-  justify-self: end;
-  width: 100%;
+  color: #444;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.88);
 }
 
 .moment-workspace {
   padding: clamp(32px, 6vw, 64px) clamp(16px, 4vw, 48px) 48px;
+  background: #fff;
   border-top: 1px solid #eee;
 }
 
@@ -788,30 +842,6 @@ export default {
   max-height: 60vh;
 }
 
-@keyframes cloud-drift-a {
-  0% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(40px);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
-@keyframes cloud-drift-b {
-  0% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(-32px);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
 @keyframes line-pulse {
   0%,
   100% {
@@ -825,25 +855,27 @@ export default {
 }
 
 @media (max-width: 860px) {
-  .moment-hero__inner {
-    grid-template-columns: 1fr;
+  .moment-museum-entry {
+    left: 0;
   }
 
-  .moment-hero__scene {
-    order: -1;
-    max-width: 420px;
-    margin: 0 auto;
+  .moment-museum-entry__content {
+    bottom: 22%;
   }
 
   .moment-workspace__grid {
     grid-template-columns: 1fr;
   }
+
+  .moment-hero {
+    align-items: flex-end;
+    padding-bottom: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .moment-cloud--a,
-  .moment-cloud--b,
-  .moment-generating__line {
+  .moment-generating__line,
+  .moment-museum-entry__icon {
     animation: none;
   }
 }
