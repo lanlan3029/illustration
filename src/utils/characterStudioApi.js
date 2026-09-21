@@ -41,7 +41,10 @@ export async function generateCharacterImage(http, {
     requestData.image = referenceImage;
   }
 
-  const responseData = await postCreateCharacter(http, requestData, { apiBaseUrl });
+  const responseData = await postCreateCharacter(http, requestData, {
+    apiBaseUrl,
+    source: 'character_studio',
+  });
   if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
     throw new Error(responseData?.desc || responseData?.message?.error || 'generate failed');
   }

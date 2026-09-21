@@ -31,6 +31,10 @@
             <span class="mp-quick-ico mp-quick-ico--set">⚙</span>
             <span>{{ $t('nav.accountSettings') || '设置' }}</span>
           </button>
+          <button type="button" class="mp-quick-item" @click="goContact">
+            <span class="mp-quick-ico mp-quick-ico--contact">✉</span>
+            <span>{{ $t('guides.contact.title') || '联系我们' }}</span>
+          </button>
         </div>
       </div>
 
@@ -367,6 +371,9 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
   methods: {
     goProfile() {
       this.$router.push("/user/profile");
+    },
+    goContact() {
+      this.$router.push({ path: '/connection', hash: '#contact' });
     },
     goRecharge() {
       this.$router.push("/member/recharge");
@@ -1662,12 +1669,14 @@ overflow: hidden;
 
 .mp-quick {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 10px;
 }
 
 .mp-quick-item {
-  flex: 1;
+  flex: 1 1 calc(50% - 5px);
+  min-width: calc(50% - 5px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1696,6 +1705,7 @@ overflow: hidden;
 .mp-quick-ico--vip { background: #fff4d6; color: #e8a300; }
 .mp-quick-ico--home { background: var(--kid-primary-soft, #efeaff); color: var(--kid-primary, #6c5ce7); }
 .mp-quick-ico--set { background: #e7f6f1; color: #2bb894; }
+.mp-quick-ico--contact { background: #eef4ff; color: #5b7fd6; }
 
 /* 响应式设计 - 移动端改为单列（断点统一 768） */
 @media (max-width: 768px) {

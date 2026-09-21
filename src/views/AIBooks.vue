@@ -1049,7 +1049,7 @@ export default {
             const responseData = await postCreateCharacter(
                 this.$http,
                 requestData,
-                { apiBaseUrl: this.apiBaseUrl }
+                { apiBaseUrl: this.apiBaseUrl, source: 'aibooks' }
             )
 
             if (!responseData) {

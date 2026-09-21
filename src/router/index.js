@@ -99,6 +99,13 @@ const routes = [{
         meta: { seoTitle: '创作指南' }
     },
     {
+        path: '/feedback',
+        name: 'feedback',
+        component: () =>
+            import(/* webpackChunkName: "feedback" */ '../views/Feedback.vue'),
+        meta: { seoTitle: '投诉建议', requiresAuth: true },
+    },
+    {
         path: '/guides',
         redirect: '/connection',
     },
@@ -531,6 +538,26 @@ const routes = [{
         meta: {
             requiresAuth: true
         }
+    },
+    {
+        path: '/member/points-history',
+        name: 'points-history',
+        component: () =>
+            import(/* webpackChunkName: "points-history" */ '../views/PointsHistory.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '积分明细',
+        },
+    },
+    {
+        path: '/member/generation-history',
+        name: 'generation-history',
+        component: () =>
+            import(/* webpackChunkName: "generation-history" */ '../views/GenerationHistory.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '生成历史',
+        },
     },
     {
         path: '/user-g/:authorId',

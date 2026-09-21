@@ -79,7 +79,7 @@
             <a class="nav-link dropdown-toggle user-menu-trigger" href="#" @click.prevent="toggleSubmenu('user')">
               <div class="user-header-wrapper">
                 <!-- 积分和Pro显示框 -->
-                <div class="points-pro-box" @click.stop="showMemberDialog = true">
+                <div class="points-pro-box" @click.stop="goPointsHistory">
                   <div class="points-section">
                     <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
                     <span class="points-value">{{ userPoints || 0 }}</span>
@@ -113,6 +113,10 @@
               <li><a @click.prevent="contactUs(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-lianxiwomen1"></i>
                 <span>{{ $t('nav.connection') }}</span>
+              </a></li>
+              <li><a @click.prevent="toFeedback(); closeSubmenu();" class="dropdown-item">
+                <i class="iconfont icon-lianxiwomen1"></i>
+                <span>{{ $t('nav.feedback') }}</span>
               </a></li>
             </ul>
           </li>
@@ -304,6 +308,10 @@ export default {
             router.push('/connection')
         }
 
+        const toFeedback = () => {
+            router.push('/feedback')
+        }
+
         const toggleMobileMenu = () => {
             mobileMenuVisible.value = !mobileMenuVisible.value
         }
@@ -345,6 +353,15 @@ export default {
             // 跳转到充值页面
             showMemberDialog.value = false
             router.push('/member/recharge')
+        }
+
+        const goPointsHistory = () => {
+            closeSubmenu()
+            if (isLogin.value || localStorage.getItem('token')) {
+                router.push('/member/points-history')
+            } else {
+                store.commit('showMask')
+            }
         }
         
         const logout = () => {
@@ -529,6 +546,8 @@ export default {
             toProfile,
             toMemberRecharge,
             contactUs,
+            toFeedback,
+            goPointsHistory,
             goToRecharge,
             logout,
             searchFun,

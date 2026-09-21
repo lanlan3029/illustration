@@ -20,6 +20,12 @@
                   <img src="@/assets/logo/count.png" alt="积分" class="points-icon-img" />
                 </p>
                 <p class="points-tip">生成一次图片消耗 2 <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" /></p>
+                <router-link to="/member/points-history" class="points-history-link">
+                  {{ $t('pointsHistory.viewHistory') }} →
+                </router-link>
+                <router-link to="/member/generation-history" class="points-history-link">
+                  {{ $t('generationHistory.viewHistory') }} →
+                </router-link>
               </div>
             </div>
           </el-card>
@@ -593,6 +599,19 @@ export default {
 .points-tip {
   font-size: 14px;
   opacity: 0.8;
+}
+
+.points-history-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.points-history-link:hover {
+  color: #fff;
 }
 
 .recharge-card {

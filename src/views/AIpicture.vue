@@ -1510,7 +1510,7 @@ export default {
                 const responseData = await postCreateCharacter(
                     this.$http,
                     requestData,
-                    { apiBaseUrl: this.apiBaseUrl }
+                    { apiBaseUrl: this.apiBaseUrl, source: 'ai_picture' }
                 )
                 if (!isCreateCharacterResponseOk(responseData)) {
                     const errorMsg = this.normalizeApiErrorToString(

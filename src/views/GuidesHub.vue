@@ -174,6 +174,9 @@
             <span>{{ $t('guides.contact.emailLabel') }}</span>
             <a href="mailto:support@kidstory.cc">support@kidstory.cc</a>
           </p>
+          <router-link to="/feedback" class="contact-feedback-link">
+            {{ $t('guides.contact.feedbackLink') }} →
+          </router-link>
         </div>
         <div class="contact-right">
           <h3>{{ $t('guides.contact.inspirationTitle') }}</h3>
@@ -739,6 +742,19 @@ function openUrl(url) {
 }
 
 .contact-email a:hover {
+  text-decoration: underline;
+}
+
+.contact-feedback-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8167a9;
+  text-decoration: none;
+}
+
+.contact-feedback-link:hover {
   text-decoration: underline;
 }
 

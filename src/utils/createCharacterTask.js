@@ -287,7 +287,9 @@ export async function resolveCreateCharacterResult(http, responseData, opts = {}
 export async function postCreateCharacter(http, requestData, opts = {}) {
   const sync = opts.sync === true
   const url = resolveApiUrl(opts.apiBaseUrl)
-  const body = sync ? { ...requestData, sync: true } : { ...requestData }
+  const body = sync
+    ? { ...requestData, sync: true, ...(opts.source ? { source: opts.source } : {}) }
+    : { ...requestData, ...(opts.source ? { source: opts.source } : {}) }
   const timeout = sync
     ? (hasReferenceImages(requestData)
       ? SYNC_POST_TIMEOUT_WITH_REFS_MS

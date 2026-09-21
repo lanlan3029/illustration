@@ -1,5 +1,15 @@
 <template>
 <div class="container">
+<div class="profile-links only-mobile">
+  <button type="button" class="profile-link-item" @click="goGenerationHistory">
+    <span class="profile-link-label">{{ $t('generationHistory.title') }}</span>
+    <span class="profile-link-arrow" aria-hidden="true">›</span>
+  </button>
+  <button type="button" class="profile-link-item" @click="goContact">
+    <span class="profile-link-label">{{ $t('guides.contact.title') }}</span>
+    <span class="profile-link-arrow" aria-hidden="true">›</span>
+  </button>
+</div>
 <div class="box">
 <el-form ref="form" :model="form" label-width="120px" label-position="left">
     <el-form-item :label="$t('userProfile.avatar')">
@@ -363,6 +373,12 @@ export default {
         });
       },
 
+      goGenerationHistory() {
+        this.$router.push('/member/generation-history');
+      },
+      goContact() {
+        this.$router.push({ path: '/connection', hash: '#contact' });
+      },
       editAvatar(){
       this.form.avatar="";
       this.uploadFileList = [];
@@ -581,18 +597,67 @@ export default {
     border-radius: 4px;
 }
 
+.profile-links {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 12px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.profile-link-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    color: #303133;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.profile-link-item + .profile-link-item {
+    border-top: 1px solid #f0f0f5;
+}
+
+.profile-link-item:active {
+    background: #f8f8fc;
+}
+
+.profile-link-label {
+    font-weight: 500;
+}
+
+.profile-link-arrow {
+    color: #c0c4cc;
+    font-size: 20px;
+    line-height: 1;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .container {
-        padding: 20px 10px;
+        padding: 16px 12px calc(20px + var(--kid-tabbar-h, 58px));
+        align-items: stretch;
     }
     
     .box {
-        padding: 24px;
+        padding: 24px 20px;
+        height: auto;
+        min-height: 0;
     }
     
     .box  :deep(.el-form-item) {
         margin-bottom: 24px;
+    }
+
+    .box :deep(.el-form-item__label) {
+        width: 88px !important;
     }
 }
 </style>

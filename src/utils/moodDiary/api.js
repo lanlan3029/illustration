@@ -613,7 +613,8 @@ export async function fetchEmotionAlign(matching, endpoint) {
 export async function createCharacterIllustration(payload) {
   const apiRoot = process.env.VUE_APP_API_BASE_URL || ''
   const data = await postCreateCharacter(axios, payload, {
-    apiBaseUrl: apiRoot ? apiRoot.replace(/\/$/, '') : undefined
+    apiBaseUrl: apiRoot ? apiRoot.replace(/\/$/, '') : undefined,
+    source: 'mood_diary',
   })
   if (!isCreateCharacterResponseOk(data) || !data.message) {
     throw new Error(data.message?.error || data.desc || 'create-character failed')
