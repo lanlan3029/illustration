@@ -2974,11 +2974,15 @@
     }
   },
   "childhoodMoments": {
-    "eyebrow": "KidStory · 时刻收集",
+    "eyebrow": "KidStory / Illustration",
     "title": "幸福童年时刻收集",
-    "lead": "把零散的幸福瞬间，贴进你的成长相册",
+    "titleLine1": "幸福童年",
+    "titleLine2": "时刻收集。",
+    "lead": "日常里那些很小、很暖的瞬间，",
+    "tagline": "写下来，画出来，慢慢贴满一面墙。",
     "viewWall": "查看收集墙",
-    "emptyHint": "写下这一刻，生成你的拍立得",
+    "emptyHint": "在右侧写下这一刻，这里会出现你的插画",
+    "saving": "保存中…",
     "polaroidCaptionDefault": "待收集的时刻",
     "developing": "显影中…",
     "sceneLabel": "这一刻发生了什么？",

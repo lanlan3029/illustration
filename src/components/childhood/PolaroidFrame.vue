@@ -2,13 +2,14 @@
   <div
     class="polaroid-frame"
     :class="{
+      'polaroid-frame--minimal': variant === 'minimal',
       'polaroid-frame--revealed': revealed,
       'polaroid-frame--developing': developing,
       'polaroid-frame--interactive': interactive,
     }"
     :style="frameStyle"
   >
-    <span class="polaroid-frame__tape" :style="tapeStyle" aria-hidden="true" />
+    <span v-if="variant !== 'minimal'" class="polaroid-frame__tape" :style="tapeStyle" aria-hidden="true" />
     <div class="polaroid-frame__photo">
       <slot />
     </div>
@@ -44,6 +45,11 @@ export default {
       type: Boolean,
       default: false,
     },
+    /** scrapbook = 手账胶带；minimal = 留白线框 */
+    variant: {
+      type: String,
+      default: 'scrapbook',
+    },
   },
   computed: {
     frameStyle() {
@@ -75,6 +81,31 @@ export default {
   transform: rotate(var(--polaroid-rotate));
   transform-origin: center center;
   transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.polaroid-frame--minimal {
+  padding: 10px 10px 18px;
+  border: 1px solid #111;
+  border-radius: 0;
+  box-shadow: none;
+  transform: rotate(var(--polaroid-rotate));
+}
+
+.polaroid-frame--minimal .polaroid-frame__photo {
+  background: #f7f7f5;
+  border-radius: 0;
+}
+
+.polaroid-frame--minimal .polaroid-frame__caption {
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #444;
+}
+
+.polaroid-frame--minimal.polaroid-frame--interactive:hover {
+  transform: rotate(var(--polaroid-rotate)) translateY(-2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.06);
 }
 
 .polaroid-frame--interactive:hover {

@@ -1,132 +1,133 @@
 <template>
-  <div
-    class="moment-page"
-    @mousemove="handleParallax"
-    @mouseleave="resetParallax"
-  >
-    <canvas ref="bokehCanvas" class="moment-bokeh" aria-hidden="true" />
+  <div class="moment-page">
+    <nav class="moment-nav">
+      <router-link to="/newyear/gallery" class="moment-nav__link">
+        {{ $t('childhoodMoments.viewWall') }}
+      </router-link>
+    </nav>
 
-    <div class="moment-hero-art" :style="heroArtStyle" aria-hidden="true">
-      <ChildrenCuateIllustration :playing="!prefersReducedMotion" />
-    </div>
-
-    <!-- 背景漂浮拍立得装饰 -->
-    <div class="moment-deco" aria-hidden="true">
-      <div
-        v-for="(deco, i) in decoPolaroids"
-        :key="i"
-        class="moment-deco__item"
-        :style="decoStyle(i)"
-      >
-        <PolaroidFrame :rotate="deco.rotate" :tape-hue="deco.tapeHue" :revealed="false">
-          <div class="moment-deco__placeholder" :style="{ background: deco.gradient }" />
-        </PolaroidFrame>
+    <section class="moment-hero">
+      <div class="moment-hero__clouds" aria-hidden="true">
+        <svg class="moment-cloud moment-cloud--a" viewBox="0 0 120 40" fill="none">
+          <path
+            d="M20 28C8 28 2 22 8 16C10 8 22 6 28 10C32 4 44 2 52 8C58 4 70 6 74 14C86 12 94 20 88 28H20Z"
+            stroke="#111"
+            stroke-width="2"
+            fill="#fff"
+          />
+        </svg>
+        <svg class="moment-cloud moment-cloud--b" viewBox="0 0 100 36" fill="none">
+          <path
+            d="M16 24C6 24 2 18 8 12C12 6 24 4 30 8C34 4 46 2 52 8C60 4 72 8 74 16C84 14 90 22 82 24H16Z"
+            stroke="#111"
+            stroke-width="1.8"
+            fill="#fff"
+          />
+        </svg>
       </div>
-    </div>
 
-    <div class="moment-shell">
-      <header class="moment-header">
-        <p class="moment-eyebrow">{{ $t('childhoodMoments.eyebrow') }}</p>
-        <h1 class="moment-title">{{ $t('childhoodMoments.title') }}</h1>
-        <p class="moment-lead">{{ $t('childhoodMoments.lead') }}</p>
-        <router-link to="/newyear/gallery" class="moment-gallery-link">
-          {{ $t('childhoodMoments.viewWall') }}
-          <span class="moment-gallery-link__arrow">→</span>
-        </router-link>
-      </header>
+      <div class="moment-hero__inner">
+        <div class="moment-hero__copy">
+          <p class="moment-kicker">{{ $t('childhoodMoments.eyebrow') }}</p>
+          <h1 class="moment-title">
+            <span>{{ $t('childhoodMoments.titleLine1') }}</span>
+            <span>{{ $t('childhoodMoments.titleLine2') }}</span>
+          </h1>
+          <p class="moment-lead">{{ $t('childhoodMoments.lead') }}</p>
+          <p class="moment-tagline">{{ $t('childhoodMoments.tagline') }}</p>
+        </div>
 
-      <div class="moment-stage">
-        <PolaroidFrame
-          :caption="polaroidCaption"
-          :rotate="-1.5"
-          :tape-hue="48"
-          :revealed="!!generatedImageUrl && !generating"
-          :developing="justGenerated"
-        >
-          <div v-if="generating" class="moment-generating">
-            <span class="moment-generating__dot" />
-            <p>{{ $t('childhoodMoments.developing') }}</p>
-          </div>
-          <el-image
-            v-else-if="generatedImageUrl"
-            :src="generatedImageUrl"
-            fit="cover"
-            class="moment-result-image"
-          >
-            <template #error>
-              <div class="moment-image-fallback">
-                <i class="el-icon-picture-outline" />
-              </div>
-            </template>
-          </el-image>
-          <div v-else class="moment-empty">
-            <span class="moment-empty__icon">📷</span>
-            <p>{{ $t('childhoodMoments.emptyHint') }}</p>
-          </div>
-        </PolaroidFrame>
-
-        <div v-if="generatedImageUrl && !generating" class="moment-actions">
-          <el-button type="primary" size="small" :loading="collecting" @click="collectIllustration">
-            {{ $t('childhoodMoments.stickToWall') }}
-          </el-button>
-          <el-button size="small" :loading="downloading" @click="downloadIllustration">
-            {{ $t('childhoodMoments.download') }}
-          </el-button>
-          <el-button size="small" text @click="clearGeneratedImage">
-            {{ $t('childhoodMoments.clear') }}
-          </el-button>
+        <div class="moment-hero__scene">
+          <ChildrenCuateIllustration variant="hero" :playing="!prefersReducedMotion" />
         </div>
       </div>
+    </section>
 
-      <div class="moment-input">
-        <label class="moment-input__label" for="moment-scene">
-          {{ $t('childhoodMoments.sceneLabel') }}
-        </label>
-        <el-input
-          id="moment-scene"
-          v-model="subjectScene"
-          type="textarea"
-          :rows="3"
-          :placeholder="$t('childhoodMoments.scenePlaceholder')"
-          class="moment-textarea"
-        />
-        <el-button
-          type="primary"
-          class="moment-generate-btn"
-          :loading="generating"
-          :disabled="!subjectScene.trim() || generating"
-          @click="generateIllustration"
-        >
-          {{ generating ? $t('childhoodMoments.generating') : $t('childhoodMoments.generate') }}
-        </el-button>
-      </div>
-
-      <section v-if="recentItems.length" class="moment-recent">
-        <div class="moment-recent__head">
-          <h2>{{ $t('childhoodMoments.recentWall') }}</h2>
-          <router-link to="/newyear/gallery">{{ $t('childhoodMoments.seeAll') }}</router-link>
-        </div>
-        <div class="moment-recent__scroll">
-          <button
-            v-for="(item, index) in recentItems"
-            :key="item._id || index"
-            type="button"
-            class="moment-recent__item"
-            :style="{ '--item-rotate': `${(index % 5 - 2) * 1.2}deg` }"
-            @click="previewRecent(item)"
+    <section class="moment-workspace">
+      <div class="moment-workspace__grid">
+        <div class="moment-preview-col">
+          <PolaroidFrame
+            variant="minimal"
+            :caption="polaroidCaption"
+            :rotate="0"
+            :revealed="!!generatedImageUrl && !generating"
+            :developing="justGenerated"
           >
-            <PolaroidFrame
-              :rotate="(index % 5 - 2) * 1.2"
-              :tape-hue="38 + index * 14"
-              :revealed="false"
-              interactive
+            <div v-if="generating" class="moment-generating">
+              <span class="moment-generating__line" />
+              <p>{{ $t('childhoodMoments.developing') }}</p>
+            </div>
+            <el-image
+              v-else-if="generatedImageUrl"
+              :src="generatedImageUrl"
+              fit="cover"
+              class="moment-result-image"
             >
-              <img :src="getImageUrl(item)" alt="" loading="lazy" />
-            </PolaroidFrame>
+              <template #error>
+                <div class="moment-image-fallback">
+                  <i class="el-icon-picture-outline" />
+                </div>
+              </template>
+            </el-image>
+            <div v-else class="moment-empty">
+              <p>{{ $t('childhoodMoments.emptyHint') }}</p>
+            </div>
+          </PolaroidFrame>
+
+          <div v-if="generatedImageUrl && !generating" class="moment-actions">
+            <button type="button" class="moment-pill moment-pill--solid" :disabled="collecting" @click="collectIllustration">
+              {{ collecting ? $t('childhoodMoments.saving') : $t('childhoodMoments.stickToWall') }}
+            </button>
+            <button type="button" class="moment-pill" :disabled="downloading" @click="downloadIllustration">
+              {{ $t('childhoodMoments.download') }}
+            </button>
+            <button type="button" class="moment-text-btn" @click="clearGeneratedImage">
+              {{ $t('childhoodMoments.clear') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="moment-form-col">
+          <label class="moment-label" for="moment-scene">
+            {{ $t('childhoodMoments.sceneLabel') }}
+          </label>
+          <textarea
+            id="moment-scene"
+            v-model="subjectScene"
+            class="moment-textarea"
+            rows="5"
+            :placeholder="$t('childhoodMoments.scenePlaceholder')"
+          />
+          <button
+            type="button"
+            class="moment-pill moment-pill--solid moment-pill--wide"
+            :disabled="!subjectScene.trim() || generating"
+            @click="generateIllustration"
+          >
+            {{ generating ? $t('childhoodMoments.generating') : $t('childhoodMoments.generate') }}
           </button>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
+
+    <section v-if="recentItems.length" class="moment-recent">
+      <div class="moment-recent__head">
+        <h2>{{ $t('childhoodMoments.recentWall') }}</h2>
+        <router-link to="/newyear/gallery">{{ $t('childhoodMoments.seeAll') }}</router-link>
+      </div>
+      <div class="moment-recent__grid">
+        <button
+          v-for="(item, index) in recentItems"
+          :key="item._id || index"
+          type="button"
+          class="moment-recent__thumb"
+          @click="previewRecent(item)"
+        >
+          <img :src="getImageUrl(item)" alt="" loading="lazy" />
+          <span>{{ item.title || $t('childhoodMoments.polaroidCaptionDefault') }}</span>
+        </button>
+      </div>
+    </section>
 
     <el-dialog
       v-model="previewVisible"
@@ -159,12 +160,6 @@ import {
   SHARE,
 } from '@/utils/childhoodMoments'
 
-const DECO_GRADIENTS = [
-  'linear-gradient(145deg, #ffd4a8 0%, #ffb5c2 100%)',
-  'linear-gradient(145deg, #b8e6d0 0%, #d4c5f9 100%)',
-  'linear-gradient(145deg, #ffe8c8 0%, #ffc9de 100%)',
-]
-
 export default {
   name: 'NewYear',
   components: { PolaroidFrame, ChildrenCuateIllustration },
@@ -180,17 +175,8 @@ export default {
       recentItems: [],
       previewVisible: false,
       previewItem: null,
-      bokehAnimationId: null,
-      bokehParticles: [],
-      resizeHandler: null,
-      parallax: { x: 0, y: 0 },
       prefersReducedMotion: false,
       submitImage,
-      decoPolaroids: [
-        { rotate: -6, tapeHue: 42, gradient: DECO_GRADIENTS[0] },
-        { rotate: 4, tapeHue: 120, gradient: DECO_GRADIENTS[1] },
-        { rotate: -3, tapeHue: 320, gradient: DECO_GRADIENTS[2] },
-      ],
     }
   },
   computed: {
@@ -203,11 +189,6 @@ export default {
       }
       return this.$t('childhoodMoments.polaroidCaptionDefault')
     },
-    heroArtStyle() {
-      return {
-        transform: `translate(${this.parallax.x * 1.4}px, ${this.parallax.y}px)`,
-      }
-    },
   },
   mounted() {
     this.$store.commit('closeMask')
@@ -219,47 +200,9 @@ export default {
     }
 
     this.loadRecentItems()
-    if (!this.prefersReducedMotion) {
-      this.initBokeh()
-    }
     this.initWeChatShare()
   },
-  beforeUnmount() {
-    if (this.bokehAnimationId) {
-      cancelAnimationFrame(this.bokehAnimationId)
-    }
-    if (this.resizeHandler) {
-      window.removeEventListener('resize', this.resizeHandler)
-    }
-  },
   methods: {
-    decoStyle(index) {
-      const offsets = [
-        { top: '8%', left: '4%' },
-        { top: '14%', right: '6%' },
-        { bottom: '18%', left: '8%' },
-      ]
-      const base = offsets[index] || offsets[0]
-      const px = this.parallax.x * (index + 1) * 0.6
-      const py = this.parallax.y * (index + 1) * 0.6
-      return {
-        ...base,
-        transform: `translate(${px}px, ${py}px)`,
-      }
-    },
-    handleParallax(e) {
-      if (this.prefersReducedMotion) return
-      const cx = window.innerWidth / 2
-      const cy = window.innerHeight / 2
-      this.parallax = {
-        x: (e.clientX - cx) / cx * 6,
-        y: (e.clientY - cy) / cy * 4,
-      }
-    },
-    resetParallax() {
-      this.parallax = { x: 0, y: 0 }
-    },
-
     getImageUrl(item) {
       if (!item) return ''
       let picture = item.content || item.picture || item.image_url || item.url || item.image
@@ -296,7 +239,7 @@ export default {
           }
         })
         merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        this.recentItems = merged.slice(0, 8)
+        this.recentItems = merged.slice(0, 6)
       } catch {
         // ignore
       }
@@ -510,63 +453,6 @@ export default {
       document.body.removeChild(link)
       this.downloading = false
     },
-
-    initBokeh() {
-      this.$nextTick(() => {
-        const canvas = this.$refs.bokehCanvas
-        if (!canvas) return
-
-        const ctx = canvas.getContext('2d')
-        const resize = () => {
-          canvas.width = window.innerWidth
-          canvas.height = window.innerHeight
-        }
-        resize()
-
-        const colors = [
-          'rgba(255, 212, 168, 0.35)',
-          'rgba(255, 181, 194, 0.3)',
-          'rgba(184, 230, 208, 0.28)',
-          'rgba(212, 197, 249, 0.25)',
-        ]
-
-        this.bokehParticles = Array.from({ length: 22 }, () => ({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          r: Math.random() * 28 + 12,
-          dx: (Math.random() - 0.5) * 0.15,
-          dy: (Math.random() - 0.5) * 0.12,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          phase: Math.random() * Math.PI * 2,
-        }))
-
-        const animate = (t) => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          this.bokehParticles.forEach((p) => {
-            p.x += p.dx
-            p.y += p.dy
-            if (p.x < -p.r) p.x = canvas.width + p.r
-            if (p.x > canvas.width + p.r) p.x = -p.r
-            if (p.y < -p.r) p.y = canvas.height + p.r
-            if (p.y > canvas.height + p.r) p.y = -p.r
-
-            const pulse = 0.85 + Math.sin(t * 0.001 + p.phase) * 0.15
-            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * pulse)
-            gradient.addColorStop(0, p.color)
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
-            ctx.fillStyle = gradient
-            ctx.beginPath()
-            ctx.arc(p.x, p.y, p.r * pulse, 0, Math.PI * 2)
-            ctx.fill()
-          })
-          this.bokehAnimationId = requestAnimationFrame(animate)
-        }
-
-        animate(0)
-        this.resizeHandler = resize
-        window.addEventListener('resize', this.resizeHandler)
-      })
-    },
   },
 }
 </script>
@@ -576,161 +462,228 @@ export default {
   top: 200px !important;
   z-index: 10001 !important;
 }
+
+.moment-preview-dialog .el-dialog {
+  border-radius: 0;
+  border: 1px solid #111;
+}
 </style>
 
 <style scoped>
 .moment-page {
   min-height: 100vh;
-  padding: 20px 16px 40px;
-  box-sizing: border-box;
-  background-color: #faf6f0;
-  background-image:
-    radial-gradient(circle at 12% 18%, rgba(255, 212, 168, 0.35) 0%, transparent 42%),
-    radial-gradient(circle at 88% 12%, rgba(255, 181, 194, 0.28) 0%, transparent 38%),
-    radial-gradient(circle at 70% 88%, rgba(184, 230, 208, 0.22) 0%, transparent 40%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background: #fff;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
+}
+
+.moment-nav {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px clamp(16px, 4vw, 48px) 0;
+}
+
+.moment-nav__link {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #111;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.moment-nav__link:hover {
+  border-color: #111;
+}
+
+.moment-hero {
   position: relative;
+  padding: 12px clamp(16px, 4vw, 48px) 0;
   overflow: hidden;
 }
 
-.moment-bokeh {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.moment-hero-art {
-  position: fixed;
-  right: max(-8px, calc((100vw - 520px) / 2 - 280px));
-  bottom: 6%;
-  z-index: 1;
-  opacity: 0.92;
-  transition: transform 0.25s ease-out;
-}
-
-.moment-hero-art :deep(.children-cuate) {
-  --cuate-size: clamp(150px, 32vw, 260px);
-}
-
-@media (max-width: 640px) {
-  .moment-hero-art {
-    right: -20px;
-    bottom: 2%;
-    opacity: 0.5;
-  }
-
-  .moment-hero-art :deep(.children-cuate) {
-    --cuate-size: clamp(120px, 38vw, 170px);
-  }
-}
-
-.moment-deco {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.moment-deco__item {
+.moment-hero__clouds {
   position: absolute;
-  width: min(120px, 22vw);
-  opacity: 0.55;
-  animation: deco-float 7s ease-in-out infinite;
-  transition: transform 0.2s ease-out;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.moment-deco__item:nth-child(2) {
-  animation-delay: -2.3s;
-  width: min(100px, 18vw);
+.moment-cloud {
+  position: absolute;
+  opacity: 0.9;
 }
 
-.moment-deco__item:nth-child(3) {
-  animation-delay: -4.1s;
-  width: min(90px, 16vw);
+.moment-cloud--a {
+  top: 8%;
+  left: 6%;
+  width: min(140px, 22vw);
+  animation: cloud-drift-a 28s linear infinite;
 }
 
-.moment-deco__placeholder {
-  width: 100%;
-  height: 100%;
+.moment-cloud--b {
+  top: 14%;
+  right: 10%;
+  width: min(110px, 18vw);
+  animation: cloud-drift-b 34s linear infinite;
 }
 
-.moment-shell {
+.moment-hero__inner {
   position: relative;
-  z-index: 2;
-  max-width: 520px;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 46%);
+  gap: clamp(16px, 4vw, 40px);
+  align-items: end;
+  max-width: 1080px;
   margin: 0 auto;
 }
 
-.moment-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.moment-eyebrow {
-  margin: 0 0 6px;
+.moment-kicker {
+  margin: 0 0 12px;
   font-size: 12px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #a0897a;
+  color: #666;
 }
 
 .moment-title {
-  margin: 0 0 8px;
-  font-family: 'KaiTi', 'STKaiti', '楷体', serif;
-  font-size: clamp(26px, 6vw, 34px);
-  font-weight: 700;
-  color: #5c4a3a;
-  line-height: 1.25;
+  margin: 0 0 20px;
+  font-size: clamp(36px, 7vw, 64px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.moment-title span {
+  display: block;
 }
 
 .moment-lead {
-  margin: 0 0 14px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #7d6a5c;
+  margin: 0 0 10px;
+  max-width: 28em;
+  font-size: clamp(15px, 2.2vw, 18px);
+  line-height: 1.75;
+  color: #333;
 }
 
-.moment-gallery-link {
+.moment-tagline {
+  margin: 0;
+  max-width: 26em;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #666;
+}
+
+.moment-hero__scene {
+  justify-self: end;
+  width: 100%;
+}
+
+.moment-workspace {
+  padding: clamp(32px, 6vw, 64px) clamp(16px, 4vw, 48px) 48px;
+  border-top: 1px solid #eee;
+}
+
+.moment-workspace__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 56px);
+  max-width: 960px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.moment-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.moment-textarea {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 0;
+  border: none;
+  border-bottom: 1px solid #111;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #111;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.moment-textarea::placeholder {
+  color: #999;
+}
+
+.moment-textarea:focus {
+  border-bottom-width: 2px;
+}
+
+.moment-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border: 1.5px solid #111;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #6b5344;
-  text-decoration: none;
-  font-size: 13px;
+  background: transparent;
+  color: #111;
+  font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 2px 10px rgba(100, 80, 60, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.moment-gallery-link:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(100, 80, 60, 0.12);
+.moment-pill:hover:not(:disabled) {
+  background: #111;
+  color: #fff;
 }
 
-.moment-gallery-link__arrow {
-  transition: transform 0.2s ease;
+.moment-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
-.moment-gallery-link:hover .moment-gallery-link__arrow {
-  transform: translateX(3px);
+.moment-pill--solid {
+  background: #111;
+  color: #fff;
 }
 
-.moment-stage {
-  margin-bottom: 18px;
+.moment-pill--solid:hover:not(:disabled) {
+  background: #333;
+}
+
+.moment-pill--wide {
+  width: 100%;
+  margin-top: 24px;
 }
 
 .moment-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.moment-text-btn {
+  border: none;
+  background: none;
+  padding: 10px 4px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .moment-generating,
@@ -742,106 +695,92 @@ export default {
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: #8a7568;
-  font-size: 13px;
-  text-align: center;
-  padding: 16px;
+  padding: 24px;
   box-sizing: border-box;
-}
-
-.moment-generating__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ffb5c2;
-  margin-bottom: 10px;
-  animation: pulse-dot 1.2s ease-in-out infinite;
-}
-
-.moment-empty__icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-  opacity: 0.7;
-}
-
-.moment-input__label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b5344;
-}
-
-.moment-textarea :deep(.el-textarea__inner) {
-  border-radius: 12px;
-  border-color: rgba(160, 137, 122, 0.25);
-  background: rgba(255, 255, 255, 0.85);
+  text-align: center;
+  color: #666;
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
-.moment-textarea :deep(.el-textarea__inner:focus) {
-  border-color: #ffb5c2;
-  box-shadow: 0 0 0 2px rgba(255, 181, 194, 0.2);
-}
-
-.moment-generate-btn {
-  width: 100%;
-  margin-top: 10px;
-  height: 44px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #ffb5c2 0%, #ffd4a8 100%);
-  color: #5c4030;
-}
-
-.moment-generate-btn:hover,
-.moment-generate-btn:focus {
-  background: linear-gradient(135deg, #ffa8b8 0%, #ffc995 100%);
-  color: #5c4030;
+.moment-generating__line {
+  width: 48px;
+  height: 2px;
+  background: #111;
+  margin-bottom: 14px;
+  animation: line-pulse 1.4s ease-in-out infinite;
 }
 
 .moment-recent {
-  margin-top: 28px;
+  padding: 0 clamp(16px, 4vw, 48px) 64px;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .moment-recent__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
 }
 
 .moment-recent__head h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  color: #6b5344;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .moment-recent__head a {
-  font-size: 12px;
-  color: #a0897a;
+  font-size: 13px;
+  color: #111;
   text-decoration: none;
+  border-bottom: 1px solid transparent;
 }
 
-.moment-recent__scroll {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+.moment-recent__head a:hover {
+  border-color: #111;
 }
 
-.moment-recent__item {
-  flex: 0 0 120px;
+.moment-recent__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.moment-recent__thumb {
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
-  scroll-snap-align: start;
+  text-align: left;
+}
+
+.moment-recent__thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 1px solid #111;
+  transition: transform 0.25s ease;
+}
+
+.moment-recent__thumb:hover img {
+  transform: translateY(-3px);
+}
+
+.moment-recent__thumb span {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .moment-preview-image {
@@ -849,40 +788,62 @@ export default {
   max-height: 60vh;
 }
 
-@keyframes deco-float {
-  0%,
-  100% {
-    transform: translateY(0);
+@keyframes cloud-drift-a {
+  0% {
+    transform: translateX(0);
   }
   50% {
-    transform: translateY(-12px);
+    transform: translateX(40px);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 
-@keyframes pulse-dot {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.6;
+@keyframes cloud-drift-b {
+  0% {
+    transform: translateX(0);
   }
   50% {
-    transform: scale(1.35);
+    transform: translateX(-32px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes line-pulse {
+  0%,
+  100% {
+    transform: scaleX(0.4);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleX(1);
     opacity: 1;
   }
 }
 
-@media (max-width: 480px) {
-  .moment-page {
-    padding: 12px 12px 32px;
+@media (max-width: 860px) {
+  .moment-hero__inner {
+    grid-template-columns: 1fr;
   }
 
-  .moment-deco__item {
-    opacity: 0.35;
+  .moment-hero__scene {
+    order: -1;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .moment-workspace__grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .moment-deco__item {
+  .moment-cloud--a,
+  .moment-cloud--b,
+  .moment-generating__line {
     animation: none;
   }
 }

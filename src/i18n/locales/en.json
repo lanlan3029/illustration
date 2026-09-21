@@ -2959,11 +2959,15 @@
     }
   },
   "childhoodMoments": {
-    "eyebrow": "KidStory · Moment Collection",
+    "eyebrow": "KidStory / Illustration",
     "title": "Happy Childhood Moments",
-    "lead": "Pin scattered happy moments onto your growing album wall",
+    "titleLine1": "Happy childhood",
+    "titleLine2": "moments.",
+    "lead": "The small, warm slices of everyday life—",
+    "tagline": "write them down, illustrate them, and slowly fill a wall.",
     "viewWall": "View collection wall",
-    "emptyHint": "Describe this moment to create your polaroid",
+    "emptyHint": "Describe your moment on the right — your illustration appears here",
+    "saving": "Saving…",
     "polaroidCaptionDefault": "Moment waiting to be collected",
     "developing": "Developing…",
     "sceneLabel": "What happened in this moment?",

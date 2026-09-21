@@ -36,8 +36,8 @@
           @click="openPreview(item, index)"
         >
           <PolaroidFrame
+            variant="minimal"
             :rotate="rotationForIndex(index)"
-            :tape-hue="38 + (index % 6) * 18"
             :caption="itemCaption(item)"
             :revealed="false"
             interactive
@@ -70,8 +70,8 @@
     >
       <div v-if="currentItem" class="wall-preview">
         <PolaroidFrame
+          variant="minimal"
           :rotate="0"
-          :tape-hue="48"
           :caption="itemCaption(currentItem)"
           :revealed="false"
         >
@@ -311,42 +311,46 @@ export default {
 <style scoped>
 .wall-page {
   min-height: 100vh;
-  background-color: #faf6f0;
-  background-image:
-    radial-gradient(circle at 15% 10%, rgba(255, 212, 168, 0.3) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(212, 197, 249, 0.22) 0%, transparent 38%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background: #fff;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
 }
 
 .wall-header {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 16px 16px 12px;
-  background: linear-gradient(180deg, rgba(250, 246, 240, 0.98) 0%, rgba(250, 246, 240, 0.88) 80%, transparent 100%);
-  backdrop-filter: blur(8px);
-  text-align: center;
+  padding: 20px clamp(16px, 4vw, 48px) 16px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #eee;
 }
 
 .wall-back {
   display: inline-block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: #a0897a;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #111;
   text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.wall-back:hover {
+  border-color: #111;
 }
 
 .wall-title {
-  margin: 0 0 4px;
-  font-family: 'KaiTi', 'STKaiti', '楷体', serif;
-  font-size: clamp(22px, 5vw, 30px);
-  color: #5c4a3a;
+  margin: 0 0 6px;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #111;
 }
 
 .wall-subtitle {
   margin: 0;
-  font-size: 13px;
-  color: #8a7568;
+  font-size: 14px;
+  color: #666;
 }
 
 .wall-viewport {
@@ -414,27 +418,27 @@ export default {
   align-items: center;
   justify-content: center;
   min-height: 50vh;
-  color: #8a7568;
+  color: #666;
   text-align: center;
   padding: 24px;
 }
 
 .wall-loading__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #b8e6d0;
-  margin-bottom: 12px;
-  animation: pulse-dot 1.2s ease-in-out infinite;
+  width: 48px;
+  height: 2px;
+  background: #111;
+  margin-bottom: 14px;
+  animation: pulse-line 1.4s ease-in-out infinite;
 }
 
 .wall-empty__cta {
   display: inline-block;
-  margin-top: 12px;
-  padding: 10px 18px;
+  margin-top: 16px;
+  padding: 10px 22px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ffb5c2 0%, #ffd4a8 100%);
-  color: #5c4030;
+  border: 1.5px solid #111;
+  background: #111;
+  color: #fff;
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
@@ -443,7 +447,7 @@ export default {
 .wall-loading-more {
   text-align: center;
   font-size: 13px;
-  color: #a0897a;
+  color: #666;
   padding: 16px 0;
 }
 
@@ -461,12 +465,11 @@ export default {
 .wall-preview-info {
   width: 100%;
   max-width: 420px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.85);
+  padding: 14px 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #5c4a3a;
+  color: #333;
+  border-top: 1px solid #eee;
 }
 
 .wall-preview-info p {
@@ -474,26 +477,24 @@ export default {
 }
 
 .wall-preview-info strong {
-  color: #8a7568;
+  color: #111;
   font-weight: 600;
 }
 
 .wall-preview-desc {
   margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(160, 137, 122, 0.25);
   font-size: 13px;
-  color: #7d6a5c;
+  color: #666;
 }
 
-@keyframes pulse-dot {
+@keyframes pulse-line {
   0%,
   100% {
-    transform: scale(1);
-    opacity: 0.6;
+    transform: scaleX(0.4);
+    opacity: 0.4;
   }
   50% {
-    transform: scale(1.35);
+    transform: scaleX(1);
     opacity: 1;
   }
 }
