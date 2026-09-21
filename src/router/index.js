@@ -457,13 +457,19 @@ const routes = [{
         path: '/newyear',
         name: 'newyear',
         component: () =>
-            import ( /* webpackChunkName: "newyear" */ '../views/NewYear.vue')
+            import ( /* webpackChunkName: "newyear" */ '../views/NewYear.vue'),
+        meta: {
+            seoTitle: '幸福童年时刻收集',
+        },
     },
     {
         path: '/newyear/gallery',
         name: 'newyear-gallery',
         component: () =>
-            import ( /* webpackChunkName: "newyear-gallery" */ '../views/NewYearGallery.vue')
+            import ( /* webpackChunkName: "newyear-gallery" */ '../views/NewYearGallery.vue'),
+        meta: {
+            seoTitle: '幸福童年收集墙',
+        },
     },
     {
         path: '/mood-diary',

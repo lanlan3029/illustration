@@ -1,163 +1,312 @@
 <template>
-  <div class="newyear-container">
-    <!-- 装饰性灯笼图标 -->
-    <div class="decoration-lantern decoration-lantern-left">🏮</div>
-    <div class="decoration-lantern decoration-lantern-right">🏮</div>
-    <div class="decoration-fu decoration-fu-top-left">福</div>
-    <div class="decoration-fu decoration-fu-top-right">福</div>
-    
-    <!-- 动态颗粒容器 -->
-    <canvas ref="particlesCanvas" class="particles-canvas"></canvas>
-    
-    <div class="style-detail-container">
-      <el-scrollbar class="style-list-container-scroll">
-     
-        <div class="gallery-link-wrapper">
-          <router-link to="/newyear/gallery" class="gallery-link-button">
-            <span class="button-icon"></span>
-            <span class="button-text">2026幻彩新春</span>
-            <span class="button-icon"></span>
-          </router-link>
-        </div>
-        <div class="style-detail">
-          <div class="detail-content">
-            <!-- 图片展示区域：空白框或生成结果 -->
-            <div class="image-display-area">
-              <!-- 生成进度提示 -->
-              <div v-if="generating" class="generating-progress">
-                <i class="el-icon-loading"></i>
-                <p>{{ $t('aiPicture.generating') }}</p>
-              </div>
+  <div
+    class="moment-page"
+    @mousemove="handleParallax"
+    @mouseleave="resetParallax"
+  >
+    <canvas ref="bokehCanvas" class="moment-bokeh" aria-hidden="true" />
 
-              <!-- 生成结果展示 -->
-              <div v-else-if="generatedImageUrl" class="generated-result">
-                <div class="result-image-wrapper">
-                  <el-image
-                    :src="generatedImageUrl"
-                    fit="contain"
-                    class="result-image"
-                  >
-                    <template #error>
-                      <div class="image-slot">
-                        <i class="el-icon-picture-outline"></i>
-                      </div>
-                    </template>
-                  </el-image>
-                </div>
-                <div class="result-actions">
-                  <el-button 
-                    type="primary" 
-                    size="small"
-                    @click="collectIllustration"
-                    :loading="collecting">
-                    <i class="el-icon-star-on"></i> 收集插画
-                  </el-button>
-                  <el-button 
-                    type="success" 
-                    size="small"
-                    @click="downloadIllustration"
-                    :loading="downloading">
-                    <i class="el-icon-download"></i> 下载插画
-                  </el-button>
-                  <el-button 
-                    type="danger" 
-                    size="small"
-                    @click="clearGeneratedImage">
-                    <i class="el-icon-delete"></i> 清除
-                  </el-button>
-                </div>
-              </div>
-
-              <!-- 空白框（未生成时显示） -->
-              <div v-else class="empty-image-box">
-                <p>新年您想记录的美好瞬间</p>
-              </div>
-            </div>
-
-            <div class="input-section">
-              <label class="input-label">{{ $t('aiPicture.subjectScene') }}</label>
-              <el-input
-                v-model="subjectScene"
-                type="textarea"
-                :rows="4"
-                :placeholder="$t('aiPicture.subjectPlaceholder')"
-                class="subject-input"
-              />
-            </div>
-
-            <el-button
-              type="primary"
-              class="generate-button"
-              @click="generateIllustration"
-              :loading="generating"
-              :disabled="!subjectScene || !subjectScene.trim() || generating"
-            >
-              {{ generating ? $t('aiPicture.generating') : $t('aiPicture.generate') }}
-            </el-button>
-          </div>
-        </div>
-      </el-scrollbar>
+    <div class="moment-hero-art" :style="heroArtStyle" aria-hidden="true">
+      <ChildrenCuateIllustration :playing="!prefersReducedMotion" />
     </div>
+
+    <!-- 背景漂浮拍立得装饰 -->
+    <div class="moment-deco" aria-hidden="true">
+      <div
+        v-for="(deco, i) in decoPolaroids"
+        :key="i"
+        class="moment-deco__item"
+        :style="decoStyle(i)"
+      >
+        <PolaroidFrame :rotate="deco.rotate" :tape-hue="deco.tapeHue" :revealed="false">
+          <div class="moment-deco__placeholder" :style="{ background: deco.gradient }" />
+        </PolaroidFrame>
+      </div>
+    </div>
+
+    <div class="moment-shell">
+      <header class="moment-header">
+        <p class="moment-eyebrow">{{ $t('childhoodMoments.eyebrow') }}</p>
+        <h1 class="moment-title">{{ $t('childhoodMoments.title') }}</h1>
+        <p class="moment-lead">{{ $t('childhoodMoments.lead') }}</p>
+        <router-link to="/newyear/gallery" class="moment-gallery-link">
+          {{ $t('childhoodMoments.viewWall') }}
+          <span class="moment-gallery-link__arrow">→</span>
+        </router-link>
+      </header>
+
+      <div class="moment-stage">
+        <PolaroidFrame
+          :caption="polaroidCaption"
+          :rotate="-1.5"
+          :tape-hue="48"
+          :revealed="!!generatedImageUrl && !generating"
+          :developing="justGenerated"
+        >
+          <div v-if="generating" class="moment-generating">
+            <span class="moment-generating__dot" />
+            <p>{{ $t('childhoodMoments.developing') }}</p>
+          </div>
+          <el-image
+            v-else-if="generatedImageUrl"
+            :src="generatedImageUrl"
+            fit="cover"
+            class="moment-result-image"
+          >
+            <template #error>
+              <div class="moment-image-fallback">
+                <i class="el-icon-picture-outline" />
+              </div>
+            </template>
+          </el-image>
+          <div v-else class="moment-empty">
+            <span class="moment-empty__icon">📷</span>
+            <p>{{ $t('childhoodMoments.emptyHint') }}</p>
+          </div>
+        </PolaroidFrame>
+
+        <div v-if="generatedImageUrl && !generating" class="moment-actions">
+          <el-button type="primary" size="small" :loading="collecting" @click="collectIllustration">
+            {{ $t('childhoodMoments.stickToWall') }}
+          </el-button>
+          <el-button size="small" :loading="downloading" @click="downloadIllustration">
+            {{ $t('childhoodMoments.download') }}
+          </el-button>
+          <el-button size="small" text @click="clearGeneratedImage">
+            {{ $t('childhoodMoments.clear') }}
+          </el-button>
+        </div>
+      </div>
+
+      <div class="moment-input">
+        <label class="moment-input__label" for="moment-scene">
+          {{ $t('childhoodMoments.sceneLabel') }}
+        </label>
+        <el-input
+          id="moment-scene"
+          v-model="subjectScene"
+          type="textarea"
+          :rows="3"
+          :placeholder="$t('childhoodMoments.scenePlaceholder')"
+          class="moment-textarea"
+        />
+        <el-button
+          type="primary"
+          class="moment-generate-btn"
+          :loading="generating"
+          :disabled="!subjectScene.trim() || generating"
+          @click="generateIllustration"
+        >
+          {{ generating ? $t('childhoodMoments.generating') : $t('childhoodMoments.generate') }}
+        </el-button>
+      </div>
+
+      <section v-if="recentItems.length" class="moment-recent">
+        <div class="moment-recent__head">
+          <h2>{{ $t('childhoodMoments.recentWall') }}</h2>
+          <router-link to="/newyear/gallery">{{ $t('childhoodMoments.seeAll') }}</router-link>
+        </div>
+        <div class="moment-recent__scroll">
+          <button
+            v-for="(item, index) in recentItems"
+            :key="item._id || index"
+            type="button"
+            class="moment-recent__item"
+            :style="{ '--item-rotate': `${(index % 5 - 2) * 1.2}deg` }"
+            @click="previewRecent(item)"
+          >
+            <PolaroidFrame
+              :rotate="(index % 5 - 2) * 1.2"
+              :tape-hue="38 + index * 14"
+              :revealed="false"
+              interactive
+            >
+              <img :src="getImageUrl(item)" alt="" loading="lazy" />
+            </PolaroidFrame>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <el-dialog
+      v-model="previewVisible"
+      :title="previewItem?.title || $t('childhoodMoments.previewTitle')"
+      width="90%"
+      class="moment-preview-dialog"
+    >
+      <el-image
+        v-if="previewItem"
+        :src="getImageUrl(previewItem)"
+        fit="contain"
+        class="moment-preview-image"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import PolaroidFrame from '@/components/childhood/PolaroidFrame.vue'
+import ChildrenCuateIllustration from '@/components/childhood/ChildrenCuateIllustration.vue'
 import submitImage from '@/assets/images/submit.webp'
 import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
+import {
+  ILL_TYPE,
+  ILL_TYPES_GALLERY,
+  STORAGE_KEY,
+  buildChildhoodPrompt,
+  buildCollectTitle,
+  SHARE,
+} from '@/utils/childhoodMoments'
+
+const DECO_GRADIENTS = [
+  'linear-gradient(145deg, #ffd4a8 0%, #ffb5c2 100%)',
+  'linear-gradient(145deg, #b8e6d0 0%, #d4c5f9 100%)',
+  'linear-gradient(145deg, #ffe8c8 0%, #ffc9de 100%)',
+]
 
 export default {
   name: 'NewYear',
-  setup() {
-    const { locale } = useI18n()
-
-    return {
-      locale
-    }
-  },
+  components: { PolaroidFrame, ChildrenCuateIllustration },
   data() {
     return {
       subjectScene: '',
       generating: false,
       generatedImageUrl: null,
+      justGenerated: false,
       collecting: false,
       downloading: false,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
-      particlesAnimationId: null,
-      particles: [],
+      recentItems: [],
+      previewVisible: false,
+      previewItem: null,
+      bokehAnimationId: null,
+      bokehParticles: [],
       resizeHandler: null,
-      submitImage
+      parallax: { x: 0, y: 0 },
+      prefersReducedMotion: false,
+      submitImage,
+      decoPolaroids: [
+        { rotate: -6, tapeHue: 42, gradient: DECO_GRADIENTS[0] },
+        { rotate: 4, tapeHue: 120, gradient: DECO_GRADIENTS[1] },
+        { rotate: -3, tapeHue: 320, gradient: DECO_GRADIENTS[2] },
+      ],
     }
   },
   computed: {
     generatedPrompt() {
-      if (!this.subjectScene || !this.subjectScene.trim()) {
-        return ''
+      return buildChildhoodPrompt(this.subjectScene)
+    },
+    polaroidCaption() {
+      if (this.generatedImageUrl && this.subjectScene.trim()) {
+        return this.subjectScene.trim().slice(0, 28)
       }
-      const defaultArtStyle = '梦幻童话风格，彩色轮廓插图，纯色、喜庆红色背景，无拘无束的氛围，浪漫、生动的色彩和宽松的笔触，春节喜庆、嬉戏和无忧无虑的场景。'
-      return `${this.subjectScene.trim()}，${defaultArtStyle}`
-    }
+      return this.$t('childhoodMoments.polaroidCaptionDefault')
+    },
+    heroArtStyle() {
+      return {
+        transform: `translate(${this.parallax.x * 1.4}px, ${this.parallax.y}px)`,
+      }
+    },
   },
   mounted() {
     this.$store.commit('closeMask')
-    const savedImage = localStorage.getItem('newyear_generated_image')
+    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const savedImage = localStorage.getItem(STORAGE_KEY)
     if (savedImage) {
       this.generatedImageUrl = savedImage
     }
-    this.initParticles()
+
+    this.loadRecentItems()
+    if (!this.prefersReducedMotion) {
+      this.initBokeh()
+    }
     this.initWeChatShare()
   },
-  
   beforeUnmount() {
-    if (this.particlesAnimationId) {
-      cancelAnimationFrame(this.particlesAnimationId)
+    if (this.bokehAnimationId) {
+      cancelAnimationFrame(this.bokehAnimationId)
     }
     if (this.resizeHandler) {
       window.removeEventListener('resize', this.resizeHandler)
     }
   },
   methods: {
+    decoStyle(index) {
+      const offsets = [
+        { top: '8%', left: '4%' },
+        { top: '14%', right: '6%' },
+        { bottom: '18%', left: '8%' },
+      ]
+      const base = offsets[index] || offsets[0]
+      const px = this.parallax.x * (index + 1) * 0.6
+      const py = this.parallax.y * (index + 1) * 0.6
+      return {
+        ...base,
+        transform: `translate(${px}px, ${py}px)`,
+      }
+    },
+    handleParallax(e) {
+      if (this.prefersReducedMotion) return
+      const cx = window.innerWidth / 2
+      const cy = window.innerHeight / 2
+      this.parallax = {
+        x: (e.clientX - cx) / cx * 6,
+        y: (e.clientY - cy) / cy * 4,
+      }
+    },
+    resetParallax() {
+      this.parallax = { x: 0, y: 0 }
+    },
+
+    getImageUrl(item) {
+      if (!item) return ''
+      let picture = item.content || item.picture || item.image_url || item.url || item.image
+      if (!picture) return ''
+      if (typeof picture === 'string') {
+        if (picture.startsWith('http') || picture.startsWith('data:')) return picture
+        return `https://static.kidstory.cc/${picture}`
+      }
+      if (typeof picture === 'object' && picture.url) return picture.url
+      return ''
+    },
+
+    async loadRecentItems() {
+      try {
+        const results = await Promise.all(
+          ILL_TYPES_GALLERY.map((type) =>
+            this.$http.get('/ill/', {
+              params: {
+                type,
+                page: 1,
+                limit: 6,
+                sort_param: 'createdAt',
+                sort_num: 'desc',
+              },
+            })
+          )
+        )
+        const merged = []
+        results.forEach((res) => {
+          if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
+            const message = res.data.message || {}
+            const items = message.data || message || res.data.data || []
+            if (Array.isArray(items)) merged.push(...items)
+          }
+        })
+        merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        this.recentItems = merged.slice(0, 8)
+      } catch {
+        // ignore
+      }
+    },
+
+    previewRecent(item) {
+      this.previewItem = item
+      this.previewVisible = true
+    },
+
     async initWeChatShare() {
       if (typeof window === 'undefined') return
       if (!/MicroMessenger/i.test(window.navigator.userAgent)) return
@@ -178,289 +327,247 @@ export default {
           timestamp: message.timestamp,
           nonceStr: message.nonceStr,
           signature: message.signature,
-          jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
+          jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData'],
         })
 
         window.wx.ready(() => {
-          const shareTitle = '共绘新春'
-          const shareDesc = '我是kidstory的第${springTotal}位创作者'
-          const shareLink = window.location.href
-          // 使用当前生成的插画作为微信分享卡片的封面图；如果还没有生成，则回退到本地 submit.webp
           const shareImg = this.generatedImageUrl || this.submitImage
-
-          if (window.wx.updateAppMessageShareData) {
-            window.wx.updateAppMessageShareData({
-              title: shareTitle,
-              desc: shareDesc,
-              link: shareLink,
-              imgUrl: shareImg
-            })
+          const payload = {
+            title: SHARE.title,
+            desc: SHARE.desc,
+            link: window.location.href,
+            imgUrl: shareImg,
           }
-
-          if (window.wx.updateTimelineShareData) {
-            window.wx.updateTimelineShareData({
-              title: shareTitle,
-              link: shareLink,
-              imgUrl: shareImg
-            })
-          }
+          window.wx.updateAppMessageShareData?.(payload)
+          window.wx.updateTimelineShareData?.({
+            title: SHARE.title,
+            link: payload.link,
+            imgUrl: shareImg,
+          })
         })
-      } catch (e) {
-        // 签名失败时忽略，不影响页面正常使用
+      } catch {
+        // ignore
       }
     },
 
     async generateIllustration() {
       if (!this.generatedPrompt) {
-        ElMessage.warning('请先输入主体场景')
+        ElMessage.warning(this.$t('childhoodMoments.sceneRequired'))
         return
       }
 
       this.generatedImageUrl = null
+      this.justGenerated = false
       this.generating = true
 
       try {
-        const requestData = {
-          prompt: this.generatedPrompt,
-          size: '1024x1024'
-        }
-
         const responseData = await postCreateCharacter(
           this.$http,
-          requestData,
+          { prompt: this.generatedPrompt, size: '1024x1024' },
           { apiBaseUrl: this.apiBaseUrl }
         )
-        
+
         if (responseData.allowed === false) {
-          const errorMessage = responseData.type === 'create-character' 
-            ? '免费次数已用完，登录解锁更多免费次数吧！'
-            : (responseData.message || '免费次数已用完，登录解锁更多免费次数吧！')
+          const errorMessage =
+            responseData.type === 'create-character'
+              ? this.$t('childhoodMoments.quotaExceeded')
+              : responseData.message || this.$t('childhoodMoments.quotaExceeded')
           ElMessage({ message: errorMessage, type: 'error', offset: 200 })
           return
         }
-        
+
         if (!isCreateCharacterResponseOk(responseData) || !responseData.message) {
-          const errorMsg = responseData.message?.error || responseData.desc || responseData.error
-          ElMessage({ message: errorMsg || '出错啦，请稍后再试', type: 'error', offset: 200 })
+          const errorMsg =
+            responseData.message?.error || responseData.desc || responseData.error
+          ElMessage({ message: errorMsg || this.$t('childhoodMoments.generateFailed'), type: 'error', offset: 200 })
           return
         }
 
         const result = responseData.message
+        if (result?.points !== undefined && this.$store?.state) {
+          this.$store.commit('setUserInfo', {
+            ...(this.$store.state.userInfo || {}),
+            points: result.points,
+          })
+        }
 
-          if (result && typeof result === 'object' && result.points !== undefined && this.$store && this.$store.state) {
-            this.$store.commit('setUserInfo', {
-              ...(this.$store.state.userInfo || {}),
-              points: result.points
-            })
-          }
-          
-          const imageUrl = result.image_url || result.character_image_url || result.image || result.url
+        const imageUrl =
+          result.image_url || result.character_image_url || result.image || result.url
 
-          if (imageUrl) {
-            this.generatedImageUrl = imageUrl
-            localStorage.setItem('newyear_generated_image', imageUrl)
-            ElMessage.success('插画生成成功！')
-            await this.autoSaveIllustration(imageUrl)
-          } else {
-            throw new Error('响应中未找到图片URL')
-          }
-      } catch (error) {
-        const errorData = error.response?.data
-        const errorMessage = errorData?.allowed === false
-          ? (errorData.type === 'create-character' 
-            ? '免费次数已用完，登录解锁更多免费次数吧！'
-            : (errorData.message || '免费次数已用完，登录解锁更多免费次数吧！'))
-          : (errorData?.message || '出错啦，请稍后再试')
-        ElMessage({ message: errorMessage, type: 'error', offset: 200 })
+        if (imageUrl) {
+          this.generatedImageUrl = imageUrl
+          this.justGenerated = true
+          localStorage.setItem(STORAGE_KEY, imageUrl)
+          ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
+          await this.autoSaveIllustration(imageUrl)
+          await this.loadRecentItems()
+          this.initWeChatShare()
+          setTimeout(() => {
+            this.justGenerated = false
+          }, 900)
+        } else {
+          throw new Error('no image url')
+        }
+      } catch {
+        ElMessage({ message: this.$t('childhoodMoments.generateFailed'), type: 'error', offset: 200 })
       } finally {
         this.generating = false
       }
     },
+
     clearGeneratedImage() {
       this.generatedImageUrl = null
-      localStorage.removeItem('newyear_generated_image')
+      this.justGenerated = false
+      localStorage.removeItem(STORAGE_KEY)
     },
-    
+
+    async fetchNextIndex() {
+      let total = 0
+      try {
+        const countRes = await this.$http.get('/ill/', {
+          params: {
+            type: ILL_TYPE,
+            page: 1,
+            limit: 1,
+            sort_param: 'createdAt',
+            sort_num: 'desc',
+          },
+        })
+        if (
+          countRes.data &&
+          (countRes.data.code === 0 || countRes.data.code === '0' || countRes.data.desc === 'success')
+        ) {
+          const message = countRes.data.message || {}
+          total = Number(message.total || countRes.data.total || 0) || 0
+        }
+      } catch {
+        // ignore
+      }
+      return total + 1
+    },
+
+    normalizePictureUrl(imageUrl) {
+      let pictureValue = imageUrl
+      if (
+        pictureValue &&
+        !pictureValue.startsWith('http://') &&
+        !pictureValue.startsWith('https://') &&
+        !pictureValue.startsWith('data:')
+      ) {
+        pictureValue = `https://static.kidstory.cc/${pictureValue}`
+      }
+      return pictureValue
+    },
+
+    async saveIllustration(imageUrl) {
+      const nextIndex = await this.fetchNextIndex()
+      const dynamicTitle = buildCollectTitle(nextIndex)
+      await this.$http.post(
+        '/ill/',
+        {
+          picture: this.normalizePictureUrl(imageUrl),
+          title: dynamicTitle,
+          description: this.generatedPrompt,
+          type: ILL_TYPE,
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+    },
+
     async autoSaveIllustration(imageUrl) {
       try {
-        let pictureValue = imageUrl
-        if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
-          pictureValue = `https://static.kidstory.cc/${pictureValue}`
-        }
-
-        // 先获取当前“春节”插画总数，用于生成“第几副作品”的标题
-        let springTotal = 0
-        try {
-          const countRes = await this.$http.get('/ill/', {
-            params: {
-              type: '春节',
-              page: 1,
-              limit: 1,
-              sort_param: 'createdAt',
-              sort_num: 'desc'
-            }
-          })
-          if (countRes.data && (countRes.data.code === 0 || countRes.data.code === '0' || countRes.data.desc === 'success')) {
-            const message = countRes.data.message || {}
-            springTotal = Number(message.total || countRes.data.total || 0) || 0
-          }
-        } catch (e) {
-          // 统计失败时忽略，退回默认标题
-        }
-
-        const nextIndex = springTotal + 1
-        const dynamicTitle = `共绘新春第${nextIndex}副作品`
-
-        await this.$http.post('/ill/', {
-          picture: pictureValue,
-          title: dynamicTitle,
-          description: this.generatedPrompt || '新年主题插画',
-          type: '春节'
-        }, {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      } catch (error) {
-        // 静默失败
+        await this.saveIllustration(imageUrl)
+      } catch {
+        // silent
       }
     },
-    
+
     async collectIllustration() {
       if (!this.generatedImageUrl) {
-        ElMessage.warning('图片尚未生成，请稍候')
+        ElMessage.warning(this.$t('childhoodMoments.notReady'))
         return
       }
       this.collecting = true
       try {
-        let pictureValue = this.generatedImageUrl
-        if (pictureValue && !pictureValue.startsWith('http://') && !pictureValue.startsWith('https://') && !pictureValue.startsWith('data:')) {
-          pictureValue = `https://static.kidstory.cc/${pictureValue}`
-        }
-        // 获取当前“春节”插画总数，用于生成“第几副作品”的标题
-        let springTotal = 0
-        try {
-          const countRes = await this.$http.get('/ill/', {
-            params: {
-              type: '春节',
-              page: 1,
-              limit: 1,
-              sort_param: 'createdAt',
-              sort_num: 'desc'
-            }
-          })
-          if (countRes.data && (countRes.data.code === 0 || countRes.data.code === '0' || countRes.data.desc === 'success')) {
-            const message = countRes.data.message || {}
-            springTotal = Number(message.total || countRes.data.total || 0) || 0
-          }
-        } catch (e) {
-          // 忽略统计失败，使用默认标题
-        }
-
-        const nextIndex = springTotal + 1
-        const dynamicTitle = `共绘新春第${nextIndex}副作品`
-
-        const response = await this.$http.post('/ill/', {
-          picture: pictureValue,
-          title: dynamicTitle,
-          description: this.generatedPrompt || '新年主题插画',
-          type: '春节'
-        }, {
-          headers: { 'Content-Type': 'application/json' }
-        })
-        if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
-          ElMessage.success('插画已保存')
-        } else {
-          ElMessage({ message: '出错啦，请稍后再试', type: 'error', offset: 200 })
-        }
-      } catch (error) {
-        ElMessage({ message: '出错啦，请稍后再试', type: 'error', offset: 200 })
+        await this.saveIllustration(this.generatedImageUrl)
+        ElMessage.success(this.$t('childhoodMoments.collectSuccess'))
+        await this.loadRecentItems()
+      } catch {
+        ElMessage({ message: this.$t('childhoodMoments.collectFailed'), type: 'error', offset: 200 })
       } finally {
         this.collecting = false
       }
     },
+
     downloadIllustration() {
       if (!this.generatedImageUrl) return
+      this.downloading = true
       const link = document.createElement('a')
       link.href = this.generatedImageUrl
-      link.download = 'illustration.png'
+      link.download = 'childhood-moment.png'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      this.downloading = false
     },
-    
-    initParticles() {
+
+    initBokeh() {
       this.$nextTick(() => {
-        const canvas = this.$refs.particlesCanvas
+        const canvas = this.$refs.bokehCanvas
         if (!canvas) return
-        
+
         const ctx = canvas.getContext('2d')
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
-        
-        this.particles = []
-        for (let i = 0; i < 50; i++) {
-          this.particles.push({
-            x: Math.random() * canvas.width,
-            y: canvas.height + Math.random() * 200,
-            size: Math.random() * 3 + 1,
-            speed: Math.random() * 0.5 + 0.2,
-            opacity: Math.random() * 0.5 + 0.3,
-            glow: Math.random() * 0.3 + 0.2
-          })
-        }
-        
-        const animate = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          this.particles.forEach(particle => {
-            particle.y -= particle.speed
-            if (particle.y < -10) {
-              particle.y = canvas.height + Math.random() * 100
-              particle.x = Math.random() * canvas.width
-            }
-            
-            ctx.save()
-            ctx.globalAlpha = particle.opacity
-            
-            const gradient = ctx.createRadialGradient(
-              particle.x, particle.y, 0,
-              particle.x, particle.y, particle.size * 3
-            )
-            gradient.addColorStop(0, `rgba(255, 215, 0, ${particle.glow})`)
-            gradient.addColorStop(0.5, `rgba(255, 193, 7, ${particle.glow * 0.5})`)
-            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)')
-            
-            ctx.fillStyle = gradient
-            ctx.beginPath()
-            ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2)
-            ctx.fill()
-            
-            ctx.fillStyle = `rgba(255, 215, 0, ${particle.opacity})`
-            ctx.beginPath()
-            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-            ctx.fill()
-            
-            ctx.strokeStyle = `rgba(255, 215, 0, ${particle.opacity * 0.6})`
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.moveTo(particle.x - particle.size * 2, particle.y)
-            ctx.lineTo(particle.x + particle.size * 2, particle.y)
-            ctx.moveTo(particle.x, particle.y - particle.size * 2)
-            ctx.lineTo(particle.x, particle.y + particle.size * 2)
-            ctx.stroke()
-            
-            ctx.restore()
-          })
-          this.particlesAnimationId = requestAnimationFrame(animate)
-        }
-        
-        animate()
-        this.resizeHandler = () => {
+        const resize = () => {
           canvas.width = window.innerWidth
           canvas.height = window.innerHeight
         }
+        resize()
+
+        const colors = [
+          'rgba(255, 212, 168, 0.35)',
+          'rgba(255, 181, 194, 0.3)',
+          'rgba(184, 230, 208, 0.28)',
+          'rgba(212, 197, 249, 0.25)',
+        ]
+
+        this.bokehParticles = Array.from({ length: 22 }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 28 + 12,
+          dx: (Math.random() - 0.5) * 0.15,
+          dy: (Math.random() - 0.5) * 0.12,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          phase: Math.random() * Math.PI * 2,
+        }))
+
+        const animate = (t) => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          this.bokehParticles.forEach((p) => {
+            p.x += p.dx
+            p.y += p.dy
+            if (p.x < -p.r) p.x = canvas.width + p.r
+            if (p.x > canvas.width + p.r) p.x = -p.r
+            if (p.y < -p.r) p.y = canvas.height + p.r
+            if (p.y > canvas.height + p.r) p.y = -p.r
+
+            const pulse = 0.85 + Math.sin(t * 0.001 + p.phase) * 0.15
+            const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * pulse)
+            gradient.addColorStop(0, p.color)
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+            ctx.fillStyle = gradient
+            ctx.beginPath()
+            ctx.arc(p.x, p.y, p.r * pulse, 0, Math.PI * 2)
+            ctx.fill()
+          })
+          this.bokehAnimationId = requestAnimationFrame(animate)
+        }
+
+        animate(0)
+        this.resizeHandler = resize
         window.addEventListener('resize', this.resizeHandler)
       })
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -472,582 +579,311 @@ export default {
 </style>
 
 <style scoped>
-.newyear-container {
+.moment-page {
   min-height: 100vh;
-  padding: 16px;
+  padding: 20px 16px 40px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #dc143c 0%, #c41e3a 50%, #b22222 100%);
+  background-color: #faf6f0;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 212, 168, 0.35) 0%, transparent 42%),
+    radial-gradient(circle at 88% 12%, rgba(255, 181, 194, 0.28) 0%, transparent 38%),
+    radial-gradient(circle at 70% 88%, rgba(184, 230, 208, 0.22) 0%, transparent 40%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   position: relative;
   overflow: hidden;
 }
 
-.newyear-container::before {
-  content: '';
+.moment-bokeh {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80vw;
-  height: 80vh;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 215, 0, 0.15) 0%,
-    rgba(255, 193, 7, 0.1) 30%,
-    rgba(220, 20, 60, 0.05) 60%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-  animation: glowPulse 4s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-  0%, 100% {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-}
-
-.decoration-lantern {
-  position: fixed;
-  font-size: 60px;
-  opacity: 0.25;
-  z-index: 0;
-  animation: float 3s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.decoration-lantern-left {
-  top: 10%;
-  left: 5%;
-  animation-delay: 0s;
-}
-
-.decoration-lantern-right {
-  top: 15%;
-  right: 5%;
-  animation-delay: 1.5s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(5deg);
-  }
-}
-
-.decoration-fu {
-  position: fixed;
-  font-size: 80px;
-  font-weight: bold;
-  color: rgba(255, 215, 0, 0.2);
-  font-family: 'KaiTi', '楷体', serif;
-  z-index: 0;
-  pointer-events: none;
-  transform: rotate(-15deg);
-}
-
-.decoration-fu-top-left {
-  top: 5%;
-  left: 8%;
-}
-
-.decoration-fu-top-right {
-  top: 8%;
-  right: 8%;
-  transform: rotate(15deg);
-}
-
-.newyear-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    /* 灯笼图案 */
-    radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 25%),
-    radial-gradient(circle at 90% 30%, rgba(255, 215, 0, 0.1) 0%, transparent 25%),
-    radial-gradient(circle at 15% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 25%),
-    radial-gradient(circle at 85% 70%, rgba(255, 215, 0, 0.08) 0%, transparent 25%),
-    /* 福字装饰 */
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 215, 0, 0.02) 10px,
-      rgba(255, 215, 0, 0.02) 20px
-    );
-  pointer-events: none;
-  z-index: 0;
-}
-
-.particles-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 100;
+  z-index: 0;
 }
 
-.style-detail-container {
-  max-width: 600px;
-  height: calc(100vh - 80px);
-  margin: 0 auto;
-  /* 更暗的背景色，带纹理 */
-  background: 
-    /* 噪点纹理 */
-    repeating-linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.1) 0px,
-      transparent 1px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.05) 2px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.1) 0px,
-      transparent 1px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.05) 2px
-    ),
-    /* 渐变纹理 */
-    radial-gradient(
-      circle at 20% 30%,
-      rgba(220, 20, 60, 0.15) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 80% 70%,
-      rgba(255, 215, 0, 0.1) 0%,
-      transparent 50%
-    ),
-    /* 基础背景 */
-    rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border-radius: 16px;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-    0 0 0 3px rgba(255, 215, 0, 0.2);
-  overflow: hidden;
+.moment-hero-art {
+  position: fixed;
+  right: max(-8px, calc((100vw - 520px) / 2 - 280px));
+  bottom: 6%;
+  z-index: 1;
+  opacity: 0.92;
+  transition: transform 0.25s ease-out;
+}
+
+.moment-hero-art :deep(.children-cuate) {
+  --cuate-size: clamp(150px, 32vw, 260px);
+}
+
+@media (max-width: 640px) {
+  .moment-hero-art {
+    right: -20px;
+    bottom: 2%;
+    opacity: 0.5;
+  }
+
+  .moment-hero-art :deep(.children-cuate) {
+    --cuate-size: clamp(120px, 38vw, 170px);
+  }
+}
+
+.moment-deco {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.moment-deco__item {
+  position: absolute;
+  width: min(120px, 22vw);
+  opacity: 0.55;
+  animation: deco-float 7s ease-in-out infinite;
+  transition: transform 0.2s ease-out;
+}
+
+.moment-deco__item:nth-child(2) {
+  animation-delay: -2.3s;
+  width: min(100px, 18vw);
+}
+
+.moment-deco__item:nth-child(3) {
+  animation-delay: -4.1s;
+  width: min(90px, 16vw);
+}
+
+.moment-deco__placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.moment-shell {
   position: relative;
   z-index: 2;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 520px;
+  margin: 0 auto;
 }
 
-.style-detail-container::before {
-  content: '🏮';
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  font-size: 40px;
-  opacity: 0.3;
-  z-index: 0;
-  animation: lanternSwing 3s ease-in-out infinite;
+.moment-header {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.style-detail-container::after {
-  content: '🏮';
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 40px;
-  opacity: 0.3;
-  z-index: 0;
-  animation: lanternSwing 3s ease-in-out infinite;
-  animation-delay: 1.5s;
+.moment-eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a0897a;
 }
 
-@keyframes lanternSwing {
-  0%, 100% {
-    transform: translateY(0) rotate(-5deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(5deg);
-  }
-}
-
-.style-list-container-scroll {
-  max-height: calc(100vh - 80px);
-}
-
-.section-title {
-  font-size: 20px;
+.moment-title {
+  margin: 0 0 8px;
+  font-family: 'KaiTi', 'STKaiti', '楷体', serif;
+  font-size: clamp(26px, 6vw, 34px);
   font-weight: 700;
-  padding: 20px 16px 12px;
-  color: #fff;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  color: #5c4a3a;
+  line-height: 1.25;
 }
 
-.section-title::before {
-  content: '🎊';
-  margin-right: 8px;
-  font-size: 24px;
+.moment-lead {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #7d6a5c;
 }
 
-.section-title::after {
-  content: '🎊';
-  margin-left: 8px;
-  font-size: 24px;
-}
-
-.gallery-link-wrapper {
-  padding: 12px 16px;
-  text-align: center;
-
-}
-
-.gallery-link-button {
+.moment-gallery-link {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, rgba(180, 30, 50, 0.9) 0%, rgba(150, 20, 40, 0.95) 50%, rgba(120, 15, 30, 1) 100%);
-  color: #fff;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #6b5344;
   text-decoration: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(220, 20, 60, 0.4);
-  transition: all 0.3s ease;
-  border: 2px solid rgba(255, 215, 0, 0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-.gallery-link-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s;
-}
-
-.gallery-link-button:hover::before {
-  left: 100%;
-}
-
-.gallery-link-button:hover {
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(200, 40, 60, 0.95) 0%, rgba(170, 30, 50, 1) 50%, rgba(140, 20, 40, 1) 100%);
-  box-shadow: 0 6px 20px rgba(150, 20, 40, 0.6);
-  border-color: rgba(255, 215, 0, 0.9);
-}
-
-.gallery-link-button:active {
-  transform: translateY(0);
-}
-
-.button-icon {
-  font-size: 20px;
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-.button-icon:last-child {
-  animation-delay: 1s;
-}
-
-@keyframes sparkle {
-  0%, 100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2) rotate(180deg);
-    opacity: 0.8;
-  }
-}
-
-.button-text {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.style-detail {
-  padding: 0 16px 16px;
-  background: transparent;
-  position: relative;
-  z-index: 1;
-}
-
-.image-display-area {
-  border-radius: 12px;
-  border: 2px dashed rgba(255, 215, 0, 0.5);
-  padding: 16px;
-  margin: 0 auto 16px;
-  background: rgba(248, 241, 241, 0.106);
-  backdrop-filter: blur(5px);
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 1 / 1;
-  width: 80%;
-}
-
-.image-display-area::before {
-  content: '';
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 120px;
-  background-image: url('@/assets/images/newyear/newyear.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.15;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.image-display-area::after {
-  content: '';
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  width: 100px;
-  height: 100px;
- 
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.15;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.generating-progress {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 180px;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
   font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 1;
+  box-shadow: 0 2px 10px rgba(100, 80, 60, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.generating-progress i {
-  font-size: 32px;
-  color: rgba(255, 215, 0, 0.9);
-  animation: rotate 1s linear infinite;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+.moment-gallery-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(100, 80, 60, 0.12);
 }
 
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.moment-gallery-link__arrow {
+  transition: transform 0.2s ease;
 }
 
-.generated-result {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-  z-index: 1;
+.moment-gallery-link:hover .moment-gallery-link__arrow {
+  transform: translateX(3px);
 }
 
-.result-image-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  overflow: hidden;
+.moment-stage {
+  margin-bottom: 18px;
 }
 
-.result-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(220, 20, 60, 0.2);
-  border: 2px solid rgba(255, 215, 0, 0.3);
-}
-
-.result-actions {
+.moment-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
-  padding-top: 12px;
-  flex-shrink: 0;
+  margin-top: 12px;
 }
 
-.empty-image-box {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.moment-generating,
+.moment-empty,
+.moment-image-fallback {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  font-weight: 500;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-  z-index: 1;
   width: 100%;
   height: 100%;
-}
-
-.empty-image-box::before {
-  content: '✨';
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  font-size: 20px;
-  opacity: 0.3;
-}
-
-.empty-image-box::after {
-  content: '✨';
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  font-size: 20px;
-  opacity: 0.3;
-}
-
-.input-section {
-  margin-bottom: 16px;
-}
-
-.input-label {
-  display: block;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.95);
-  margin-bottom: 6px;
-  font-weight: 600;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.subject-input :deep(.el-textarea__inner) {
+  color: #8a7568;
   font-size: 13px;
-  border-color: rgba(220, 20, 60, 0.3);
-  transition: all 0.3s;
+  text-align: center;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
-.subject-input :deep(.el-textarea__inner):focus {
-  border-color: #dc143c;
-  box-shadow: 0 0 0 2px rgba(220, 20, 60, 0.1);
+.moment-generating__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffb5c2;
+  margin-bottom: 10px;
+  animation: pulse-dot 1.2s ease-in-out infinite;
 }
 
-.generate-button {
-  width: 100%;
-  margin-top: 8px;
-  background: linear-gradient(135deg, rgba(180, 30, 50, 0.9) 0%, rgba(150, 20, 40, 0.95) 50%, rgba(120, 15, 30, 1) 100%);
-  border: 2px solid rgba(255, 215, 0, 0.5);
-  color: #fff;
-  font-weight: 700;
-  font-size: 16px;
-  height: 48px;
+.moment-empty__icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  opacity: 0.7;
+}
+
+.moment-input__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b5344;
+}
+
+.moment-textarea :deep(.el-textarea__inner) {
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(150, 20, 40, 0.4);
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
+  border-color: rgba(160, 137, 122, 0.25);
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  line-height: 1.55;
 }
 
-.generate-button::before {
-  content: '✨';
-  margin-right: 8px;
+.moment-textarea :deep(.el-textarea__inner:focus) {
+  border-color: #ffb5c2;
+  box-shadow: 0 0 0 2px rgba(255, 181, 194, 0.2);
 }
 
-.generate-button:hover {
-  background: linear-gradient(135deg, rgba(200, 40, 60, 0.95) 0%, rgba(170, 30, 50, 1) 50%, rgba(140, 20, 40, 1) 100%);
-  border-color: rgba(255, 215, 0, 0.9);
-  box-shadow: 0 6px 20px rgba(150, 20, 40, 0.5);
-  transform: translateY(-2px);
+.moment-generate-btn {
+  width: 100%;
+  margin-top: 10px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffb5c2 0%, #ffd4a8 100%);
+  color: #5c4030;
 }
 
-.generate-button:active {
-  transform: translateY(0);
+.moment-generate-btn:hover,
+.moment-generate-btn:focus {
+  background: linear-gradient(135deg, #ffa8b8 0%, #ffc995 100%);
+  color: #5c4030;
 }
 
-.generate-button:disabled {
-  background: #f1b8b8;
-  box-shadow: none;
-  cursor: not-allowed;
+.moment-recent {
+  margin-top: 28px;
 }
 
-.generate-button :deep(.el-button__inner) {
-  color: #fff;
+.moment-recent__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.moment-recent__head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #6b5344;
+}
+
+.moment-recent__head a {
+  font-size: 12px;
+  color: #a0897a;
+  text-decoration: none;
+}
+
+.moment-recent__scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.moment-recent__item {
+  flex: 0 0 120px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.moment-preview-image {
+  width: 100%;
+  max-height: 60vh;
+}
+
+@keyframes deco-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 480px) {
-  .newyear-container {
-    padding: 8px;
+  .moment-page {
+    padding: 12px 12px 32px;
   }
 
-  .style-detail-container {
-    border-radius: 12px;
+  .moment-deco__item {
+    opacity: 0.35;
   }
+}
 
-  .newyear-container::after {
-    font-size: 60px;
-  }
-
-  .section-title {
-    font-size: 18px;
-    padding: 16px 12px 10px;
-  }
-
-  .decoration-lantern {
-    font-size: 40px;
-    opacity: 0.15;
-  }
-
-  .decoration-fu {
-    font-size: 50px;
-    opacity: 0.15;
-  }
-
-  .gallery-link-wrapper {
-    padding: 10px 12px;
-  }
-
-  .gallery-link-button {
-    padding: 10px 20px;
-    font-size: 14px;
-    gap: 6px;
-  }
-
-  .button-icon {
-    font-size: 18px;
-  }
-
-  .button-text {
-    font-size: 14px;
-    letter-spacing: 0.5px;
+@media (prefers-reduced-motion: reduce) {
+  .moment-deco__item {
+    animation: none;
   }
 }
 </style>
-
-
