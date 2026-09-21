@@ -1,80 +1,75 @@
 <template>
-  <div class="exhibit-page">
-    <div class="exhibit-page__bg" aria-hidden="true" />
-    <div class="exhibit-page__veil" aria-hidden="true" />
-
-    <header class="exhibit-header">
-      <router-link to="/childhood" class="exhibit-back">{{ $t('childhoodMoments.backToCreate') }}</router-link>
-      <h1 class="exhibit-title">{{ $t('childhoodMoments.exhibitTitle') }}</h1>
-      <p class="exhibit-subtitle">{{ $t('childhoodMoments.exhibitSubtitle', { count: totalCount }) }}</p>
+  <div class="wall-page">
+    <header class="wall-header">
+      <router-link to="/childhood" class="wall-back">{{ $t('childhoodMoments.backToCreate') }}</router-link>
+      <div class="wall-header__main">
+        <h1 class="wall-title">{{ $t('childhoodMoments.exhibitTitle') }}</h1>
+        <p class="wall-subtitle">{{ $t('childhoodMoments.exhibitSubtitle', { count: totalCount }) }}</p>
+      </div>
     </header>
 
-    <div v-if="loading && !allIllustrations.length" class="exhibit-loading">
-      <span class="exhibit-loading__line" />
+    <div v-if="loading && !allIllustrations.length" class="wall-state">
+      <span class="wall-state__line" />
       <p>{{ $t('childhoodMoments.wallLoading') }}</p>
     </div>
 
     <div
       v-else
       ref="viewportRef"
-      class="exhibit-viewport"
+      class="wall-body"
       @scroll="handleScroll"
     >
-      <div v-if="!allIllustrations.length" class="exhibit-empty">
+      <div v-if="!allIllustrations.length" class="wall-state">
         <p>{{ $t('childhoodMoments.wallEmpty') }}</p>
-        <router-link to="/childhood" class="exhibit-empty__cta">
+        <router-link to="/childhood" class="wall-empty-cta">
           {{ $t('childhoodMoments.wallEmptyCta') }}
         </router-link>
       </div>
 
-      <div v-else class="exhibit-wall">
+      <div v-else class="wall-grid">
         <button
           v-for="(item, index) in allIllustrations"
           :key="item._id || index"
           ref="wallItems"
           type="button"
-          class="exhibit-piece"
-          :class="[
-            `exhibit-piece--${exhibitLayout(index).size}`,
-            { 'exhibit-piece--visible': visibleIds.has(item._id || String(index)) },
-          ]"
-          :style="exhibitStyle(index)"
-          @click="openPreview(item, index)"
+          class="wall-card"
+          :class="{ 'wall-card--visible': visibleIds.has(item._id || String(index)) }"
+          :style="{ '--stagger-delay': `${(index % 12) * 50}ms` }"
+          @click="openPreview(item)"
         >
-          <GalleryArtFrame
-            :variant="frameVariant(index)"
-            :caption="itemCaption(item)"
-            :date="item.createdAt ? formatDateShort(item.createdAt) : ''"
-          >
+          <div class="wall-card__media">
             <img
               :src="getImageUrl(item)"
               :alt="itemCaption(item)"
               loading="lazy"
             />
-          </GalleryArtFrame>
+          </div>
+          <div class="wall-card__meta">
+            <span class="wall-card__caption">{{ itemCaption(item) }}</span>
+            <span v-if="item.createdAt" class="wall-card__date">
+              {{ formatDateShort(item.createdAt) }}
+            </span>
+          </div>
         </button>
       </div>
 
-      <p v-if="loadingMore" class="exhibit-loading-more">{{ $t('childhoodMoments.wallLoadingMore') }}</p>
+      <p v-if="loadingMore" class="wall-loading-more">{{ $t('childhoodMoments.wallLoadingMore') }}</p>
     </div>
 
     <el-dialog
       v-model="previewVisible"
       :title="currentItem?.title || $t('childhoodMoments.previewTitle')"
-      width="min(92vw, 720px)"
-      class="exhibit-preview-dialog"
+      width="min(92vw, 640px)"
+      class="wall-preview-dialog"
       @closed="closePreview"
     >
-      <div v-if="currentItem" class="exhibit-preview">
-        <GalleryArtFrame
-          :variant="frameVariant(currentIndex)"
-          :caption="itemCaption(currentItem)"
-          :date="currentItem.createdAt ? formatDateShort(currentItem.createdAt) : ''"
-          class="exhibit-preview__frame"
-        >
-          <img :src="getImageUrl(currentItem)" alt="" />
-        </GalleryArtFrame>
-        <div class="exhibit-preview__info">
+      <div v-if="currentItem" class="wall-preview">
+        <img
+          class="wall-preview__img"
+          :src="getImageUrl(currentItem)"
+          alt=""
+        />
+        <div class="wall-preview__info">
           <p v-if="currentItem.owner">
             <strong>{{ $t('childhoodMoments.author') }}</strong>
             {{ currentItem.owner.name || $t('childhoodMoments.anonymous') }}
@@ -83,7 +78,7 @@
             <strong>{{ $t('childhoodMoments.time') }}</strong>
             {{ formatDate(currentItem.createdAt) }}
           </p>
-          <p v-if="currentItem.description" class="exhibit-preview__desc">
+          <p v-if="currentItem.description" class="wall-preview__desc">
             {{ currentItem.description }}
           </p>
         </div>
@@ -94,21 +89,15 @@
 
 <script>
 import { ElMessage } from 'element-plus'
-import GalleryArtFrame from '@/components/childhood/GalleryArtFrame.vue'
-import galleryBg from '@/assets/images/newyear/gallery-bg-golden-road.jpg'
 import {
   ILL_TYPES_GALLERY,
-  getExhibitLayout,
-  getFrameVariant,
   getIllustrationUrl,
 } from '@/utils/childhoodMoments'
 
 export default {
   name: 'ChildhoodGallery',
-  components: { GalleryArtFrame },
   data() {
     return {
-      galleryBg,
       allIllustrations: [],
       totalCount: 0,
       loading: true,
@@ -117,17 +106,12 @@ export default {
       hasMoreByType: {},
       previewVisible: false,
       currentItem: null,
-      currentIndex: 0,
       visibleIds: new Set(),
       observer: null,
     }
   },
   mounted() {
     this.$store.commit('closeMask')
-    document.documentElement.style.setProperty(
-      '--exhibit-bg',
-      `url(${this.galleryBg})`
-    )
     ILL_TYPES_GALLERY.forEach((type) => {
       this.pageByType[type] = 1
       this.hasMoreByType[type] = true
@@ -136,28 +120,8 @@ export default {
   },
   beforeUnmount() {
     this.observer?.disconnect()
-    document.documentElement.style.removeProperty('--exhibit-bg')
   },
   methods: {
-    exhibitLayout(index) {
-      return getExhibitLayout(index)
-    },
-
-    frameVariant(index) {
-      return getFrameVariant(index)
-    },
-
-    exhibitStyle(index) {
-      const layout = getExhibitLayout(index)
-      return {
-        gridColumn: layout.gridColumn,
-        gridRow: layout.gridRow,
-        '--piece-rotate': `${layout.rotate}deg`,
-        '--stagger-delay': `${(index % 10) * 70}ms`,
-        marginTop: layout.offsetY ? `${layout.offsetY}px` : undefined,
-      }
-    },
-
     getImageUrl(item) {
       return getIllustrationUrl(item)
     },
@@ -271,7 +235,7 @@ export default {
             }
           })
         },
-        { root: this.$refs.viewportRef, threshold: 0.08, rootMargin: '60px' }
+        { root: this.$refs.viewportRef, threshold: 0.06, rootMargin: '40px' }
       )
 
       const nodes = this.$refs.wallItems
@@ -294,9 +258,8 @@ export default {
       }
     },
 
-    openPreview(item, index) {
+    openPreview(item) {
       this.currentItem = item
-      this.currentIndex = index
       this.previewVisible = true
     },
 
@@ -324,190 +287,210 @@ export default {
 </script>
 
 <style scoped>
-.exhibit-page {
-  --exhibit-bg: none;
+.wall-page {
   min-height: 100vh;
-  color: #f5f5f5;
+  background: #fff;
+  color: #111;
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-.exhibit-page__bg {
-  position: fixed;
-  inset: 0;
-  background: var(--exhibit-bg) center / cover no-repeat;
-  z-index: 0;
+.wall-header {
+  flex-shrink: 0;
+  padding: 24px clamp(20px, 5vw, 56px) 20px;
+  border-bottom: 1px solid #eee;
 }
 
-.exhibit-page__veil {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.76);
-  z-index: 0;
-}
-
-.exhibit-header {
-  position: relative;
-  z-index: 1;
-  padding: 28px clamp(20px, 5vw, 56px) 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.exhibit-back {
+.wall-back {
   display: inline-block;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.72);
+  color: #666;
   text-decoration: none;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   transition: color 0.2s ease;
 }
 
-.exhibit-back:hover {
-  color: #fff;
+.wall-back:hover {
+  color: #111;
 }
 
-.exhibit-title {
+.wall-header__main {
+  max-width: 960px;
+}
+
+.wall-title {
   margin: 0 0 8px;
-  font-size: clamp(28px, 5vw, 44px);
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: clamp(32px, 6vw, 52px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
-.exhibit-subtitle {
+.wall-subtitle {
   margin: 0;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.55);
-  letter-spacing: 0.04em;
+  color: #666;
+  letter-spacing: 0.02em;
 }
 
-.exhibit-viewport {
-  position: relative;
-  z-index: 1;
-  min-height: calc(100vh - 140px);
+.wall-body {
+  flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8px clamp(16px, 4vw, 48px) 64px;
+  padding: clamp(28px, 5vw, 48px) clamp(20px, 5vw, 56px) 64px;
 }
 
-.exhibit-wall {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: minmax(100px, auto);
-  gap: clamp(20px, 3vw, 36px);
+.wall-grid {
+  column-count: 3;
+  column-gap: clamp(20px, 3vw, 32px);
   max-width: 1200px;
   margin: 0 auto;
-  align-items: start;
 }
 
-.exhibit-piece {
+.wall-card {
+  display: block;
+  width: 100%;
+  margin: 0 0 clamp(20px, 3vw, 32px);
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
   text-align: left;
-  transform: rotate(var(--piece-rotate, 0deg));
+  break-inside: avoid;
   opacity: 0;
-  translate: 0 24px;
+  translate: 0 16px;
   transition:
-    opacity 0.7s ease var(--stagger-delay, 0ms),
-    translate 0.7s ease var(--stagger-delay, 0ms),
-    transform 0.35s ease;
+    opacity 0.55s ease var(--stagger-delay, 0ms),
+    translate 0.55s ease var(--stagger-delay, 0ms);
 }
 
-.exhibit-piece--visible {
+.wall-card--visible {
   opacity: 1;
   translate: 0 0;
 }
 
-.exhibit-piece:hover {
-  transform: rotate(var(--piece-rotate, 0deg)) translateY(-6px) scale(1.02);
-  z-index: 2;
+.wall-card__media {
+  overflow: hidden;
+  background: #f5f5f5;
+  line-height: 0;
 }
 
-.exhibit-piece:hover :deep(.gallery-art-frame) {
-  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 32px rgba(255, 220, 160, 0.15));
+.wall-card__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.45s ease, opacity 0.45s ease;
 }
 
-.exhibit-preview__frame {
-  max-width: 360px;
-  margin: 0 auto;
+.wall-card:hover .wall-card__media img {
+  transform: scale(1.03);
 }
 
-.exhibit-loading,
-.exhibit-empty {
-  position: relative;
-  z-index: 1;
+.wall-card__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px 0;
+}
+
+.wall-card__caption {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wall-card__date {
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #999;
+}
+
+.wall-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 50vh;
-  color: rgba(255, 255, 255, 0.65);
+  color: #888;
   text-align: center;
 }
 
-.exhibit-loading__line {
+.wall-state__line {
   width: 48px;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.6);
+  height: 2px;
+  background: #111;
   margin-bottom: 16px;
-  animation: exhibit-line 1.4s ease-in-out infinite;
+  animation: wall-line 1.4s ease-in-out infinite;
 }
 
-.exhibit-empty__cta {
-  display: inline-block;
+.wall-empty-cta {
+  display: inline-flex;
+  align-items: center;
   margin-top: 20px;
-  padding: 10px 24px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  color: #fff;
+  min-height: 44px;
+  padding: 0 24px;
+  border: 1.5px solid #111;
+  border-radius: 999px;
+  color: #111;
   text-decoration: none;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  transition: background 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.exhibit-empty__cta:hover {
-  background: rgba(255, 255, 255, 0.12);
+.wall-empty-cta:hover {
+  background: #111;
+  color: #fff;
 }
 
-.exhibit-loading-more {
-  position: relative;
-  z-index: 1;
+.wall-loading-more {
   text-align: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-  padding: 24px 0;
-  letter-spacing: 0.1em;
+  color: #999;
+  padding: 32px 0 0;
+  letter-spacing: 0.08em;
 }
 
-.exhibit-preview__info {
+.wall-preview__img {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  background: #f5f5f5;
+}
+
+.wall-preview__info {
   padding: 16px 0 0;
   font-size: 14px;
   line-height: 1.65;
-  color: #ddd;
+  color: #444;
 }
 
-.exhibit-preview__info p {
+.wall-preview__info p {
   margin: 6px 0;
 }
 
-.exhibit-preview__info strong {
-  color: #aaa;
+.wall-preview__info strong {
+  color: #888;
   font-weight: 500;
 }
 
-.exhibit-preview__desc {
+.wall-preview__desc {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  color: #bbb;
+  border-top: 1px solid #eee;
+  color: #666;
   font-size: 13px;
 }
 
-@keyframes exhibit-line {
+@keyframes wall-line {
   0%,
   100% {
     transform: scaleX(0.35);
@@ -519,47 +502,45 @@ export default {
   }
 }
 
-@media (max-width: 768px) {
-  .exhibit-wall {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 16px;
+@media (max-width: 960px) {
+  .wall-grid {
+    column-count: 2;
   }
+}
 
-  .exhibit-piece {
-    grid-column: auto !important;
-    grid-row: auto !important;
-    margin-top: 0 !important;
-    transform: rotate(0deg) !important;
-  }
-
-  .exhibit-piece:hover {
-    transform: translateY(-4px) scale(1.01) !important;
+@media (max-width: 560px) {
+  .wall-grid {
+    column-count: 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .exhibit-piece {
+  .wall-card {
     opacity: 1;
     translate: none;
     transition: none;
   }
 
-  .exhibit-loading__line {
+  .wall-card__media img {
+    transition: none;
+  }
+
+  .wall-state__line {
     animation: none;
   }
 }
 </style>
 
 <style>
-.exhibit-preview-dialog .el-dialog {
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #eee;
+.wall-preview-dialog .el-dialog {
+  background: #fff;
+  border: none;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12);
 }
 
-.exhibit-preview-dialog .el-dialog__title {
-  color: #eee;
-  font-weight: 400;
-  letter-spacing: 0.04em;
+.wall-preview-dialog .el-dialog__title {
+  color: #111;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 </style>

@@ -25,29 +25,6 @@ export const SHARE = {
   desc: '把珍贵童年瞬间贴进收集墙，一起来收集吧',
 }
 
-/** 艺术画廊展墙布局（12 列网格，循环复用） */
-export const EXHIBIT_LAYOUTS = [
-  { gridColumn: '1 / 6', gridRow: 'span 2', rotate: -1.8, size: 'lg', offsetY: 0 },
-  { gridColumn: '7 / 11', gridRow: 'span 1', rotate: 1.2, size: 'sm', offsetY: 32 },
-  { gridColumn: '11 / 13', gridRow: 'span 2', rotate: -0.8, size: 'md', offsetY: 8 },
-  { gridColumn: '2 / 5', gridRow: 'span 1', rotate: 2.1, size: 'sm', offsetY: 24 },
-  { gridColumn: '5 / 10', gridRow: 'span 2', rotate: -1.2, size: 'lg', offsetY: 0 },
-  { gridColumn: '10 / 13', gridRow: 'span 1', rotate: 0.6, size: 'md', offsetY: 40 },
-  { gridColumn: '1 / 4', gridRow: 'span 1', rotate: -2.4, size: 'sm', offsetY: 16 },
-  { gridColumn: '4 / 9', gridRow: 'span 2', rotate: 1.5, size: 'lg', offsetY: 0 },
-]
-
-export function getExhibitLayout(index) {
-  return EXHIBIT_LAYOUTS[index % EXHIBIT_LAYOUTS.length]
-}
-
-/** 画廊 SVG 相框样式（对应三张参考框） */
-export const FRAME_VARIANTS = ['oval-gold', 'scroll-blue', 'scroll-purple']
-
-export function getFrameVariant(index) {
-  return FRAME_VARIANTS[index % FRAME_VARIANTS.length]
-}
-
 export function getIllustrationUrl(item) {
   if (!item) return ''
   let picture = item.content || item.picture || item.image_url || item.url || item.image

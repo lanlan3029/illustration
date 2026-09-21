@@ -1,6 +1,6 @@
 <template>
   <div class="moment-page">
-    <MuseumSceneBackground :playing="!prefersReducedMotion" />
+    <MuseumSceneBackground />
 
     <button
       type="button"
@@ -167,7 +167,6 @@ export default {
       recentItems: [],
       previewVisible: false,
       previewItem: null,
-      prefersReducedMotion: false,
       submitImage,
     }
   },
@@ -184,7 +183,6 @@ export default {
   },
   mounted() {
     this.$store.commit('closeMask')
-    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const savedImage = localStorage.getItem(STORAGE_KEY)
     if (savedImage) {
@@ -475,11 +473,11 @@ export default {
 }
 
 .moment-museum-entry {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 38%;
   right: 0;
-  height: clamp(300px, 56vh, 560px);
+  height: 100vh;
   z-index: 2;
   padding: 0;
   border: none;
@@ -582,7 +580,7 @@ export default {
 .moment-hero {
   display: flex;
   align-items: flex-end;
-  min-height: clamp(300px, 56vh, 560px);
+  min-height: 100vh;
   padding: 0 clamp(16px, 4vw, 48px) clamp(20px, 4vh, 36px);
   box-sizing: border-box;
 }
