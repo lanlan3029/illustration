@@ -212,13 +212,13 @@ export default {
   grid-template-rows: repeat(var(--rows), 1fr);
   gap: var(--cell-gap);
   width: 100%;
-  max-width: min(560px, 92vw);
+  max-width: min(720px, 100%);
   aspect-ratio: 1 / 1;
   margin: 0 auto;
-  padding: clamp(10px, 2vw, 16px);
+  padding: clamp(12px, 2.4vw, 20px);
   box-sizing: border-box;
-  background: linear-gradient(160deg, #3d5a45 0%, #2f4836 100%);
-  border-radius: 4px;
+  background: linear-gradient(160deg, #e8c96a 0%, #d4a84a 100%);
+  border-radius: 0;
 }
 
 .focus-grid__cell {

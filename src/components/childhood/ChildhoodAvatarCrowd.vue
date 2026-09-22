@@ -3,10 +3,10 @@
     class="avatar-crowd"
     :class="{
       'avatar-crowd--focus': isExpanded,
-      'avatar-crowd--cover': variant === 'cover',
+      'avatar-crowd--hero': variant === 'hero',
     }"
   >
-    <div v-if="variant !== 'cover'" class="avatar-crowd__head">
+    <div v-if="variant === 'default'" class="avatar-crowd__head">
       <p class="avatar-crowd__label">{{ $t('childhoodMoments.crowdLabel') }}</p>
       <span class="avatar-crowd__count">{{ $t('childhoodMoments.crowdCount', { count: people.length }) }}</span>
     </div>
@@ -105,7 +105,7 @@ export default {
     variant: {
       type: String,
       default: 'default',
-      validator: (v) => ['default', 'cover'].includes(v),
+      validator: (v) => ['default', 'hero'].includes(v),
     },
   },
   data() {
@@ -165,8 +165,8 @@ export default {
 
     syncPersonWidth() {
       const w = this.$refs.wrapRef?.clientWidth || 360
-      if (this.variant === 'cover') {
-        this.personWidth = w < 220 ? 52 : w < 280 ? 58 : 64
+      if (this.variant === 'hero') {
+        this.personWidth = w < 360 ? 96 : w < 520 ? 112 : w < 720 ? 124 : 136
         return
       }
       this.personWidth = w < 420 ? 108 : w < 640 ? 120 : 132
@@ -437,17 +437,18 @@ export default {
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.avatar-crowd--cover {
+.avatar-crowd--hero {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
-.avatar-crowd--cover .avatar-crowd__wrap {
+.avatar-crowd--hero .avatar-crowd__wrap {
   flex: 1;
-  min-height: 0;
-  height: 100%;
+  min-height: clamp(360px, 52vh, 560px);
+  height: auto;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -455,30 +456,25 @@ export default {
   overflow: hidden;
 }
 
-.avatar-crowd--cover .avatar-crowd__wrap:not(.avatar-crowd__wrap--focus) {
-  min-height: unset;
-}
-
-.avatar-crowd--cover .avatar-crowd__wrap--focus {
-  min-height: 0;
+.avatar-crowd--hero .avatar-crowd__wrap--focus {
+  min-height: clamp(480px, 68vh, 720px);
   box-shadow: none;
   border: none;
+  overflow: auto;
 }
 
-.avatar-crowd--cover .avatar-crowd__stage--focus {
+.avatar-crowd--hero .avatar-crowd__stage--focus {
   transform: scale(1.04);
 }
 
-.avatar-crowd--cover .avatar-crowd__empty {
-  font-size: 12px;
-  color: #aaa;
-  padding: 12px;
+.avatar-crowd--hero .avatar-crowd__empty {
+  font-size: 13px;
+  color: rgba(42, 35, 64, 0.45);
+  padding: 16px;
 }
 
-.avatar-crowd--cover .avatar-crowd__tip {
-  max-width: min(180px, 65vw);
-  font-size: 11px;
-  padding: 8px 10px;
+.avatar-crowd--hero .avatar-crowd__tip {
+  max-width: min(220px, 72vw);
 }
 
 .avatar-crowd__head {

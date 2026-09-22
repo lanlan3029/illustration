@@ -1,20 +1,18 @@
 <template>
   <div class="moment-page">
-    <nav class="moment-nav">
-      <router-link to="/childhood/gallery" class="moment-nav__link">
-        {{ $t('childhoodMoments.viewWall') }}
-      </router-link>
-    </nav>
+    <section class="moment-upper">
+      <div class="moment-upper__bar">
+        <p class="moment-upper__brand">KidStory</p>
+        <router-link to="/childhood/gallery" class="moment-upper__link">
+          {{ $t('childhoodMoments.viewWall') }}
+        </router-link>
+      </div>
 
-    <section class="moment-hero">
-      <div class="moment-hero__grid">
-        <article class="book-cover" aria-label="幸福童年时刻">
-          <div class="book-cover__panel">
-            <p class="book-cover__brand">KidStory</p>
-            <h1 class="book-cover__title">{{ $t('childhoodMoments.coverTitle') }}</h1>
-            <ChildhoodAvatarCrowd ref="crowdRef" variant="cover" />
-          </div>
-        </article>
+      <div class="moment-upper__grid">
+        <div class="moment-crowd">
+          <h1 class="moment-crowd__title">{{ $t('childhoodMoments.coverTitle') }}</h1>
+          <ChildhoodAvatarCrowd ref="crowdRef" variant="hero" />
+        </div>
 
         <div class="moment-form">
           <textarea
@@ -44,6 +42,18 @@
           </div>
         </div>
       </div>
+
+      <svg
+        class="moment-wave"
+        viewBox="0 0 1440 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,52 C320,96 520,12 720,48 C920,84 1120,20 1440,56 L1440,100 L0,100 Z"
+          fill="var(--moment-lower-bg)"
+        />
+      </svg>
     </section>
 
     <section ref="galleryRef" class="moment-gallery">
@@ -447,86 +457,93 @@ export default {
 
 <style scoped>
 .moment-page {
+  --moment-upper-bg: #ebe4f4;
+  --moment-lower-bg: #f5e8b8;
+  width: 100%;
   min-height: 100vh;
-  background: #fff;
+  margin: 0;
+  padding: 0;
+  background: var(--moment-lower-bg);
   color: #111;
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
-  padding-bottom: 64px;
 }
 
-.moment-nav {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px clamp(20px, 5vw, 48px) 0;
-}
-
-.moment-nav__link {
-  font-size: 13px;
-  color: #666;
-  text-decoration: none;
-  letter-spacing: 0.02em;
-  transition: color 0.2s ease;
-}
-
-.moment-nav__link:hover {
-  color: #111;
-}
-
-.moment-hero {
-  padding: clamp(24px, 5vw, 48px) clamp(20px, 5vw, 48px);
-}
-
-.moment-hero__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
-  gap: clamp(32px, 6vw, 72px);
-  max-width: 960px;
-  margin: 0 auto;
-  align-items: center;
-}
-
-.book-cover {
+.moment-upper {
+  position: relative;
   width: 100%;
-  max-width: 340px;
-  margin: 0 auto;
+  background: var(--moment-upper-bg);
+  padding-bottom: 0;
 }
 
-.book-cover__panel {
-  aspect-ratio: 3 / 4.2;
+.moment-upper__bar {
   display: flex;
-  flex-direction: column;
-  padding: clamp(20px, 4vw, 28px) clamp(16px, 3vw, 22px) clamp(12px, 2vw, 16px);
-  background: linear-gradient(165deg, #faf8f4 0%, #f3efe8 100%);
-  border: 1px solid #e5dfd4;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 16px 40px rgba(0, 0, 0, 0.08),
-    4px 0 12px rgba(0, 0, 0, 0.04);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px clamp(16px, 3vw, 28px) 8px;
   box-sizing: border-box;
 }
 
-.book-cover__brand {
-  margin: 0 0 6px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+.moment-upper__brand {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #8167a9;
 }
 
-.book-cover__title {
-  margin: 0 0 12px;
-  font-size: clamp(20px, 4vw, 26px);
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: 0.06em;
-  color: #2a2a2a;
+.moment-upper__link {
+  font-size: 13px;
+  color: #444;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.moment-upper__link:hover {
+  color: #111;
+}
+
+.moment-upper__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 0;
+  width: 100%;
+  min-height: min(78vh, 680px);
+  align-items: stretch;
+}
+
+.moment-crowd {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  padding: 8px 0 24px;
+}
+
+.moment-crowd__title {
+  margin: 0 0 8px;
+  padding: 0 clamp(16px, 3vw, 28px);
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: #2a2340;
+}
+
+.moment-wave {
+  display: block;
+  width: 100%;
+  height: clamp(48px, 8vw, 80px);
+  margin-bottom: -1px;
 }
 
 .moment-form {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 280px;
+  min-height: 320px;
+  padding: clamp(24px, 5vw, 48px) clamp(16px, 3vw, 28px) clamp(32px, 6vw, 56px);
+  box-sizing: border-box;
 }
 
 .moment-form__input {
@@ -575,13 +592,14 @@ export default {
 }
 
 .moment-btn--ghost {
-  border: 1.5px solid #ddd;
-  background: transparent;
-  color: #444;
+  border: 1.5px solid rgba(42, 35, 64, 0.25);
+  background: rgba(255, 255, 255, 0.45);
+  color: #333;
 }
 
 .moment-btn--ghost:hover:not(:disabled) {
   border-color: #8167a9;
+  background: #fff;
   color: #8167a9;
 }
 
@@ -597,17 +615,19 @@ export default {
 }
 
 .moment-gallery {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: clamp(40px, 8vw, 64px) clamp(20px, 5vw, 48px) 0;
-  border-top: 1px solid #eee;
+  width: 100%;
+  margin: 0;
+  padding: clamp(32px, 6vw, 56px) 0 64px;
+  box-sizing: border-box;
 }
 
 .moment-gallery__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  padding: 0 clamp(16px, 3vw, 28px);
+  box-sizing: border-box;
 }
 
 .moment-gallery__head h2 {
@@ -633,10 +653,11 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 0;
-  color: #999;
+  padding: 48px 20px;
+  color: #666;
   font-size: 14px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .moment-gallery__state--empty {
@@ -652,11 +673,14 @@ export default {
 }
 
 .moment-gallery__focus {
-  max-width: 560px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .moment-gallery__focus-caption {
-  margin: 20px 0 6px;
+  margin: 20px clamp(16px, 3vw, 28px) 6px;
   font-size: 14px;
   line-height: 1.6;
   color: #333;
@@ -664,9 +688,9 @@ export default {
 }
 
 .moment-gallery__focus-hint {
-  margin: 0;
+  margin: 0 clamp(16px, 3vw, 28px);
   font-size: 12px;
-  color: #999;
+  color: #777;
   text-align: center;
 }
 
@@ -695,17 +719,19 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .moment-hero__grid {
+  .moment-upper__grid {
     grid-template-columns: 1fr;
-    gap: 36px;
+    min-height: auto;
   }
 
-  .book-cover {
-    max-width: 280px;
+  .moment-crowd {
+    min-height: 360px;
+    padding-bottom: 8px;
   }
 
   .moment-form {
     min-height: auto;
+    padding-top: 0;
   }
 
   .moment-form__actions {
