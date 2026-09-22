@@ -21,6 +21,13 @@
         @click="closeAllTips"
       >
         <p
+          v-if="bootError"
+          class="avatar-crowd__error"
+        >
+          {{ bootError }}
+        </p>
+        <p
+          v-else
           class="avatar-crowd__empty"
           :class="{ 'avatar-crowd__empty--hidden': people.length > 0 }"
         >
@@ -66,10 +73,14 @@
 </template>
 
 <script>
+import avatarManifest from '@/data/avatarParts/manifest.json'
+import avatarStyleTags from '@/data/avatarParts/style_tags.json'
+import { CHILDHOOD_SEED_STORIES } from '@/utils/childhoodSeedStories'
 import {
   LAYER_SPECS,
   PERSON_ASPECT,
   createPerson,
+  createSeedPerson,
   layoutPeople,
   loadCrowdFromStorage,
   partUrl,
@@ -93,6 +104,7 @@ export default {
       manifest: null,
       styleTags: null,
       ready: false,
+      bootError: '',
       stageHeight: 320,
       personWidth: 132,
       positions: {},
@@ -127,36 +139,17 @@ export default {
     this.clearFocusSequence()
   },
   methods: {
-    async boot() {
+    boot() {
       try {
-        const [manifestRes, tagsRes] = await Promise.all([
-          fetch('/avatar_parts/manifest.json'),
-          fetch('/avatar_parts/style_tags.json'),
-        ])
-        if (!manifestRes.ok) throw new Error(`manifest ${manifestRes.status}`)
-        this.manifest = await manifestRes.json()
-        this.styleTags = tagsRes.ok ? await tagsRes.json() : null
+        this.manifest = avatarManifest
+        this.styleTags = avatarStyleTags
         this.ready = true
-
-        const saved = loadCrowdFromStorage()
-        if (saved.length) {
-          this.people = saved.map((p) => ({
-            ...p,
-            visible: false,
-            tipOpen: false,
-          }))
-          this.warmPeople(this.people)
-          this.$nextTick(() => {
-            this.relayout()
-            requestAnimationFrame(() => {
-              this.people.forEach((p) => {
-                p.visible = true
-              })
-            })
-          })
-        }
-      } catch {
+        this.bootError = ''
+        this.loadInitialPeople()
+      } catch (err) {
         this.ready = false
+        this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
+        console.error('[ChildhoodAvatarCrowd] boot failed', err)
       }
     },
 
@@ -183,6 +176,30 @@ export default {
       const img = new Image()
       img.decoding = 'async'
       img.src = url
+    },
+
+    loadInitialPeople() {
+      const seedPeople = CHILDHOOD_SEED_STORIES.map((story) =>
+        createSeedPerson(story, this.manifest, this.styleTags)
+      )
+      const userPeople = loadCrowdFromStorage().map((p) => ({
+        ...p,
+        isSeed: false,
+        visible: false,
+        tipOpen: false,
+      }))
+      this.people = [...seedPeople, ...userPeople]
+      this.warmPeople(this.people)
+      this.$nextTick(() => {
+        this.relayout()
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this.people.forEach((p) => {
+              p.visible = true
+            })
+          })
+        })
+      })
     },
 
     warmPeople(list) {
@@ -356,7 +373,7 @@ export default {
       const person = createPerson(note, this.manifest, this.styleTags)
       this.warmPeople([person])
       this.people.push(person)
-      saveCrowdToStorage(this.people)
+      saveCrowdToStorage(this.people.filter((p) => !p.isSeed))
 
       this.$nextTick(() => {
         this.relayout()
@@ -491,6 +508,19 @@ export default {
 
 .avatar-crowd__empty--hidden {
   opacity: 0;
+}
+
+.avatar-crowd__error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #b44;
 }
 
 .avatar-crowd__person {

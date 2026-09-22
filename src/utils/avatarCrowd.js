@@ -1,6 +1,7 @@
 /** 童年人群 — 部件拼接与砖墙布局（参照 avatar_crowd_demo.html） */
 
-export const PARTS_BASE = '/avatar_parts/'
+const BASE = (process.env.BASE_URL || '/').replace(/\/?$/, '/')
+export const PARTS_BASE = `${BASE}avatar_parts/`
 
 export const CROWD_STORAGE_KEY = 'childhood_avatar_crowd'
 
@@ -50,6 +51,21 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+function pickSeeded(arr, seed) {
+  if (!arr.length) return ''
+  return arr[seed % arr.length]
+}
+
+export function hashSeed(str) {
+  let h = 2166136261
+  const s = String(str || '')
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
 function stemOf(filename) {
   return String(filename || '').replace(/\.svg$/i, '')
 }
@@ -77,6 +93,19 @@ export function makeJitter() {
   }
 }
 
+export function makeSeededJitter(seed) {
+  const r1 = ((seed * 9301 + 49297) % 233280) / 233280
+  const r2 = (((seed + 1) * 9301 + 49297) % 233280) / 233280
+  const r3 = (((seed + 2) * 9301 + 49297) % 233280) / 233280
+  const r4 = (((seed + 3) * 9301 + 49297) % 233280) / 233280
+  return {
+    x: (r1 - 0.5) * 0.06,
+    y: (r2 - 0.5) * 0.04,
+    s: 0.96 + r3 * 0.06,
+    bob: (r4 - 0.5) * 0.02,
+  }
+}
+
 export function randomRecipe(manifest, styleTags) {
   const body = pick(manifest.body)
   const bodyVibe = vibeOf(styleTags, 'body', body)
@@ -86,7 +115,36 @@ export function randomRecipe(manifest, styleTags) {
   return { body, face, head, vibe: bodyVibe }
 }
 
+export function seededRecipe(manifest, styleTags, seedKey) {
+  const seed = hashSeed(seedKey)
+  const body = pickSeeded(manifest.body, seed)
+  const bodyVibe = vibeOf(styleTags, 'body', body)
+  const allowedHeads = styleTags?.compatible?.[bodyVibe] || ['f', 'm', 'n']
+  const headPool = filterByVibes(styleTags, 'head', manifest.head, allowedHeads)
+  const head = pickSeeded(headPool, seed + 17)
+  const face = pickSeeded(manifest.face, seed + 53)
+  return { body, face, head, vibe: bodyVibe }
+}
+
+export function createSeedPerson(story, manifest, styleTags) {
+  const seedKey = story.user_id || story.id
+  const seed = hashSeed(seedKey)
+  return {
+    id: story.id,
+    createdAt: 0,
+    note: story.content,
+    username: story.username || '',
+    user_id: story.user_id || '',
+    isSeed: true,
+    recipe: seededRecipe(manifest, styleTags, seedKey),
+    jitter: makeSeededJitter(seed),
+    visible: false,
+    tipOpen: false,
+  }
+}
+
 export function isPersonToday(person) {
+  if (person?.isSeed) return false
   const ts = person?.createdAt || Number.parseInt(String(person?.id || '').split('-')[0], 10)
   if (!ts || Number.isNaN(ts)) return false
   const d = new Date(ts)
@@ -107,6 +165,7 @@ export function createPerson(note, manifest, styleTags) {
   return {
     id: `${createdAt}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt,
+    isSeed: false,
     note: (note || '').trim(),
     recipe: randomRecipe(manifest, styleTags),
     jitter: makeJitter(),
