@@ -63,17 +63,18 @@
         {{ $t('childhoodMoments.galleryEmpty') }}
       </p>
 
-      <div v-else class="moment-gallery__grid">
-        <button
-          v-for="(item, index) in galleryItems"
-          :key="item._id || index"
-          type="button"
-          class="moment-gallery__card"
-          @click="previewItem = item; previewVisible = true"
-        >
-          <img :src="getImageUrl(item)" :alt="itemCaption(item)" loading="lazy" />
-          <p class="moment-gallery__caption">{{ itemCaption(item) }}</p>
-        </button>
+      <div v-else class="moment-gallery__focus">
+        <ChildhoodFocusGrid
+          ref="focusGrid"
+          v-model="galleryFocusIndex"
+          :items="galleryGridItems"
+          :aria-label="$t('childhoodMoments.galleryTitle')"
+          @select="openGalleryPreview"
+        />
+        <p v-if="galleryGridItems[galleryFocusIndex]?.caption" class="moment-gallery__focus-caption">
+          {{ galleryGridItems[galleryFocusIndex].caption }}
+        </p>
+        <p class="moment-gallery__focus-hint">{{ $t('childhoodMoments.focusHint') }}</p>
       </div>
     </section>
 
@@ -100,6 +101,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
+import ChildhoodFocusGrid from '@/components/childhood/ChildhoodFocusGrid.vue'
 import submitImage from '@/assets/images/submit.webp'
 import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 import {
@@ -113,7 +115,7 @@ import {
 
 export default {
   name: 'Childhood',
-  components: { ChildhoodAvatarCrowd },
+  components: { ChildhoodAvatarCrowd, ChildhoodFocusGrid },
   data() {
     return {
       subjectScene: '',
@@ -122,6 +124,7 @@ export default {
       generatedImageUrl: null,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
       galleryItems: [],
+      galleryFocusIndex: 0,
       galleryLoading: true,
       previewVisible: false,
       previewItem: null,
@@ -131,6 +134,17 @@ export default {
   computed: {
     generatedPrompt() {
       return buildChildhoodPrompt(this.subjectScene)
+    },
+    galleryGridItems() {
+      return this.galleryItems.map((item, index) => ({
+        id: item._id || `g-${index}`,
+        imageUrl: this.getImageUrl(item),
+        caption: this.itemCaption(item),
+        raw: item,
+      }))
+    },
+    currentGalleryGridItem() {
+      return this.galleryGridItems[this.galleryFocusIndex] || null
     },
   },
   mounted() {
@@ -202,9 +216,16 @@ export default {
     },
 
     scrollToGallery() {
+      this.galleryFocusIndex = 0
       this.$nextTick(() => {
         this.$refs.galleryRef?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
+    },
+
+    openGalleryPreview(gridItem) {
+      if (!gridItem?.raw) return
+      this.previewItem = gridItem.raw
+      this.previewVisible = true
     },
 
     async initWeChatShare() {
@@ -630,43 +651,23 @@ export default {
   animation: line-pulse 1.4s ease-in-out infinite;
 }
 
-.moment-gallery__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
+.moment-gallery__focus {
+  max-width: 560px;
 }
 
-.moment-gallery__card {
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  text-align: left;
+.moment-gallery__focus-caption {
+  margin: 20px 0 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  text-align: center;
 }
 
-.moment-gallery__card img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  background: #f5f5f5;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.moment-gallery__card:hover img {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
-}
-
-.moment-gallery__caption {
-  margin: 10px 0 0;
+.moment-gallery__focus-hint {
+  margin: 0;
   font-size: 12px;
-  line-height: 1.5;
-  color: #666;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: #999;
+  text-align: center;
 }
 
 .moment-preview-image {

@@ -8,7 +8,7 @@
       </div>
     </header>
 
-    <div v-if="loading && !allIllustrations.length" class="wall-state">
+    <div v-if="loading && !gridItems.length" class="wall-state">
       <span class="wall-state__line" />
       <p>{{ $t('childhoodMoments.wallLoading') }}</p>
     </div>
@@ -19,38 +19,50 @@
       class="wall-body"
       @scroll="handleScroll"
     >
-      <div v-if="!allIllustrations.length" class="wall-state">
+      <div v-if="!gridItems.length" class="wall-state">
         <p>{{ $t('childhoodMoments.wallEmpty') }}</p>
         <router-link to="/childhood" class="wall-empty-cta">
           {{ $t('childhoodMoments.wallEmptyCta') }}
         </router-link>
       </div>
 
-      <div v-else class="wall-grid">
-        <button
-          v-for="(item, index) in allIllustrations"
-          :key="item._id || index"
-          ref="wallItems"
-          type="button"
-          class="wall-card"
-          :class="{ 'wall-card--visible': visibleIds.has(item._id || String(index)) }"
-          :style="{ '--stagger-delay': `${(index % 12) * 50}ms` }"
-          @click="openPreview(item)"
-        >
-          <div class="wall-card__media">
-            <img
-              :src="getImageUrl(item)"
-              :alt="itemCaption(item)"
-              loading="lazy"
-            />
+      <div v-else class="wall-focus">
+        <ChildhoodFocusGrid
+          ref="focusGrid"
+          v-model="focusIndex"
+          :items="gridItems"
+          :aria-label="$t('childhoodMoments.exhibitTitle')"
+          @select="openPreviewByGrid"
+        />
+
+        <div class="wall-focus__meta">
+          <button
+            type="button"
+            class="wall-focus__nav"
+            :disabled="focusIndex <= 0"
+            :aria-label="$t('childhoodMoments.focusPrev')"
+            @click="$refs.focusGrid?.step(-1)"
+          >
+            ←
+          </button>
+
+          <div class="wall-focus__copy">
+            <p v-if="currentGridItem?.caption" class="wall-focus__caption">
+              {{ currentGridItem.caption }}
+            </p>
+            <p class="wall-focus__hint">{{ $t('childhoodMoments.focusHint') }}</p>
           </div>
-          <div class="wall-card__meta">
-            <span class="wall-card__caption">{{ itemCaption(item) }}</span>
-            <span v-if="item.createdAt" class="wall-card__date">
-              {{ formatDateShort(item.createdAt) }}
-            </span>
-          </div>
-        </button>
+
+          <button
+            type="button"
+            class="wall-focus__nav"
+            :disabled="focusIndex >= gridItems.length - 1"
+            :aria-label="$t('childhoodMoments.focusNext')"
+            @click="$refs.focusGrid?.step(1)"
+          >
+            →
+          </button>
+        </div>
       </div>
 
       <p v-if="loadingMore" class="wall-loading-more">{{ $t('childhoodMoments.wallLoadingMore') }}</p>
@@ -89,6 +101,7 @@
 
 <script>
 import { ElMessage } from 'element-plus'
+import ChildhoodFocusGrid from '@/components/childhood/ChildhoodFocusGrid.vue'
 import {
   ILL_TYPES_GALLERY,
   getIllustrationUrl,
@@ -96,6 +109,7 @@ import {
 
 export default {
   name: 'ChildhoodGallery',
+  components: { ChildhoodFocusGrid },
   data() {
     return {
       allIllustrations: [],
@@ -106,9 +120,23 @@ export default {
       hasMoreByType: {},
       previewVisible: false,
       currentItem: null,
-      visibleIds: new Set(),
-      observer: null,
+      focusIndex: 0,
     }
+  },
+  computed: {
+    gridItems() {
+      return this.allIllustrations
+        .filter((item) => this.hasIllustration(item))
+        .map((item, index) => ({
+          id: item._id || `ill-${index}`,
+          imageUrl: getIllustrationUrl(item),
+          caption: this.itemCaption(item),
+          raw: item,
+        }))
+    },
+    currentGridItem() {
+      return this.gridItems[this.focusIndex] || null
+    },
   },
   mounted() {
     this.$store.commit('closeMask')
@@ -118,17 +146,19 @@ export default {
     })
     this.loadIllustrations(true)
   },
-  beforeUnmount() {
-    this.observer?.disconnect()
-  },
   methods: {
     getImageUrl(item) {
       return getIllustrationUrl(item)
     },
 
+    hasIllustration(item) {
+      const url = getIllustrationUrl(item)
+      return !!url && url.length > 8
+    },
+
     itemCaption(item) {
+      if (item?.description) return item.description.slice(0, 80)
       if (item?.title) return item.title
-      if (item?.description) return item.description.slice(0, 32)
       return this.$t('childhoodMoments.polaroidCaptionDefault')
     },
 
@@ -202,50 +232,12 @@ export default {
           this.allIllustrations = this.mergeItems(this.allIllustrations, batch)
         }
         this.totalCount = Math.max(newTotal, this.allIllustrations.length)
-
-        this.$nextTick(() => this.setupObserver())
       } catch {
         ElMessage.error(this.$t('childhoodMoments.wallLoadFailed'))
       } finally {
         this.loading = false
         this.loadingMore = false
       }
-    },
-
-    setupObserver() {
-      if (this.observer) {
-        this.observer.disconnect()
-      }
-      if (typeof IntersectionObserver === 'undefined') {
-        this.allIllustrations.forEach((item, index) => {
-          this.visibleIds.add(item._id || String(index))
-        })
-        return
-      }
-
-      this.observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const id = entry.target.dataset.id
-              if (id) {
-                this.visibleIds = new Set([...this.visibleIds, id])
-              }
-              this.observer.unobserve(entry.target)
-            }
-          })
-        },
-        { root: this.$refs.viewportRef, threshold: 0.06, rootMargin: '40px' }
-      )
-
-      const nodes = this.$refs.wallItems
-      const list = Array.isArray(nodes) ? nodes : nodes ? [nodes] : []
-      list.forEach((el, index) => {
-        const item = this.allIllustrations[index]
-        if (!el || !item) return
-        el.dataset.id = item._id || String(index)
-        this.observer.observe(el)
-      })
     },
 
     handleScroll() {
@@ -258,8 +250,9 @@ export default {
       }
     },
 
-    openPreview(item) {
-      this.currentItem = item
+    openPreviewByGrid(gridItem) {
+      if (!gridItem?.raw) return
+      this.currentItem = gridItem.raw
       this.previewVisible = true
     },
 
@@ -275,12 +268,6 @@ export default {
         month: 'long',
         day: 'numeric',
       })
-    },
-
-    formatDateShort(dateString) {
-      if (!dateString) return ''
-      const d = new Date(dateString)
-      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`
     },
   },
 }
@@ -316,10 +303,6 @@ export default {
   color: #111;
 }
 
-.wall-header__main {
-  max-width: 960px;
-}
-
 .wall-title {
   margin: 0 0 8px;
   font-size: clamp(32px, 6vw, 52px);
@@ -332,84 +315,68 @@ export default {
   margin: 0;
   font-size: 14px;
   color: #666;
-  letter-spacing: 0.02em;
 }
 
 .wall-body {
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   padding: clamp(28px, 5vw, 48px) clamp(20px, 5vw, 56px) 64px;
 }
 
-.wall-grid {
-  column-count: 3;
-  column-gap: clamp(20px, 3vw, 32px);
-  max-width: 1200px;
+.wall-focus {
+  max-width: 640px;
   margin: 0 auto;
 }
 
-.wall-card {
-  display: block;
-  width: 100%;
-  margin: 0 0 clamp(20px, 3vw, 32px);
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  break-inside: avoid;
-  opacity: 0;
-  translate: 0 16px;
-  transition:
-    opacity 0.55s ease var(--stagger-delay, 0ms),
-    translate 0.55s ease var(--stagger-delay, 0ms);
+.wall-focus__meta {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 16px;
+  margin-top: 24px;
 }
 
-.wall-card--visible {
-  opacity: 1;
-  translate: 0 0;
-}
-
-.wall-card__media {
-  overflow: hidden;
-  background: #f5f5f5;
-  line-height: 0;
-}
-
-.wall-card__media img {
-  display: block;
-  width: 100%;
-  height: auto;
-  transition: transform 0.45s ease, opacity 0.45s ease;
-}
-
-.wall-card:hover .wall-card__media img {
-  transform: scale(1.03);
-}
-
-.wall-card__meta {
+.wall-focus__nav {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 2px 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
-.wall-card__caption {
-  font-size: 13px;
-  line-height: 1.4;
+.wall-focus__nav:hover:not(:disabled) {
+  border-color: #8167a9;
+  color: #8167a9;
+}
+
+.wall-focus__nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.wall-focus__copy {
+  text-align: center;
+  min-width: 0;
+}
+
+.wall-focus__caption {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.6;
   color: #222;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.wall-card__date {
-  flex-shrink: 0;
-  font-size: 11px;
-  letter-spacing: 0.06em;
+.wall-focus__hint {
+  margin: 0;
+  font-size: 12px;
   color: #999;
+  letter-spacing: 0.02em;
 }
 
 .wall-state {
@@ -425,14 +392,13 @@ export default {
 .wall-state__line {
   width: 48px;
   height: 2px;
-  background: #111;
+  background: #8167a9;
   margin-bottom: 16px;
   animation: wall-line 1.4s ease-in-out infinite;
 }
 
 .wall-empty-cta {
   display: inline-flex;
-  align-items: center;
   margin-top: 20px;
   min-height: 44px;
   padding: 0 24px;
@@ -442,12 +408,6 @@ export default {
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.wall-empty-cta:hover {
-  background: #111;
-  color: #fff;
 }
 
 .wall-loading-more {
@@ -455,7 +415,6 @@ export default {
   font-size: 12px;
   color: #999;
   padding: 32px 0 0;
-  letter-spacing: 0.08em;
 }
 
 .wall-preview__img {
@@ -471,15 +430,6 @@ export default {
   font-size: 14px;
   line-height: 1.65;
   color: #444;
-}
-
-.wall-preview__info p {
-  margin: 6px 0;
-}
-
-.wall-preview__info strong {
-  color: #888;
-  font-weight: 500;
 }
 
 .wall-preview__desc {
@@ -502,29 +452,7 @@ export default {
   }
 }
 
-@media (max-width: 960px) {
-  .wall-grid {
-    column-count: 2;
-  }
-}
-
-@media (max-width: 560px) {
-  .wall-grid {
-    column-count: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .wall-card {
-    opacity: 1;
-    translate: none;
-    transition: none;
-  }
-
-  .wall-card__media img {
-    transition: none;
-  }
-
   .wall-state__line {
     animation: none;
   }
@@ -536,11 +464,5 @@ export default {
   background: #fff;
   border: none;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12);
-}
-
-.wall-preview-dialog .el-dialog__title {
-  color: #111;
-  font-weight: 600;
-  letter-spacing: -0.01em;
 }
 </style>
