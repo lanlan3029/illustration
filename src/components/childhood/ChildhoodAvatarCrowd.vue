@@ -1,9 +1,12 @@
 <template>
   <div
     class="avatar-crowd"
-    :class="{ 'avatar-crowd--focus': isExpanded }"
+    :class="{
+      'avatar-crowd--focus': isExpanded,
+      'avatar-crowd--cover': variant === 'cover',
+    }"
   >
-    <div class="avatar-crowd__head">
+    <div v-if="variant !== 'cover'" class="avatar-crowd__head">
       <p class="avatar-crowd__label">{{ $t('childhoodMoments.crowdLabel') }}</p>
       <span class="avatar-crowd__count">{{ $t('childhoodMoments.crowdCount', { count: people.length }) }}</span>
     </div>
@@ -98,6 +101,13 @@ const FOCUS_TIMELINE = {
 
 export default {
   name: 'ChildhoodAvatarCrowd',
+  props: {
+    variant: {
+      type: String,
+      default: 'default',
+      validator: (v) => ['default', 'cover'].includes(v),
+    },
+  },
   data() {
     return {
       people: [],
@@ -155,6 +165,10 @@ export default {
 
     syncPersonWidth() {
       const w = this.$refs.wrapRef?.clientWidth || 360
+      if (this.variant === 'cover') {
+        this.personWidth = w < 220 ? 52 : w < 280 ? 58 : 64
+        return
+      }
       this.personWidth = w < 420 ? 108 : w < 640 ? 120 : 132
     },
 
@@ -421,6 +435,50 @@ export default {
   --crowd-purple-soft: rgba(129, 103, 169, 0.12);
   --person-w: 132px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.avatar-crowd--cover {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.avatar-crowd--cover .avatar-crowd__wrap {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.avatar-crowd--cover .avatar-crowd__wrap:not(.avatar-crowd__wrap--focus) {
+  min-height: unset;
+}
+
+.avatar-crowd--cover .avatar-crowd__wrap--focus {
+  min-height: 0;
+  box-shadow: none;
+  border: none;
+}
+
+.avatar-crowd--cover .avatar-crowd__stage--focus {
+  transform: scale(1.04);
+}
+
+.avatar-crowd--cover .avatar-crowd__empty {
+  font-size: 12px;
+  color: #aaa;
+  padding: 12px;
+}
+
+.avatar-crowd--cover .avatar-crowd__tip {
+  max-width: min(180px, 65vw);
+  font-size: 11px;
+  padding: 8px 10px;
 }
 
 .avatar-crowd__head {
