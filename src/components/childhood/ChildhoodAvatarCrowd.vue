@@ -72,6 +72,10 @@
         </div>
       </div>
     </div>
+
+    <p v-if="variant === 'hero' && people.length > 0" class="avatar-crowd__hero-hint">
+      {{ $t('childhoodMoments.crowdHoverHint', { count: people.length }) }}
+    </p>
   </div>
 </template>
 
@@ -101,6 +105,7 @@ const FOCUS_TIMELINE = {
 
 export default {
   name: 'ChildhoodAvatarCrowd',
+  emits: ['layout'],
   props: {
     variant: {
       type: String,
@@ -267,6 +272,34 @@ export default {
       )
       this.stageHeight = height
       this.positions = Object.fromEntries(positions.map((p) => [p.id, p]))
+      this.$nextTick(() => this.$emit('layout'))
+    },
+
+    /** 人物群实际包围盒右侧中心（viewport 坐标），供页面连接线锚点 */
+    getClusterConnectorPoint() {
+      const stage = this.$refs.stageRef
+      if (!stage || !this.people.length) return null
+
+      const personH = this.personWidth * PERSON_ASPECT
+      let maxRight = 0
+      let sumY = 0
+      let count = 0
+
+      this.people.forEach((person) => {
+        const pos = this.positions[person.id]
+        if (!pos) return
+        maxRight = Math.max(maxRight, pos.left + this.personWidth)
+        sumY += pos.top + personH * 0.55
+        count += 1
+      })
+
+      if (!count) return null
+
+      const stageRect = stage.getBoundingClientRect()
+      return {
+        x: stageRect.left + maxRight + 4,
+        y: stageRect.top + sumY / count,
+      }
     },
 
     wait(ms) {
@@ -432,7 +465,7 @@ export default {
 <style scoped>
 .avatar-crowd {
   --crowd-purple: #8167a9;
-  --crowd-purple-soft: rgba(129, 103, 169, 0.12);
+  --crowd-purple-soft: rgba(129, 103, 169, 0.07);
   --person-w: 132px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -443,17 +476,18 @@ export default {
   display: flex;
   flex-direction: column;
   width: 100%;
+  overflow: visible;
 }
 
 .avatar-crowd--hero .avatar-crowd__wrap {
   flex: 1;
-  min-height: clamp(360px, 52vh, 560px);
+  min-height: clamp(280px, 38vh, 480px);
   height: auto;
   border: none;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .avatar-crowd--hero .avatar-crowd__wrap--focus {
@@ -461,6 +495,8 @@ export default {
   box-shadow: none;
   border: none;
   overflow: auto;
+  padding-top: clamp(56px, 8vh, 80px);
+  box-sizing: border-box;
 }
 
 .avatar-crowd--hero .avatar-crowd__stage--focus {
@@ -469,12 +505,25 @@ export default {
 
 .avatar-crowd--hero .avatar-crowd__empty {
   font-size: 13px;
-  color: rgba(42, 35, 64, 0.45);
+  color: rgba(0, 0, 0, 0.35);
   padding: 16px;
 }
 
 .avatar-crowd--hero .avatar-crowd__tip {
   max-width: min(220px, 72vw);
+  box-shadow:
+    0 4px 14px rgba(129, 103, 169, 0.1),
+    0 0 0 1.5px var(--crowd-purple-soft);
+  z-index: 10001;
+}
+
+.avatar-crowd__hero-hint {
+  margin: 10px clamp(16px, 3vw, 28px) 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8a8498;
+  letter-spacing: 0.02em;
 }
 
 .avatar-crowd__head {
@@ -677,8 +726,8 @@ export default {
   word-break: break-word;
   border: 1.5px solid var(--crowd-purple);
   box-shadow:
-    0 12px 32px rgba(129, 103, 169, 0.18),
-    0 0 0 4px var(--crowd-purple-soft);
+    0 6px 18px rgba(129, 103, 169, 0.12),
+    0 0 0 1.5px var(--crowd-purple-soft);
   pointer-events: none;
   z-index: 5;
   transform: translate3d(-50%, 10px, 0) scale(0.9);

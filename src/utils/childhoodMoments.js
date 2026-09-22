@@ -25,14 +25,44 @@ export const SHARE = {
   desc: '把珍贵童年瞬间贴进收集墙，一起来收集吧',
 }
 
+function normalizeIllustrationUrl(picture) {
+  if (!picture || typeof picture !== 'string') return ''
+  const value = picture.trim()
+  if (!value) return ''
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:image')) {
+    return value
+  }
+  return `https://static.kidstory.cc/${value.replace(/^\//, '')}`
+}
+
+/** 排除纯文本 description，只认图片路径或 URL */
+export function looksLikeImageUrl(value) {
+  if (!value || typeof value !== 'string') return false
+  const v = value.trim()
+  if (v.length < 4) return false
+  if (v.startsWith('http://') || v.startsWith('https://') || v.startsWith('data:image')) return true
+  if (/\.(png|jpe?g|webp|gif|svg|avif)(\?.*)?$/i.test(v)) return true
+  // 静态资源路径（无中文）
+  if (v.includes('/') && !/[\u4e00-\u9fff]/.test(v)) return true
+  return false
+}
+
 export function getIllustrationUrl(item) {
   if (!item) return ''
-  let picture = item.content || item.picture || item.image_url || item.url || item.image
-  if (!picture) return ''
-  if (typeof picture === 'string') {
-    if (picture.startsWith('http') || picture.startsWith('data:')) return picture
-    return `https://static.kidstory.cc/${picture}`
+  const candidates = [item.picture, item.image_url, item.image, item.url, item.content]
+  for (const picture of candidates) {
+    if (!picture) continue
+    if (typeof picture === 'object' && picture.url) {
+      return normalizeIllustrationUrl(picture.url)
+    }
+    if (typeof picture === 'string' && looksLikeImageUrl(picture)) {
+      return normalizeIllustrationUrl(picture)
+    }
   }
-  if (typeof picture === 'object' && picture.url) return picture.url
   return ''
+}
+
+export function hasIllustration(item) {
+  const url = getIllustrationUrl(item)
+  return !!url && url.length > 8
 }

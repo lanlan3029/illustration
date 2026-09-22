@@ -105,6 +105,7 @@ import ChildhoodFocusGrid from '@/components/childhood/ChildhoodFocusGrid.vue'
 import {
   ILL_TYPES_GALLERY,
   getIllustrationUrl,
+  hasIllustration,
 } from '@/utils/childhoodMoments'
 
 export default {
@@ -126,7 +127,7 @@ export default {
   computed: {
     gridItems() {
       return this.allIllustrations
-        .filter((item) => this.hasIllustration(item))
+        .filter((item) => hasIllustration(item))
         .map((item, index) => ({
           id: item._id || `ill-${index}`,
           imageUrl: getIllustrationUrl(item),
@@ -149,11 +150,6 @@ export default {
   methods: {
     getImageUrl(item) {
       return getIllustrationUrl(item)
-    },
-
-    hasIllustration(item) {
-      const url = getIllustrationUrl(item)
-      return !!url && url.length > 8
     },
 
     itemCaption(item) {

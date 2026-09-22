@@ -50,19 +50,7 @@ export const CHILDHOOD_SEED_STORIES = [
     user_id: '6382ba0c000000001f0166ed',
     content: '小时候很喜欢凌晨起床，和父母坐高铁出远门',
   },
-  {
-    id: 'seed-010',
-    username: '富momo',
-    user_id: '5ae2ea8fe8ac2b6da854e97e',
-    content:
-      '哇塞我从小到大都很喜欢这种小意外的日常，比如大半夜不睡觉，比如特别早睡然后凌晨起来去看日出，比如上班的时候悄悄摸鱼，小时候没试过长大自己想怎么来就怎么来可好玩了哈哈哈',
-  },
-  {
-    id: 'seed-011',
-    username: '獾猪在歌唱',
-    user_id: '5a37c71811be102d7b44d58e',
-    content: '我娃平常起床困难户，有天早晨他爸发现屋里有一只死虫子，喊他来看，他直接弹射起床[笑哭R]',
-  },
+
   {
     id: 'seed-012',
     username: '无事小神仙mio',

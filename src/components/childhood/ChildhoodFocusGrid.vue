@@ -1,5 +1,34 @@
 <template>
+  <!-- 仅展示有图的条目，无空占位 -->
   <div
+    v-if="hideEmpty"
+    class="focus-grid focus-grid--photos"
+    role="region"
+    :aria-label="ariaLabel"
+  >
+    <button
+      v-for="(item, index) in items"
+      :key="item.id"
+      type="button"
+      class="focus-grid__photo"
+      :class="{ 'focus-grid__photo--active': index === focusIndex }"
+      :aria-label="item.caption"
+      @click="onPhotoClick(index, item)"
+    >
+      <div class="focus-grid__frame">
+        <img
+          class="focus-grid__img"
+          :src="item.imageUrl"
+          :alt="item.caption || ''"
+          loading="lazy"
+        />
+      </div>
+    </button>
+  </div>
+
+  <!-- 5×5 聚焦网格（gallery 页等场景保留） -->
+  <div
+    v-else
     class="focus-grid"
     :style="{ '--cols': columns, '--rows': rows }"
     role="region"
@@ -26,11 +55,6 @@
             :alt="cell.item.caption || ''"
             loading="lazy"
           />
-          <span v-else :key="`empty-${cell.slot}`" class="focus-grid__placeholder" aria-hidden="true">
-            <svg viewBox="0 0 40 40" class="focus-grid__shape">
-              <path :d="placeholderPath(cell.slot)" fill="none" stroke="currentColor" stroke-width="1.5" />
-            </svg>
-          </span>
         </Transition>
       </div>
     </button>
@@ -41,18 +65,6 @@
 /** 5×5 网格中心槽位（行优先索引） */
 const DEFAULT_COLS = 5
 const DEFAULT_ROWS = 5
-
-const PLACEHOLDER_SHAPES = [
-  'M20 4 L36 36 L4 36 Z',
-  'M8 8 H32 V32 H8 Z',
-  'M20 6 A14 14 0 1 1 20 34 A14 14 0 1 1 20 6',
-  'M6 20 H34',
-  'M20 6 V34',
-  'M10 10 L30 30 M30 10 L10 30',
-  'M20 8 L32 32 L8 32 Z',
-  'M12 12 H28 V28 H12 Z',
-  'M20 10 A10 16 0 1 1 20 30 A10 16 0 1 1 20 10',
-]
 
 export default {
   name: 'ChildhoodFocusGrid',
@@ -76,6 +88,10 @@ export default {
     ariaLabel: {
       type: String,
       default: '童年插画网格',
+    },
+    hideEmpty: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: ['update:modelValue', 'select', 'focus'],
@@ -142,10 +158,6 @@ export default {
     window.removeEventListener('keydown', this.onKeydown)
   },
   methods: {
-    placeholderPath(slot) {
-      return PLACEHOLDER_SHAPES[slot % PLACEHOLDER_SHAPES.length]
-    },
-
     cellClass(cell) {
       return {
         'focus-grid__cell--center': cell.isCenter,
@@ -164,6 +176,11 @@ export default {
         '--ring': cell.dist,
         '--enter-delay': `${cell.dist * 40}ms`,
       }
+    },
+
+    onPhotoClick(index, item) {
+      this.focusIndex = index
+      this.$emit('select', item)
     },
 
     onCellClick(cell) {
@@ -205,7 +222,7 @@ export default {
   --rows: 5;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --cell-gap: clamp(6px, 1.2vw, 10px);
-  --frame-border: #1a1a1a;
+  --frame-border: #000000;
 
   display: grid;
   grid-template-columns: repeat(var(--cols), 1fr);
@@ -217,8 +234,59 @@ export default {
   margin: 0 auto;
   padding: clamp(12px, 2.4vw, 20px);
   box-sizing: border-box;
-  background: linear-gradient(160deg, #e8c96a 0%, #d4a84a 100%);
+  background: linear-gradient(152deg, #5c5498 0%, #484080 100%);
   border-radius: 0;
+  box-shadow: 0 16px 48px rgba(12, 8, 40, 0.42);
+}
+
+.focus-grid--photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(88px, 14vw, 132px), 1fr));
+  gap: clamp(10px, 1.8vw, 14px);
+  width: 100%;
+  max-width: min(760px, 92vw);
+  margin: 0 auto;
+  padding: clamp(4px, 1vw, 8px) clamp(16px, 3vw, 28px);
+  aspect-ratio: unset;
+  background: transparent;
+  box-shadow: none;
+}
+
+.focus-grid__photo {
+  position: relative;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
+  transform: scale(0.94);
+  opacity: 0.82;
+  transition:
+    transform 0.35s var(--ease),
+    opacity 0.3s ease;
+}
+
+.focus-grid__photo--active {
+  transform: scale(1);
+  opacity: 1;
+  z-index: 2;
+}
+
+.focus-grid__photo:hover {
+  opacity: 1;
+  transform: scale(0.98);
+}
+
+.focus-grid__photo--active:hover {
+  transform: scale(1.02);
+}
+
+.focus-grid__cell--empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.focus-grid__cell--center.focus-grid__cell--empty {
+  visibility: hidden;
 }
 
 .focus-grid__cell {
@@ -228,8 +296,8 @@ export default {
   background: transparent;
   cursor: pointer;
   transform: scale(0.88);
-  opacity: 0.42;
-  filter: saturate(0.75);
+  opacity: 0.58;
+  filter: saturate(0.85);
   transition:
     transform 0.48s var(--ease) var(--enter-delay, 0ms),
     opacity 0.4s ease var(--enter-delay, 0ms),
@@ -237,17 +305,13 @@ export default {
   will-change: transform, opacity;
 }
 
-.focus-grid__cell--filled {
-  opacity: 0.58;
-}
-
-.focus-grid__cell--ring-1.focus-grid__cell--filled {
+.focus-grid__cell--ring-1 {
   opacity: 0.72;
   transform: scale(0.94);
 }
 
-.focus-grid__cell--ring-2.focus-grid__cell--filled {
-  opacity: 0.58;
+.focus-grid__cell--ring-2 {
+  opacity: 0.62;
   transform: scale(0.9);
 }
 
@@ -259,13 +323,7 @@ export default {
   cursor: zoom-in;
 }
 
-.focus-grid__cell--center.focus-grid__cell--empty {
-  cursor: default;
-  transform: scale(1);
-  opacity: 0.35;
-}
-
-.focus-grid__cell:not(.focus-grid__cell--center):hover.focus-grid__cell--filled {
+.focus-grid__cell:not(.focus-grid__cell--center):hover {
   opacity: 0.92;
   transform: scale(0.98);
   filter: saturate(0.95);
@@ -273,18 +331,25 @@ export default {
 
 .focus-grid__frame {
   width: 100%;
-  height: 100%;
-  border: 1.5px solid var(--frame-border);
-  background: rgba(255, 255, 255, 0.06);
+  aspect-ratio: 1 / 1;
+  border: 2px solid var(--frame-border);
+  background: #fff;
   overflow: hidden;
   box-sizing: border-box;
 }
 
+.focus-grid__photo .focus-grid__frame {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.focus-grid__photo--active .focus-grid__frame {
+  border-width: 2.5px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
 .focus-grid__cell--center .focus-grid__frame {
-  border-width: 2px;
-  box-shadow:
-    0 0 0 2px rgba(255, 236, 160, 0.35),
-    0 12px 32px rgba(0, 0, 0, 0.28);
+  border-width: 2.5px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
 .focus-grid__img {
@@ -292,19 +357,6 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.focus-grid__placeholder {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  color: rgba(255, 236, 160, 0.55);
-}
-
-.focus-grid__shape {
-  width: 55%;
-  height: 55%;
 }
 
 .focus-grid-fade-enter-active,
@@ -323,7 +375,8 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .focus-grid__cell {
+  .focus-grid__cell,
+  .focus-grid__photo {
     transition: none;
   }
 
