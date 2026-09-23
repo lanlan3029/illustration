@@ -1,49 +1,120 @@
 import { hashSeed } from '@/utils/avatarCrowd'
 
-/** 桌面端散落锚点（归一化 0–1，参照 gallery 参考图） */
-const GALLERY_ANCHORS = [
-  { x: 0.02, y: 0.04, w: 0.24 },
-  { x: 0.28, y: 0.02, w: 0.22 },
-  { x: 0.54, y: 0.06, w: 0.2 },
-  { x: 0.76, y: 0.03, w: 0.21 },
-  { x: 0.05, y: 0.26, w: 0.26 },
-  { x: 0.34, y: 0.22, w: 0.22 },
-  { x: 0.6, y: 0.24, w: 0.23 },
-  { x: 0.82, y: 0.28, w: 0.16 },
-  { x: 0.01, y: 0.48, w: 0.21 },
-  { x: 0.24, y: 0.46, w: 0.24 },
-  { x: 0.5, y: 0.5, w: 0.22 },
-  { x: 0.74, y: 0.52, w: 0.2 },
-  { x: 0.08, y: 0.7, w: 0.23 },
-  { x: 0.32, y: 0.68, w: 0.25 },
-  { x: 0.58, y: 0.72, w: 0.21 },
-  { x: 0.8, y: 0.7, w: 0.18 },
-  { x: 0.04, y: 0.88, w: 0.2 },
-  { x: 0.26, y: 0.9, w: 0.22 },
-  { x: 0.52, y: 0.86, w: 0.24 },
-  { x: 0.76, y: 0.88, w: 0.2 },
-  { x: 0.14, y: 0.12, w: 0.18 },
-  { x: 0.44, y: 0.38, w: 0.19 },
-  { x: 0.68, y: 0.4, w: 0.21 },
-  { x: 0.18, y: 0.58, w: 0.2 },
-  { x: 0.42, y: 0.78, w: 0.22 },
-]
-
 const SCENE_ASPECT = 0.82
+const MIN_GAP = 18
+const PAD = 10
 
-function jitterFor(id) {
-  const seed = hashSeed(id)
-  const r1 = ((seed * 9301 + 49297) % 233280) / 233280
-  const r2 = (((seed + 1) * 9301 + 49297) % 233280) / 233280
+function seededUnit(seed) {
+  return ((seed * 9301 + 49297) % 233280) / 233280
+}
+
+function itemMetrics(person, index, containerWidth, attempt) {
+  const seed = hashSeed(`${person.id}-${index}-${attempt}`)
+  const r1 = seededUnit(seed)
+  const r2 = seededUnit(seed + 11)
+  const r3 = seededUnit(seed + 23)
+  const r4 = seededUnit(seed + 37)
+
+  const baseW = containerWidth * 0.105
+  const width = baseW * (0.82 + r1 * 0.28)
+  const height = width * SCENE_ASPECT
+  const rotate = (r2 - 0.5) * 7
+
+  return { width, height, rotate, r3, r4 }
+}
+
+function rectsOverlap(a, b, gap) {
+  return !(
+    a.left + a.width + gap <= b.left ||
+    b.left + b.width + gap <= a.left ||
+    a.top + a.height + gap <= b.top ||
+    b.top + b.height + gap <= a.top
+  )
+}
+
+function spiralCandidate(index, attempt, metrics, containerWidth, maxY) {
+  const seed = hashSeed(`pos-${index}-${attempt}`)
+  const r1 = seededUnit(seed)
+  const r2 = seededUnit(seed + 13)
+  const r3 = seededUnit(seed + 29)
+
+  const angle = index * 2.399963 + attempt * 0.85 + (r1 - 0.5) * 1.4
+  const radius = (18 + Math.sqrt(index + 1) * 28 + attempt * 6) * (0.88 + r2 * 0.22)
+
+  const cx = containerWidth * (0.38 + r3 * 0.18)
+  const cy = containerWidth * 0.28 + index * 6
+
+  let left = cx + Math.cos(angle) * radius - metrics.width / 2
+  let top = cy + Math.sin(angle) * radius * 0.72 - metrics.height / 2
+
+  left += (metrics.r3 - 0.5) * containerWidth * 0.08
+  top += (metrics.r4 - 0.5) * containerWidth * 0.06
+
+  left = Math.max(PAD, Math.min(left, containerWidth - metrics.width - PAD))
+  top = Math.max(PAD, Math.min(top, Math.max(maxY, containerWidth * 1.05)))
+
+  return { left, top }
+}
+
+function randomCandidate(index, attempt, metrics, containerWidth, maxY) {
+  const seed = hashSeed(`rand-${index}-${attempt}`)
+  const r1 = seededUnit(seed)
+  const r2 = seededUnit(seed + 17)
+
+  const left = PAD + r1 * Math.max(0, containerWidth - metrics.width - PAD * 2)
+  const top = PAD + r2 * Math.max(maxY, containerWidth * 0.95)
+
+  return { left, top }
+}
+
+function placeOne(person, index, containerWidth, placed) {
+  const maxAttempts = 64
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const metrics = itemMetrics(person, index, containerWidth, attempt)
+    const maxY = placed.reduce((m, p) => Math.max(m, p.top + p.height), PAD)
+
+    const useSpiral = attempt < 36
+    const { left, top } = useSpiral
+      ? spiralCandidate(index, attempt, metrics, containerWidth, maxY)
+      : randomCandidate(index, attempt - 36, metrics, containerWidth, maxY + 20)
+
+    const candidate = {
+      id: person.id,
+      left,
+      top,
+      width: metrics.width,
+      height: metrics.height,
+      rotate: metrics.rotate,
+      baseScale: 1,
+    }
+
+    const collides = placed.some((p) =>
+      rectsOverlap(
+        { left: candidate.left, top: candidate.top, width: candidate.width, height: candidate.height },
+        { left: p.left, top: p.top, width: p.width, height: p.height },
+        MIN_GAP
+      )
+    )
+
+    if (!collides) return candidate
+  }
+
+  const metrics = itemMetrics(person, index, 999)
+  const fallbackTop = placed.reduce((m, p) => Math.max(m, p.top + p.height + MIN_GAP), PAD)
   return {
-    dx: (r1 - 0.5) * 0.03,
-    dy: (r2 - 0.5) * 0.025,
-    scale: 0.92 + (r1 * 0.12),
+    id: person.id,
+    left: PAD + (index % 3) * (metrics.width + MIN_GAP),
+    top: fallbackTop,
+    width: metrics.width,
+    height: metrics.height,
+    rotate: 0,
+    baseScale: 1,
   }
 }
 
 /**
- * @returns {{ positions: Array<{id, left, top, width, baseScale}>, height: number }}
+ * @returns {{ positions: Array<{id, left, top, width, height, rotate, baseScale}>, height: number }}
  */
 export function layoutGalleryScenes(people, containerWidth) {
   const n = people.length
@@ -54,49 +125,49 @@ export function layoutGalleryScenes(people, containerWidth) {
   const mobile = containerWidth < 720
   if (mobile) {
     const cols = containerWidth < 420 ? 2 : 3
-    const gap = 12
-    const pad = 12
-    const cellW = (containerWidth - pad * 2 - gap * (cols - 1)) / cols
+    const gap = 16
+    const pad = PAD
+    const cellW = ((containerWidth - pad * 2 - gap * (cols - 1)) / cols) * 0.92
     const cellH = cellW * SCENE_ASPECT
 
     const positions = people.map((person, i) => {
       const col = i % cols
       const row = Math.floor(i / cols)
-      const j = jitterFor(person.id)
+      const seed = hashSeed(person.id)
+      const rotate = (seededUnit(seed) - 0.5) * 5
       return {
         id: person.id,
         left: pad + col * (cellW + gap),
         top: pad + row * (cellH + gap),
-        width: cellW * j.scale,
+        width: cellW,
+        height: cellH,
+        rotate,
         baseScale: 1,
       }
     })
 
     const rows = Math.ceil(n / cols)
-    const height = pad * 2 + rows * cellH + Math.max(0, rows - 1) * gap + 8
+    const height = pad * 2 + rows * cellH + Math.max(0, rows - 1) * gap + 16
     return { positions, height }
   }
 
-  let maxBottom = 0
-  const positions = people.map((person, i) => {
-    const anchor = GALLERY_ANCHORS[i % GALLERY_ANCHORS.length]
-    const j = jitterFor(`${person.id}-${i}`)
-    const width = containerWidth * anchor.w * j.scale
-    const left = containerWidth * (anchor.x + j.dx)
-    const top = containerWidth * (anchor.y + j.dy) * 0.72
-    const itemH = width * SCENE_ASPECT
-    maxBottom = Math.max(maxBottom, top + itemH)
-    return {
-      id: person.id,
-      left,
-      top,
-      width,
-      baseScale: 1,
-    }
+  const placed = []
+  people.forEach((person, index) => {
+    placed.push(placeOne(person, index, containerWidth, placed))
   })
+
+  const maxBottom = placed.reduce((m, p) => Math.max(m, p.top + p.height), 0)
+  const positions = placed.map(({ id, left, top, width, height, rotate, baseScale }) => ({
+    id,
+    left,
+    top,
+    width,
+    rotate,
+    baseScale,
+  }))
 
   return {
     positions,
-    height: Math.max(420, maxBottom + 48),
+    height: Math.max(380, maxBottom + PAD + 32),
   }
 }

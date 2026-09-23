@@ -520,10 +520,10 @@ export default {
 
 .moment-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-  gap: clamp(12px, 2vw, 24px);
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: clamp(16px, 2.5vw, 32px);
   width: 100%;
-  min-height: max(480px, 58dvh);
+  min-height: max(520px, 62dvh);
   align-items: start;
   padding: 8px clamp(12px, 2.5vw, 28px) clamp(32px, 5vw, 56px);
   box-sizing: border-box;
@@ -535,7 +535,8 @@ export default {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  padding: 4px 0;
+  padding: 8px 4px 16px;
+  overflow: visible;
 }
 
 .moment-form {

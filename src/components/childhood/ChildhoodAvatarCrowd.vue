@@ -197,14 +197,16 @@ export default {
     itemStyle(person) {
       const pos = this.positions[person.id]
       if (!pos) {
-        return { opacity: 0, width: '120px' }
+        return { opacity: 0, width: '96px' }
       }
+      const rotate = pos.rotate || 0
       return {
         left: `${pos.left}px`,
         top: `${pos.top}px`,
         width: `${pos.width}px`,
         zIndex: person.id === this.focusPersonId ? 10000 : 10 + Math.round(pos.top),
         '--base-scale': String(pos.baseScale || 1),
+        '--item-rotate': `${rotate}deg`,
       }
     },
 
@@ -233,7 +235,8 @@ export default {
       const wrap = this.$refs.wrapRef
       const pos = this.positions[id]
       if (!wrap || !pos) return
-      const centerY = pos.top + pos.width * 0.41
+      const itemH = pos.height || pos.width * 0.82
+      const centerY = pos.top + itemH * 0.5
       wrap.scrollTo({
         top: Math.max(0, centerY - wrap.clientHeight / 2),
         behavior: smooth && !this.prefersReducedMotion ? 'smooth' : 'auto',
@@ -410,7 +413,8 @@ export default {
   aspect-ratio: 1 / 0.82;
   transform-origin: 50% 88%;
   opacity: 0;
-  transform: translate3d(0, 12px, 0) scale(calc(var(--base-scale, 1) * 0.92));
+  transform: translate3d(0, 12px, 0) rotate(var(--item-rotate, 0deg))
+    scale(calc(var(--base-scale, 1) * 0.92));
   transition:
     transform 0.38s var(--ease-out),
     opacity 0.3s ease,
@@ -420,7 +424,7 @@ export default {
 
 .scene-gallery__item--in {
   opacity: 1;
-  transform: translate3d(0, 0, 0) scale(var(--base-scale, 1));
+  transform: translate3d(0, 0, 0) rotate(var(--item-rotate, 0deg)) scale(var(--base-scale, 1));
 }
 
 .scene-gallery__item--dim {
@@ -429,7 +433,7 @@ export default {
 }
 
 .scene-gallery__item--focus {
-  transform: translate3d(0, -8px, 0) scale(calc(var(--base-scale, 1) * 1.08)) !important;
+  transform: translate3d(0, -8px, 0) rotate(0deg) scale(calc(var(--base-scale, 1) * 1.08)) !important;
   opacity: 1 !important;
   filter: drop-shadow(0 16px 28px rgba(80, 60, 100, 0.16)) !important;
   z-index: 10000 !important;
@@ -438,7 +442,7 @@ export default {
 .scene-gallery__item:hover,
 .scene-gallery__item:focus-visible,
 .scene-gallery__item--tip {
-  transform: translate3d(0, -6px, 0) scale(calc(var(--base-scale, 1) * 1.04));
+  transform: translate3d(0, -6px, 0) rotate(0deg) scale(calc(var(--base-scale, 1) * 1.04));
   outline: none;
   filter: drop-shadow(0 12px 22px rgba(80, 60, 100, 0.14));
   z-index: 9999 !important;
