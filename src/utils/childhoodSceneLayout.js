@@ -1,26 +1,24 @@
 import { hashSeed } from '@/utils/avatarCrowd'
 
 const SCENE_ASPECT = 0.82
-const MIN_GAP = 18
-const PAD = 10
+const ITEM_WIDTH_RATIO = 0.12
+const MIN_GAP = 14
+const PAD = 12
 
 function seededUnit(seed) {
   return ((seed * 9301 + 49297) % 233280) / 233280
 }
 
-function itemMetrics(person, index, containerWidth, attempt) {
-  const seed = hashSeed(`${person.id}-${index}-${attempt}`)
+function itemMetrics(person, index) {
+  const seed = hashSeed(`${person.id}-${index}`)
   const r1 = seededUnit(seed)
   const r2 = seededUnit(seed + 11)
   const r3 = seededUnit(seed + 23)
-  const r4 = seededUnit(seed + 37)
 
-  const baseW = containerWidth * 0.105
-  const width = baseW * (0.82 + r1 * 0.28)
-  const height = width * SCENE_ASPECT
-  const rotate = (r2 - 0.5) * 7
+  const widthRatio = ITEM_WIDTH_RATIO * (0.88 + r1 * 0.2)
+  const rotate = (r2 - 0.5) * 6
 
-  return { width, height, rotate, r3, r4 }
+  return { widthRatio, rotate, jx: (r3 - 0.5) * 2, jy: (seededUnit(seed + 31) - 0.5) * 2 }
 }
 
 function rectsOverlap(a, b, gap) {
@@ -32,88 +30,8 @@ function rectsOverlap(a, b, gap) {
   )
 }
 
-function spiralCandidate(index, attempt, metrics, containerWidth, maxY) {
-  const seed = hashSeed(`pos-${index}-${attempt}`)
-  const r1 = seededUnit(seed)
-  const r2 = seededUnit(seed + 13)
-  const r3 = seededUnit(seed + 29)
-
-  const angle = index * 2.399963 + attempt * 0.85 + (r1 - 0.5) * 1.4
-  const radius = (18 + Math.sqrt(index + 1) * 28 + attempt * 6) * (0.88 + r2 * 0.22)
-
-  const cx = containerWidth * (0.38 + r3 * 0.18)
-  const cy = containerWidth * 0.28 + index * 6
-
-  let left = cx + Math.cos(angle) * radius - metrics.width / 2
-  let top = cy + Math.sin(angle) * radius * 0.72 - metrics.height / 2
-
-  left += (metrics.r3 - 0.5) * containerWidth * 0.08
-  top += (metrics.r4 - 0.5) * containerWidth * 0.06
-
-  left = Math.max(PAD, Math.min(left, containerWidth - metrics.width - PAD))
-  top = Math.max(PAD, Math.min(top, Math.max(maxY, containerWidth * 1.05)))
-
-  return { left, top }
-}
-
-function randomCandidate(index, attempt, metrics, containerWidth, maxY) {
-  const seed = hashSeed(`rand-${index}-${attempt}`)
-  const r1 = seededUnit(seed)
-  const r2 = seededUnit(seed + 17)
-
-  const left = PAD + r1 * Math.max(0, containerWidth - metrics.width - PAD * 2)
-  const top = PAD + r2 * Math.max(maxY, containerWidth * 0.95)
-
-  return { left, top }
-}
-
-function placeOne(person, index, containerWidth, placed) {
-  const maxAttempts = 64
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const metrics = itemMetrics(person, index, containerWidth, attempt)
-    const maxY = placed.reduce((m, p) => Math.max(m, p.top + p.height), PAD)
-
-    const useSpiral = attempt < 36
-    const { left, top } = useSpiral
-      ? spiralCandidate(index, attempt, metrics, containerWidth, maxY)
-      : randomCandidate(index, attempt - 36, metrics, containerWidth, maxY + 20)
-
-    const candidate = {
-      id: person.id,
-      left,
-      top,
-      width: metrics.width,
-      height: metrics.height,
-      rotate: metrics.rotate,
-      baseScale: 1,
-    }
-
-    const collides = placed.some((p) =>
-      rectsOverlap(
-        { left: candidate.left, top: candidate.top, width: candidate.width, height: candidate.height },
-        { left: p.left, top: p.top, width: p.width, height: p.height },
-        MIN_GAP
-      )
-    )
-
-    if (!collides) return candidate
-  }
-
-  const metrics = itemMetrics(person, index, 999)
-  const fallbackTop = placed.reduce((m, p) => Math.max(m, p.top + p.height + MIN_GAP), PAD)
-  return {
-    id: person.id,
-    left: PAD + (index % 3) * (metrics.width + MIN_GAP),
-    top: fallbackTop,
-    width: metrics.width,
-    height: metrics.height,
-    rotate: 0,
-    baseScale: 1,
-  }
-}
-
 /**
+ * 紧凑砖墙 + 小幅抖动：避免螺旋/随机落点造成的大片空白
  * @returns {{ positions: Array<{id, left, top, width, height, rotate, baseScale}>, height: number }}
  */
 export function layoutGalleryScenes(people, containerWidth) {
@@ -123,40 +41,62 @@ export function layoutGalleryScenes(people, containerWidth) {
   }
 
   const mobile = containerWidth < 720
-  if (mobile) {
-    const cols = containerWidth < 420 ? 2 : 3
-    const gap = 16
-    const pad = PAD
-    const cellW = ((containerWidth - pad * 2 - gap * (cols - 1)) / cols) * 0.92
-    const cellH = cellW * SCENE_ASPECT
-
-    const positions = people.map((person, i) => {
-      const col = i % cols
-      const row = Math.floor(i / cols)
-      const seed = hashSeed(person.id)
-      const rotate = (seededUnit(seed) - 0.5) * 5
-      return {
-        id: person.id,
-        left: pad + col * (cellW + gap),
-        top: pad + row * (cellH + gap),
-        width: cellW,
-        height: cellH,
-        rotate,
-        baseScale: 1,
-      }
-    })
-
-    const rows = Math.ceil(n / cols)
-    const height = pad * 2 + rows * cellH + Math.max(0, rows - 1) * gap + 16
-    return { positions, height }
-  }
+  const avgW = containerWidth * ITEM_WIDTH_RATIO
+  const avgH = avgW * SCENE_ASPECT
+  const cols = mobile
+    ? containerWidth < 420
+      ? 2
+      : 3
+    : Math.max(3, Math.min(5, Math.floor((containerWidth - PAD * 2 + MIN_GAP) / (avgW + MIN_GAP))))
+  const rows = Math.ceil(n / cols)
+  const brickShift = avgW * 0.42
 
   const placed = []
+
   people.forEach((person, index) => {
-    placed.push(placeOne(person, index, containerWidth, placed))
+    const { widthRatio, rotate, jx, jy } = itemMetrics(person, index)
+    const width = containerWidth * widthRatio
+    const height = width * SCENE_ASPECT
+
+    const col = index % cols
+    const row = Math.floor(index / cols)
+    const brick = row % 2 === 1 ? brickShift : 0
+
+    const baseLeft = PAD + brick + col * (avgW + MIN_GAP)
+    const baseTop = PAD + row * (avgH + MIN_GAP)
+
+    const maxJx = Math.min(10, MIN_GAP * 0.45)
+    const maxJy = Math.min(8, MIN_GAP * 0.35)
+
+    let left = baseLeft + jx * maxJx
+    let top = baseTop + jy * maxJy
+
+    left = Math.max(PAD, Math.min(left, containerWidth - width - PAD))
+
+    const candidate = {
+      id: person.id,
+      left,
+      top,
+      width,
+      height,
+      rotate,
+      baseScale: 1,
+    }
+
+    const collides = placed.some((p) =>
+      rectsOverlap(candidate, p, MIN_GAP * 0.6)
+    )
+
+    if (collides) {
+      candidate.left = baseLeft
+      candidate.top = baseTop
+      candidate.rotate = rotate * 0.5
+    }
+
+    placed.push(candidate)
   })
 
-  const maxBottom = placed.reduce((m, p) => Math.max(m, p.top + p.height), 0)
+  const maxBottom = placed.reduce((m, p) => Math.max(m, p.top + p.height), PAD)
   const positions = placed.map(({ id, left, top, width, height, rotate, baseScale }) => ({
     id,
     left,
@@ -168,6 +108,6 @@ export function layoutGalleryScenes(people, containerWidth) {
 
   return {
     positions,
-    height: Math.max(380, maxBottom + PAD + 32),
+    height: Math.max(mobile ? 280 : 340, maxBottom + PAD + 20),
   }
 }

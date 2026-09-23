@@ -55,7 +55,11 @@
         </aside>
     </section>
 
-    <section ref="galleryRef" class="moment-user-works">
+    <section
+      v-if="galleryLoading || galleryGridItems.length"
+      ref="galleryRef"
+      class="moment-user-works"
+    >
       <div v-if="galleryGridItems.length" class="moment-gallery__head">
         <router-link to="/childhood/gallery" class="moment-gallery__see-all">
           {{ $t('childhoodMoments.seeAll') }}
@@ -70,9 +74,9 @@
       <div
         v-else
         class="moment-gallery__focus"
-        :class="{ 'moment-gallery__focus--empty': !galleryGridItems.length }"
       >
         <ChildhoodFocusGrid
+          v-if="galleryGridItems.length"
           ref="focusGrid"
           v-model="galleryFocusIndex"
           hide-empty
@@ -80,10 +84,7 @@
           :aria-label="$t('childhoodMoments.galleryTitle')"
           @select="openGalleryPreview"
         />
-        <p v-if="!galleryGridItems.length" class="moment-gallery__empty-note">
-          {{ $t('childhoodMoments.galleryEmpty') }}
-        </p>
-        <p v-else-if="galleryGridItems[galleryFocusIndex]?.caption" class="moment-gallery__focus-caption">
+        <p v-if="galleryGridItems[galleryFocusIndex]?.caption" class="moment-gallery__focus-caption">
           {{ galleryGridItems[galleryFocusIndex].caption }}
         </p>
         <p v-if="galleryGridItems.length" class="moment-gallery__focus-hint">
@@ -765,18 +766,6 @@ export default {
   margin: 0;
   padding: clamp(4px, 1vw, 12px) 0 0;
   box-sizing: border-box;
-}
-
-.moment-gallery__focus--empty {
-  min-height: min(28vh, 320px);
-}
-
-.moment-gallery__empty-note {
-  margin: 16px clamp(16px, 3vw, 28px) 0;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--moment-muted);
-  text-align: center;
 }
 
 .moment-gallery__focus :deep(.focus-grid) {
