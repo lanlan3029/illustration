@@ -75,7 +75,11 @@
 </template>
 
 <script>
-import { fetchChildhoodScenes } from '@/utils/childhoodPictureApi'
+import {
+  createFreshPersonFromRecord,
+  extractPictureId,
+  fetchChildhoodScenes,
+} from '@/utils/childhoodPictureApi'
 import {
   createPerson,
   createPersonFromPicture,
@@ -165,9 +169,9 @@ export default {
     async refreshScenes(options = {}) {
       if (!this.ready) return
       if (options.anchorId) {
-        this.pendingAnchorId = options.anchorId
+        this.pendingAnchorId = String(options.anchorId)
       }
-      await this.loadInitialPeople()
+      await this.loadInitialPeople(options)
       this.relayout()
       if (this.pendingAnchorId) {
         const anchorId = this.pendingAnchorId
@@ -178,7 +182,7 @@ export default {
 
     focusPersonById(id, { animate = true } = {}) {
       if (!id) return
-      const person = this.people.find((p) => p.id === id)
+      const person = this.people.find((p) => String(p.id) === String(id))
       if (!person) return
       this.$nextTick(() => {
         this.scrollToPerson(id, animate)
@@ -191,7 +195,7 @@ export default {
     maybeFocusHighlight() {
       const id = this.pendingAnchorId || this.highlightId
       if (!id || this.didInitialFocus) return
-      const person = this.people.find((p) => p.id === id)
+      const person = this.people.find((p) => String(p.id) === String(id))
       if (!person) return
       this.didInitialFocus = true
       this.pendingAnchorId = ''
@@ -219,16 +223,42 @@ export default {
       img.src = url
     },
 
-    async loadInitialPeople() {
+    mergeFreshPerson(people, options = {}) {
+      const { freshRecord, freshImageUrl } = options
+      if (!freshRecord) return people
+
+      const fresh = createFreshPersonFromRecord(
+        freshRecord,
+        people.length,
+        freshImageUrl || ''
+      )
+      if (!fresh.imageUrl) return people
+
+      const freshId = extractPictureId(freshRecord) || fresh.id
+      const index = people.findIndex((p) => String(p.id) === String(freshId))
+      if (index === -1) {
+        return [...people, fresh]
+      }
+
+      const next = [...people]
+      next[index] = { ...next[index], ...fresh, imageUrl: fresh.imageUrl || next[index].imageUrl }
+      return next
+    },
+
+    async loadInitialPeople(options = {}) {
       let seedPeople = []
       try {
         const list = await fetchChildhoodScenes(this.$http)
         seedPeople = list
           .map((item, index) => createPersonFromPicture(item, index))
           .filter((person) => person.imageUrl)
+        seedPeople = this.mergeFreshPerson(seedPeople, options)
       } catch (err) {
         console.error('[ChildhoodAvatarCrowd] fetch childhood pictures failed', err)
         this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
+        if (options.freshRecord) {
+          seedPeople = this.mergeFreshPerson([], options)
+        }
       }
 
       const userPeople = loadCrowdFromStorage().map((p) => ({

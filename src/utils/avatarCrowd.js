@@ -51,7 +51,7 @@ export function makeSeededJitter(seed) {
 
 /** 图元 API 条目 → 场景群 person */
 export function createPersonFromPicture(item, index = 0) {
-  const id = item._id || item.id || `childhood-picture-${index}`
+  const id = String(item._id || item.id || `childhood-picture-${index}`)
   const seed = hashSeed(id)
   const note = (item.description || '').trim() || (item.title || '').trim()
   return {

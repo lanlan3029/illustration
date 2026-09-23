@@ -372,7 +372,7 @@ export default {
 
           const pictureRecord = await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
           const pictureId = extractPictureId(pictureRecord)
-          const crowdList = await fetchChildhoodScenes(this.$http, { limit: 60 })
+          const crowdList = await fetchChildhoodScenes(this.$http)
 
           this.lastShareStory = sceneText
           this.lastPictureId = pictureId
@@ -396,7 +396,11 @@ export default {
             console.warn('[Childhood] share poster failed', err)
           }
 
-          await this.$refs.crowdRef?.refreshScenes({ anchorId: pictureId })
+          await this.$refs.crowdRef?.refreshScenes({
+            anchorId: pictureId,
+            freshRecord: pictureRecord,
+            freshImageUrl: cutoutDataUrl,
+          })
 
           ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
           this.subjectScene = ''

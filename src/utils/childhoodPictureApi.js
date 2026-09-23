@@ -1,6 +1,6 @@
 /** 童年场景群 — 图元 API（type=childhood） */
 
-import { hashSeed } from '@/utils/avatarCrowd'
+import { createPersonFromPicture, hashSeed } from '@/utils/avatarCrowd'
 
 export const CHILDHOOD_PICTURE_TYPE = 'childhood'
 export const CHILDHOOD_SHARE_POSTER_TYPE = '_orphan'
@@ -76,21 +76,16 @@ function normalizePictureList(payload) {
   return Array.isArray(list) ? list : []
 }
 
-/**
- * 拉取童年场景图元（公开，无需登录）
- * @param {import('axios').AxiosInstance} http
- * @param {{ page?: number, limit?: number }} options
- */
-export async function fetchChildhoodScenes(http, options = {}) {
-  const page = options.page || 1
-  const limit = options.limit || 60
+/** 后端 config.per_page 默认 18，且 GET /picture/ 会忽略客户端 limit */
+const BACKEND_PAGE_SIZE = 18
+
+async function fetchChildhoodScenesPage(http, page, sort) {
   const res = await http.get('/picture/', {
     params: {
       type: CHILDHOOD_PICTURE_TYPE,
-      sort_param: 'createdAt',
-      sort_num: 'asc',
+      sort_param: sort.param,
+      sort_num: sort.num,
       page,
-      limit,
     },
   })
   const data = res?.data || {}
@@ -98,4 +93,42 @@ export async function fetchChildhoodScenes(http, options = {}) {
     throw new Error(data.message || '加载童年场景失败')
   }
   return normalizePictureList(data)
+}
+
+/**
+ * 拉取童年场景图元（公开，无需登录）
+ * 默认分页拉全量，避免新上传条目因 per_page=18 + 升序排在第 2 页而丢失
+ * @param {import('axios').AxiosInstance} http
+ * @param {{ page?: number, fetchAll?: boolean, maxPages?: number, sort_param?: string, sort_num?: string }} options
+ */
+export async function fetchChildhoodScenes(http, options = {}) {
+  const sort = {
+    param: options.sort_param || 'createdAt',
+    num: options.sort_num || 'asc',
+  }
+  const maxPages = options.maxPages || 40
+
+  if (options.page && options.fetchAll === false) {
+    return fetchChildhoodScenesPage(http, options.page, sort)
+  }
+
+  const all = []
+  for (let page = 1; page <= maxPages; page += 1) {
+    const batch = await fetchChildhoodScenesPage(http, page, sort)
+    if (!batch.length) break
+    all.push(...batch)
+    if (batch.length < BACKEND_PAGE_SIZE) break
+  }
+  return all
+}
+
+/** 上传回执 → 画廊 person（可先用本地 dataUrl 即时展示） */
+export function createFreshPersonFromRecord(record, index = 0, imageUrlOverride = '') {
+  const person = createPersonFromPicture(record, index)
+  const id = extractPictureId(record)
+  if (id) person.id = id
+  if (imageUrlOverride) {
+    person.imageUrl = imageUrlOverride
+  }
+  return person
 }
