@@ -3000,6 +3000,15 @@
     "formGuide": "写下童年故事，加入人群，或生成插画",
     "formShortcut": "⌘/Ctrl + Enter 生成插画",
     "scenePlaceholder": "讲述你童年最幸福的一件事吧。",
+    "scenePlaceholders": [
+      "讲述你童年最幸福的一件事吧。",
+      "凌晨被叫醒，却特别开心的那次……",
+      "和爸妈一起出发，天还没亮。",
+      "那一碗方便面，现在还记得味道。",
+      "窗边的雪、海边的日出、抱上车的瞬间。"
+    ],
+    "communityLive": "正在分享",
+    "communityTime": "今日 {count} 人 · {time}",
     "submitText": "文字分享",
     "submittingText": "提交中…",
     "submitTextSuccess": "故事已分享，封面里多了小伙伴",

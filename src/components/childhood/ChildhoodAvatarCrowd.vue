@@ -66,9 +66,6 @@
       </div>
     </div>
 
-    <p v-if="variant === 'hero' && people.length > 0" class="scene-gallery__hint">
-      {{ $t('childhoodMoments.crowdHoverHint', { count: people.length }) }}
-    </p>
   </div>
 </template>
 
@@ -91,7 +88,7 @@ const FOCUS_TIMELINE = {
 
 export default {
   name: 'ChildhoodAvatarCrowd',
-  emits: ['layout'],
+  emits: ['layout', 'count-change'],
   props: {
     variant: {
       type: String,
@@ -210,12 +207,23 @@ export default {
       }
     },
 
+    emitCount() {
+      const avatars = this.people
+        .filter((p) => p.imageUrl)
+        .slice(0, 6)
+        .map((p) => p.imageUrl)
+      this.$emit('count-change', { count: this.people.length, avatars })
+    },
+
     relayout() {
       const width = this.$refs.wrapRef?.clientWidth || 360
       const { height, positions } = layoutGalleryScenes(this.people, width)
       this.stageHeight = height
       this.positions = Object.fromEntries(positions.map((p) => [p.id, p]))
-      this.$nextTick(() => this.$emit('layout'))
+      this.$nextTick(() => {
+        this.$emit('layout')
+        this.emitCount()
+      })
     },
 
     wait(ms) {
@@ -512,16 +520,6 @@ export default {
 .scene-gallery__item--tip .scene-gallery__tip {
   opacity: 1;
   transform: translate3d(-50%, 0, 0) scale(1);
-}
-
-.scene-gallery__hint {
-  margin: 12px 0 0;
-  padding: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #9a929f;
-  letter-spacing: 0.02em;
-  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {

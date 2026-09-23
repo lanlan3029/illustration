@@ -2985,6 +2985,15 @@
     "formGuide": "Write a childhood story, join the crowd, or create an illustration",
     "formShortcut": "⌘/Ctrl + Enter to create illustration",
     "scenePlaceholder": "Tell me one of the happiest things from your childhood.",
+    "scenePlaceholders": [
+      "Tell me one of the happiest things from your childhood.",
+      "Woken before dawn — and somehow thrilled…",
+      "Leaving with Mom and Dad while the sky was still dark.",
+      "That bowl of instant noodles — I still remember the taste.",
+      "Snow at the window, sunrise at the sea, carried to the car."
+    ],
+    "communityLive": "Sharing now",
+    "communityTime": "{count} today · {time}",
     "submitText": "Text share",
     "submittingText": "Sharing…",
     "submitTextSuccess": "Story shared — a new friend joined the cover",
