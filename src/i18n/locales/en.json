@@ -2961,6 +2961,7 @@
   "childhoodMoments": {
     "eyebrow": "KidStory / Illustration",
     "title": "Happy Childhood Moments",
+    "pageTitle": "Happy Childhood Collection",
     "titleLine1": "Happy childhood",
     "titleLine2": "moments.",
     "coverTitle": "Happy Childhood Moments",
@@ -2982,8 +2983,10 @@
     "polaroidCaptionDefault": "Moment waiting to be collected",
     "developing": "Developing…",
     "sceneLabel": "What happened in this moment?",
-    "formGuide": "Write a childhood story, join the crowd, or create an illustration",
-    "formShortcut": "⌘/Ctrl + Enter to create illustration",
+    "formGuide": "Write a childhood story, join the crowd, create an illustration",
+    "share": "Share",
+    "sharing": "Sharing…",
+    "formShortcut": "⌘/Ctrl + Enter to share",
     "scenePlaceholder": "Tell me one of the happiest things from your childhood.",
     "scenePlaceholders": [
       "Tell me one of the happiest things from your childhood.",

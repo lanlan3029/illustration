@@ -17,11 +17,15 @@
       :class="{ 'scene-gallery__wrap--focus': isExpanded }"
     >
       <div
-        ref="stageRef"
-        class="scene-gallery__canvas"
-        :style="{ height: `${stageHeight}px` }"
-        @click="closeAllTips"
+        class="scene-gallery__center"
+        :class="{ 'scene-gallery__center--short': variant === 'hero' && isShortStage }"
       >
+        <div
+          ref="stageRef"
+          class="scene-gallery__canvas"
+          :style="{ height: `${stageHeight}px` }"
+          @click="closeAllTips"
+        >
         <p v-if="bootError" class="scene-gallery__error">{{ bootError }}</p>
         <p
           v-else
@@ -63,6 +67,7 @@
             {{ person.note ? person.note.slice(0, 2) : '…' }}
           </div>
         </button>
+        </div>
       </div>
     </div>
 
@@ -102,8 +107,10 @@ export default {
       ready: false,
       bootError: '',
       stageHeight: 420,
+      isShortStage: false,
       positions: {},
       resizeTimer: null,
+      resizeObserver: null,
       focusSettleTimer: null,
       focusSequenceTimers: [],
       warmed: new Set(),
@@ -116,9 +123,16 @@ export default {
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     this.boot()
     window.addEventListener('resize', this.handleResize, { passive: true })
+    this.$nextTick(() => {
+      if (this.$refs.wrapRef && typeof ResizeObserver !== 'undefined') {
+        this.resizeObserver = new ResizeObserver(() => this.handleResize())
+        this.resizeObserver.observe(this.$refs.wrapRef)
+      }
+    })
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize)
+    this.resizeObserver?.disconnect()
     clearTimeout(this.resizeTimer)
     this.clearFocusSequence()
   },
@@ -216,11 +230,17 @@ export default {
     },
 
     relayout() {
-      const width = this.$refs.wrapRef?.clientWidth || 360
+      const wrap = this.$refs.wrapRef
+      const width = wrap?.clientWidth || 360
       const { height, positions } = layoutGalleryScenes(this.people, width)
       this.stageHeight = height
       this.positions = Object.fromEntries(positions.map((p) => [p.id, p]))
       this.$nextTick(() => {
+        if (this.variant === 'hero' && wrap) {
+          this.isShortStage = height < wrap.clientHeight - 1
+        } else {
+          this.isShortStage = false
+        }
         this.$emit('layout')
         this.emitCount()
       })
@@ -373,7 +393,22 @@ export default {
 
 .scene-gallery--hero .scene-gallery__wrap {
   flex: 1;
-  min-height: clamp(360px, 52vh, 640px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: visible;
+}
+
+.scene-gallery__center {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.scene-gallery--hero .scene-gallery__center--short {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .scene-gallery__wrap--focus {

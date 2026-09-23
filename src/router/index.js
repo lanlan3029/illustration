@@ -459,16 +459,7 @@ const routes = [{
         component: () =>
             import ( /* webpackChunkName: "childhood" */ '../views/Childhood.vue'),
         meta: {
-            seoTitle: '幸福童年时刻收集',
-        },
-    },
-    {
-        path: '/childhood/gallery',
-        name: 'childhood-gallery',
-        component: () =>
-            import ( /* webpackChunkName: "childhood-gallery" */ '../views/ChildhoodGallery.vue'),
-        meta: {
-            seoTitle: '童年画廊',
+            seoTitle: '幸福童年收集',
         },
     },
     {
@@ -477,7 +468,11 @@ const routes = [{
     },
     {
         path: '/newyear/gallery',
-        redirect: '/childhood/gallery',
+        redirect: '/childhood',
+    },
+    {
+        path: '/childhood/gallery',
+        redirect: '/childhood',
     },
     {
         path: '/mood-diary',

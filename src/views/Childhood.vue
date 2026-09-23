@@ -3,9 +3,6 @@
     <section class="moment-split">
       <div ref="crowdAreaRef" class="moment-split__left">
         <ChildhoodAvatarCrowd ref="crowdRef" variant="hero" @count-change="onCrowdUpdate" />
-        <p v-if="sceneCount > 0" class="moment-split__foot-hint">
-          {{ $t('childhoodMoments.crowdHoverHint', { count: sceneCount }) }}
-        </p>
       </div>
 
       <aside class="moment-split__right">
@@ -14,36 +11,10 @@
         <div class="moment-panel__noise" aria-hidden="true" />
 
         <div class="moment-panel__inner">
-          <router-link to="/childhood/gallery" class="moment-panel__link">
-            {{ $t('childhoodMoments.viewWall') }}
-          </router-link>
-
           <header class="moment-panel__head">
-            <h1 class="moment-panel__title">
-              <span>{{ $t('childhoodMoments.titleLine1') }}</span>
-              <span>{{ $t('childhoodMoments.titleLine2') }}</span>
-            </h1>
+            <h1 class="moment-panel__title">{{ $t('childhoodMoments.pageTitle') }}</h1>
             <p class="moment-panel__guide">{{ $t('childhoodMoments.formGuide') }}</p>
           </header>
-
-          <div v-if="sceneAvatars.length" class="moment-community">
-            <div class="moment-community__avatars" aria-hidden="true">
-              <img
-                v-for="(url, index) in sceneAvatars"
-                :key="`${url}-${index}`"
-                class="moment-community__avatar"
-                :src="url"
-                alt=""
-                decoding="async"
-              />
-            </div>
-            <div class="moment-community__meta">
-              <span class="moment-community__live">{{ $t('childhoodMoments.communityLive') }}</span>
-              <span class="moment-community__time">{{
-                $t('childhoodMoments.communityTime', { count: sceneCount, time: communityTimeLabel })
-              }}</span>
-            </div>
-          </div>
 
           <div
             class="moment-form__card"
@@ -62,26 +33,18 @@
             <div class="moment-form__actions">
               <button
                 type="button"
-                class="moment-btn moment-btn--ghost"
-                :disabled="!subjectScene.trim() || submittingText || generating"
-                @click="submitTextOnly"
-              >
-                {{ submittingText ? $t('childhoodMoments.submittingText') : $t('childhoodMoments.submitText') }}
-              </button>
-              <button
-                type="button"
                 class="moment-btn moment-btn--primary"
                 :disabled="!subjectScene.trim() || generating"
-                @click="generateIllustration"
+                @click="shareMoment"
               >
                 <span v-if="generating" class="moment-btn__spinner" aria-hidden="true" />
-                {{ generating ? $t('childhoodMoments.generating') : $t('childhoodMoments.generate') }}
+                {{ generating ? $t('childhoodMoments.sharing') : $t('childhoodMoments.share') }}
               </button>
             </div>
             <p class="moment-form__shortcut">{{ $t('childhoodMoments.formShortcut') }}</p>
             <div v-if="generating" class="moment-form__overlay" role="status">
               <span class="moment-form__overlay-spinner" aria-hidden="true" />
-              <span>{{ $t('childhoodMoments.generating') }}</span>
+              <span>{{ $t('childhoodMoments.sharing') }}</span>
             </div>
           </div>
         </div>
@@ -93,12 +56,6 @@
       ref="galleryRef"
       class="moment-user-works"
     >
-      <div v-if="galleryGridItems.length" class="moment-gallery__head">
-        <router-link to="/childhood/gallery" class="moment-gallery__see-all">
-          {{ $t('childhoodMoments.seeAll') }}
-        </router-link>
-      </div>
-
       <div v-if="galleryLoading" class="moment-gallery__state">
         <span class="moment-gallery__line" />
         <p>{{ $t('childhoodMoments.galleryLoading') }}</p>
@@ -125,6 +82,25 @@
         </p>
       </div>
     </section>
+
+    <footer v-if="sceneCount > 0" class="moment-page__stats">
+      <div v-if="sceneAvatars.length" class="moment-page__stats-avatars" aria-hidden="true">
+        <img
+          v-for="(url, index) in sceneAvatars"
+          :key="`${url}-${index}`"
+          class="moment-page__stats-avatar"
+          :src="url"
+          alt=""
+          decoding="async"
+        />
+      </div>
+      <div class="moment-page__stats-meta">
+        <span class="moment-page__stats-live">{{ $t('childhoodMoments.communityLive') }}</span>
+        <span class="moment-page__stats-time">{{
+          $t('childhoodMoments.communityTime', { count: sceneCount, time: communityTimeLabel })
+        }}</span>
+      </div>
+    </footer>
 
     <el-dialog
       v-model="previewVisible"
@@ -171,7 +147,6 @@ export default {
     return {
       subjectScene: '',
       generating: false,
-      submittingText: false,
       generatedImageUrl: null,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
       galleryItems: [],
@@ -401,20 +376,6 @@ export default {
       return total + 1
     },
 
-    async saveTextStory(text) {
-      const nextIndex = await this.fetchNextIndex()
-      await this.$http.post(
-        '/ill/',
-        {
-          picture: '',
-          title: buildCollectTitle(nextIndex),
-          description: text,
-          type: ILL_TYPE,
-        },
-        { headers: { 'Content-Type': 'application/json' } }
-      )
-    },
-
     normalizePictureUrl(imageUrl) {
       let pictureValue = imageUrl
       if (
@@ -452,33 +413,11 @@ export default {
     onSceneKeydown(e) {
       if (!(e.metaKey || e.ctrlKey) || e.key !== 'Enter') return
       e.preventDefault()
-      if (this.generating || this.submittingText || !this.subjectScene.trim()) return
-      this.generateIllustration()
+      if (this.generating || !this.subjectScene.trim()) return
+      this.shareMoment()
     },
 
-    async submitTextOnly() {
-      const text = this.subjectScene.trim()
-      if (!text) {
-        ElMessage.warning(this.$t('childhoodMoments.sceneRequired'))
-        return
-      }
-      if (!this.ensureLogin()) return
-
-      this.submittingText = true
-      this.$refs.crowdRef?.addPerson(text)
-
-      try {
-        await this.saveTextStory(text)
-        ElMessage.success(this.$t('childhoodMoments.submitTextSuccess'))
-        this.subjectScene = ''
-      } catch {
-        ElMessage.error(this.$t('childhoodMoments.submitTextFailed'))
-      } finally {
-        this.submittingText = false
-      }
-    },
-
-    async generateIllustration() {
+    async shareMoment() {
       if (!this.generatedPrompt) {
         ElMessage.warning(this.$t('childhoodMoments.sceneRequired'))
         return
@@ -603,14 +542,9 @@ export default {
   box-sizing: border-box;
 }
 
-.moment-split__foot-hint {
-  margin-top: auto;
-  padding: 16px 12px 4px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #9a929f;
-  letter-spacing: 0.02em;
-  text-align: center;
+.moment-split__left :deep(.scene-gallery--hero) {
+  flex: 1;
+  min-height: 0;
 }
 
 .moment-split__right {
@@ -672,28 +606,11 @@ export default {
   box-sizing: border-box;
 }
 
-.moment-panel__link {
-  align-self: flex-end;
-  margin-bottom: clamp(20px, 3vw, 32px);
-  font-size: 13px;
-  color: var(--moment-muted-dark);
-  text-decoration: none;
-  letter-spacing: 0.02em;
-  transition: color 0.2s ease;
-}
-
-.moment-panel__link:hover {
-  color: var(--moment-text-light);
-}
-
 .moment-panel__head {
   margin-bottom: clamp(20px, 3vw, 28px);
 }
 
 .moment-panel__title {
-  display: flex;
-  flex-direction: column;
-  gap: 0.12em;
   margin: 0 0 14px;
   font-family: 'Songti SC', 'Noto Serif SC', 'STSong', 'SimSun', serif;
   font-size: clamp(28px, 4.2vw, 38px);
@@ -711,55 +628,52 @@ export default {
   letter-spacing: 0.02em;
 }
 
-.moment-community {
+.moment-page__stats {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-bottom: 20px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(8px);
+  padding: 20px clamp(16px, 3vw, 28px) 28px;
+  background: var(--moment-cream);
 }
 
-.moment-community__avatars {
+.moment-page__stats-avatars {
   display: flex;
   flex-shrink: 0;
   padding-left: 4px;
 }
 
-.moment-community__avatar {
+.moment-page__stats-avatar {
   width: 28px;
   height: 28px;
   margin-left: -8px;
-  border: 2px solid var(--moment-panel-bg);
+  border: 2px solid var(--moment-cream);
   border-radius: 50%;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(129, 103, 169, 0.12);
 }
 
-.moment-community__avatar:first-child {
+.moment-page__stats-avatar:first-child {
   margin-left: 0;
 }
 
-.moment-community__meta {
+.moment-page__stats-meta {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.moment-community__live {
+.moment-page__stats-live {
   font-size: 12px;
   font-weight: 600;
-  color: var(--moment-accent);
+  color: #8167a9;
   letter-spacing: 0.04em;
 }
 
-.moment-community__time {
+.moment-page__stats-time {
   font-size: 11px;
-  color: var(--moment-muted-dark);
+  color: #9a929f;
   letter-spacing: 0.02em;
 }
 
@@ -858,13 +772,13 @@ export default {
 }
 
 .moment-form__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.moment-form__actions .moment-btn {
+  width: 100%;
 }
 
 .moment-btn {
@@ -930,25 +844,6 @@ export default {
   background: var(--moment-cream);
   border-top: 1px solid rgba(129, 103, 169, 0.1);
   color: #2a2340;
-}
-
-.moment-gallery__head {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-  padding: 0 clamp(16px, 3vw, 28px);
-  box-sizing: border-box;
-}
-
-.moment-gallery__see-all {
-  font-size: 13px;
-  color: #9a929f;
-  text-decoration: none;
-}
-
-.moment-gallery__see-all:hover {
-  color: #2a2340;
-  text-decoration: underline;
 }
 
 .moment-gallery__state {
@@ -1050,19 +945,6 @@ export default {
 
   .moment-panel__guide {
     text-align: center;
-  }
-
-  .moment-panel__link {
-    align-self: center;
-  }
-
-  .moment-form__actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .moment-btn {
-    width: 100%;
   }
 }
 

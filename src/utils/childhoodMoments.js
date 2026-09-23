@@ -21,8 +21,8 @@ export function buildCollectTitle(index) {
 }
 
 export const SHARE = {
-  title: '幸福童年时刻收集',
-  desc: '把珍贵童年瞬间贴进收集墙，一起来收集吧',
+  title: '幸福童年收集',
+  desc: '写下珍贵童年瞬间，生成治愈插画，一起来收集吧',
 }
 
 function normalizeIllustrationUrl(picture) {
