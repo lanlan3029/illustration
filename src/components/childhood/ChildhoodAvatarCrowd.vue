@@ -100,6 +100,10 @@ export default {
       default: 'default',
       validator: (v) => ['default', 'hero'].includes(v),
     },
+    highlightId: {
+      type: String,
+      default: '',
+    },
   },
   data() {
     return {
@@ -117,7 +121,16 @@ export default {
       isExpanded: false,
       focusPersonId: null,
       prefersReducedMotion: false,
+      pendingAnchorId: '',
+      didInitialFocus: false,
     }
+  },
+  watch: {
+    highlightId(next) {
+      if (next && this.people.length) {
+        this.focusPersonById(next, { animate: false })
+      }
+    },
   },
   mounted() {
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -149,10 +162,43 @@ export default {
       }
     },
 
-    async refreshScenes() {
+    async refreshScenes(options = {}) {
       if (!this.ready) return
+      if (options.anchorId) {
+        this.pendingAnchorId = options.anchorId
+      }
       await this.loadInitialPeople()
       this.relayout()
+      if (this.pendingAnchorId) {
+        const anchorId = this.pendingAnchorId
+        this.pendingAnchorId = ''
+        this.$nextTick(() => this.focusPersonById(anchorId, { animate: true }))
+      }
+    },
+
+    focusPersonById(id, { animate = true } = {}) {
+      if (!id) return
+      const person = this.people.find((p) => p.id === id)
+      if (!person) return
+      this.$nextTick(() => {
+        this.scrollToPerson(id, animate)
+        if (animate) {
+          this.runFocusSequence(person)
+        }
+      })
+    },
+
+    maybeFocusHighlight() {
+      const id = this.pendingAnchorId || this.highlightId
+      if (!id || this.didInitialFocus) return
+      const person = this.people.find((p) => p.id === id)
+      if (!person) return
+      this.didInitialFocus = true
+      this.pendingAnchorId = ''
+      this.$nextTick(() => {
+        this.scrollToPerson(id, false)
+        this.runFocusSequence(person)
+      })
     },
 
     handleResize() {
@@ -200,6 +246,7 @@ export default {
             this.people.forEach((p) => {
               p.visible = true
             })
+            this.maybeFocusHighlight()
           })
         })
       })

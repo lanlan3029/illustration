@@ -2,7 +2,12 @@
   <div ref="pageRef" class="moment-page">
     <section class="moment-split">
       <div ref="crowdAreaRef" class="moment-split__left">
-        <ChildhoodAvatarCrowd ref="crowdRef" variant="hero" @count-change="onCrowdUpdate" />
+        <ChildhoodAvatarCrowd
+          ref="crowdRef"
+          variant="hero"
+          :highlight-id="highlightPictureId"
+          @count-change="onCrowdUpdate"
+        />
       </div>
 
       <aside class="moment-split__right">
@@ -80,13 +85,29 @@ import submitImage from '@/assets/images/submit.webp'
 import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
 import { canvasToDataUrl, matChildhoodCutoutFromUrl } from '@/utils/canvasMatting'
 import { uploadPictureElement } from '@/utils/saveCroppedAsset'
-import { CHILDHOOD_PICTURE_TYPE } from '@/utils/childhoodPictureApi'
+import {
+  CHILDHOOD_PICTURE_TYPE,
+  CHILDHOOD_SHARE_POSTER_TYPE,
+  extractPictureId,
+  extractPictureRecord,
+  fetchChildhoodScenes,
+  pickCrowdImageUrls,
+  resolvePictureUrl,
+} from '@/utils/childhoodPictureApi'
+import { hashSeed } from '@/utils/avatarCrowd'
+import { drawChildhoodSharePoster } from '@/utils/childhoodSharePoster'
 import {
   STORAGE_KEY,
+  MY_PICTURE_ID_KEY,
+  SHARE_STORY_KEY,
+  SHARE_POSTER_URL_KEY,
   CHILDHOOD_MATTING_BG,
   buildChildhoodPrompt,
   buildChildhoodPictureTitle,
-  SHARE,
+  buildShareTitle,
+  buildShareDesc,
+  buildShareLink,
+  toAbsoluteShareUrl,
 } from '@/utils/childhoodMoments'
 
 export default {
@@ -97,6 +118,10 @@ export default {
       subjectScene: '',
       generating: false,
       generatedImageUrl: null,
+      sharePosterUrl: '',
+      lastShareStory: '',
+      lastPictureId: '',
+      wxShareReady: false,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
       submitImage,
       sceneCount: 0,
@@ -127,6 +152,9 @@ export default {
     generatedPrompt() {
       return buildChildhoodPrompt(this.subjectScene)
     },
+    highlightPictureId() {
+      return this.$route.query.mine || this.lastPictureId || localStorage.getItem(MY_PICTURE_ID_KEY) || ''
+    },
   },
   mounted() {
     this.$store.commit('closeMask')
@@ -135,6 +163,9 @@ export default {
     if (savedImage) {
       this.generatedImageUrl = savedImage
     }
+    this.sharePosterUrl = localStorage.getItem(SHARE_POSTER_URL_KEY) || ''
+    this.lastShareStory = localStorage.getItem(SHARE_STORY_KEY) || ''
+    this.lastPictureId = localStorage.getItem(MY_PICTURE_ID_KEY) || ''
 
     this.initWeChatShare()
     this.startPlaceholderRotation()
@@ -152,6 +183,9 @@ export default {
       }
       this.sceneCount = payload?.count || 0
       this.sceneAvatars = payload?.avatars || []
+      if (this.wxShareReady && (this.lastShareStory || localStorage.getItem(SHARE_STORY_KEY))) {
+        this.applyWeChatShare()
+      }
     },
 
     startPlaceholderRotation() {
@@ -165,6 +199,43 @@ export default {
       this.clockTimer = setInterval(() => {
         this.communityClock = Date.now()
       }, 60000)
+    },
+
+    buildSharePayload() {
+      const story = this.lastShareStory || localStorage.getItem(SHARE_STORY_KEY) || ''
+      const pictureId = this.lastPictureId || localStorage.getItem(MY_PICTURE_ID_KEY) || ''
+      const posterUrl = this.sharePosterUrl || localStorage.getItem(SHARE_POSTER_URL_KEY) || ''
+      const imgUrl = toAbsoluteShareUrl(
+        posterUrl || this.generatedImageUrl || this.submitImage
+      )
+
+      return {
+        title: buildShareTitle(story),
+        desc: buildShareDesc(this.sceneCount),
+        link: buildShareLink(pictureId || this.highlightPictureId),
+        imgUrl,
+      }
+    },
+
+    applyWeChatShare() {
+      if (typeof window === 'undefined' || !window.wx) return
+      const payload = this.buildSharePayload()
+      const apply = () => {
+        window.wx.updateAppMessageShareData?.(payload)
+        window.wx.updateTimelineShareData?.({
+          title: payload.title,
+          link: payload.link,
+          imgUrl: payload.imgUrl,
+        })
+      }
+      if (this.wxShareReady) {
+        apply()
+      } else {
+        window.wx.ready(() => {
+          this.wxShareReady = true
+          apply()
+        })
+      }
     },
 
     async initWeChatShare() {
@@ -191,19 +262,8 @@ export default {
         })
 
         window.wx.ready(() => {
-          const shareImg = this.generatedImageUrl || this.submitImage
-          const payload = {
-            title: SHARE.title,
-            desc: SHARE.desc,
-            link: window.location.href,
-            imgUrl: shareImg,
-          }
-          window.wx.updateAppMessageShareData?.(payload)
-          window.wx.updateTimelineShareData?.({
-            title: SHARE.title,
-            link: payload.link,
-            imgUrl: shareImg,
-          })
+          this.wxShareReady = true
+          this.applyWeChatShare()
         })
       } catch {
         // ignore
@@ -211,12 +271,37 @@ export default {
     },
 
     async saveChildhoodPicture(cutoutDataUrl, description) {
-      await uploadPictureElement(this.$http, cutoutDataUrl, {
+      const response = await uploadPictureElement(this.$http, cutoutDataUrl, {
         title: buildChildhoodPictureTitle(description),
         type: CHILDHOOD_PICTURE_TYPE,
         desc: description,
         is_public: 1,
       })
+      return extractPictureRecord(response)
+    },
+
+    async buildAndUploadSharePoster(cutoutDataUrl, sceneText, pictureId, crowdList) {
+      const crowdUrls = pickCrowdImageUrls(crowdList, {
+        excludeId: pictureId,
+        limit: 10,
+        seed: hashSeed(pictureId || sceneText),
+      })
+
+      const posterDataUrl = await drawChildhoodSharePoster({
+        heroSrc: cutoutDataUrl,
+        crowdSrcs: crowdUrls,
+        seed: hashSeed(`${pictureId}-${sceneText}`),
+      })
+
+      const response = await uploadPictureElement(this.$http, posterDataUrl, {
+        title: `${buildChildhoodPictureTitle(sceneText)} · 分享`,
+        type: CHILDHOOD_SHARE_POSTER_TYPE,
+        desc: sceneText,
+        is_public: 0,
+      })
+
+      const record = extractPictureRecord(response)
+      return resolvePictureUrl(record)
     },
 
     ensureLogin() {
@@ -285,12 +370,37 @@ export default {
           this.generatedImageUrl = cutoutDataUrl
           localStorage.setItem(STORAGE_KEY, cutoutDataUrl)
 
-          await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
-          await this.$refs.crowdRef?.refreshScenes()
+          const pictureRecord = await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
+          const pictureId = extractPictureId(pictureRecord)
+          const crowdList = await fetchChildhoodScenes(this.$http, { limit: 60 })
+
+          this.lastShareStory = sceneText
+          this.lastPictureId = pictureId
+          localStorage.setItem(SHARE_STORY_KEY, sceneText)
+          if (pictureId) {
+            localStorage.setItem(MY_PICTURE_ID_KEY, pictureId)
+          }
+
+          try {
+            const posterUrl = await this.buildAndUploadSharePoster(
+              cutoutDataUrl,
+              sceneText,
+              pictureId,
+              crowdList
+            )
+            if (posterUrl) {
+              this.sharePosterUrl = posterUrl
+              localStorage.setItem(SHARE_POSTER_URL_KEY, posterUrl)
+            }
+          } catch (err) {
+            console.warn('[Childhood] share poster failed', err)
+          }
+
+          await this.$refs.crowdRef?.refreshScenes({ anchorId: pictureId })
 
           ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
           this.subjectScene = ''
-          this.initWeChatShare()
+          this.applyWeChatShare()
         } else {
           throw new Error('no image url')
         }

@@ -1,6 +1,45 @@
 /** 童年场景群 — 图元 API（type=childhood） */
 
+import { hashSeed } from '@/utils/avatarCrowd'
+
 export const CHILDHOOD_PICTURE_TYPE = 'childhood'
+export const CHILDHOOD_SHARE_POSTER_TYPE = '_orphan'
+
+function seededUnit(seed) {
+  return ((seed * 9301 + 49297) % 233280) / 233280
+}
+
+export function extractPictureRecord(payload) {
+  return payload?.message ?? payload?.data ?? payload
+}
+
+export function extractPictureId(record) {
+  if (!record) return ''
+  return String(record._id || record.id || '')
+}
+
+/** 从列表中挑选散落背景图（排除主角） */
+export function pickCrowdImageUrls(items, options = {}) {
+  const { excludeId = '', limit = 10, seed = 0 } = options
+  const pool = (items || [])
+    .map((item) => ({
+      id: extractPictureId(item),
+      url: resolvePictureUrl(item),
+    }))
+    .filter((item) => item.url && item.id !== excludeId)
+
+  if (!pool.length) return []
+
+  const shuffled = [...pool]
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(seededUnit(hashSeed(`${seed}-${i}`)) * (i + 1))
+    const tmp = shuffled[i]
+    shuffled[i] = shuffled[j]
+    shuffled[j] = tmp
+  }
+
+  return shuffled.slice(0, limit).map((item) => item.url)
+}
 
 function withCacheBust(url, item) {
   if (!url || !item?.updatedAt) return url
