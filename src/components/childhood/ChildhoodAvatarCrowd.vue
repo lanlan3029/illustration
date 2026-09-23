@@ -46,6 +46,7 @@
             'avatar-crowd__person--tip': person.tipOpen,
             'avatar-crowd__person--focus': person.id === focusPersonId,
             'avatar-crowd__person--dim': isExpanded && person.id !== focusPersonId,
+            'avatar-crowd__person--text': !person.imageUrl,
           }"
           :style="personStyle(person)"
           role="img"
@@ -58,16 +59,17 @@
           @focusout="closeTip(person.id)"
         >
           <div class="avatar-crowd__tip">{{ person.note || $t('childhoodMoments.crowdNoNote') }}</div>
-          <div class="avatar-crowd__avatar">
+          <div class="avatar-crowd__scene">
             <img
-              v-for="layer in layersFor(person)"
-              :key="layer.key"
-              :class="layer.cls"
-              :style="layer.style"
-              :src="layer.src"
+              v-if="person.imageUrl"
+              class="avatar-crowd__img"
+              :src="person.imageUrl"
               alt=""
               decoding="async"
             />
+            <div v-else class="avatar-crowd__text-chip">
+              {{ person.note ? person.note.slice(0, 2) : '…' }}
+            </div>
           </div>
         </div>
       </div>
@@ -80,17 +82,13 @@
 </template>
 
 <script>
-import avatarManifest from '@/data/avatarParts/manifest.json'
-import avatarStyleTags from '@/data/avatarParts/style_tags.json'
-import { CHILDHOOD_SEED_STORIES } from '@/utils/childhoodSeedStories'
+import { fetchChildhoodScenes } from '@/utils/childhoodPictureApi'
 import {
-  LAYER_SPECS,
-  PERSON_ASPECT,
+  SCENE_ASPECT,
   createPerson,
-  createSeedPerson,
+  createPersonFromPicture,
   layoutPeople,
   loadCrowdFromStorage,
-  partUrl,
   saveCrowdToStorage,
 } from '@/utils/avatarCrowd'
 
@@ -116,8 +114,6 @@ export default {
   data() {
     return {
       people: [],
-      manifest: null,
-      styleTags: null,
       ready: false,
       bootError: '',
       stageHeight: 320,
@@ -154,13 +150,11 @@ export default {
     this.clearFocusSequence()
   },
   methods: {
-    boot() {
+    async boot() {
       try {
-        this.manifest = avatarManifest
-        this.styleTags = avatarStyleTags
         this.ready = true
         this.bootError = ''
-        this.loadInitialPeople()
+        await this.loadInitialPeople()
       } catch (err) {
         this.ready = false
         this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
@@ -171,10 +165,10 @@ export default {
     syncPersonWidth() {
       const w = this.$refs.wrapRef?.clientWidth || 360
       if (this.variant === 'hero') {
-        this.personWidth = w < 360 ? 96 : w < 520 ? 112 : w < 720 ? 124 : 136
+        this.personWidth = w < 360 ? 108 : w < 520 ? 124 : w < 720 ? 136 : 148
         return
       }
-      this.personWidth = w < 420 ? 108 : w < 640 ? 120 : 132
+      this.personWidth = w < 420 ? 112 : w < 640 ? 128 : 140
     },
 
     handleResize() {
@@ -190,17 +184,25 @@ export default {
     },
 
     warmImage(url) {
-      if (this.warmed.has(url)) return
+      if (!url || this.warmed.has(url)) return
       this.warmed.add(url)
       const img = new Image()
       img.decoding = 'async'
       img.src = url
     },
 
-    loadInitialPeople() {
-      const seedPeople = CHILDHOOD_SEED_STORIES.map((story) =>
-        createSeedPerson(story, this.manifest, this.styleTags)
-      )
+    async loadInitialPeople() {
+      let seedPeople = []
+      try {
+        const list = await fetchChildhoodScenes(this.$http)
+        seedPeople = list
+          .map((item, index) => createPersonFromPicture(item, index))
+          .filter((person) => person.imageUrl)
+      } catch (err) {
+        console.error('[ChildhoodAvatarCrowd] fetch childhood pictures failed', err)
+        this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
+      }
+
       const userPeople = loadCrowdFromStorage().map((p) => ({
         ...p,
         isSeed: false,
@@ -223,25 +225,8 @@ export default {
 
     warmPeople(list) {
       list.forEach((person) => {
-        LAYER_SPECS.forEach((spec) => {
-          this.warmImage(partUrl(spec.kind, person.recipe[spec.kind]))
-        })
+        this.warmImage(person.imageUrl)
       })
-    },
-
-    layersFor(person) {
-      return LAYER_SPECS.map((spec) => ({
-        key: `${person.id}-${spec.kind}`,
-        cls: spec.cls,
-        src: partUrl(spec.kind, person.recipe[spec.kind]),
-        style: {
-          left: `${spec.left * 100}%`,
-          top: `${spec.top * 100}%`,
-          width: `${spec.width * 100}%`,
-          height: `${spec.height * 100}%`,
-          zIndex: spec.zIndex,
-        },
-      }))
     },
 
     personStyle(person) {
@@ -275,12 +260,11 @@ export default {
       this.$nextTick(() => this.$emit('layout'))
     },
 
-    /** 人物群实际包围盒右侧中心（viewport 坐标），供页面连接线锚点 */
     getClusterConnectorPoint() {
       const stage = this.$refs.stageRef
       if (!stage || !this.people.length) return null
 
-      const personH = this.personWidth * PERSON_ASPECT
+      const personH = this.personWidth * SCENE_ASPECT
       let maxRight = 0
       let sumY = 0
       let count = 0
@@ -332,7 +316,7 @@ export default {
       const pos = this.positions[id]
       if (!stage || !pos) return
 
-      const personH = this.personWidth * PERSON_ASPECT
+      const personH = this.personWidth * SCENE_ASPECT
       const stageW = stage.clientWidth || 1
       const stageH = this.stageHeight || 1
 
@@ -347,7 +331,7 @@ export default {
       const pos = this.positions[id]
       if (!wrap || !pos) return
 
-      const personH = this.personWidth * PERSON_ASPECT
+      const personH = this.personWidth * SCENE_ASPECT
       const centerX = pos.left + this.personWidth / 2
       const centerY = pos.top + personH * 0.62
 
@@ -361,14 +345,6 @@ export default {
       })
     },
 
-    /**
-     * 提交后动画序列：
-     * 1. 区域放大 (expand)
-     * 2. 新人入场 (enter)
-     * 3. 视口平移至人物 (pan)
-     * 4. 聚光灯 + 气泡 (spotlight)
-     * 5. 收回扩展态 (settle)
-     */
     async runFocusSequence(person) {
       this.clearFocusSequence()
       this.focusPersonId = person.id
@@ -386,24 +362,19 @@ export default {
         return
       }
 
-      // 1. 区域放大
       this.isExpanded = true
       await this.wait(FOCUS_TIMELINE.enter)
 
-      // 2. 新人入场
       person.visible = true
       await this.nextFrame(2)
 
-      // 3. 平移视口到新人
       await this.wait(FOCUS_TIMELINE.pan - FOCUS_TIMELINE.enter)
       this.scrollToPerson(person.id, true)
       this.setFocusOrigin(person.id)
 
-      // 4. 聚光灯 + 自动弹出气泡
       await this.wait(FOCUS_TIMELINE.spotlight - FOCUS_TIMELINE.pan)
       person.tipOpen = true
 
-      // 5. 收回
       this.focusSettleTimer = setTimeout(() => {
         this.releaseFocus(person)
       }, FOCUS_TIMELINE.settle - FOCUS_TIMELINE.spotlight)
@@ -416,8 +387,8 @@ export default {
     },
 
     addPerson(note) {
-      if (!this.ready || !this.manifest) return null
-      const person = createPerson(note, this.manifest, this.styleTags)
+      if (!this.ready) return null
+      const person = createPerson(note)
       this.warmPeople([person])
       this.people.push(person)
       saveCrowdToStorage(this.people.filter((p) => !p.isSeed))
@@ -466,7 +437,6 @@ export default {
 .avatar-crowd {
   --crowd-purple: #8167a9;
   --crowd-purple-soft: rgba(129, 103, 169, 0.07);
-  --person-w: 132px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -510,7 +480,7 @@ export default {
 }
 
 .avatar-crowd--hero .avatar-crowd__tip {
-  max-width: min(220px, 72vw);
+  max-width: min(260px, 78vw);
   box-shadow:
     0 4px 14px rgba(129, 103, 169, 0.1),
     0 0 0 1.5px var(--crowd-purple-soft);
@@ -558,10 +528,8 @@ export default {
   position: relative;
   min-height: clamp(360px, 52vh, 560px);
   border-radius: 16px;
-  background:
-    radial-gradient(ellipse at 50% 0%, #fff 0%, transparent 58%),
-    linear-gradient(180deg, #faf9fc 0%, #f5f0fa 100%);
-  border: 1px solid #ece8f4;
+  background: transparent;
+  border: none;
   overflow: hidden;
   transition:
     min-height 0.55s var(--ease-out),
@@ -571,10 +539,6 @@ export default {
 
 .avatar-crowd__wrap--focus {
   min-height: clamp(480px, 68vh, 720px);
-  border-color: var(--crowd-purple);
-  box-shadow:
-    0 0 0 4px var(--crowd-purple-soft),
-    0 20px 48px rgba(129, 103, 169, 0.14);
   overflow: auto;
   scroll-behavior: smooth;
 }
@@ -628,7 +592,7 @@ export default {
 
 .avatar-crowd__person {
   position: absolute;
-  aspect-ratio: 1136 / 1533;
+  aspect-ratio: 1 / 0.82;
   transform-origin: 50% 88%;
   cursor: pointer;
   --lift: 0px;
@@ -644,7 +608,7 @@ export default {
     left 0.48s var(--ease-out),
     top 0.48s var(--ease-out);
   will-change: transform, left, top;
-  filter: drop-shadow(0 6px 10px rgba(61, 47, 98, 0.08));
+  filter: drop-shadow(0 8px 14px rgba(61, 47, 98, 0.1));
 }
 
 .avatar-crowd__person--in {
@@ -697,25 +661,45 @@ export default {
   --scale: calc(var(--base-scale) * 1.14);
 }
 
-.avatar-crowd__avatar {
+.avatar-crowd__scene {
   position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.avatar-crowd__layer {
-  position: absolute;
+.avatar-crowd__img {
   display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
   pointer-events: none;
   user-select: none;
+}
+
+.avatar-crowd__text-chip {
+  width: 56%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #f3eef9 0%, #e8dff5 100%);
+  border: 1.5px solid rgba(129, 103, 169, 0.35);
+  color: #5c4a82;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .avatar-crowd__tip {
   position: absolute;
   left: 50%;
-  bottom: calc(100% - 6%);
+  bottom: calc(100% - 2%);
   width: max-content;
-  max-width: min(220px, 72vw);
+  max-width: min(260px, 78vw);
   padding: 10px 14px;
   border-radius: 12px;
   background: #fff;
@@ -767,10 +751,6 @@ export default {
 }
 
 @media (max-width: 560px) {
-  .avatar-crowd__person {
-    --person-w: 108px;
-  }
-
   .avatar-crowd__wrap--focus {
     min-height: clamp(420px, 62vh, 640px);
   }

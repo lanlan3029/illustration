@@ -1,59 +1,20 @@
-/** 童年人群 — 部件拼接与砖墙布局（参照 avatar_crowd_demo.html） */
+/** 童年场景群 — 布局与用户当日提交 */
 
-const BASE = (process.env.BASE_URL || '/').replace(/\/?$/, '/')
-export const PARTS_BASE = `${BASE}avatar_parts/`
+import { resolvePictureUrl } from '@/utils/childhoodPictureApi'
 
 export const CROWD_STORAGE_KEY = 'childhood_avatar_crowd'
 
+/** 场景图平均高宽比（用于砖墙布局估算） */
+export const SCENE_ASPECT = 0.82
+
 export const LAYOUT = {
-  perRow: 6,
-  xGap: 0.72,
-  yGap: 0.4,
-  brick: 0.5,
+  perRow: 5,
+  xGap: 0.78,
+  yGap: 0.36,
+  brick: 0.48,
   topPad: 20,
-  sidePad: 16,
-  bottomPad: 64,
-}
-
-export const PERSON_ASPECT = 1533 / 1136
-
-export const LAYER_SPECS = [
-  {
-    cls: 'avatar-crowd__layer avatar-crowd__layer--body',
-    kind: 'body',
-    left: 147 / 1136,
-    top: 639 / 1533,
-    width: 818 / 1136,
-    height: 733 / 1533,
-    zIndex: 1,
-  },
-  {
-    cls: 'avatar-crowd__layer avatar-crowd__layer--head',
-    kind: 'head',
-    left: 372 / 1136,
-    top: 180 / 1533,
-    width: 473 / 1136,
-    height: 567 / 1533,
-    zIndex: 2,
-  },
-  {
-    cls: 'avatar-crowd__layer avatar-crowd__layer--face',
-    kind: 'face',
-    left: 531 / 1136,
-    top: 366 / 1533,
-    width: 289 / 1136,
-    height: 293 / 1533,
-    zIndex: 3,
-  },
-]
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
-
-function pickSeeded(arr, seed) {
-  if (!arr.length) return ''
-  return arr[seed % arr.length]
+  sidePad: 12,
+  bottomPad: 56,
 }
 
 export function hashSeed(str) {
@@ -66,29 +27,11 @@ export function hashSeed(str) {
   return h >>> 0
 }
 
-function stemOf(filename) {
-  return String(filename || '').replace(/\.svg$/i, '')
-}
-
-function vibeOf(styleTags, kind, filename) {
-  if (!styleTags?.[kind]) return 'n'
-  return styleTags[kind][stemOf(filename)] || 'n'
-}
-
-function filterByVibes(styleTags, kind, files, allowedVibes) {
-  const hit = files.filter((f) => allowedVibes.indexOf(vibeOf(styleTags, kind, f)) >= 0)
-  return hit.length ? hit : files
-}
-
-export function partUrl(kind, filename) {
-  return `${PARTS_BASE}${encodeURIComponent(kind)}/${encodeURIComponent(filename)}`
-}
-
 export function makeJitter() {
   return {
-    x: (Math.random() - 0.5) * 0.06,
-    y: (Math.random() - 0.5) * 0.04,
-    s: 0.96 + Math.random() * 0.06,
+    x: (Math.random() - 0.5) * 0.08,
+    y: (Math.random() - 0.5) * 0.05,
+    s: 0.94 + Math.random() * 0.08,
     bob: (Math.random() - 0.5) * 0.02,
   }
 }
@@ -99,44 +42,25 @@ export function makeSeededJitter(seed) {
   const r3 = (((seed + 2) * 9301 + 49297) % 233280) / 233280
   const r4 = (((seed + 3) * 9301 + 49297) % 233280) / 233280
   return {
-    x: (r1 - 0.5) * 0.06,
-    y: (r2 - 0.5) * 0.04,
-    s: 0.96 + r3 * 0.06,
+    x: (r1 - 0.5) * 0.08,
+    y: (r2 - 0.5) * 0.05,
+    s: 0.94 + r3 * 0.08,
     bob: (r4 - 0.5) * 0.02,
   }
 }
 
-export function randomRecipe(manifest, styleTags) {
-  const body = pick(manifest.body)
-  const bodyVibe = vibeOf(styleTags, 'body', body)
-  const allowedHeads = styleTags?.compatible?.[bodyVibe] || ['f', 'm', 'n']
-  const head = pick(filterByVibes(styleTags, 'head', manifest.head, allowedHeads))
-  const face = pick(manifest.face)
-  return { body, face, head, vibe: bodyVibe }
-}
-
-export function seededRecipe(manifest, styleTags, seedKey) {
-  const seed = hashSeed(seedKey)
-  const body = pickSeeded(manifest.body, seed)
-  const bodyVibe = vibeOf(styleTags, 'body', body)
-  const allowedHeads = styleTags?.compatible?.[bodyVibe] || ['f', 'm', 'n']
-  const headPool = filterByVibes(styleTags, 'head', manifest.head, allowedHeads)
-  const head = pickSeeded(headPool, seed + 17)
-  const face = pickSeeded(manifest.face, seed + 53)
-  return { body, face, head, vibe: bodyVibe }
-}
-
-export function createSeedPerson(story, manifest, styleTags) {
-  const seedKey = story.user_id || story.id
-  const seed = hashSeed(seedKey)
+/** 图元 API 条目 → 场景群 person */
+export function createPersonFromPicture(item, index = 0) {
+  const id = item._id || item.id || `childhood-picture-${index}`
+  const seed = hashSeed(id)
+  const note = (item.description || '').trim() || (item.title || '').trim()
   return {
-    id: story.id,
-    createdAt: 0,
-    note: story.content,
-    username: story.username || '',
-    user_id: story.user_id || '',
+    id,
+    createdAt: item.createdAt ? new Date(item.createdAt).getTime() : 0,
+    note,
+    title: item.title || '',
+    imageUrl: resolvePictureUrl(item),
     isSeed: true,
-    recipe: seededRecipe(manifest, styleTags, seedKey),
     jitter: makeSeededJitter(seed),
     visible: false,
     tipOpen: false,
@@ -160,14 +84,15 @@ export function filterTodayPeople(people) {
   return (people || []).filter(isPersonToday)
 }
 
-export function createPerson(note, manifest, styleTags) {
+export function createPerson(note) {
   const createdAt = Date.now()
+  const text = (note || '').trim()
   return {
     id: `${createdAt}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt,
     isSeed: false,
-    note: (note || '').trim(),
-    recipe: randomRecipe(manifest, styleTags),
+    note: text,
+    imageUrl: '',
     jitter: makeJitter(),
     visible: false,
     tipOpen: false,
@@ -181,7 +106,7 @@ export function layoutPeople(people, containerWidth, personWidth, parentHeight =
   }
 
   const w = personWidth
-  const h = w * PERSON_ASPECT
+  const h = w * SCENE_ASPECT
   const usable = Math.max(280, containerWidth - LAYOUT.sidePad * 2)
   const brickShift = w * LAYOUT.brick
 
@@ -224,7 +149,10 @@ export function loadCrowdFromStorage() {
     if (today.length !== parsed.length) {
       saveCrowdToStorage(today)
     }
-    return today
+    return today.map((person) => ({
+      ...person,
+      imageUrl: person.imageUrl || '',
+    }))
   } catch {
     return []
   }
@@ -233,11 +161,10 @@ export function loadCrowdFromStorage() {
 export function saveCrowdToStorage(people) {
   try {
     const today = filterTodayPeople(people)
-    const payload = today.map(({ id, createdAt, note, recipe, jitter }) => ({
+    const payload = today.map(({ id, createdAt, note, jitter }) => ({
       id,
       createdAt,
       note,
-      recipe,
       jitter,
     }))
     localStorage.setItem(CROWD_STORAGE_KEY, JSON.stringify(payload))
