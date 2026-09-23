@@ -1,28 +1,17 @@
 <template>
   <div ref="pageRef" class="moment-page">
-    <svg
-      v-if="connectorsVisible"
-      class="moment-connectors"
-      :viewBox="`0 0 ${connectorSize.w} ${connectorSize.h}`"
-      aria-hidden="true"
-    >
-      <path v-if="shareConnectorPath" :d="shareConnectorPath" class="moment-connector" />
-      <path v-if="galleryConnectorPath" :d="galleryConnectorPath" class="moment-connector moment-connector--gallery" />
-    </svg>
+    <header class="moment-header">
+      <router-link to="/childhood/gallery" class="moment-header__link">
+        {{ $t('childhoodMoments.viewWall') }}
+      </router-link>
+    </header>
 
-    <section class="moment-upper">
-      <div class="moment-upper__bar">
-        <router-link to="/childhood/gallery" class="moment-upper__link">
-          {{ $t('childhoodMoments.viewWall') }}
-        </router-link>
+    <section class="moment-hero">
+      <div ref="crowdAreaRef" class="moment-hero__gallery">
+        <ChildhoodAvatarCrowd ref="crowdRef" variant="hero" />
       </div>
 
-      <div class="moment-upper__grid">
-        <div ref="crowdAreaRef" class="moment-crowd">
-          <ChildhoodAvatarCrowd ref="crowdRef" variant="hero" @layout="updateConnectorPaths" />
-        </div>
-
-        <div class="moment-form">
+      <aside class="moment-form">
           <p class="moment-form__guide">{{ $t('childhoodMoments.formGuide') }}</p>
           <div
             class="moment-form__card"
@@ -40,7 +29,6 @@
             />
             <div class="moment-form__actions">
               <button
-                ref="shareBtnRef"
                 type="button"
                 class="moment-btn moment-btn--ghost"
                 :disabled="!subjectScene.trim() || submittingText || generating"
@@ -49,7 +37,6 @@
                 {{ submittingText ? $t('childhoodMoments.submittingText') : $t('childhoodMoments.submitText') }}
               </button>
               <button
-                ref="generateBtnRef"
                 type="button"
                 class="moment-btn moment-btn--primary"
                 :disabled="!subjectScene.trim() || generating"
@@ -65,25 +52,10 @@
               <span>{{ $t('childhoodMoments.generating') }}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 左低右高，峰值偏右（参照参考图） -->
-      <svg
-        class="moment-wave"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 1440 100"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <path
-          class="moment-wave__path"
-          d="M0,96 C320,94 640,72 960,42 C1120,28 1280,22 1440,30 L1440,100 L0,100 Z"
-        />
-      </svg>
+        </aside>
     </section>
 
-    <section ref="galleryRef" class="moment-gallery">
+    <section ref="galleryRef" class="moment-user-works">
       <div v-if="galleryGridItems.length" class="moment-gallery__head">
         <router-link to="/childhood/gallery" class="moment-gallery__see-all">
           {{ $t('childhoodMoments.seeAll') }}
@@ -174,11 +146,6 @@ export default {
       previewVisible: false,
       previewItem: null,
       submitImage,
-      connectorSize: { w: 1, h: 1 },
-      shareConnectorPath: '',
-      galleryConnectorPath: '',
-      connectorsVisible: false,
-      connectorResizeObserver: null,
     }
   },
   computed: {
@@ -222,130 +189,8 @@ export default {
 
     this.loadGalleryItems()
     this.initWeChatShare()
-
-    this.$nextTick(() => {
-      this.setupConnectorTracking()
-      // 人物 crowd 布局完成后再算一次
-      setTimeout(() => this.updateConnectorPaths(), 320)
-      setTimeout(() => this.updateConnectorPaths(), 1200)
-    })
-  },
-  beforeUnmount() {
-    this.teardownConnectorTracking()
   },
   methods: {
-    setupConnectorTracking() {
-      this.updateConnectorPaths()
-      window.addEventListener('resize', this.updateConnectorPaths, { passive: true })
-
-      if (typeof ResizeObserver !== 'undefined' && this.$refs.pageRef) {
-        this.connectorResizeObserver = new ResizeObserver(() => {
-          this.updateConnectorPaths()
-        })
-        this.connectorResizeObserver.observe(this.$refs.pageRef)
-        if (this.$refs.crowdAreaRef) {
-          this.connectorResizeObserver.observe(this.$refs.crowdAreaRef)
-        }
-      }
-    },
-
-    teardownConnectorTracking() {
-      window.removeEventListener('resize', this.updateConnectorPaths)
-      this.connectorResizeObserver?.disconnect()
-      this.connectorResizeObserver = null
-    },
-
-    localPoint(el, anchor, pageRect) {
-      const rect = el.getBoundingClientRect()
-      const x0 = rect.left - pageRect.left
-      const y0 = rect.top - pageRect.top
-
-      if (anchor === 'right-center') {
-        return { x: x0 + rect.width, y: y0 + rect.height / 2 }
-      }
-      if (anchor === 'left-center') {
-        return { x: x0, y: y0 + rect.height / 2 }
-      }
-      if (anchor === 'bottom-center') {
-        return { x: x0 + rect.width / 2, y: y0 + rect.height }
-      }
-      if (anchor === 'top-center') {
-        return { x: x0 + rect.width / 2, y: y0 }
-      }
-      return { x: x0, y: y0 }
-    },
-
-    buildShareConnectorPath(x1, y1, x2, y2) {
-      const midX = (x1 + x2) / 2
-      return `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${midX.toFixed(1)} ${y1.toFixed(1)}, ${midX.toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`
-    },
-
-    viewportToPagePoint(point, pageRect) {
-      return {
-        x: point.x - pageRect.left,
-        y: point.y - pageRect.top,
-      }
-    },
-
-    buildVerticalConnectorPath(x1, y1, x2, y2) {
-      const midY = y1 + (y2 - y1) * 0.55
-      return `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${x1.toFixed(1)} ${midY.toFixed(1)}, ${x2.toFixed(1)} ${midY.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`
-    },
-
-    updateConnectorPaths() {
-      const page = this.$refs.pageRef
-      const crowd = this.$refs.crowdAreaRef
-      const shareBtn = this.$refs.shareBtnRef
-      const generateBtn = this.$refs.generateBtnRef
-      const gallery = this.$refs.galleryRef
-
-      if (!page || !crowd || !shareBtn || !generateBtn || !gallery) {
-        this.connectorsVisible = false
-        return
-      }
-
-      if (window.innerWidth < 900) {
-        this.connectorsVisible = false
-        this.shareConnectorPath = ''
-        this.galleryConnectorPath = ''
-        return
-      }
-
-      const pageRect = page.getBoundingClientRect()
-      const w = Math.max(page.offsetWidth, 1)
-      const h = Math.max(page.offsetHeight, 1)
-
-      const clusterViewport = this.$refs.crowdRef?.getClusterConnectorPoint?.()
-      const crowdPoint = clusterViewport
-        ? this.viewportToPagePoint(clusterViewport, pageRect)
-        : this.localPoint(crowd, 'right-center', pageRect)
-      const sharePoint = this.localPoint(shareBtn, 'left-center', pageRect)
-      const generatePoint = this.localPoint(generateBtn, 'bottom-center', pageRect)
-      const galleryPoint = this.localPoint(gallery, 'top-center', pageRect)
-
-      // 分享按钮 → 人物群右侧（水平 S 曲线）
-      if (sharePoint.x <= crowdPoint.x + 12) {
-        this.shareConnectorPath = ''
-      } else {
-        this.shareConnectorPath = this.buildShareConnectorPath(
-          sharePoint.x,
-          sharePoint.y,
-          crowdPoint.x,
-          crowdPoint.y
-        )
-      }
-
-      this.galleryConnectorPath = this.buildVerticalConnectorPath(
-        generatePoint.x,
-        generatePoint.y + 6,
-        galleryPoint.x,
-        galleryPoint.y + 4
-      )
-
-      this.connectorSize = { w, h }
-      this.connectorsVisible = !!(this.shareConnectorPath || this.galleryConnectorPath)
-    },
-
     getImageUrl(item) {
       return getIllustrationUrl(item)
     },
@@ -389,7 +234,6 @@ export default {
         // ignore
       } finally {
         this.galleryLoading = false
-        this.$nextTick(() => this.updateConnectorPaths())
       }
     },
 
@@ -397,7 +241,6 @@ export default {
       this.galleryFocusIndex = 0
       this.$nextTick(() => {
         this.$refs.galleryRef?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        setTimeout(() => this.updateConnectorPaths(), 400)
       })
     },
 
@@ -642,132 +485,68 @@ export default {
 
 <style scoped>
 .moment-page {
-  position: relative;
-  --moment-upper-bg: #ffffff;
-  /* 波浪与 gallery 共用同一紫色，避免双色分层 */
-  --moment-lower-bg: #3f3878;
-  --wave-h: clamp(72px, 11vw, 108px);
-  --upper-min-h: max(480px, 52dvh);
+  --moment-bg: #faf4f2;
+  --moment-accent: #8167a9;
+  --moment-text: #2a2340;
+  --moment-muted: #9a929f;
   width: 100%;
-  min-height: 200vh;
-  min-height: 200dvh;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
-  background: var(--moment-lower-bg);
-  color: #111;
+  background: var(--moment-bg);
+  color: var(--moment-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
 }
 
-.moment-connectors {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 3;
-  overflow: visible;
-}
-
-.moment-connector {
-  fill: none;
-  stroke: rgba(129, 103, 169, 0.62);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 8 6;
-  animation: moment-connector-march 1.1s linear infinite;
-}
-
-.moment-connector--gallery {
-  stroke: rgba(63, 56, 120, 0.48);
-  stroke-dasharray: 9 7;
-  animation-duration: 1.35s;
-}
-
-@keyframes moment-connector-march {
-  to {
-    stroke-dashoffset: -26;
-  }
-}
-
-.moment-upper {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: auto;
-  background: var(--moment-upper-bg);
-  padding-bottom: var(--wave-h);
-  box-sizing: border-box;
-}
-
-.moment-wave {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: var(--wave-h);
-  display: block;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.moment-wave__path {
-  fill: var(--moment-lower-bg);
-}
-
-.moment-upper__bar {
+.moment-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   width: 100%;
-  padding: 16px clamp(16px, 3vw, 28px) 8px;
+  padding: 16px clamp(16px, 3vw, 28px) 0;
   box-sizing: border-box;
 }
 
-.moment-upper__link {
+.moment-header__link {
   font-size: 13px;
-  color: #666;
+  color: var(--moment-muted);
   text-decoration: none;
   letter-spacing: 0.02em;
 }
 
-.moment-upper__link:hover {
-  color: #111;
+.moment-header__link:hover {
+  color: var(--moment-text);
 }
 
-.moment-upper__grid {
+.moment-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: clamp(16px, 3vw, 32px);
-  flex: 1;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: clamp(12px, 2vw, 24px);
   width: 100%;
-  min-height: var(--upper-min-h);
-  align-items: center;
-  overflow: visible;
+  min-height: max(480px, 58dvh);
+  align-items: start;
+  padding: 8px clamp(12px, 2.5vw, 28px) clamp(32px, 5vw, 56px);
+  box-sizing: border-box;
 }
 
-.moment-crowd {
+.moment-hero__gallery {
   position: relative;
-  z-index: 4;
   display: flex;
-  flex: 1;
   flex-direction: column;
   min-height: 0;
-  padding: 8px 0 clamp(16px, 3vw, 28px);
-  overflow: visible;
+  min-width: 0;
+  padding: 4px 0;
 }
 
 .moment-form {
-  position: relative;
-  z-index: 4;
+  position: sticky;
+  top: 72px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
-  padding: clamp(16px, 3vw, 32px) clamp(16px, 3vw, 28px);
+  padding: clamp(8px, 1.5vw, 16px) 0;
   box-sizing: border-box;
 }
 
@@ -777,7 +556,7 @@ export default {
   margin: 0 0 12px;
   font-size: 13px;
   line-height: 1.55;
-  color: #8a8498;
+  color: var(--moment-muted);
   letter-spacing: 0.02em;
 }
 
@@ -786,13 +565,11 @@ export default {
   width: 100%;
   max-width: 420px;
   padding: clamp(24px, 4vw, 32px);
-  border: 1px solid rgba(63, 56, 120, 0.12);
+  border: 1px solid rgba(129, 103, 169, 0.14);
   border-radius: 20px;
-  background: #fff;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 12px 40px rgba(63, 56, 120, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 32px rgba(129, 103, 169, 0.08);
+  backdrop-filter: blur(6px);
   box-sizing: border-box;
   transition:
     border-color 0.2s ease,
@@ -800,11 +577,10 @@ export default {
 }
 
 .moment-form__card:focus-within:not(.moment-form__card--busy) {
-  border-color: rgba(63, 56, 120, 0.32);
+  border-color: rgba(129, 103, 169, 0.32);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 0 0 3px rgba(63, 56, 120, 0.1),
-    0 16px 48px rgba(63, 56, 120, 0.12);
+    0 0 0 3px rgba(129, 103, 169, 0.1),
+    0 12px 40px rgba(129, 103, 169, 0.12);
 }
 
 .moment-form__card--busy {
@@ -820,8 +596,8 @@ export default {
   justify-content: center;
   gap: 12px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.82);
-  color: #3f3878;
+  background: rgba(250, 244, 242, 0.88);
+  color: var(--moment-accent);
   font-size: 14px;
   font-weight: 600;
   backdrop-filter: blur(2px);
@@ -831,8 +607,8 @@ export default {
 .moment-btn__spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(63, 56, 120, 0.2);
-  border-top-color: #3f3878;
+  border: 2px solid rgba(129, 103, 169, 0.2);
+  border-top-color: var(--moment-accent);
   border-radius: 50%;
   animation: moment-spin 0.7s linear infinite;
 }
@@ -866,7 +642,7 @@ export default {
   background: transparent;
   font-size: clamp(16px, 2.2vw, 18px);
   line-height: 1.75;
-  color: #2a2340;
+  color: var(--moment-text);
   resize: none;
   outline: none;
   box-sizing: border-box;
@@ -883,7 +659,7 @@ export default {
   gap: 10px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid rgba(63, 56, 120, 0.08);
+  border-top: 1px solid rgba(129, 103, 169, 0.1);
 }
 
 .moment-btn {
@@ -907,68 +683,64 @@ export default {
 }
 
 .moment-btn--ghost {
-  border: 1.5px solid rgba(63, 56, 120, 0.2);
-  background: #faf9fc;
+  border: 1.5px solid rgba(129, 103, 169, 0.28);
+  background: rgba(255, 255, 255, 0.65);
   color: #4a4268;
 }
 
 .moment-btn--ghost:hover:not(:disabled) {
-  border-color: #8167a9;
+  border-color: var(--moment-accent);
   background: #fff;
-  color: #8167a9;
+  color: var(--moment-accent);
 }
 
 .moment-btn--primary {
-  border: 1.5px solid #3f3878;
-  background: #3f3878;
+  border: 1.5px solid var(--moment-accent);
+  background: var(--moment-accent);
   color: #fff;
 }
 
 .moment-btn--primary:hover:not(:disabled) {
-  background: #4a4298;
-  border-color: #4a4298;
+  background: #9278b8;
+  border-color: #9278b8;
 }
 
-.moment-gallery {
-  position: relative;
-  z-index: 1;
+.moment-user-works {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: max(100dvh, calc(200dvh - var(--upper-min-h)));
-  margin: 0;
-  padding: clamp(12px, 2vw, 24px) 0 64px;
+  padding: clamp(24px, 4vw, 40px) 0 64px;
   box-sizing: border-box;
-  background: var(--moment-lower-bg);
+  background: var(--moment-bg);
+  border-top: 1px solid rgba(129, 103, 169, 0.1);
 }
 
 .moment-gallery__head {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   padding: 0 clamp(16px, 3vw, 28px);
   box-sizing: border-box;
 }
 
 .moment-gallery__see-all {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--moment-muted);
   text-decoration: none;
 }
 
 .moment-gallery__see-all:hover {
-  color: #fff;
+  color: var(--moment-text);
   text-decoration: underline;
 }
 
 .moment-gallery__state {
   display: flex;
-  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 48px 20px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--moment-muted);
   font-size: 14px;
   text-align: center;
   box-sizing: border-box;
@@ -977,33 +749,32 @@ export default {
 .moment-gallery__line {
   width: 40px;
   height: 2px;
-  background: #c4b0ff;
+  background: rgba(129, 103, 169, 0.35);
   margin-bottom: 14px;
   animation: line-pulse 1.4s ease-in-out infinite;
 }
 
 .moment-gallery__focus {
   display: flex;
-  flex: 1;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  min-height: min(68vh, 640px);
+  min-height: min(36vh, 420px);
   margin: 0;
   padding: clamp(4px, 1vw, 12px) 0 0;
   box-sizing: border-box;
 }
 
 .moment-gallery__focus--empty {
-  min-height: min(42vh, 480px);
+  min-height: min(28vh, 320px);
 }
 
 .moment-gallery__empty-note {
   margin: 16px clamp(16px, 3vw, 28px) 0;
   font-size: 13px;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--moment-muted);
   text-align: center;
 }
 
@@ -1015,14 +786,14 @@ export default {
   margin: 20px clamp(16px, 3vw, 28px) 6px;
   font-size: 14px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--moment-text);
   text-align: center;
 }
 
 .moment-gallery__focus-hint {
   margin: 0 clamp(16px, 3vw, 28px);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--moment-muted);
   text-align: center;
 }
 
@@ -1051,13 +822,13 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .moment-upper__grid {
+  .moment-hero {
     grid-template-columns: 1fr;
     min-height: auto;
-    align-items: stretch;
   }
 
   .moment-form {
+    position: static;
     padding-top: 0;
   }
 
@@ -1077,10 +848,6 @@ export default {
 
 @media (prefers-reduced-motion: reduce) {
   .moment-gallery__line {
-    animation: none;
-  }
-
-  .moment-connector {
     animation: none;
   }
 }

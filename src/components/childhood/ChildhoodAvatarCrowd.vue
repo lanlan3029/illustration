@@ -1,81 +1,72 @@
 <template>
   <div
-    class="avatar-crowd"
+    class="scene-gallery"
     :class="{
-      'avatar-crowd--focus': isExpanded,
-      'avatar-crowd--hero': variant === 'hero',
+      'scene-gallery--focus': isExpanded,
+      'scene-gallery--hero': variant === 'hero',
     }"
   >
-    <div v-if="variant === 'default'" class="avatar-crowd__head">
-      <p class="avatar-crowd__label">{{ $t('childhoodMoments.crowdLabel') }}</p>
-      <span class="avatar-crowd__count">{{ $t('childhoodMoments.crowdCount', { count: people.length }) }}</span>
+    <div v-if="variant === 'default'" class="scene-gallery__head">
+      <p class="scene-gallery__label">{{ $t('childhoodMoments.crowdLabel') }}</p>
+      <span class="scene-gallery__count">{{ $t('childhoodMoments.crowdCount', { count: people.length }) }}</span>
     </div>
 
     <div
       ref="wrapRef"
-      class="avatar-crowd__wrap"
-      :class="{ 'avatar-crowd__wrap--focus': isExpanded }"
+      class="scene-gallery__wrap"
+      :class="{ 'scene-gallery__wrap--focus': isExpanded }"
     >
       <div
         ref="stageRef"
-        class="avatar-crowd__stage"
-        :class="{ 'avatar-crowd__stage--focus': isExpanded }"
-        :style="stageStyle"
+        class="scene-gallery__canvas"
+        :style="{ height: `${stageHeight}px` }"
         @click="closeAllTips"
       >
-        <p
-          v-if="bootError"
-          class="avatar-crowd__error"
-        >
-          {{ bootError }}
-        </p>
+        <p v-if="bootError" class="scene-gallery__error">{{ bootError }}</p>
         <p
           v-else
-          class="avatar-crowd__empty"
-          :class="{ 'avatar-crowd__empty--hidden': people.length > 0 }"
+          class="scene-gallery__empty"
+          :class="{ 'scene-gallery__empty--hidden': people.length > 0 }"
         >
           {{ $t('childhoodMoments.crowdEmpty') }}
         </p>
 
-        <div
+        <button
           v-for="person in people"
           :key="person.id"
-          class="avatar-crowd__person"
+          type="button"
+          class="scene-gallery__item"
           :class="{
-            'avatar-crowd__person--in': person.visible,
-            'avatar-crowd__person--tip': person.tipOpen,
-            'avatar-crowd__person--focus': person.id === focusPersonId,
-            'avatar-crowd__person--dim': isExpanded && person.id !== focusPersonId,
-            'avatar-crowd__person--text': !person.imageUrl,
+            'scene-gallery__item--in': person.visible,
+            'scene-gallery__item--tip': person.tipOpen,
+            'scene-gallery__item--focus': person.id === focusPersonId,
+            'scene-gallery__item--dim': isExpanded && person.id !== focusPersonId,
+            'scene-gallery__item--text': !person.imageUrl,
           }"
-          :style="personStyle(person)"
-          role="img"
+          :style="itemStyle(person)"
           :aria-label="person.note || $t('childhoodMoments.crowdPerson')"
-          tabindex="0"
           @click.stop="toggleTip(person.id)"
           @mouseenter="openTip(person.id)"
           @mouseleave="closeTip(person.id)"
           @focusin="openTip(person.id)"
           @focusout="closeTip(person.id)"
         >
-          <div class="avatar-crowd__tip">{{ person.note || $t('childhoodMoments.crowdNoNote') }}</div>
-          <div class="avatar-crowd__scene">
-            <img
-              v-if="person.imageUrl"
-              class="avatar-crowd__img"
-              :src="person.imageUrl"
-              alt=""
-              decoding="async"
-            />
-            <div v-else class="avatar-crowd__text-chip">
-              {{ person.note ? person.note.slice(0, 2) : '…' }}
-            </div>
+          <div class="scene-gallery__tip">{{ person.note || $t('childhoodMoments.crowdNoNote') }}</div>
+          <img
+            v-if="person.imageUrl"
+            class="scene-gallery__img"
+            :src="person.imageUrl"
+            alt=""
+            decoding="async"
+          />
+          <div v-else class="scene-gallery__text-chip">
+            {{ person.note ? person.note.slice(0, 2) : '…' }}
           </div>
-        </div>
+        </button>
       </div>
     </div>
 
-    <p v-if="variant === 'hero' && people.length > 0" class="avatar-crowd__hero-hint">
+    <p v-if="variant === 'hero' && people.length > 0" class="scene-gallery__hint">
       {{ $t('childhoodMoments.crowdHoverHint', { count: people.length }) }}
     </p>
   </div>
@@ -84,17 +75,14 @@
 <script>
 import { fetchChildhoodScenes } from '@/utils/childhoodPictureApi'
 import {
-  SCENE_ASPECT,
   createPerson,
   createPersonFromPicture,
-  layoutPeople,
   loadCrowdFromStorage,
   saveCrowdToStorage,
 } from '@/utils/avatarCrowd'
+import { layoutGalleryScenes } from '@/utils/childhoodSceneLayout'
 
-/** 提交后聚焦动画时间轴（ms） */
 const FOCUS_TIMELINE = {
-  expand: 0,
   enter: 80,
   pan: 480,
   spotlight: 560,
@@ -116,8 +104,7 @@ export default {
       people: [],
       ready: false,
       bootError: '',
-      stageHeight: 320,
-      personWidth: 132,
+      stageHeight: 420,
       positions: {},
       resizeTimer: null,
       focusSettleTimer: null,
@@ -125,22 +112,11 @@ export default {
       warmed: new Set(),
       isExpanded: false,
       focusPersonId: null,
-      focusOrigin: { x: 50, y: 50 },
       prefersReducedMotion: false,
     }
   },
-  computed: {
-    stageStyle() {
-      return {
-        height: `${this.stageHeight}px`,
-        '--focus-x': `${this.focusOrigin.x}%`,
-        '--focus-y': `${this.focusOrigin.y}%`,
-      }
-    },
-  },
   mounted() {
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    this.syncPersonWidth()
     this.boot()
     window.addEventListener('resize', this.handleResize, { passive: true })
   },
@@ -162,23 +138,12 @@ export default {
       }
     },
 
-    syncPersonWidth() {
-      const w = this.$refs.wrapRef?.clientWidth || 360
-      if (this.variant === 'hero') {
-        this.personWidth = w < 360 ? 108 : w < 520 ? 124 : w < 720 ? 136 : 148
-        return
-      }
-      this.personWidth = w < 420 ? 112 : w < 640 ? 128 : 140
-    },
-
     handleResize() {
       clearTimeout(this.resizeTimer)
       this.resizeTimer = setTimeout(() => {
-        this.syncPersonWidth()
         this.relayout()
         if (this.focusPersonId) {
           this.scrollToPerson(this.focusPersonId, false)
-          this.setFocusOrigin(this.focusPersonId)
         }
       }, 80)
     },
@@ -229,61 +194,26 @@ export default {
       })
     },
 
-    personStyle(person) {
+    itemStyle(person) {
       const pos = this.positions[person.id]
       if (!pos) {
-        return {
-          width: `${this.personWidth}px`,
-          opacity: 0,
-        }
+        return { opacity: 0, width: '120px' }
       }
       return {
         left: `${pos.left}px`,
         top: `${pos.top}px`,
-        width: `${this.personWidth}px`,
-        zIndex: person.id === this.focusPersonId ? 10000 : pos.zIndex,
-        '--base-scale': String(pos.baseScale),
+        width: `${pos.width}px`,
+        zIndex: person.id === this.focusPersonId ? 10000 : 10 + Math.round(pos.top),
+        '--base-scale': String(pos.baseScale || 1),
       }
     },
 
     relayout() {
       const width = this.$refs.wrapRef?.clientWidth || 360
-      const parentH = this.$refs.wrapRef?.clientHeight || 0
-      const { height, positions } = layoutPeople(
-        this.people,
-        width,
-        this.personWidth,
-        parentH
-      )
+      const { height, positions } = layoutGalleryScenes(this.people, width)
       this.stageHeight = height
       this.positions = Object.fromEntries(positions.map((p) => [p.id, p]))
       this.$nextTick(() => this.$emit('layout'))
-    },
-
-    getClusterConnectorPoint() {
-      const stage = this.$refs.stageRef
-      if (!stage || !this.people.length) return null
-
-      const personH = this.personWidth * SCENE_ASPECT
-      let maxRight = 0
-      let sumY = 0
-      let count = 0
-
-      this.people.forEach((person) => {
-        const pos = this.positions[person.id]
-        if (!pos) return
-        maxRight = Math.max(maxRight, pos.left + this.personWidth)
-        sumY += pos.top + personH * 0.55
-        count += 1
-      })
-
-      if (!count) return null
-
-      const stageRect = stage.getBoundingClientRect()
-      return {
-        x: stageRect.left + maxRight + 4,
-        y: stageRect.top + sumY / count,
-      }
     },
 
     wait(ms) {
@@ -293,54 +223,19 @@ export default {
       })
     },
 
-    nextFrame(count = 2) {
-      return new Promise((resolve) => {
-        let remaining = count
-        const step = () => {
-          remaining -= 1
-          if (remaining <= 0) resolve()
-          else requestAnimationFrame(step)
-        }
-        requestAnimationFrame(step)
-      })
-    },
-
     clearFocusSequence() {
       clearTimeout(this.focusSettleTimer)
       this.focusSequenceTimers.forEach(clearTimeout)
       this.focusSequenceTimers = []
     },
 
-    setFocusOrigin(id) {
-      const stage = this.$refs.stageRef
-      const pos = this.positions[id]
-      if (!stage || !pos) return
-
-      const personH = this.personWidth * SCENE_ASPECT
-      const stageW = stage.clientWidth || 1
-      const stageH = this.stageHeight || 1
-
-      this.focusOrigin = {
-        x: ((pos.left + this.personWidth / 2) / stageW) * 100,
-        y: ((pos.top + personH * 0.78) / stageH) * 100,
-      }
-    },
-
     scrollToPerson(id, smooth = true) {
       const wrap = this.$refs.wrapRef
       const pos = this.positions[id]
       if (!wrap || !pos) return
-
-      const personH = this.personWidth * SCENE_ASPECT
-      const centerX = pos.left + this.personWidth / 2
-      const centerY = pos.top + personH * 0.62
-
-      const maxScrollLeft = Math.max(0, wrap.scrollWidth - wrap.clientWidth)
-      const maxScrollTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight)
-
+      const centerY = pos.top + pos.width * 0.41
       wrap.scrollTo({
-        left: Math.min(maxScrollLeft, Math.max(0, centerX - wrap.clientWidth / 2)),
-        top: Math.min(maxScrollTop, Math.max(0, centerY - wrap.clientHeight / 2)),
+        top: Math.max(0, centerY - wrap.clientHeight / 2),
         behavior: smooth && !this.prefersReducedMotion ? 'smooth' : 'auto',
       })
     },
@@ -354,27 +249,18 @@ export default {
         person.visible = true
         person.tipOpen = true
         this.relayout()
-        this.$nextTick(() => {
-          this.scrollToPerson(person.id, false)
-          this.setFocusOrigin(person.id)
-        })
+        this.$nextTick(() => this.scrollToPerson(person.id, false))
         this.focusSettleTimer = setTimeout(() => this.releaseFocus(person), 3000)
         return
       }
 
       this.isExpanded = true
       await this.wait(FOCUS_TIMELINE.enter)
-
       person.visible = true
-      await this.nextFrame(2)
-
       await this.wait(FOCUS_TIMELINE.pan - FOCUS_TIMELINE.enter)
       this.scrollToPerson(person.id, true)
-      this.setFocusOrigin(person.id)
-
       await this.wait(FOCUS_TIMELINE.spotlight - FOCUS_TIMELINE.pan)
       person.tipOpen = true
-
       this.focusSettleTimer = setTimeout(() => {
         this.releaseFocus(person)
       }, FOCUS_TIMELINE.settle - FOCUS_TIMELINE.spotlight)
@@ -392,12 +278,10 @@ export default {
       this.warmPeople([person])
       this.people.push(person)
       saveCrowdToStorage(this.people.filter((p) => !p.isSeed))
-
       this.$nextTick(() => {
         this.relayout()
         this.runFocusSequence(person)
       })
-
       return person
     },
 
@@ -434,131 +318,67 @@ export default {
 </script>
 
 <style scoped>
-.avatar-crowd {
-  --crowd-purple: #8167a9;
-  --crowd-purple-soft: rgba(129, 103, 169, 0.07);
+.scene-gallery {
+  --gallery-accent: #8167a9;
+  --gallery-accent-soft: rgba(129, 103, 169, 0.12);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  width: 100%;
 }
 
-.avatar-crowd--hero {
-  flex: 1;
-  min-height: 0;
+.scene-gallery--hero {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  overflow: visible;
-}
-
-.avatar-crowd--hero .avatar-crowd__wrap {
+  min-height: 0;
   flex: 1;
-  min-height: clamp(280px, 38vh, 480px);
-  height: auto;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  overflow: visible;
 }
 
-.avatar-crowd--hero .avatar-crowd__wrap--focus {
-  min-height: clamp(480px, 68vh, 720px);
-  box-shadow: none;
-  border: none;
-  overflow: auto;
-  padding-top: clamp(56px, 8vh, 80px);
-  box-sizing: border-box;
-}
-
-.avatar-crowd--hero .avatar-crowd__stage--focus {
-  transform: scale(1.04);
-}
-
-.avatar-crowd--hero .avatar-crowd__empty {
-  font-size: 13px;
-  color: rgba(0, 0, 0, 0.35);
-  padding: 16px;
-}
-
-.avatar-crowd--hero .avatar-crowd__tip {
-  max-width: min(260px, 78vw);
-  box-shadow:
-    0 4px 14px rgba(129, 103, 169, 0.1),
-    0 0 0 1.5px var(--crowd-purple-soft);
-  z-index: 10001;
-}
-
-.avatar-crowd__hero-hint {
-  margin: 10px clamp(16px, 3vw, 28px) 0;
-  padding: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #8a8498;
-  letter-spacing: 0.02em;
-}
-
-.avatar-crowd__head {
+.scene-gallery__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
-  transition: opacity 0.3s ease;
 }
 
-.avatar-crowd--focus .avatar-crowd__head {
-  opacity: 0.72;
-}
-
-.avatar-crowd__label {
+.scene-gallery__label {
   margin: 0;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #444;
+  color: #6b6478;
 }
 
-.avatar-crowd__count {
+.scene-gallery__count {
   font-size: 12px;
-  color: var(--crowd-purple);
-  letter-spacing: 0.04em;
+  color: var(--gallery-accent);
 }
 
-.avatar-crowd__wrap {
+.scene-gallery__wrap {
   position: relative;
-  min-height: clamp(360px, 52vh, 560px);
-  border-radius: 16px;
-  background: transparent;
-  border: none;
-  overflow: hidden;
-  transition:
-    min-height 0.55s var(--ease-out),
-    border-color 0.4s ease,
-    box-shadow 0.4s ease;
+  width: 100%;
+  overflow: visible;
 }
 
-.avatar-crowd__wrap--focus {
-  min-height: clamp(480px, 68vh, 720px);
+.scene-gallery--hero .scene-gallery__wrap {
+  flex: 1;
+  min-height: clamp(360px, 52vh, 640px);
+}
+
+.scene-gallery__wrap--focus {
   overflow: auto;
+  max-height: clamp(480px, 72vh, 760px);
   scroll-behavior: smooth;
 }
 
-.avatar-crowd__stage {
+.scene-gallery__canvas {
   position: relative;
   width: 100%;
   min-height: 320px;
-  transform: scale(1);
-  transform-origin: var(--focus-x, 50%) var(--focus-y, 50%);
-  transition:
-    height 0.45s var(--ease-out),
-    transform 0.65s var(--ease-out);
 }
 
-.avatar-crowd__stage--focus {
-  transform: scale(1.06);
-}
-
-.avatar-crowd__empty {
+.scene-gallery__empty,
+.scene-gallery__error {
   position: absolute;
   inset: 0;
   display: grid;
@@ -568,109 +388,63 @@ export default {
   text-align: center;
   font-size: 14px;
   line-height: 1.65;
-  color: #888;
+  color: #9a929f;
   pointer-events: none;
-  transition: opacity 0.35s ease;
 }
 
-.avatar-crowd__empty--hidden {
-  opacity: 0;
-}
-
-.avatar-crowd__error {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  margin: 0;
-  padding: 24px;
-  text-align: center;
-  font-size: 14px;
-  line-height: 1.65;
+.scene-gallery__error {
   color: #b44;
 }
 
-.avatar-crowd__person {
+.scene-gallery__empty--hidden {
+  opacity: 0;
+}
+
+.scene-gallery__item {
   position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   aspect-ratio: 1 / 0.82;
   transform-origin: 50% 88%;
-  cursor: pointer;
-  --lift: 0px;
-  --base-scale: 1;
-  --scale: var(--base-scale);
-  --enter: 0.88;
   opacity: 0;
-  transform: translate3d(0, 18px, 0) scale(calc(var(--scale) * var(--enter)));
+  transform: translate3d(0, 12px, 0) scale(calc(var(--base-scale, 1) * 0.92));
   transition:
-    transform 0.42s var(--ease-out),
-    opacity 0.34s ease,
-    filter 0.34s ease,
-    left 0.48s var(--ease-out),
-    top 0.48s var(--ease-out);
-  will-change: transform, left, top;
-  filter: drop-shadow(0 8px 14px rgba(61, 47, 98, 0.1));
+    transform 0.38s var(--ease-out),
+    opacity 0.3s ease,
+    filter 0.3s ease;
+  filter: drop-shadow(0 6px 14px rgba(80, 60, 100, 0.08));
 }
 
-.avatar-crowd__person--in {
+.scene-gallery__item--in {
   opacity: 1;
-  --enter: 1;
-  transform: translate3d(0, var(--lift), 0) scale(var(--scale));
+  transform: translate3d(0, 0, 0) scale(var(--base-scale, 1));
 }
 
-.avatar-crowd__person--dim {
-  opacity: 0.55;
-  filter: saturate(0.82) drop-shadow(0 4px 8px rgba(61, 47, 98, 0.05));
+.scene-gallery__item--dim {
+  opacity: 0.45;
+  filter: saturate(0.75);
 }
 
-.avatar-crowd__person--focus {
-  --lift: -18px;
-  --scale: calc(var(--base-scale) * 1.14);
+.scene-gallery__item--focus {
+  transform: translate3d(0, -8px, 0) scale(calc(var(--base-scale, 1) * 1.08)) !important;
   opacity: 1 !important;
-  filter: drop-shadow(0 22px 32px rgba(129, 103, 169, 0.28)) !important;
+  filter: drop-shadow(0 16px 28px rgba(80, 60, 100, 0.16)) !important;
   z-index: 10000 !important;
 }
 
-.avatar-crowd__person--focus::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 4%;
-  width: 72%;
-  height: 10%;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(129, 103, 169, 0.28) 0%, transparent 72%);
-  animation: crowd-spotlight 1.8s var(--ease-out) infinite;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.avatar-crowd__person:hover,
-.avatar-crowd__person:focus-visible,
-.avatar-crowd__person--tip {
-  --lift: -12px;
-  --scale: calc(var(--base-scale) * 1.08);
+.scene-gallery__item:hover,
+.scene-gallery__item:focus-visible,
+.scene-gallery__item--tip {
+  transform: translate3d(0, -6px, 0) scale(calc(var(--base-scale, 1) * 1.04));
   outline: none;
-  filter: drop-shadow(0 16px 22px rgba(61, 47, 98, 0.16));
+  filter: drop-shadow(0 12px 22px rgba(80, 60, 100, 0.14));
   z-index: 9999 !important;
 }
 
-.avatar-crowd__person--focus:hover,
-.avatar-crowd__person--focus.avatar-crowd__person--tip {
-  --lift: -18px;
-  --scale: calc(var(--base-scale) * 1.14);
-}
-
-.avatar-crowd__scene {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.avatar-crowd__img {
+.scene-gallery__img {
   display: block;
   width: 100%;
   height: 100%;
@@ -680,24 +454,24 @@ export default {
   user-select: none;
 }
 
-.avatar-crowd__text-chip {
+.scene-gallery__text-chip {
   width: 56%;
   aspect-ratio: 1;
+  margin: 0 auto;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #f3eef9 0%, #e8dff5 100%);
-  border: 1.5px solid rgba(129, 103, 169, 0.35);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px solid rgba(129, 103, 169, 0.28);
   color: #5c4a82;
   font-size: 14px;
   font-weight: 600;
-  line-height: 1;
 }
 
-.avatar-crowd__tip {
+.scene-gallery__tip {
   position: absolute;
   left: 50%;
-  bottom: calc(100% - 2%);
+  bottom: calc(100% + 4px);
   width: max-content;
   max-width: min(260px, 78vw);
   padding: 10px 14px;
@@ -708,72 +482,48 @@ export default {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  border: 1.5px solid var(--crowd-purple);
-  box-shadow:
-    0 6px 18px rgba(129, 103, 169, 0.12),
-    0 0 0 1.5px var(--crowd-purple-soft);
+  border: 1.5px solid var(--gallery-accent);
+  box-shadow: 0 8px 24px rgba(129, 103, 169, 0.12);
   pointer-events: none;
   z-index: 5;
-  transform: translate3d(-50%, 10px, 0) scale(0.9);
+  transform: translate3d(-50%, 8px, 0) scale(0.92);
   opacity: 0;
   transition:
-    opacity 0.24s var(--ease-out),
-    transform 0.3s var(--ease-out);
+    opacity 0.22s var(--ease-out),
+    transform 0.28s var(--ease-out);
 }
 
-.avatar-crowd__tip::after {
+.scene-gallery__tip::after {
   content: '';
   position: absolute;
   left: 50%;
   top: 100%;
   transform: translateX(-50%);
   border: 7px solid transparent;
-  border-top-color: var(--crowd-purple);
+  border-top-color: var(--gallery-accent);
 }
 
-.avatar-crowd__person:hover .avatar-crowd__tip,
-.avatar-crowd__person:focus-visible .avatar-crowd__tip,
-.avatar-crowd__person--tip .avatar-crowd__tip {
+.scene-gallery__item:hover .scene-gallery__tip,
+.scene-gallery__item:focus-visible .scene-gallery__tip,
+.scene-gallery__item--tip .scene-gallery__tip {
   opacity: 1;
   transform: translate3d(-50%, 0, 0) scale(1);
 }
 
-@keyframes crowd-spotlight {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: translateX(-50%) scale(0.92);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.08);
-  }
-}
-
-@media (max-width: 560px) {
-  .avatar-crowd__wrap--focus {
-    min-height: clamp(420px, 62vh, 640px);
-  }
-
-  .avatar-crowd__stage--focus {
-    transform: scale(1.04);
-  }
+.scene-gallery__hint {
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #9a929f;
+  letter-spacing: 0.02em;
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .avatar-crowd__wrap,
-  .avatar-crowd__stage,
-  .avatar-crowd__person,
-  .avatar-crowd__tip {
+  .scene-gallery__item,
+  .scene-gallery__tip {
     transition: none;
-  }
-
-  .avatar-crowd__person--focus::before {
-    animation: none;
-  }
-
-  .avatar-crowd__stage--focus {
-    transform: none;
   }
 }
 </style>
