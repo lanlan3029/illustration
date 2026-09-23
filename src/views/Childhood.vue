@@ -82,7 +82,11 @@ import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
 import submitImage from '@/assets/images/submit.webp'
-import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
+import {
+  postCreateCharacter,
+  isCreateCharacterResponseOk,
+  resolveGenerationImageUrl,
+} from '@/utils/createCharacterTask'
 import { canvasToDataUrl, matChildhoodCutoutFromUrl } from '@/utils/canvasMatting'
 import { uploadPictureElement } from '@/utils/saveCroppedAsset'
 import {
@@ -304,6 +308,15 @@ export default {
       return resolvePictureUrl(record)
     },
 
+    safeStorageSet(key, value) {
+      try {
+        if (typeof value === 'string' && value.length > 900000) return
+        localStorage.setItem(key, value)
+      } catch (err) {
+        console.warn('[Childhood] localStorage set failed', key, err)
+      }
+    },
+
     ensureLogin() {
       if (this.isLogin && localStorage.getItem('token')) return true
       ElMessage.warning(this.$t('childhoodMoments.pleaseLogin'))
@@ -361,24 +374,30 @@ export default {
           })
         }
 
-        const imageUrl =
-          result.image_url || result.character_image_url || result.image || result.url
+        const imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
 
         if (imageUrl) {
-          const cutoutCanvas = await matChildhoodCutoutFromUrl(imageUrl, CHILDHOOD_MATTING_BG)
+          const cutoutCanvas = await matChildhoodCutoutFromUrl(imageUrl, CHILDHOOD_MATTING_BG, {
+            http: this.$http,
+            apiBaseUrl: this.apiBaseUrl,
+          })
           const cutoutDataUrl = canvasToDataUrl(cutoutCanvas)
           this.generatedImageUrl = cutoutDataUrl
-          localStorage.setItem(STORAGE_KEY, cutoutDataUrl)
+          this.safeStorageSet(STORAGE_KEY, cutoutDataUrl)
 
           const pictureRecord = await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
           const pictureId = extractPictureId(pictureRecord)
+          const uploadedUrl = resolvePictureUrl(pictureRecord)
           const crowdList = await fetchChildhoodScenes(this.$http)
 
           this.lastShareStory = sceneText
           this.lastPictureId = pictureId
-          localStorage.setItem(SHARE_STORY_KEY, sceneText)
+          this.safeStorageSet(SHARE_STORY_KEY, sceneText)
           if (pictureId) {
-            localStorage.setItem(MY_PICTURE_ID_KEY, pictureId)
+            this.safeStorageSet(MY_PICTURE_ID_KEY, pictureId)
+          }
+          if (uploadedUrl) {
+            this.generatedImageUrl = uploadedUrl
           }
 
           try {
@@ -390,7 +409,7 @@ export default {
             )
             if (posterUrl) {
               this.sharePosterUrl = posterUrl
-              localStorage.setItem(SHARE_POSTER_URL_KEY, posterUrl)
+              this.safeStorageSet(SHARE_POSTER_URL_KEY, posterUrl)
             }
           } catch (err) {
             console.warn('[Childhood] share poster failed', err)
@@ -408,8 +427,14 @@ export default {
         } else {
           throw new Error('no image url')
         }
-      } catch {
-        ElMessage({ message: this.$t('childhoodMoments.generateFailed'), type: 'error', offset: 200 })
+      } catch (err) {
+        console.error('[Childhood] shareMoment failed', err)
+        const detail = err?.message || err?.response?.data?.message
+        ElMessage({
+          message: detail || this.$t('childhoodMoments.generateFailed'),
+          type: 'error',
+          offset: 200,
+        })
       } finally {
         this.generating = false
       }

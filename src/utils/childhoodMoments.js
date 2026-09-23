@@ -10,48 +10,53 @@ const SHARE_TITLE_MAX = 28
 /** 生图背景色（抠图用） */
 export const CHILDHOOD_MATTING_BG = { r: 255, g: 43, b: 214, hex: '#FF2BD6' }
 
-export const CHILDHOOD_STYLE_PROMPT = `One isolated lifestyle vignette for a modern children's picture book and educational website.
-Not a repeating pattern, not a sticker sheet.
+export const CHILDHOOD_STYLE_PROMPT = `One isolated lifestyle vignette. Not a repeating pattern, not a sticker sheet.
 
-Visual style:
-Flat hand-drawn editorial illustration.
-Sophisticated flat illustration, simple organic shapes, large flat color blocks.
-Clean but slightly imperfect hand-drawn outlines, bold dark contour lines.
-Minimal facial features, elongated expressive figures, relaxed natural poses.
-Playful visual rhythm, warm and friendly atmosphere.
-Warm, playful, sophisticated, human — editorial rather than childish,
-like a contemporary children's magazine illustration.
-Keep shapes simple and readable; confident organic silhouettes and expressive body language.
+STYLE PRIORITY (most important):
+Contemporary editorial flat illustration for a children's magazine — NOT cute commercial picture book art, NOT kawaii, NOT anime, NOT Disney-style.
+
+Linework:
+Bold thick dark brown contour lines (#3D2E24), clearly visible from a distance.
+Slightly imperfect hand-drawn edges — but STRONG silhouettes, not delicate thin outlines.
+Each major shape gets ONE outer contour; avoid inner detail lines.
+
+Figures (keep extremely simple):
+Elongated bodies (~6–7 head heights), slim relaxed proportions — NOT chibi, NOT big-head cute kids.
+Faces are almost blank: tiny dot eyes OR two dots only — NO nose lines, NO mouth details, NO ears drawn, NO eyebrows, NO blush, NO teeth.
+Hair = one solid flat shape (bob / short block / simple ponytail), NO hair strands, NO highlights, NO inner hair lines.
+Hands and feet = simplified mitten-like or rounded stubs, NO fingers, NO shoe laces.
+Clothing = 1–2 flat color blocks per garment, NO fabric folds, NO shading, NO patterns (no checks, stripes, logos), NO zippers, pockets, or backpack details.
+Express emotion through POSE and silhouette only, not facial rendering.
+
+Objects & environment:
+Reduce everything to large readable shapes — door, table, tree, floor as flat color masses.
+Bricks, tiles, brooms, plants: flat symbolic shapes only — NO surface texture, NO grain, NO wet reflections, NO cast shadows on ground.
+Background minimal: a few props max; leave breathing room.
 
 Color:
-Soft muted pastel colors with a slightly retro feeling:
-cream, dusty pink, muted lavender, sage green, olive green,
-dusty blue, coral orange, mustard yellow.
-Dark brown linework.
+Soft muted retro pastels: cream, dusty pink, muted lavender, sage, olive, dusty blue, coral, mustard.
+Fill with flat solid colors only.
 
-Rendering:
-Flat colors, minimal visual detail.
-No gradients, no realistic lighting, no 3D, no photorealism,
-no heavy texture, no complex background, no glossy effects, no drop shadows.
+Rendering rules:
+Flat color fills, zero gradients, zero 3D, zero photorealism, zero glossy highlights, zero ambient occlusion.
 
 Composition / matting:
 NO outer contour, die-cut, white halo, or sticker border around the whole group.
-Each shape sits DIRECTLY on a flat solid #FF2BD6 magenta background, generous empty margin.
+All elements sit DIRECTLY on flat solid #FF2BD6 magenta background with generous empty margin.
 
-People:
-Children must be both boys and girls across a series — not the same face every time.
-Girls: bob, pigtails, clip, or dress. Boys: short hair.
-Do not reuse one face with different clothes.
+People variety:
+Mix boys and girls across scenes — different hair shapes, not the same face recycled.
 
 Scene logic:
 People stand on land/floor. Trees and flowers grow from soil. Water is only water.
-Do not put a train on a beach, a tree in the sea, or mix mismatched scales.
-A vehicle or building can be drawn alone and large, without tiny foreground people.
+No impossible scale mixes (no train on a beach). Vehicles/buildings may appear large without tiny foreground people.
 
-Negative:
-no orange faceless silhouettes, no geometric icon people,
-no photorealism, no 3D, no gradients, no signature, no brand logos,
-no white sticker border, no outer black outline around the whole silhouette.`
+Strict negative:
+no thin delicate linework, no detailed faces, no nose/mouth/ear drawing, no hair strands,
+no clothing folds or patterns, no kawaii/chibi/big-head cute style, no anime eyes,
+no picture-book realism, no brick texture, no floor reflections, no gradients, no drop shadows,
+no orange faceless silhouettes, no geometric icon people, no 3D, no photorealism,
+no signature, no brand logos, no white sticker border, no outer halo around the whole vignette.`
 
 export function buildChildhoodPrompt(scene) {
   const text = (scene || '').trim()

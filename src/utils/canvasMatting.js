@@ -1,4 +1,5 @@
 import { applyStickerStyle, loadImage } from '@/utils/lassoCrop';
+import { loadHtmlImage, loadImageBlob } from '@/utils/canvasImageCompose';
 
 export { loadImage, downloadDataUrl, readFileAsDataUrl } from '@/utils/lassoCrop';
 
@@ -240,10 +241,37 @@ function resolveMattingSourceUrl(url) {
   return resolveImageSourceUrl(url);
 }
 
+async function loadMattingImage(url, options = {}) {
+  const src = resolveMattingSourceUrl(url);
+  if (!src) throw new Error('无图片地址');
+
+  if (src.startsWith('data:') || src.startsWith('blob:')) {
+    return loadImage(src);
+  }
+
+  try {
+    const blob = await loadImageBlob(src, {
+      http: options.http,
+      apiBaseUrl: options.apiBaseUrl,
+    });
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      return await loadHtmlImage(objectUrl);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  } catch (blobErr) {
+    try {
+      return await loadImage(src);
+    } catch {
+      throw blobErr;
+    }
+  }
+}
+
 /** 童年场景：洋红底 → 透明 PNG canvas */
 export async function matChildhoodCutoutFromUrl(url, bgColor, options = {}) {
-  const src = resolveMattingSourceUrl(url);
-  const image = await loadImage(src);
+  const image = await loadMattingImage(url, options);
   return mattingSolidBackground(image, bgColor, { sticker: false, ...options });
 }
 
