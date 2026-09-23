@@ -84,14 +84,25 @@ async function updateContent(id, content) {
   return data.message
 }
 
-async function deleteRecord(id) {
+async function hideTempRecord(id) {
   const res = await fetch(`${API_BASE}/picture/${id}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
+    method: 'PUT',
+    headers: authHeaders(true),
+    body: JSON.stringify({ type: '_orphan', is_public: 0 }),
   })
   const data = await res.json()
   if (!res.ok || (data.desc && data.desc !== 'success')) {
-    throw new Error(`删除临时记录失败: ${JSON.stringify(data)}`)
+    throw new Error(`隐藏临时记录失败: ${JSON.stringify(data)}`)
+  }
+}
+
+async function verifyStaticUrl(relativePath) {
+  const url = `https://static.kidstory.cc/${String(relativePath).replace(/^\//, '')}`
+  try {
+    const res = await fetch(url, { method: 'HEAD' })
+    return res.ok
+  } catch {
+    return false
   }
 }
 
@@ -112,9 +123,16 @@ async function replaceOne(story, existing) {
   }
 
   await updateContent(existing._id, newPath)
-  await deleteRecord(temp._id)
+  // 不能 DELETE 临时记录：后端会 unlink 磁盘文件，而正式记录已指向同一路径 → CDN 404
+  await hideTempRecord(temp._id)
 
+  const onStatic = await verifyStaticUrl(newPath)
   console.log(`  ✓ 已替换为 ${newPath}`)
+  if (!onStatic) {
+    console.warn(
+      `  ⚠ static.kidstory.cc 尚未能访问该文件，请在服务器同步 upload/ 到静态 CDN 后重试 HEAD`
+    )
+  }
 }
 
 async function main() {

@@ -149,6 +149,12 @@ export default {
       }
     },
 
+    async refreshScenes() {
+      if (!this.ready) return
+      await this.loadInitialPeople()
+      this.relayout()
+    },
+
     handleResize() {
       clearTimeout(this.resizeTimer)
       this.resizeTimer = setTimeout(() => {
@@ -359,6 +365,7 @@ export default {
 .scene-gallery--hero {
   display: flex;
   flex-direction: column;
+  width: 100%;
   min-height: 0;
   flex: 1;
 }

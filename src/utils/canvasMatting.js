@@ -18,6 +18,55 @@ export function isNearWhite(r, g, b, threshold = 240, tolerance = 28) {
   return avg >= threshold && max - min <= tolerance;
 }
 
+export function colorDistance(r, g, b, target) {
+  const dr = r - target.r;
+  const dg = g - target.g;
+  const db = b - target.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+export function isNearColor(r, g, b, target, maxDistance = 85) {
+  return colorDistance(r, g, b, target) <= maxDistance;
+}
+
+/** 从四边泛洪，去掉与边缘连通的指定背景色 */
+function buildEdgeBackgroundMaskColor(data, width, height, target, maxDistance) {
+  const size = width * height;
+  const bg = new Uint8Array(size);
+  const queue = [];
+
+  const idx = (x, y) => y * width + x;
+  const tryPush = (x, y) => {
+    const i = idx(x, y);
+    if (bg[i]) return;
+    const p = i * 4;
+    if (!isNearColor(data[p], data[p + 1], data[p + 2], target, maxDistance)) return;
+    bg[i] = 1;
+    queue.push(i);
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    tryPush(x, 0);
+    tryPush(x, height - 1);
+  }
+  for (let y = 0; y < height; y += 1) {
+    tryPush(0, y);
+    tryPush(width - 1, y);
+  }
+
+  while (queue.length) {
+    const i = queue.pop();
+    const x = i % width;
+    const y = (i - x) / width;
+    if (x > 0) tryPush(x - 1, y);
+    if (x < width - 1) tryPush(x + 1, y);
+    if (y > 0) tryPush(x, y - 1);
+    if (y < height - 1) tryPush(x, y + 1);
+  }
+
+  return bg;
+}
+
 /** 从四边泛洪，只去掉与边缘连通的近白区域（避免误删角色内部浅色） */
 function buildEdgeBackgroundMask(data, width, height, threshold, tolerance) {
   const size = width * height;
@@ -144,6 +193,58 @@ export async function mattingFromImageUrl(url, options = {}) {
   const src = resolveImageSourceUrl(url);
   const image = await loadImage(src);
   return mattingWhiteBackground(image, options);
+}
+
+/**
+ * 纯色底抠图（童年场景 #FF2BD6 洋红底）
+ */
+export function mattingSolidBackground(image, bgColor, options = {}) {
+  const maxDistance = options.colorTolerance ?? 88;
+  const feather = options.feather ?? 1;
+  const floodFromEdges = options.floodFromEdges !== false;
+  const sticker = options.sticker ?? false;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth || image.width;
+  canvas.height = image.naturalHeight || image.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 不可用');
+
+  ctx.drawImage(image, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data, width, height } = imageData;
+
+  let bgMask = null;
+  if (floodFromEdges) {
+    bgMask = buildEdgeBackgroundMaskColor(data, width, height, bgColor, maxDistance);
+  }
+
+  for (let i = 0; i < data.length; i += 4) {
+    const pixelIdx = i / 4;
+    const isBg = floodFromEdges
+      ? bgMask[pixelIdx] === 1
+      : isNearColor(data[i], data[i + 1], data[i + 2], bgColor, maxDistance);
+    data[i + 3] = isBg ? 0 : 255;
+  }
+
+  featherAlpha(data, width, height, feather);
+  ctx.putImageData(imageData, 0, 0);
+
+  if (sticker === false) return canvas;
+  return applyStickerStyle(canvas, typeof sticker === 'object' ? sticker : {});
+}
+
+function resolveMattingSourceUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url;
+  return resolveImageSourceUrl(url);
+}
+
+/** 童年场景：洋红底 → 透明 PNG canvas */
+export async function matChildhoodCutoutFromUrl(url, bgColor, options = {}) {
+  const src = resolveMattingSourceUrl(url);
+  const image = await loadImage(src);
+  return mattingSolidBackground(image, bgColor, { sticker: false, ...options });
 }
 
 /** 白底抠图 → PNG data URL（供编辑器 / 保存角色使用） */

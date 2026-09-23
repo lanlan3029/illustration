@@ -2,22 +2,34 @@
 
 export const CHILDHOOD_PICTURE_TYPE = 'childhood'
 
+function withCacheBust(url, item) {
+  if (!url || !item?.updatedAt) return url
+  const stamp = encodeURIComponent(item.updatedAt)
+  return url.includes('?') ? `${url}&v=${stamp}` : `${url}?v=${stamp}`
+}
+
 export function resolvePictureUrl(item) {
   if (!item) return ''
   let content = item.content
   if (Array.isArray(content)) content = content[0]
   if (typeof content === 'string' && (content.startsWith('http://') || content.startsWith('https://'))) {
-    return content
+    return withCacheBust(content, item)
   }
   if (typeof content === 'string' && content.trim()) {
-    return `https://static.kidstory.cc/${content.replace(/^\//, '')}`
+    return withCacheBust(
+      `https://static.kidstory.cc/${content.replace(/^\//, '')}`,
+      item
+    )
   }
   const fallback = item.picture || item.image_url || item.image || item.url
   if (!fallback) return ''
   if (typeof fallback === 'string' && (fallback.startsWith('http://') || fallback.startsWith('https://'))) {
-    return fallback
+    return withCacheBust(fallback, item)
   }
-  return `https://static.kidstory.cc/${String(fallback).replace(/^\//, '')}`
+  return withCacheBust(
+    `https://static.kidstory.cc/${String(fallback).replace(/^\//, '')}`,
+    item
+  )
 }
 
 function normalizePictureList(payload) {

@@ -47,78 +47,28 @@
               <span>{{ $t('childhoodMoments.sharing') }}</span>
             </div>
           </div>
+
+          <footer v-if="sceneCount > 0" class="moment-panel__stats">
+            <div v-if="sceneAvatars.length" class="moment-panel__stats-avatars" aria-hidden="true">
+              <img
+                v-for="(url, index) in sceneAvatars"
+                :key="`${url}-${index}`"
+                class="moment-panel__stats-avatar"
+                :src="url"
+                alt=""
+                decoding="async"
+              />
+            </div>
+            <div class="moment-panel__stats-meta">
+              <span class="moment-panel__stats-live">{{ $t('childhoodMoments.communityLive') }}</span>
+              <span class="moment-panel__stats-time">{{
+                $t('childhoodMoments.communityTime', { count: sceneCount, time: communityTimeLabel })
+              }}</span>
+            </div>
+          </footer>
         </div>
       </aside>
     </section>
-
-    <section
-      v-if="galleryLoading || galleryGridItems.length"
-      ref="galleryRef"
-      class="moment-user-works"
-    >
-      <div v-if="galleryLoading" class="moment-gallery__state">
-        <span class="moment-gallery__line" />
-        <p>{{ $t('childhoodMoments.galleryLoading') }}</p>
-      </div>
-
-      <div
-        v-else
-        class="moment-gallery__focus"
-      >
-        <ChildhoodFocusGrid
-          v-if="galleryGridItems.length"
-          ref="focusGrid"
-          v-model="galleryFocusIndex"
-          hide-empty
-          :items="galleryGridItems"
-          :aria-label="$t('childhoodMoments.galleryTitle')"
-          @select="openGalleryPreview"
-        />
-        <p v-if="galleryGridItems[galleryFocusIndex]?.caption" class="moment-gallery__focus-caption">
-          {{ galleryGridItems[galleryFocusIndex].caption }}
-        </p>
-        <p v-if="galleryGridItems.length" class="moment-gallery__focus-hint">
-          {{ $t('childhoodMoments.photoGridHint') }}
-        </p>
-      </div>
-    </section>
-
-    <footer v-if="sceneCount > 0" class="moment-page__stats">
-      <div v-if="sceneAvatars.length" class="moment-page__stats-avatars" aria-hidden="true">
-        <img
-          v-for="(url, index) in sceneAvatars"
-          :key="`${url}-${index}`"
-          class="moment-page__stats-avatar"
-          :src="url"
-          alt=""
-          decoding="async"
-        />
-      </div>
-      <div class="moment-page__stats-meta">
-        <span class="moment-page__stats-live">{{ $t('childhoodMoments.communityLive') }}</span>
-        <span class="moment-page__stats-time">{{
-          $t('childhoodMoments.communityTime', { count: sceneCount, time: communityTimeLabel })
-        }}</span>
-      </div>
-    </footer>
-
-    <el-dialog
-      v-model="previewVisible"
-      :title="previewItem?.title || $t('childhoodMoments.previewTitle')"
-      width="min(92vw, 640px)"
-      class="moment-preview-dialog"
-      @closed="previewItem = null"
-    >
-      <el-image
-        v-if="previewItem"
-        :src="getImageUrl(previewItem)"
-        fit="contain"
-        class="moment-preview-image"
-      />
-      <p v-if="previewItem?.description" class="moment-preview-desc">
-        {{ previewItem.description }}
-      </p>
-    </el-dialog>
   </div>
 </template>
 
@@ -126,34 +76,28 @@
 import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
-import ChildhoodFocusGrid from '@/components/childhood/ChildhoodFocusGrid.vue'
 import submitImage from '@/assets/images/submit.webp'
 import { postCreateCharacter, isCreateCharacterResponseOk } from '@/utils/createCharacterTask'
+import { canvasToDataUrl, matChildhoodCutoutFromUrl } from '@/utils/canvasMatting'
+import { uploadPictureElement } from '@/utils/saveCroppedAsset'
+import { CHILDHOOD_PICTURE_TYPE } from '@/utils/childhoodPictureApi'
 import {
-  ILL_TYPE,
-  ILL_TYPES_GALLERY,
   STORAGE_KEY,
+  CHILDHOOD_MATTING_BG,
   buildChildhoodPrompt,
-  buildCollectTitle,
-  getIllustrationUrl,
-  hasIllustration,
+  buildChildhoodPictureTitle,
   SHARE,
 } from '@/utils/childhoodMoments'
 
 export default {
   name: 'Childhood',
-  components: { ChildhoodAvatarCrowd, ChildhoodFocusGrid },
+  components: { ChildhoodAvatarCrowd },
   data() {
     return {
       subjectScene: '',
       generating: false,
       generatedImageUrl: null,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
-      galleryItems: [],
-      galleryFocusIndex: 0,
-      galleryLoading: true,
-      previewVisible: false,
-      previewItem: null,
       submitImage,
       sceneCount: 0,
       sceneAvatars: [],
@@ -183,31 +127,6 @@ export default {
     generatedPrompt() {
       return buildChildhoodPrompt(this.subjectScene)
     },
-    galleryGridItems() {
-      const items = this.galleryItems.map((item, index) => ({
-        id: item._id || `g-${index}`,
-        imageUrl: getIllustrationUrl(item),
-        caption: this.itemCaption(item),
-        raw: item,
-      }))
-
-      if (this.generatedImageUrl) {
-        const exists = items.some((entry) => entry.imageUrl === this.generatedImageUrl)
-        if (!exists) {
-          items.unshift({
-            id: 'local-generated',
-            imageUrl: this.generatedImageUrl,
-            caption: this.$t('childhoodMoments.polaroidCaptionDefault'),
-            raw: { picture: this.generatedImageUrl, description: '' },
-          })
-        }
-      }
-
-      return items
-    },
-    currentGalleryGridItem() {
-      return this.galleryGridItems[this.galleryFocusIndex] || null
-    },
   },
   mounted() {
     this.$store.commit('closeMask')
@@ -217,7 +136,6 @@ export default {
       this.generatedImageUrl = savedImage
     }
 
-    this.loadGalleryItems()
     this.initWeChatShare()
     this.startPlaceholderRotation()
     this.startCommunityClock()
@@ -247,65 +165,6 @@ export default {
       this.clockTimer = setInterval(() => {
         this.communityClock = Date.now()
       }, 60000)
-    },
-
-    getImageUrl(item) {
-      return getIllustrationUrl(item)
-    },
-
-    itemCaption(item) {
-      if (item?.description) return item.description.slice(0, 48)
-      if (item?.title) return item.title
-      return this.$t('childhoodMoments.polaroidCaptionDefault')
-    },
-
-    async loadGalleryItems() {
-      this.galleryLoading = true
-      try {
-        const results = await Promise.all(
-          ILL_TYPES_GALLERY.map((type) =>
-            this.$http.get('/ill/', {
-              params: {
-                type,
-                page: 1,
-                limit: 48,
-                sort_param: 'createdAt',
-                sort_num: 'desc',
-              },
-            })
-          )
-        )
-        const merged = []
-        results.forEach((res) => {
-          if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
-            const message = res.data.message || {}
-            const items = message.data || message || res.data.data || []
-            if (Array.isArray(items)) merged.push(...items)
-          }
-        })
-        merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        this.galleryItems = merged
-          .filter((item) => hasIllustration(item))
-          .filter((item) => item.type === ILL_TYPE || !item.type)
-          .slice(0, 48)
-      } catch {
-        // ignore
-      } finally {
-        this.galleryLoading = false
-      }
-    },
-
-    scrollToGallery() {
-      this.galleryFocusIndex = 0
-      this.$nextTick(() => {
-        this.$refs.galleryRef?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
-    },
-
-    openGalleryPreview(gridItem) {
-      if (!gridItem?.raw) return
-      this.previewItem = gridItem.raw
-      this.previewVisible = true
     },
 
     async initWeChatShare() {
@@ -351,56 +210,13 @@ export default {
       }
     },
 
-    async fetchNextIndex() {
-      let total = 0
-      try {
-        const countRes = await this.$http.get('/ill/', {
-          params: {
-            type: ILL_TYPE,
-            page: 1,
-            limit: 1,
-            sort_param: 'createdAt',
-            sort_num: 'desc',
-          },
-        })
-        if (
-          countRes.data &&
-          (countRes.data.code === 0 || countRes.data.code === '0' || countRes.data.desc === 'success')
-        ) {
-          const message = countRes.data.message || {}
-          total = Number(message.total || countRes.data.total || 0) || 0
-        }
-      } catch {
-        // ignore
-      }
-      return total + 1
-    },
-
-    normalizePictureUrl(imageUrl) {
-      let pictureValue = imageUrl
-      if (
-        pictureValue &&
-        !pictureValue.startsWith('http://') &&
-        !pictureValue.startsWith('https://') &&
-        !pictureValue.startsWith('data:')
-      ) {
-        pictureValue = `https://static.kidstory.cc/${pictureValue}`
-      }
-      return pictureValue
-    },
-
-    async saveIllustration(imageUrl, description) {
-      const nextIndex = await this.fetchNextIndex()
-      await this.$http.post(
-        '/ill/',
-        {
-          picture: this.normalizePictureUrl(imageUrl),
-          title: buildCollectTitle(nextIndex),
-          description: description || this.generatedPrompt,
-          type: ILL_TYPE,
-        },
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+    async saveChildhoodPicture(cutoutDataUrl, description) {
+      await uploadPictureElement(this.$http, cutoutDataUrl, {
+        title: buildChildhoodPictureTitle(description),
+        type: CHILDHOOD_PICTURE_TYPE,
+        desc: description,
+        is_public: 1,
+      })
     },
 
     ensureLogin() {
@@ -425,7 +241,6 @@ export default {
       if (!this.ensureLogin()) return
 
       const sceneText = this.subjectScene.trim()
-      this.$refs.crowdRef?.addPerson(sceneText)
 
       this.generatedImageUrl = null
       this.generating = true
@@ -465,20 +280,17 @@ export default {
           result.image_url || result.character_image_url || result.image || result.url
 
         if (imageUrl) {
-          this.generatedImageUrl = imageUrl
-          localStorage.setItem(STORAGE_KEY, imageUrl)
+          const cutoutCanvas = await matChildhoodCutoutFromUrl(imageUrl, CHILDHOOD_MATTING_BG)
+          const cutoutDataUrl = canvasToDataUrl(cutoutCanvas)
+          this.generatedImageUrl = cutoutDataUrl
+          localStorage.setItem(STORAGE_KEY, cutoutDataUrl)
+
+          await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
+          await this.$refs.crowdRef?.refreshScenes()
+
           ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
-
-          try {
-            await this.saveIllustration(imageUrl, sceneText)
-          } catch {
-            // silent
-          }
-
           this.subjectScene = ''
-          await this.loadGalleryItems()
           this.initWeChatShare()
-          this.scrollToGallery()
         } else {
           throw new Error('no image url')
         }
@@ -496,12 +308,6 @@ export default {
 .el-message {
   top: 200px !important;
   z-index: 10001 !important;
-}
-
-.moment-preview-dialog .el-dialog {
-  border-radius: 8px;
-  border: none;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12);
 }
 </style>
 
@@ -537,7 +343,7 @@ export default {
   flex-direction: column;
   min-width: 0;
   min-height: 100dvh;
-  padding: clamp(12px, 2vw, 24px) clamp(8px, 1.5vw, 20px) clamp(20px, 3vw, 32px);
+  padding: clamp(12px, 2vw, 24px) clamp(10px, 1.5vw, 16px) clamp(20px, 3vw, 32px);
   background: var(--moment-cream);
   box-sizing: border-box;
 }
@@ -600,6 +406,7 @@ export default {
   flex-direction: column;
   flex: 1;
   width: 100%;
+  min-height: 100%;
   max-width: 440px;
   margin: 0 auto;
   padding: clamp(24px, 4vw, 40px) clamp(20px, 3.5vw, 36px) clamp(32px, 5vw, 48px);
@@ -628,52 +435,51 @@ export default {
   letter-spacing: 0.02em;
 }
 
-.moment-page__stats {
+.moment-panel__stats {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  padding: 20px clamp(16px, 3vw, 28px) 28px;
-  background: var(--moment-cream);
+  margin-top: auto;
+  padding-top: clamp(24px, 4vw, 36px);
 }
 
-.moment-page__stats-avatars {
+.moment-panel__stats-avatars {
   display: flex;
   flex-shrink: 0;
   padding-left: 4px;
 }
 
-.moment-page__stats-avatar {
+.moment-panel__stats-avatar {
   width: 28px;
   height: 28px;
   margin-left: -8px;
-  border: 2px solid var(--moment-cream);
+  border: 2px solid var(--moment-panel-bg);
   border-radius: 50%;
   object-fit: cover;
-  background: rgba(129, 103, 169, 0.12);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.moment-page__stats-avatar:first-child {
+.moment-panel__stats-avatar:first-child {
   margin-left: 0;
 }
 
-.moment-page__stats-meta {
+.moment-panel__stats-meta {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.moment-page__stats-live {
+.moment-panel__stats-live {
   font-size: 12px;
   font-weight: 600;
-  color: #8167a9;
+  color: var(--moment-accent);
   letter-spacing: 0.04em;
 }
 
-.moment-page__stats-time {
+.moment-panel__stats-time {
   font-size: 11px;
-  color: #9a929f;
+  color: var(--moment-muted-dark);
   letter-spacing: 0.02em;
 }
 
@@ -835,92 +641,6 @@ export default {
   transform: translateY(-1px);
 }
 
-.moment-user-works {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: clamp(24px, 4vw, 40px) 0 64px;
-  box-sizing: border-box;
-  background: var(--moment-cream);
-  border-top: 1px solid rgba(129, 103, 169, 0.1);
-  color: #2a2340;
-}
-
-.moment-gallery__state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 20px;
-  color: #9a929f;
-  font-size: 14px;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.moment-gallery__line {
-  width: 40px;
-  height: 2px;
-  background: rgba(129, 103, 169, 0.35);
-  margin-bottom: 14px;
-  animation: line-pulse 1.4s ease-in-out infinite;
-}
-
-.moment-gallery__focus {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  width: 100%;
-  min-height: min(36vh, 420px);
-  margin: 0;
-  padding: clamp(4px, 1vw, 12px) 0 0;
-  box-sizing: border-box;
-}
-
-.moment-gallery__focus :deep(.focus-grid) {
-  max-width: min(760px, 92vw);
-}
-
-.moment-gallery__focus-caption {
-  margin: 20px clamp(16px, 3vw, 28px) 6px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #2a2340;
-  text-align: center;
-}
-
-.moment-gallery__focus-hint {
-  margin: 0 clamp(16px, 3vw, 28px);
-  font-size: 12px;
-  color: #9a929f;
-  text-align: center;
-}
-
-.moment-preview-image {
-  width: 100%;
-  max-height: 65vh;
-}
-
-.moment-preview-desc {
-  margin: 16px 0 0;
-  font-size: 14px;
-  line-height: 1.65;
-  color: #555;
-}
-
-@keyframes line-pulse {
-  0%,
-  100% {
-    transform: scaleX(0.4);
-    opacity: 0.4;
-  }
-  50% {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-}
-
 @media (max-width: 900px) {
   .moment-split {
     grid-template-columns: 1fr;
@@ -945,12 +665,6 @@ export default {
 
   .moment-panel__guide {
     text-align: center;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .moment-gallery__line {
-    animation: none;
   }
 }
 </style>
