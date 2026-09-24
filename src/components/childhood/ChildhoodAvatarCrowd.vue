@@ -36,7 +36,7 @@
         </p>
 
         <button
-          v-for="person in people"
+          v-for="(person, index) in people"
           :key="person.id"
           type="button"
           class="scene-gallery__item"
@@ -47,15 +47,16 @@
             'scene-gallery__item--dim': isExpanded && person.id !== focusPersonId,
             'scene-gallery__item--text': !person.imageUrl,
           }"
-          :style="itemStyle(person)"
+          :style="{ ...itemStyle(person), '--arrival-delay': `${Math.min(index, 16) * 35}ms` }"
           :aria-label="person.note || $t('childhoodMoments.crowdPerson')"
           @click.stop="toggleTip(person.id)"
           @mouseenter="openTip(person.id)"
           @mouseleave="closeTip(person.id)"
           @focusin="openTip(person.id)"
           @focusout="closeTip(person.id)"
+          @keydown.esc.stop="closeAllTips"
         >
-          <div class="scene-gallery__tip">{{ person.note || $t('childhoodMoments.crowdNoNote') }}</div>
+          <div class="scene-gallery__tip" :aria-hidden="!person.tipOpen">{{ person.note || $t('childhoodMoments.crowdNoNote') }}</div>
           <img
             v-if="person.imageUrl"
             class="scene-gallery__img"
@@ -442,8 +443,8 @@ export default {
 
 <style scoped>
 .scene-gallery {
-  --gallery-accent: #8167a9;
-  --gallery-accent-soft: rgba(129, 103, 169, 0.12);
+  --gallery-accent: #587784;
+  --gallery-accent-soft: rgba(88, 119, 132, 0.12);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   width: 100%;
 }
@@ -470,7 +471,7 @@ export default {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6b6478;
+  color: #75766d;
 }
 
 .scene-gallery__count {
@@ -506,7 +507,7 @@ export default {
 
 .scene-gallery__wrap--focus {
   overflow: auto;
-  max-height: clamp(480px, 72vh, 760px);
+  max-height: 100%;
   scroll-behavior: smooth;
 }
 
@@ -527,7 +528,7 @@ export default {
   text-align: center;
   font-size: 14px;
   line-height: 1.65;
-  color: #9a929f;
+  color: #75766d;
   pointer-events: none;
 }
 
@@ -555,7 +556,7 @@ export default {
     transform 0.38s var(--ease-out),
     opacity 0.3s ease,
     filter 0.3s ease;
-  filter: drop-shadow(0 6px 14px rgba(80, 60, 100, 0.08));
+  filter: none;
 }
 
 .scene-gallery__item--in {
@@ -571,7 +572,7 @@ export default {
 .scene-gallery__item--focus {
   transform: translate3d(0, -8px, 0) rotate(0deg) scale(calc(var(--base-scale, 1) * 1.08)) !important;
   opacity: 1 !important;
-  filter: drop-shadow(0 16px 28px rgba(80, 60, 100, 0.16)) !important;
+  filter: drop-shadow(0 16px 28px rgba(81, 78, 75, 0.16)) !important;
   z-index: 10000 !important;
 }
 
@@ -580,7 +581,7 @@ export default {
 .scene-gallery__item--tip {
   transform: translate3d(0, -6px, 0) rotate(0deg) scale(calc(var(--base-scale, 1) * 1.04));
   outline: none;
-  filter: drop-shadow(0 12px 22px rgba(80, 60, 100, 0.14));
+  filter: drop-shadow(0 12px 22px rgba(81, 78, 75, 0.14));
   z-index: 9999 !important;
 }
 
@@ -592,6 +593,7 @@ export default {
   object-position: center bottom;
   pointer-events: none;
   user-select: none;
+  animation: scene-arrive 650ms var(--ease-out) var(--arrival-delay, 0ms) backwards;
 }
 
 .scene-gallery__text-chip {
@@ -602,8 +604,8 @@ export default {
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.72);
-  border: 1.5px solid rgba(129, 103, 169, 0.28);
-  color: #5c4a82;
+  border: 1.5px solid rgba(88, 119, 132, 0.28);
+  color: #425e69;
   font-size: 14px;
   font-weight: 600;
 }
@@ -617,13 +619,13 @@ export default {
   padding: 10px 14px;
   border-radius: 12px;
   background: #fff;
-  color: #3d2f62;
+  color: #514e4b;
   font-size: 13px;
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  border: 1.5px solid var(--gallery-accent);
-  box-shadow: 0 8px 24px rgba(129, 103, 169, 0.12);
+  border: 1px solid #d9d5cb;
+  box-shadow: 0 8px 24px rgba(88, 119, 132, 0.12);
   pointer-events: none;
   z-index: 5;
   transform: translate3d(-50%, 8px, 0) scale(0.92);
@@ -640,17 +642,23 @@ export default {
   top: 100%;
   transform: translateX(-50%);
   border: 7px solid transparent;
-  border-top-color: var(--gallery-accent);
+  border-top-color: #d9d5cb;
 }
 
-.scene-gallery__item:hover .scene-gallery__tip,
-.scene-gallery__item:focus-visible .scene-gallery__tip,
 .scene-gallery__item--tip .scene-gallery__tip {
   opacity: 1;
   transform: translate3d(-50%, 0, 0) scale(1);
 }
 
+@keyframes scene-arrive {
+  from { opacity: 0; transform: translateY(14px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.scene-gallery__item:focus-visible { outline: 2px solid var(--gallery-accent); outline-offset: 5px; border-radius: 8px; }
+.scene-gallery--hero .scene-gallery__wrap { scrollbar-width: thin; scrollbar-color: #c9cfc5 transparent; }
 @media (prefers-reduced-motion: reduce) {
+  .scene-gallery__img { animation: none; }
+  .scene-gallery__wrap--focus { scroll-behavior: auto; }
   .scene-gallery__item,
   .scene-gallery__tip {
     transition: none;
