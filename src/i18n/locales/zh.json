@@ -2974,6 +2974,44 @@
     }
   },
   "childhoodMoments": {
+    "postcardTitle": "寄出一张童年明信片",
+    "postcardAlt": "童年明信片：上方是插画，下方是回忆、日期与参与二维码",
+    "postcardLoading": "正在装好这份童年回忆…",
+    "retryPostcard": "重新试试",
+    "postcardHeading": "让你的童年，\n唤起另一段童年。",
+    "postcardIntro": "把明信片发给朋友，或发给回忆里的那个人。有些小事，原来一直被记得。",
+    "savePostcard": "保存童年明信片",
+    "savePostcardHint": "适合发朋友圈、小红书；手机也可长按图片保存。",
+    "invitationLabel": "和卡片一起发出的邀请 · 可以修改",
+    "copyInvitation": "复制文案和链接",
+    "postcardLinkHint": "朋友打开链接或扫描二维码，先读到这段回忆，再写自己的故事。",
+    "invitationText": "这让你想起了什么？写下一段回忆，画成你的童年。",
+    "postcardError": "明信片暂时没做好，可能是图片加载失败。故事还在，可以重试。",
+    "postcardDownloaded": "已开始下载；手机若未弹出下载，可长按卡片保存。",
+    "invitationCopied": "邀请文案和故事链接已复制。",
+    "copyManually": "暂时无法自动复制，请长按或选中文案手动复制。",
+    "memoryLetter": "一封童年来信",
+    "memoryImage": "这段童年故事的插画",
+    "makePostcard": "制作分享明信片",
+    "writeMine": "我也写一段",
+    "memoryUnavailable": "这段回忆暂时无法读取。你仍可以留下自己的童年故事。",
+    "memoryLoading": "正在打开这封童年来信…",
+    "promptLabel": "从一件小事开始",
+    "publicStoryHint": "生成后，故事与插画将公开展示在童年收集墙。",
+    "writingPrompts": [
+      {
+        "label": "记忆里的味道",
+        "text": "小时候，最忘不了的味道是"
+      },
+      {
+        "label": "被照顾的瞬间",
+        "text": "小时候，有一件被照顾的小事，我一直记得："
+      },
+      {
+        "label": "最开心的一次出门",
+        "text": "小时候，最开心的一次出门是"
+      }
+    ],
     "eyebrow": "KidStory / Illustration",
     "title": "幸福童年收集",
     "pageTitle": "幸福童年收集",
@@ -2998,10 +3036,10 @@
     "polaroidCaptionDefault": "待收集的时刻",
     "developing": "显影中…",
     "sceneLabel": "这一刻发生了什么？",
-    "formGuide": "写下童年故事，加入人群，生成插画",
-    "formShortcut": "⌘/Ctrl + Enter 分享",
-    "share": "分享",
-    "sharing": "分享中…",
+    "formGuide": "留下一段回忆，画成你的童年。",
+    "formShortcut": "⌘/Ctrl + Enter 生成插画",
+    "share": "画成我的童年",
+    "sharing": "正在画下这段回忆…",
     "scenePlaceholder": "讲述你童年最幸福的一件事吧。",
     "scenePlaceholders": [
       "讲述你童年最幸福的一件事吧。",
@@ -3010,8 +3048,8 @@
       "那一碗方便面，现在还记得味道。",
       "窗边的雪、海边的日出、抱上车的瞬间。"
     ],
-    "communityLive": "正在分享",
-    "communityTime": "今日 {count} 人 · {time}",
+    "communityLive": "大家的童年",
+    "communityTime": "已收集 {count} 段回忆 · {time}",
     "submitText": "文字分享",
     "submittingText": "提交中…",
     "submitTextSuccess": "故事已分享，封面里多了小伙伴",

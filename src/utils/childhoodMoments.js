@@ -10,31 +10,27 @@ const SHARE_TITLE_MAX = 28
 /** 生图背景色（抠图用） */
 export const CHILDHOOD_MATTING_BG = { r: 255, g: 43, b: 214, hex: '#FF2BD6' }
 
-export const CHILDHOOD_STYLE_PROMPT = `Illustrate the Scene below as one small, self-contained childhood-memory vignette.
+export const CHILDHOOD_STYLE_PROMPT = `Draw the Scene as ONE charming, flat 2D cartoon vignette for a collection of childhood memories. Every vignette must look drawn by the same illustrator for the same cheerful family picture book.
 
-Art direction:
-A soft, airy, gently muted editorial illustration of everyday life. Draw recognizable people with natural, relaxed proportions and gently curved silhouettes. Adults have balanced adult proportions; children are visibly smaller with age-appropriate proportions. Convey the interaction through believable gestures, body language and overlapping shapes.
-Use smooth, simplified color shapes without outlines. Faces are warm skin-colored shapes without drawn facial features; a small ear shape is welcome where visible. Hair forms a simple dark silhouette. Hands and shoes are simplified but recognizable. Preserve enough structure to explain the action: a shirt collar, a few broad clothing folds, backpack straps and a pocket, bowl rims or table legs when relevant. Keep these details sparse and integrated into the color shapes.
+Character design — rounded and distinctly cartoon:
+Use compact, softly rounded bodies, slightly large round heads, short simple limbs and gentle, playful poses. Adults are about 4–5 heads tall; young children about 2.5–3 heads tall. Give each face tiny dark dot eyes, a small curved smile, a minimal nose mark and optional soft peach cheeks. Show affection through these simple expressions and body language. Hair is a solid warm dark-brown shape with a few rounded waves or curls, never individual strands. Hands are small rounded cartoon shapes with very few finger marks; shoes are simple rounded shapes.
 
-Palette:
-Use distinct, harmonious low-to-medium-saturation colors: dusty slate blue #587784, pale blue-green mint, dusty blue-green #86AAA1, muted blue-gray #83A9B2, subdued pale mustard #D5C17B, dusty blush, muted clay coral #CF806A, warm off-white #F4F0E7 and softened charcoal gray-brown #514E4B.
-Balance cool blue and mint with warm coral and mustard; maintain readable separation between adjacent shapes. Use natural, soft warm skin tones. Treat the hex values as approximate guidance for a light, calm palette, not as a uniform color filter.
-When the Scene includes a father, mother and child, favor slate blue for the father's shirt and charcoal gray-brown for his trousers, clay coral for the mother's top and pale mustard for her lower garment, warm off-white for the child's shirt, blue-gray for shorts and dusty blue-green for a backpack if present. These are color assignments only; include people and objects only when called for by the Scene.
-For relevant props, use muted warm ochre-brown wood, desaturated straw-yellow broom bristles, warm off-white bowls with pale mint or gray-blue rims. A brick floor patch can be muted terracotta #C99782 with light warm joints; a sunlight patch can be a simple flat buttery-yellow shape #E5D59B.
+Linework and flat fills:
+Use delicate warm-brown hand-drawn contour lines around people, clothing and important objects, with slightly organic curves and rounded joins. Keep the line weight thin and consistent, never a heavy black comic outline. Fill each shape with one clean, opaque, uniform color. Use only a few simple interior lines for clothing, bowls, windows and furniture. Clothing may have a sparse check or dot pattern where appropriate, drawn as simple flat marks. Do not model volume with tonal shading. Draw food as a few colorful symbolic shapes, not realistic ingredients.
 
-Rendering:
-Keep the illustration flat and simplified, with mostly solid fills. Use only a few subtle darker color shapes to describe essential folds or overlaps. Minimize shading. Edges are clean and softly curved. No gradients, added texture, grain, realistic materials, glossy highlights, dramatic lighting, 3D rendering or drop shadows.
+Consistent family-cartoon palette:
+Warm dark-brown hair and outlines #653D2D, soft peach skin #F2BA87, creamy white #FFF9E9, pastel lavender #C3A0CF, mint/seafoam #91BFA9, cheerful soft cornflower blue #779CD6, mellow yellow #F3CC72, warm peach ground #F5C99D, olive green #859746 and occasional soft pink #E9ADB5. Favor lavender, mint, cream and yellow for clothing; use blue and olive for vehicles and props. Keep colors distinct, clean and gently cheerful, not smoky, gray-brown, monochrome beige or realistic skin rendering. Avoid neon colors in the subject.
 
-Scene and composition:
-Follow the supplied Scene for the number of people, their actions and the necessary objects. Arrange them as a single coherent interaction, with complete silhouettes and comfortable empty space around the group. A small irregular floor patch may connect the feet and furniture. Keep the ground local to the action rather than filling the canvas. Do not invent decorative walls, plants, buildings, travel motifs or extra people.
+Scene construction:
+Follow only the people, actions and objects in the supplied Scene. Show the complete group in one small isolated composition, with generous empty space around it. Props are cute simplified cartoon shapes: softly rounded tables, chairs, bowls, beds, cars or houses. Use a shallow, simple view with minimal perspective and a small peach-colored oval or irregular ground patch. Keep architecture symbolic and small, not a detailed room or architectural cutaway. Use a few lines at most to suggest a floor, never a detailed brick grid. If the Scene calls for a sun or moon, use a tiny flat yellow/orange symbol.
 
-Background for transparent output:
-The application removes the background after generation to deliver a transparent PNG. Render the entire empty background as exactly solid ${CHILDHOOD_MATTING_BG.hex}, including open gaps between limbs, furniture and props. Reserve this color exclusively for the removable background; never use it in the illustration. Keep all subjects fully inside the canvas. No white or black background, checkerboard pattern, backdrop, border, outline or halo around the group.
+Strict style exclusions:
+No realistic or semi-realistic people; no tall slender fashion figures; no blank faceless editorial figures; no anatomical detail, realistic hands, individual hair strands, fabric rendering, complex clothing folds, realistic food, wood grain, brick textures, watercolor washes, paper grain, gradients, dimensional shading, cast shadows, dramatic lighting, 3D or photographic detail. No typography, labels, logos, frame, sticker border or white halo.
 
-Avoid:
-Saturated electric blue, vivid orange skin, a uniform beige wash, chibi proportions, oversized heads, anime faces, geometric icon people, overly abstract limbs, typography, labels, signatures and logos.
+Removable background — technical requirement:
+Use exactly solid ${CHILDHOOD_MATTING_BG.hex} as the entire background, including EVERY enclosed opening between arms and torsos, between legs, under tables, between chair rails, and between overlapping objects. No background shadows, glow or background color variation. This key color is reserved ONLY for background: never use magenta, fuchsia, hot pink or a purple-pink shade close to it in clothes, skin, props or outline strokes. Pastel lavender and soft dusty pink must stay pale and clearly different from the saturated key. The application removes this color to produce a genuinely transparent PNG.
 
-Return only one vignette image.`
+Return only the single cartoon vignette image.`
 
 export function buildChildhoodPrompt(scene) {
   const text = (scene || '').trim()
@@ -61,19 +57,16 @@ export function buildShareTitle(story) {
   return `${text.slice(0, SHARE_TITLE_MAX)}…`
 }
 
-/** 微信分享描述：社会证明 + 轻邀请 */
-export function buildShareDesc(count) {
-  const n = Number(count) || 0
-  if (n > 0) {
-    return `今日已有 ${n} 人在收集童年瞬间 · 你也来加一张？`
-  }
-  return '我把童年画出来了，你也来加一张？'
+/** 用一个问题邀请朋友留下自己的回忆。 */
+export function buildShareDesc() {
+  return '这让你想起了什么？留下一段回忆，画成你的童年。'
 }
 
 export function buildShareLink(pictureId, baseHref) {
   try {
-    const base = (baseHref || (typeof window !== 'undefined' ? window.location.href : '')).split('#')[0]
-    const url = new URL(base)
+    const origin = typeof window !== 'undefined' && /(^|\.)kidstory\.cc$/.test(window.location.hostname)
+      ? window.location.origin : 'https://www.kidstory.cc'
+    const url = new URL('/childhood', baseHref || origin)
     if (pictureId) {
       url.searchParams.set('mine', pictureId)
     } else {

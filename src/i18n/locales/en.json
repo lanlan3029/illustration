@@ -2959,6 +2959,44 @@
     }
   },
   "childhoodMoments": {
+    "postcardTitle": "Send a childhood postcard",
+    "postcardAlt": "A childhood postcard with illustrations, a memory, date and QR code",
+    "postcardLoading": "Putting your memory into a postcard…",
+    "retryPostcard": "Try again",
+    "postcardHeading": "One memory brings back another.",
+    "postcardIntro": "Send it to a friend, or to someone in this memory. The little things stay with us.",
+    "savePostcard": "Save my postcard",
+    "savePostcardHint": "Share the image anywhere. On mobile, touch and hold to save.",
+    "invitationLabel": "Your invitation · editable",
+    "copyInvitation": "Copy invitation and link",
+    "postcardLinkHint": "The link and QR code open this memory, then invite friends to write their own.",
+    "invitationText": "What does this remind you of? Write a memory and turn it into an illustration.",
+    "postcardError": "We could not load the postcard images. Your story is safe; please try again.",
+    "postcardDownloaded": "Download started. On mobile, you can also touch and hold the image.",
+    "invitationCopied": "Invitation and story link copied.",
+    "copyManually": "Please select the invitation text and copy it manually.",
+    "memoryLetter": "A letter from childhood",
+    "memoryImage": "An illustration of this childhood memory",
+    "makePostcard": "Make a shareable postcard",
+    "writeMine": "Write my own memory",
+    "memoryUnavailable": "This memory is unavailable right now. You can still write your own.",
+    "memoryLoading": "Opening a letter from childhood…",
+    "promptLabel": "Start with a little moment",
+    "publicStoryHint": "Your story and illustration will appear publicly on the childhood wall.",
+    "writingPrompts": [
+      {
+        "label": "A taste I remember",
+        "text": "The taste I remember most from childhood is "
+      },
+      {
+        "label": "A moment of care",
+        "text": "A small act of care I still remember: "
+      },
+      {
+        "label": "A happy little trip",
+        "text": "My happiest childhood trip was "
+      }
+    ],
     "eyebrow": "KidStory / Illustration",
     "title": "Happy Childhood Moments",
     "pageTitle": "Happy Childhood Collection",
@@ -2983,10 +3021,10 @@
     "polaroidCaptionDefault": "Moment waiting to be collected",
     "developing": "Developing…",
     "sceneLabel": "What happened in this moment?",
-    "formGuide": "Write a childhood story, join the crowd, create an illustration",
-    "share": "Share",
-    "sharing": "Sharing…",
-    "formShortcut": "⌘/Ctrl + Enter to share",
+    "formGuide": "Write a little memory. Turn it into your childhood illustration.",
+    "share": "Illustrate my memory",
+    "sharing": "Drawing your memory…",
+    "formShortcut": "⌘/Ctrl + Enter to illustrate",
     "scenePlaceholder": "Tell me one of the happiest things from your childhood.",
     "scenePlaceholders": [
       "Tell me one of the happiest things from your childhood.",
@@ -2995,8 +3033,8 @@
       "That bowl of instant noodles — I still remember the taste.",
       "Snow at the window, sunrise at the sea, carried to the car."
     ],
-    "communityLive": "Sharing now",
-    "communityTime": "{count} today · {time}",
+    "communityLive": "Our childhood memories",
+    "communityTime": "{count} memories collected · {time}",
     "submitText": "Text share",
     "submittingText": "Sharing…",
     "submitTextSuccess": "Story shared — a new friend joined the cover",

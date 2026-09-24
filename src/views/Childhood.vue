@@ -7,15 +7,34 @@
           variant="hero"
           :highlight-id="highlightPictureId"
           @count-change="onCrowdUpdate"
+          @select-memory="selectMemory"
+          @load-error="memoriesFailed = true; memoriesLoaded = true"
         />
       </div>
 
       <aside class="moment-split__right">
         <div class="moment-panel__inner">
+          <section v-if="activeMemory" class="memory-letter" :aria-label="$t('childhoodMoments.memoryLetter')">
+            <p class="memory-letter__eyebrow">{{ $t('childhoodMoments.memoryLetter') }}</p>
+            <img :src="activeMemory.imageUrl" :alt="$t('childhoodMoments.memoryImage')" />
+            <blockquote>{{ activeMemory.note }}</blockquote>
+            <time v-if="activeMemory.createdAt">{{ memoryDate }}</time>
+            <div class="memory-letter__actions">
+              <button type="button" @click="postcardOpen = true">{{ $t('childhoodMoments.makePostcard') }}</button>
+              <button type="button" @click="startWriting">{{ $t('childhoodMoments.writeMine') }}</button>
+            </div>
+          </section>
+          <p v-else-if="$route.query.mine" class="memory-status" role="status">{{ $t(memoriesLoaded ? 'childhoodMoments.memoryUnavailable' : 'childhoodMoments.memoryLoading') }}
+            <button v-if="memoriesFailed" type="button" @click="retryMemories">{{ $t('childhoodMoments.retryPostcard') }}</button>
+          </p>
           <header class="moment-panel__head">
             <h1 class="moment-panel__title">{{ $t('childhoodMoments.pageTitle') }}</h1>
             <p class="moment-panel__guide">{{ $t('childhoodMoments.formGuide') }}</p>
           </header>
+
+          <div class="memory-prompts" :aria-label="$t('childhoodMoments.promptLabel')">
+            <button v-for="prompt in writingPrompts" :key="prompt.label" type="button" :disabled="generating" @click="usePrompt(prompt.text)">{{ prompt.label }}</button>
+          </div>
 
           <div
             class="moment-form__card"
@@ -45,6 +64,7 @@
               </button>
             </div>
             <p class="moment-form__shortcut">{{ $t('childhoodMoments.formShortcut') }}</p>
+            <p class="moment-form__privacy">{{ $t('childhoodMoments.publicStoryHint') }}</p>
             <div v-if="generating" class="moment-form__overlay" role="status">
               <span class="moment-form__paint-dots" aria-hidden="true"><i /><i /><i /></span>
               <span>{{ $t('childhoodMoments.sharing') }}</span>
@@ -72,6 +92,7 @@
         </div>
       </aside>
     </section>
+    <ChildhoodPostcard v-model="postcardOpen" :memory="activeMemory" :crowd-srcs="postcardCrowdUrls" />
   </div>
 </template>
 
@@ -79,6 +100,7 @@
 import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
+import ChildhoodPostcard from '@/components/childhood/ChildhoodPostcard.vue'
 import submitImage from '@/assets/images/submit.webp'
 import {
   postCreateCharacter,
@@ -89,15 +111,11 @@ import { canvasToDataUrl, matChildhoodCutoutFromUrl } from '@/utils/canvasMattin
 import { uploadPictureElement } from '@/utils/saveCroppedAsset'
 import {
   CHILDHOOD_PICTURE_TYPE,
-  CHILDHOOD_SHARE_POSTER_TYPE,
   extractPictureId,
   extractPictureRecord,
-  fetchChildhoodScenes,
-  pickCrowdImageUrls,
   resolvePictureUrl,
 } from '@/utils/childhoodPictureApi'
-import { hashSeed } from '@/utils/avatarCrowd'
-import { drawChildhoodSharePoster } from '@/utils/childhoodSharePoster'
+import { formatPostcardDate } from '@/utils/childhoodSharePoster'
 import {
   STORAGE_KEY,
   MY_PICTURE_ID_KEY,
@@ -114,10 +132,16 @@ import {
 
 export default {
   name: 'Childhood',
-  components: { ChildhoodAvatarCrowd },
+  components: { ChildhoodAvatarCrowd, ChildhoodPostcard },
   data() {
     return {
       subjectScene: '',
+      selectedMemory: null,
+      memories: [],
+      memoriesLoaded: false,
+      memoriesFailed: false,
+      postcardOpen: false,
+      lastCreatedAt: '',
       generating: false,
       generatedImageUrl: null,
       sharePosterUrl: '',
@@ -136,6 +160,20 @@ export default {
   },
   computed: {
     ...mapState(['isLogin']),
+    writingPrompts() { return this.$tm('childhoodMoments.writingPrompts') },
+    activeMemory() {
+      if (this.selectedMemory) return this.selectedMemory
+      const sharedId = String(this.$route.query.mine || '')
+      if (sharedId) return this.memories.find(memory => memory.id === sharedId) || null
+      return this.memories.find(memory => memory.id === this.lastPictureId) ||
+        (this.generatedImageUrl && this.lastShareStory ? {
+          id: this.lastPictureId, imageUrl: this.generatedImageUrl, note: this.lastShareStory, createdAt: this.lastCreatedAt,
+        } : null)
+    },
+    memoryDate() { return formatPostcardDate(this.activeMemory?.createdAt) },
+    postcardCrowdUrls() {
+      return this.memories.filter(memory => memory.id !== this.activeMemory?.id).slice(0, 4).map(memory => memory.imageUrl)
+    },
     scenePlaceholderList() {
       const list = this.$tm('childhoodMoments.scenePlaceholders')
       if (Array.isArray(list) && list.length) return list
@@ -177,7 +215,29 @@ export default {
     clearInterval(this.placeholderTimer)
     clearInterval(this.clockTimer)
   },
+  watch: {
+    '$route.query.mine'() { this.selectedMemory = null },
+    activeMemory() { if (this.wxShareReady) this.applyWeChatShare() },
+  },
   methods: {
+    selectMemory(memory) { this.selectedMemory = memory },
+    async retryMemories() {
+      this.memoriesLoaded = false
+      this.memoriesFailed = false
+      await this.$refs.crowdRef?.boot()
+    },
+    startWriting() {
+      this.$nextTick(() => {
+        const input = this.$el.querySelector('#moment-scene')
+        input?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+        input?.focus({ preventScroll: true })
+      })
+    },
+    usePrompt(text) {
+      // Selecting a topic should never erase a story already being written.
+      if (!this.subjectScene.trim()) this.subjectScene = text
+      this.startWriting()
+    },
     onCrowdUpdate(payload) {
       if (typeof payload === 'number') {
         this.sceneCount = payload
@@ -185,6 +245,9 @@ export default {
       }
       this.sceneCount = payload?.count || 0
       this.sceneAvatars = payload?.avatars || []
+      this.memories = payload?.memories || []
+      this.memoriesLoaded = true
+      this.memoriesFailed = Boolean(payload?.failed)
       if (this.wxShareReady && (this.lastShareStory || localStorage.getItem(SHARE_STORY_KEY))) {
         this.applyWeChatShare()
       }
@@ -204,11 +267,11 @@ export default {
     },
 
     buildSharePayload() {
-      const story = this.lastShareStory || localStorage.getItem(SHARE_STORY_KEY) || ''
-      const pictureId = this.lastPictureId || localStorage.getItem(MY_PICTURE_ID_KEY) || ''
+      const story = this.activeMemory?.note || this.lastShareStory || ''
+      const pictureId = this.activeMemory?.id || this.lastPictureId || ''
       const posterUrl = this.sharePosterUrl || localStorage.getItem(SHARE_POSTER_URL_KEY) || ''
       const imgUrl = toAbsoluteShareUrl(
-        posterUrl || this.generatedImageUrl || this.submitImage
+        this.activeMemory?.imageUrl || posterUrl || this.generatedImageUrl || this.submitImage
       )
 
       return {
@@ -282,30 +345,6 @@ export default {
       return extractPictureRecord(response)
     },
 
-    async buildAndUploadSharePoster(cutoutDataUrl, sceneText, pictureId, crowdList) {
-      const crowdUrls = pickCrowdImageUrls(crowdList, {
-        excludeId: pictureId,
-        limit: 10,
-        seed: hashSeed(pictureId || sceneText),
-      })
-
-      const posterDataUrl = await drawChildhoodSharePoster({
-        heroSrc: cutoutDataUrl,
-        crowdSrcs: crowdUrls,
-        seed: hashSeed(`${pictureId}-${sceneText}`),
-      })
-
-      const response = await uploadPictureElement(this.$http, posterDataUrl, {
-        title: `${buildChildhoodPictureTitle(sceneText)} · 分享`,
-        type: CHILDHOOD_SHARE_POSTER_TYPE,
-        desc: sceneText,
-        is_public: 0,
-      })
-
-      const record = extractPictureRecord(response)
-      return resolvePictureUrl(record)
-    },
-
     safeStorageSet(key, value) {
       try {
         if (typeof value === 'string' && value.length > 900000) return
@@ -338,7 +377,6 @@ export default {
 
       const sceneText = this.subjectScene.trim()
 
-      this.generatedImageUrl = null
       this.generating = true
 
       try {
@@ -380,21 +418,22 @@ export default {
             apiBaseUrl: this.apiBaseUrl,
           })
           const cutoutDataUrl = canvasToDataUrl(cutoutCanvas)
-          this.generatedImageUrl = cutoutDataUrl
-          this.safeStorageSet(STORAGE_KEY, cutoutDataUrl)
 
           const pictureRecord = await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
           const pictureId = extractPictureId(pictureRecord)
           const uploadedUrl = resolvePictureUrl(pictureRecord)
+          this.generatedImageUrl = uploadedUrl || cutoutDataUrl
+          this.safeStorageSet(STORAGE_KEY, this.generatedImageUrl)
 
           this.lastShareStory = sceneText
           this.lastPictureId = pictureId
+          this.lastCreatedAt = pictureRecord.createdAt || new Date().toISOString()
+          this.selectedMemory = { id: pictureId, imageUrl: uploadedUrl || cutoutDataUrl, note: sceneText, createdAt: this.lastCreatedAt }
+          this.sharePosterUrl = ''
+          this.safeStorageSet(SHARE_POSTER_URL_KEY, '')
           this.safeStorageSet(SHARE_STORY_KEY, sceneText)
           if (pictureId) {
             this.safeStorageSet(MY_PICTURE_ID_KEY, pictureId)
-          }
-          if (uploadedUrl) {
-            this.generatedImageUrl = uploadedUrl
           }
 
           // 先展示已抠图的本地 PNG，列表与分享海报失败不应阻断 gallery。
@@ -404,24 +443,9 @@ export default {
             freshImageUrl: cutoutDataUrl,
           })
 
-          try {
-            const crowdList = await fetchChildhoodScenes(this.$http)
-            const posterUrl = await this.buildAndUploadSharePoster(
-              cutoutDataUrl,
-              sceneText,
-              pictureId,
-              crowdList
-            )
-            if (posterUrl) {
-              this.sharePosterUrl = posterUrl
-              this.safeStorageSet(SHARE_POSTER_URL_KEY, posterUrl)
-            }
-          } catch (err) {
-            console.warn('[Childhood] share poster failed', err)
-          }
-
           ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
           this.subjectScene = ''
+          this.postcardOpen = true
           this.applyWeChatShare()
         } else {
           throw new Error('no image url')
@@ -615,4 +639,19 @@ export default {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+.memory-letter { padding: 22px; margin: 0 0 30px; background: #fffaf0; border: 1px solid #ded8c9; box-shadow: 0 6px 18px #554c3610; }
+.memory-letter__eyebrow { color: #748170; font-size: 11px; letter-spacing: 3px; margin: 0; }
+.memory-letter > img { display: block; width: 100%; height: 150px; object-fit: contain; margin: 16px auto; }
+.memory-letter blockquote { margin: 12px 0; color: #51483e; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
+.memory-letter time { display: block; font: 12px Georgia, serif; color: #81796b; margin-top: 14px; }
+.memory-letter__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.memory-letter__actions button, .memory-status button { border: 1px solid #b8c1b4; border-radius: 5px; background: transparent; color: #496253; padding: 9px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.memory-letter__actions button:first-child { background: #587784; color: white; border-color: #587784; }
+.memory-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.memory-prompts button { border: 1px solid #d6d0c3; border-radius: 20px; color: #625f53; background: #f8f5ed; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; transition: background .2s; }
+.memory-prompts button:hover { background: #e2e8dc; }
+.memory-prompts button:disabled { opacity: .5; cursor: wait; }
+.memory-letter button:focus-visible, .memory-prompts button:focus-visible { outline: 2px solid #587784; outline-offset: 3px; }
+.memory-status { font-size: 13px; color: #6b7665; line-height: 1.8; }
+.moment-form__privacy { margin: 10px 0 0; color: #75766d; font-size: 11px; line-height: 1.6; text-align: center; }
 </style>

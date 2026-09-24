@@ -98,7 +98,7 @@ const FOCUS_TIMELINE = {
 
 export default {
   name: 'ChildhoodAvatarCrowd',
-  emits: ['layout', 'count-change'],
+  emits: ['layout', 'count-change', 'select-memory', 'load-error'],
   props: {
     variant: {
       type: String,
@@ -163,6 +163,7 @@ export default {
       } catch (err) {
         this.ready = false
         this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
+        this.$emit('load-error')
         console.error('[ChildhoodAvatarCrowd] boot failed', err)
       }
     },
@@ -319,7 +320,7 @@ export default {
         .filter((p) => p.imageUrl)
         .slice(0, 6)
         .map((p) => p.imageUrl)
-      this.$emit('count-change', { count: this.people.length, avatars })
+      this.$emit('count-change', { count: this.people.length, avatars, memories: this.people, failed: Boolean(this.bootError) })
     },
 
     relayout() {
@@ -425,6 +426,7 @@ export default {
     toggleTip(id) {
       const person = this.people.find((p) => p.id === id)
       if (!person) return
+      this.$emit('select-memory', person)
       const next = !person.tipOpen
       this.people.forEach((p) => {
         p.tipOpen = p.id === id ? next : false
