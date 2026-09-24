@@ -10,15 +10,14 @@ const SHARE_TITLE_MAX = 28
 /** 生图背景色（抠图用） */
 export const CHILDHOOD_MATTING_BG = { r: 255, g: 43, b: 214, hex: '#FF2BD6' }
 
-export const CHILDHOOD_STYLE_PROMPT = `One isolated lifestyle vignette. Not a repeating pattern, not a sticker sheet.
+export const CHILDHOOD_STYLE_PROMPT = `Create one isolated childhood-memory vignette based on the Scene below. Not a repeating pattern, not a sticker sheet.
 
 STYLE PRIORITY (most important):
-Contemporary editorial flat illustration for a children's magazine — NOT cute commercial picture book art, NOT kawaii, NOT anime, NOT Disney-style.
+Soft, airy, gently muted contemporary editorial flat illustration. Keep the treatment flat and simplified, with large readable shapes and a warm everyday atmosphere — NOT kawaii, NOT anime, NOT Disney-style.
 
-Linework:
-Bold thick dark brown contour lines (#3D2E24), clearly visible from a distance.
-Slightly imperfect hand-drawn edges — but STRONG silhouettes, not delicate thin outlines.
-Each major shape gets ONE outer contour; avoid inner detail lines.
+Shapes:
+Use clean, softly organic silhouettes defined by adjacent flat color blocks. No outlines or contour strokes.
+Keep poses and objects readable through shape and distinct colors; avoid inner detail lines.
 
 Figures (keep extremely simple):
 Elongated bodies (~6–7 head heights), slim relaxed proportions — NOT chibi, NOT big-head cute kids.
@@ -29,20 +28,27 @@ Clothing = 1–2 flat color blocks per garment, NO fabric folds, NO shading, NO 
 Express emotion through POSE and silhouette only, not facial rendering.
 
 Objects & environment:
-Reduce everything to large readable shapes — door, table, tree, floor as flat color masses.
-Bricks, tiles, brooms, plants: flat symbolic shapes only — NO surface texture, NO grain, NO wet reflections, NO cast shadows on ground.
-Background minimal: a few props max; leave breathing room.
+Include only the people, objects and setting details needed for the supplied Scene; do not add extra people or decorative walls, plants, buildings or travel motifs.
+Reduce objects to flat symbolic shapes. A small floor or ground patch may anchor the scene, but no full background or landscape.
+Bricks, tiles, brooms and plants, when required by the Scene: no surface texture, no grain, no wet reflections, no cast shadows on ground.
+Keep a few essential props at most and leave generous breathing room.
 
 Color:
-Soft muted retro pastels: cream, dusty pink, muted lavender, sage, olive, dusty blue, coral, mustard.
-Fill with flat solid colors only.
+Use a harmonious low-to-medium-saturation palette: dusty desaturated slate blue, pale blue-green mint, muted mustard yellow, dusty blush, soft terracotta/coral accents, warm off-white, and softened charcoal brown.
+Approximate color guidance: muted slate blue #587784, charcoal gray-brown #514E4B, muted clay coral #CF806A, subdued pale mustard #D5C17B, dusty blue-green #86AAA1, muted blue-gray #83A9B2, warm off-white #F4F0E7.
+Distribute these colors naturally across clothing and props. For example, a shirt can be slate blue, coral or warm off-white; trousers charcoal gray-brown; a backpack dusty blue-green; shorts muted blue-gray.
+Use natural soft warm skin tones, never vivid orange. If present, floor bricks are muted reddish terracotta #C99782 with light warm joints; a sunlight patch is flat pale buttery yellow #E5D59B; wood is muted warm ochre-brown; broom straw is desaturated straw yellow; bowls have pale mint and gray-blue accents.
+These colors are approximate design guidance, not required objects. Prioritize the overall harmonious palette while retaining distinct colors and readable contrast. Do not apply a uniform beige filter or use saturated electric blue.
+Fill with flat solid colors only. The matting background specified below is the sole exception to this muted palette.
 
 Rendering rules:
-Flat color fills, zero gradients, zero 3D, zero photorealism, zero glossy highlights, zero ambient occlusion.
+Flat color fills, no shading or added texture, zero gradients, zero 3D, zero photorealism, zero glossy highlights, zero ambient occlusion.
 
 Composition / matting:
 NO outer contour, die-cut, white halo, or sticker border around the whole group.
 All elements sit DIRECTLY on flat solid #FF2BD6 magenta background with generous empty margin.
+This uniform background will be removed to produce a transparent PNG. Keep #FF2BD6 out of all subjects and props. No white background or checkerboard pattern.
+Return only the single vignette image, with all people and props fully inside the canvas.
 
 People variety:
 Mix boys and girls across scenes — different hair shapes, not the same face recycled.
@@ -52,11 +58,11 @@ People stand on land/floor. Trees and flowers grow from soil. Water is only wate
 No impossible scale mixes (no train on a beach). Vehicles/buildings may appear large without tiny foreground people.
 
 Strict negative:
-no thin delicate linework, no detailed faces, no nose/mouth/ear drawing, no hair strands,
+no outlines or contour strokes, no detailed faces, no nose/mouth/ear drawing, no hair strands,
 no clothing folds or patterns, no kawaii/chibi/big-head cute style, no anime eyes,
 no picture-book realism, no brick texture, no floor reflections, no gradients, no drop shadows,
 no orange faceless silhouettes, no geometric icon people, no 3D, no photorealism,
-no signature, no brand logos, no white sticker border, no outer halo around the whole vignette.`
+no typography, no labels, no signature, no brand logos, no borders, no white sticker border, no outer halo around the whole vignette.`
 
 export function buildChildhoodPrompt(scene) {
   const text = (scene || '').trim()

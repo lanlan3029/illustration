@@ -167,11 +167,19 @@ export default {
     },
 
     async refreshScenes(options = {}) {
-      if (!this.ready) return
+      this.ready = true
+      this.bootError = ''
       if (options.anchorId) {
         this.pendingAnchorId = String(options.anchorId)
       }
-      await this.loadInitialPeople(options)
+      if (options.freshRecord) {
+        // 上传回执已足够展示；不要等待列表同步或分享海报的网络请求。
+        this.people = this.mergeFreshPerson(this.people, options)
+        this.people.forEach((person) => { person.visible = true })
+        this.warmPeople(this.people)
+      } else {
+        await this.loadInitialPeople(options)
+      }
       this.relayout()
       if (this.pendingAnchorId) {
         const anchorId = this.pendingAnchorId
@@ -253,6 +261,7 @@ export default {
           .map((item, index) => createPersonFromPicture(item, index))
           .filter((person) => person.imageUrl)
         seedPeople = this.mergeFreshPerson(seedPeople, options)
+        this.bootError = ''
       } catch (err) {
         console.error('[ChildhoodAvatarCrowd] fetch childhood pictures failed', err)
         this.bootError = this.$t('childhoodMoments.crowdLoadFailed')

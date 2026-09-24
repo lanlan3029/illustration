@@ -388,7 +388,6 @@ export default {
           const pictureRecord = await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
           const pictureId = extractPictureId(pictureRecord)
           const uploadedUrl = resolvePictureUrl(pictureRecord)
-          const crowdList = await fetchChildhoodScenes(this.$http)
 
           this.lastShareStory = sceneText
           this.lastPictureId = pictureId
@@ -400,7 +399,15 @@ export default {
             this.generatedImageUrl = uploadedUrl
           }
 
+          // 先展示已抠图的本地 PNG，列表与分享海报失败不应阻断 gallery。
+          await this.$refs.crowdRef?.refreshScenes({
+            anchorId: pictureId,
+            freshRecord: pictureRecord,
+            freshImageUrl: cutoutDataUrl,
+          })
+
           try {
+            const crowdList = await fetchChildhoodScenes(this.$http)
             const posterUrl = await this.buildAndUploadSharePoster(
               cutoutDataUrl,
               sceneText,
@@ -414,12 +421,6 @@ export default {
           } catch (err) {
             console.warn('[Childhood] share poster failed', err)
           }
-
-          await this.$refs.crowdRef?.refreshScenes({
-            anchorId: pictureId,
-            freshRecord: pictureRecord,
-            freshImageUrl: cutoutDataUrl,
-          })
 
           ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
           this.subjectScene = ''

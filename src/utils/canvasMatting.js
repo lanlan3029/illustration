@@ -167,7 +167,7 @@ export function mattingWhiteBackground(image, options = {}) {
     const isBg = floodFromEdges
       ? bgMask[pixelIdx] === 1
       : isNearWhite(r, g, b, threshold, tolerance);
-    data[i + 3] = isBg ? 0 : 255;
+    data[i + 3] = isBg ? 0 : data[i + 3];
   }
 
   featherAlpha(data, width, height, feather);
@@ -185,7 +185,7 @@ export async function mattingFromDataUrl(dataUrl, options = {}) {
 /** 相对路径 / OSS 路径 → 可加载的完整 URL */
 export function resolveImageSourceUrl(url) {
   if (!url) return '';
-  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/')) return `https://static.kidstory.cc${url}`;
   return `https://static.kidstory.cc/${String(url).replace(/^\/+/, '')}`;
 }
@@ -225,7 +225,7 @@ export function mattingSolidBackground(image, bgColor, options = {}) {
     const isBg = floodFromEdges
       ? bgMask[pixelIdx] === 1
       : isNearColor(data[i], data[i + 1], data[i + 2], bgColor, maxDistance);
-    data[i + 3] = isBg ? 0 : 255;
+    data[i + 3] = isBg ? 0 : data[i + 3];
   }
 
   featherAlpha(data, width, height, feather);
