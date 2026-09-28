@@ -2166,6 +2166,10 @@ export default {
     gap: 8px;
     margin-top: 8px;
     width: 100%;
+    max-height: min(320px, 42vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
 }
 
 .style-picker-item {
