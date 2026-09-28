@@ -243,7 +243,12 @@
             </template>
 
             <div v-else class="cs-view-locked">
-              <span class="cs-view-locked-icon">🔒</span>
+              <img
+                class="cs-view-locked-icon"
+                src="@/assets/icons/lock.svg"
+                alt=""
+                aria-hidden="true"
+              />
               <p>{{ $t('characterStudio.viewLocked') }}</p>
             </div>
           </article>
@@ -1104,9 +1109,11 @@ export default {
 }
 
 .cs-view-locked-icon {
-  font-size: 22px;
+  width: 28px;
+  height: 28px;
   margin-bottom: 8px;
-  opacity: 0.6;
+  opacity: 0.45;
+  filter: brightness(0) saturate(100%) invert(62%) sepia(6%) saturate(400%) hue-rotate(182deg);
 }
 
 @media (max-width: 1100px) {
