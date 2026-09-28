@@ -7,19 +7,34 @@
           variant="hero"
           :highlight-id="highlightPictureId"
           @count-change="onCrowdUpdate"
+          @select-memory="selectMemory"
+          @load-error="memoriesFailed = true; memoriesLoaded = true"
         />
       </div>
 
       <aside class="moment-split__right">
-        <div class="moment-panel__glow moment-panel__glow--purple" aria-hidden="true" />
-        <div class="moment-panel__glow moment-panel__glow--amber" aria-hidden="true" />
-        <div class="moment-panel__noise" aria-hidden="true" />
-
         <div class="moment-panel__inner">
+          <section v-if="activeMemory" class="memory-letter" :aria-label="$t('childhoodMoments.memoryLetter')">
+            <p class="memory-letter__eyebrow">{{ $t('childhoodMoments.memoryLetter') }}</p>
+            <img :src="activeMemory.imageUrl" :alt="$t('childhoodMoments.memoryImage')" />
+            <blockquote>{{ activeMemory.note }}</blockquote>
+            <time v-if="activeMemory.createdAt">{{ memoryDate }}</time>
+            <div class="memory-letter__actions">
+              <button type="button" @click="postcardOpen = true">{{ $t('childhoodMoments.makePostcard') }}</button>
+              <button type="button" @click="startWriting">{{ $t('childhoodMoments.writeMine') }}</button>
+            </div>
+          </section>
+          <p v-else-if="$route.query.mine" class="memory-status" role="status">{{ $t(memoriesLoaded ? 'childhoodMoments.memoryUnavailable' : 'childhoodMoments.memoryLoading') }}
+            <button v-if="memoriesFailed" type="button" @click="retryMemories">{{ $t('childhoodMoments.retryPostcard') }}</button>
+          </p>
           <header class="moment-panel__head">
             <h1 class="moment-panel__title">{{ $t('childhoodMoments.pageTitle') }}</h1>
             <p class="moment-panel__guide">{{ $t('childhoodMoments.formGuide') }}</p>
           </header>
+
+          <div class="memory-prompts" :aria-label="$t('childhoodMoments.promptLabel')">
+            <button v-for="prompt in writingPrompts" :key="prompt.label" type="button" :disabled="generating" @click="usePrompt(prompt.text)">{{ prompt.label }}</button>
+          </div>
 
           <div
             class="moment-form__card"
@@ -31,6 +46,7 @@
               v-model="subjectScene"
               class="moment-form__input"
               rows="5"
+              :aria-label="$t('childhoodMoments.formGuide')"
               :placeholder="currentPlaceholder"
               :disabled="generating"
               @keydown="onSceneKeydown"
@@ -44,11 +60,13 @@
               >
                 <span v-if="generating" class="moment-btn__spinner" aria-hidden="true" />
                 {{ generating ? $t('childhoodMoments.sharing') : $t('childhoodMoments.share') }}
+                <svg v-if="!generating" class="moment-btn__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
             </div>
             <p class="moment-form__shortcut">{{ $t('childhoodMoments.formShortcut') }}</p>
+            <p class="moment-form__privacy">{{ $t('childhoodMoments.publicStoryHint') }}</p>
             <div v-if="generating" class="moment-form__overlay" role="status">
-              <span class="moment-form__overlay-spinner" aria-hidden="true" />
+              <span class="moment-form__paint-dots" aria-hidden="true"><i /><i /><i /></span>
               <span>{{ $t('childhoodMoments.sharing') }}</span>
             </div>
           </div>
@@ -74,6 +92,7 @@
         </div>
       </aside>
     </section>
+    <ChildhoodPostcard v-model="postcardOpen" :memory="activeMemory" :crowd-srcs="postcardCrowdUrls" />
   </div>
 </template>
 
@@ -81,6 +100,7 @@
 import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
+import ChildhoodPostcard from '@/components/childhood/ChildhoodPostcard.vue'
 import submitImage from '@/assets/images/submit.webp'
 import {
   postCreateCharacter,
@@ -91,15 +111,11 @@ import { canvasToDataUrl, matChildhoodCutoutFromUrl } from '@/utils/canvasMattin
 import { uploadPictureElement } from '@/utils/saveCroppedAsset'
 import {
   CHILDHOOD_PICTURE_TYPE,
-  CHILDHOOD_SHARE_POSTER_TYPE,
   extractPictureId,
   extractPictureRecord,
-  fetchChildhoodScenes,
-  pickCrowdImageUrls,
   resolvePictureUrl,
 } from '@/utils/childhoodPictureApi'
-import { hashSeed } from '@/utils/avatarCrowd'
-import { drawChildhoodSharePoster } from '@/utils/childhoodSharePoster'
+import { formatPostcardDate } from '@/utils/childhoodSharePoster'
 import {
   STORAGE_KEY,
   MY_PICTURE_ID_KEY,
@@ -116,10 +132,16 @@ import {
 
 export default {
   name: 'Childhood',
-  components: { ChildhoodAvatarCrowd },
+  components: { ChildhoodAvatarCrowd, ChildhoodPostcard },
   data() {
     return {
       subjectScene: '',
+      selectedMemory: null,
+      memories: [],
+      memoriesLoaded: false,
+      memoriesFailed: false,
+      postcardOpen: false,
+      lastCreatedAt: '',
       generating: false,
       generatedImageUrl: null,
       sharePosterUrl: '',
@@ -138,6 +160,20 @@ export default {
   },
   computed: {
     ...mapState(['isLogin']),
+    writingPrompts() { return this.$tm('childhoodMoments.writingPrompts') },
+    activeMemory() {
+      if (this.selectedMemory) return this.selectedMemory
+      const sharedId = String(this.$route.query.mine || '')
+      if (sharedId) return this.memories.find(memory => memory.id === sharedId) || null
+      return this.memories.find(memory => memory.id === this.lastPictureId) ||
+        (this.generatedImageUrl && this.lastShareStory ? {
+          id: this.lastPictureId, imageUrl: this.generatedImageUrl, note: this.lastShareStory, createdAt: this.lastCreatedAt,
+        } : null)
+    },
+    memoryDate() { return formatPostcardDate(this.activeMemory?.createdAt) },
+    postcardCrowdUrls() {
+      return this.memories.filter(memory => memory.id !== this.activeMemory?.id).slice(0, 4).map(memory => memory.imageUrl)
+    },
     scenePlaceholderList() {
       const list = this.$tm('childhoodMoments.scenePlaceholders')
       if (Array.isArray(list) && list.length) return list
@@ -179,7 +215,29 @@ export default {
     clearInterval(this.placeholderTimer)
     clearInterval(this.clockTimer)
   },
+  watch: {
+    '$route.query.mine'() { this.selectedMemory = null },
+    activeMemory() { if (this.wxShareReady) this.applyWeChatShare() },
+  },
   methods: {
+    selectMemory(memory) { this.selectedMemory = memory },
+    async retryMemories() {
+      this.memoriesLoaded = false
+      this.memoriesFailed = false
+      await this.$refs.crowdRef?.boot()
+    },
+    startWriting() {
+      this.$nextTick(() => {
+        const input = this.$el.querySelector('#moment-scene')
+        input?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+        input?.focus({ preventScroll: true })
+      })
+    },
+    usePrompt(text) {
+      // Selecting a topic should never erase a story already being written.
+      if (!this.subjectScene.trim()) this.subjectScene = text
+      this.startWriting()
+    },
     onCrowdUpdate(payload) {
       if (typeof payload === 'number') {
         this.sceneCount = payload
@@ -187,6 +245,9 @@ export default {
       }
       this.sceneCount = payload?.count || 0
       this.sceneAvatars = payload?.avatars || []
+      this.memories = payload?.memories || []
+      this.memoriesLoaded = true
+      this.memoriesFailed = Boolean(payload?.failed)
       if (this.wxShareReady && (this.lastShareStory || localStorage.getItem(SHARE_STORY_KEY))) {
         this.applyWeChatShare()
       }
@@ -206,11 +267,11 @@ export default {
     },
 
     buildSharePayload() {
-      const story = this.lastShareStory || localStorage.getItem(SHARE_STORY_KEY) || ''
-      const pictureId = this.lastPictureId || localStorage.getItem(MY_PICTURE_ID_KEY) || ''
+      const story = this.activeMemory?.note || this.lastShareStory || ''
+      const pictureId = this.activeMemory?.id || this.lastPictureId || ''
       const posterUrl = this.sharePosterUrl || localStorage.getItem(SHARE_POSTER_URL_KEY) || ''
       const imgUrl = toAbsoluteShareUrl(
-        posterUrl || this.generatedImageUrl || this.submitImage
+        this.activeMemory?.imageUrl || posterUrl || this.generatedImageUrl || this.submitImage
       )
 
       return {
@@ -284,30 +345,6 @@ export default {
       return extractPictureRecord(response)
     },
 
-    async buildAndUploadSharePoster(cutoutDataUrl, sceneText, pictureId, crowdList) {
-      const crowdUrls = pickCrowdImageUrls(crowdList, {
-        excludeId: pictureId,
-        limit: 10,
-        seed: hashSeed(pictureId || sceneText),
-      })
-
-      const posterDataUrl = await drawChildhoodSharePoster({
-        heroSrc: cutoutDataUrl,
-        crowdSrcs: crowdUrls,
-        seed: hashSeed(`${pictureId}-${sceneText}`),
-      })
-
-      const response = await uploadPictureElement(this.$http, posterDataUrl, {
-        title: `${buildChildhoodPictureTitle(sceneText)} · 分享`,
-        type: CHILDHOOD_SHARE_POSTER_TYPE,
-        desc: sceneText,
-        is_public: 0,
-      })
-
-      const record = extractPictureRecord(response)
-      return resolvePictureUrl(record)
-    },
-
     safeStorageSet(key, value) {
       try {
         if (typeof value === 'string' && value.length > 900000) return
@@ -340,7 +377,6 @@ export default {
 
       const sceneText = this.subjectScene.trim()
 
-      this.generatedImageUrl = null
       this.generating = true
 
       try {
@@ -382,39 +418,25 @@ export default {
             apiBaseUrl: this.apiBaseUrl,
           })
           const cutoutDataUrl = canvasToDataUrl(cutoutCanvas)
-          this.generatedImageUrl = cutoutDataUrl
-          this.safeStorageSet(STORAGE_KEY, cutoutDataUrl)
 
           const pictureRecord = await this.saveChildhoodPicture(cutoutDataUrl, sceneText)
           const pictureId = extractPictureId(pictureRecord)
           const uploadedUrl = resolvePictureUrl(pictureRecord)
-          const crowdList = await fetchChildhoodScenes(this.$http)
+          this.generatedImageUrl = uploadedUrl || cutoutDataUrl
+          this.safeStorageSet(STORAGE_KEY, this.generatedImageUrl)
 
           this.lastShareStory = sceneText
           this.lastPictureId = pictureId
+          this.lastCreatedAt = pictureRecord.createdAt || new Date().toISOString()
+          this.selectedMemory = { id: pictureId, imageUrl: uploadedUrl || cutoutDataUrl, note: sceneText, createdAt: this.lastCreatedAt }
+          this.sharePosterUrl = ''
+          this.safeStorageSet(SHARE_POSTER_URL_KEY, '')
           this.safeStorageSet(SHARE_STORY_KEY, sceneText)
           if (pictureId) {
             this.safeStorageSet(MY_PICTURE_ID_KEY, pictureId)
           }
-          if (uploadedUrl) {
-            this.generatedImageUrl = uploadedUrl
-          }
 
-          try {
-            const posterUrl = await this.buildAndUploadSharePoster(
-              cutoutDataUrl,
-              sceneText,
-              pictureId,
-              crowdList
-            )
-            if (posterUrl) {
-              this.sharePosterUrl = posterUrl
-              this.safeStorageSet(SHARE_POSTER_URL_KEY, posterUrl)
-            }
-          } catch (err) {
-            console.warn('[Childhood] share poster failed', err)
-          }
-
+          // 先展示已抠图的本地 PNG，列表与分享海报失败不应阻断 gallery。
           await this.$refs.crowdRef?.refreshScenes({
             anchorId: pictureId,
             freshRecord: pictureRecord,
@@ -423,6 +445,7 @@ export default {
 
           ElMessage.success(this.$t('childhoodMoments.generateSuccess'))
           this.subjectScene = ''
+          this.postcardOpen = true
           this.applyWeChatShare()
         } else {
           throw new Error('no image url')
@@ -452,358 +475,183 @@ export default {
 
 <style scoped>
 .moment-page {
-  --moment-cream: #faf4f2;
-  --moment-panel-bg: #14101c;
-  --moment-accent: #a78bcc;
-  --moment-accent-deep: #8167a9;
-  --moment-text-light: #f5f0fa;
-  --moment-muted-dark: rgba(245, 240, 250, 0.52);
-  display: flex;
-  flex-direction: column;
+  /* App shell: 50px navigation + 40px footer on desktop. */
+  --moment-stage-height: calc(100dvh - 90px);
+  --moment-cream: #f8f5ef;
+  --moment-panel-bg: #f0eae0;
+  --moment-accent: #587784;
+  --moment-accent-deep: #425e69;
+  --moment-ink: #3e403b;
+  --moment-muted: #75766d;
+  --moment-line: #d9d5cb;
   width: 100%;
-  min-height: 100dvh;
-  margin: 0;
-  padding: 0;
+  min-height: var(--moment-stage-height);
   background: var(--moment-cream);
-  color: var(--moment-text-light);
+  color: var(--moment-ink);
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
+  text-align: left;
 }
-
 .moment-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  width: 100%;
-  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1.6fr) minmax(360px, 1fr);
+  min-height: var(--moment-stage-height);
 }
-
 .moment-split__left {
-  position: relative;
   display: flex;
-  flex-direction: column;
   min-width: 0;
-  min-height: 100dvh;
-  padding: clamp(12px, 2vw, 24px) clamp(10px, 1.5vw, 16px) clamp(20px, 3vw, 32px);
-  background: var(--moment-cream);
+  height: var(--moment-stage-height);
+  padding: clamp(24px, 3vw, 48px) clamp(16px, 2vw, 36px);
   box-sizing: border-box;
 }
-
-.moment-split__left :deep(.scene-gallery--hero) {
-  flex: 1;
-  min-height: 0;
-}
-
+.moment-split__left :deep(.scene-gallery--hero) { flex: 1; min-height: 0; }
 .moment-split__right {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
-  overflow: hidden;
-  background-color: var(--moment-panel-bg);
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.moment-panel__glow {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(80px);
-}
-
-.moment-panel__glow--purple {
-  top: -8%;
-  right: -6%;
-  width: min(420px, 55vw);
-  height: min(420px, 55vw);
-  background: radial-gradient(circle, rgba(129, 103, 169, 0.45) 0%, transparent 70%);
-}
-
-.moment-panel__glow--amber {
-  bottom: -4%;
-  right: 8%;
-  width: min(320px, 45vw);
-  height: min(320px, 45vw);
-  background: radial-gradient(circle, rgba(232, 168, 108, 0.22) 0%, transparent 72%);
-}
-
-.moment-panel__noise {
-  position: absolute;
-  inset: 0;
-  opacity: 0.35;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  mix-blend-mode: overlay;
-}
-
-.moment-panel__inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  width: 100%;
-  min-height: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: clamp(24px, 4vw, 40px) clamp(20px, 3.5vw, 36px) clamp(32px, 5vw, 48px);
-  box-sizing: border-box;
-}
-
-.moment-panel__head {
-  margin-bottom: clamp(20px, 3vw, 28px);
-}
-
-.moment-panel__title {
-  margin: 0 0 14px;
-  font-family: 'Songti SC', 'Noto Serif SC', 'STSong', 'SimSun', serif;
-  font-size: clamp(28px, 4.2vw, 38px);
-  font-weight: 300;
-  line-height: 1.25;
-  letter-spacing: 0.06em;
-  color: var(--moment-text-light);
-}
-
-.moment-panel__guide {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.65;
-  color: var(--moment-muted-dark);
-  letter-spacing: 0.02em;
-}
-
-.moment-panel__stats {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: clamp(24px, 4vw, 36px);
-}
-
-.moment-panel__stats-avatars {
-  display: flex;
-  flex-shrink: 0;
-  padding-left: 4px;
-}
-
-.moment-panel__stats-avatar {
-  width: 28px;
-  height: 28px;
-  margin-left: -8px;
-  border: 2px solid var(--moment-panel-bg);
-  border-radius: 50%;
-  object-fit: cover;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.moment-panel__stats-avatar:first-child {
-  margin-left: 0;
-}
-
-.moment-panel__stats-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
+  min-height: var(--moment-stage-height);
+  background: var(--moment-panel-bg);
+  border-left: 1px solid var(--moment-line);
 }
-
-.moment-panel__stats-live {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--moment-accent);
-  letter-spacing: 0.04em;
-}
-
-.moment-panel__stats-time {
-  font-size: 11px;
-  color: var(--moment-muted-dark);
-  letter-spacing: 0.02em;
-}
-
-.moment-form__card {
-  position: relative;
+.moment-panel__inner {
   width: 100%;
-  padding: clamp(20px, 3vw, 28px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(16px);
+  max-width: 560px;
+  margin: auto;
+  padding: 64px clamp(28px, 3.4vw, 64px);
   box-sizing: border-box;
-  transition:
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+  animation: moment-arrive 700ms cubic-bezier(.22, 1, .36, 1) both;
 }
-
-.moment-form__card:focus-within:not(.moment-form__card--busy) {
-  border-color: rgba(167, 139, 204, 0.45);
-  box-shadow:
-    0 0 0 1px rgba(167, 139, 204, 0.2),
-    0 0 28px rgba(129, 103, 169, 0.35),
-    0 12px 40px rgba(0, 0, 0, 0.3);
+.moment-panel__head { margin-bottom: 36px; }
+.moment-panel__head::before {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 4px;
+  margin-bottom: 26px;
+  background: #cf806a;
 }
-
-.moment-form__card--busy {
-  pointer-events: none;
-}
-
-.moment-form__overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  border-radius: 20px;
-  background: rgba(20, 16, 28, 0.82);
-  color: var(--moment-accent);
-  font-size: 14px;
+.moment-panel__title {
+  margin: 0 0 18px;
+  font-family: 'Songti SC', 'Noto Serif SC', 'STSong', 'SimSun', serif;
+  font-size: clamp(30px, 3.1vw, 48px);
   font-weight: 600;
-  backdrop-filter: blur(4px);
+  line-height: 1.35;
+  letter-spacing: .025em;
+  color: var(--moment-ink);
 }
-
-.moment-form__overlay-spinner,
-.moment-btn__spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(167, 139, 204, 0.25);
-  border-top-color: var(--moment-accent);
-  border-radius: 50%;
-  animation: moment-spin 0.7s linear infinite;
-}
-
-.moment-btn__spinner {
-  width: 14px;
-  height: 14px;
-  margin-right: 8px;
-}
-
-.moment-form__shortcut {
-  margin: 12px 0 0;
-  font-size: 11px;
-  color: rgba(245, 240, 250, 0.35);
-  text-align: right;
-  letter-spacing: 0.02em;
-}
-
-@keyframes moment-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+.moment-panel__guide { margin: 0; font-size: 14px; line-height: 1.9; color: var(--moment-muted); }
+.moment-form__card { position: relative; width: 100%; }
 .moment-form__input {
   display: block;
   width: 100%;
-  min-height: 140px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  font-size: clamp(16px, 2.2vw, 18px);
-  line-height: 1.75;
-  color: var(--moment-text-light);
-  resize: none;
+  min-height: 214px;
+  padding: 22px;
+  border: 1px solid #d2cfc6;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(81, 78, 75, .025);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--moment-ink);
+  resize: vertical;
   outline: none;
   box-sizing: border-box;
-  transition: color 0.2s ease;
+  transition: border-color 220ms ease, box-shadow 220ms ease;
 }
-
-.moment-form__input::placeholder {
-  color: rgba(245, 240, 250, 0.38);
-  transition: opacity 0.35s ease;
+.moment-form__input:focus {
+  border-color: var(--moment-accent);
+  box-shadow: 0 0 0 3px rgba(88, 119, 132, .12), 0 8px 22px rgba(81, 78, 75, .04);
 }
-
-.moment-form__actions {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.moment-form__actions .moment-btn {
-  width: 100%;
-}
-
+.moment-form__input::placeholder { color: #86867d; }
+.moment-form__actions { margin-top: 22px; }
 .moment-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  min-height: 44px;
-  padding: 0 24px;
-  border-radius: 999px;
-  font-size: 14px;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 24px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.02em;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.15s ease;
+  transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
-
-.moment-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.moment-btn--ghost {
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(245, 240, 250, 0.85);
-}
-
-.moment-btn--ghost:hover:not(:disabled) {
-  border-color: rgba(167, 139, 204, 0.5);
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--moment-text-light);
-}
-
-.moment-btn--primary {
-  border: none;
-  background: linear-gradient(135deg, #9278b8 0%, #8167a9 48%, #6b5490 100%);
-  color: #fff;
-  box-shadow:
-    0 4px 14px rgba(129, 103, 169, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.12) inset;
-}
-
+.moment-btn--primary { background: var(--moment-accent); color: #fff; }
 .moment-btn--primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #a088c4 0%, #9278b8 48%, #8167a9 100%);
-  box-shadow:
-    0 6px 20px rgba(129, 103, 169, 0.55),
-    0 1px 0 rgba(255, 255, 255, 0.15) inset;
-  transform: translateY(-1px);
+  background: var(--moment-accent-deep);
+  box-shadow: 0 6px 16px rgba(88, 119, 132, .16);
+  transform: translateY(-2px);
 }
-
-@media (max-width: 900px) {
-  .moment-split {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .moment-split__left {
-    min-height: min(52dvh, 480px);
-  }
-
-  .moment-split__right {
-    min-height: auto;
-  }
-
-  .moment-panel__inner {
-    max-width: none;
-  }
-
-  .moment-panel__title {
-    text-align: center;
-  }
-
-  .moment-panel__guide {
-    text-align: center;
-  }
+.moment-btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+.moment-btn:focus-visible { outline: 2px solid var(--moment-accent); outline-offset: 4px; }
+.moment-btn:disabled { background: #d2dcd9; color: #566a68; cursor: not-allowed; }
+.moment-btn__arrow { transition: transform 200ms ease; }
+.moment-btn:hover:not(:disabled) .moment-btn__arrow { transform: translateX(3px); }
+.moment-form__shortcut { margin: 12px 0 0; color: var(--moment-muted); font-size: 12px; text-align: center; line-height: 1.7; }
+.moment-form__overlay {
+  position: absolute;
+  inset: -10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  border-radius: 12px;
+  background: rgba(248, 245, 239, .96);
+  color: var(--moment-accent-deep);
+  font-size: 14px;
+  animation: moment-arrive 240ms ease both;
 }
+.moment-form__paint-dots { display: flex; gap: 9px; align-items: center; height: 24px; }
+.moment-form__paint-dots i { width: 13px; height: 13px; border-radius: 50%; background: #86aaa1; animation: moment-paint 1.4s ease-in-out infinite; }
+.moment-form__paint-dots i:nth-child(2) { background: #cf806a; animation-delay: 160ms; }
+.moment-form__paint-dots i:nth-child(3) { background: #d5c17b; animation-delay: 320ms; }
+.moment-btn__spinner { width: 14px; height: 14px; border: 2px solid #b0c0bb; border-top-color: var(--moment-accent); border-radius: 50%; animation: moment-spin 900ms linear infinite; }
+.moment-panel__stats { display: flex; align-items: center; gap: 12px; margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--moment-line); }
+.moment-panel__stats-avatars { display: flex; flex-shrink: 0; }
+.moment-panel__stats-avatar { width: 30px; height: 30px; margin-left: -8px; border: 2px solid var(--moment-panel-bg); border-radius: 50%; object-fit: cover; background: var(--moment-cream); }
+.moment-panel__stats-avatar:first-child { margin-left: 0; }
+.moment-panel__stats-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.moment-panel__stats-live { font-size: 12px; font-weight: 600; color: var(--moment-accent-deep); }
+.moment-panel__stats-time { font-size: 11px; line-height: 1.6; color: var(--moment-muted); }
+@keyframes moment-arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes moment-paint { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+@keyframes moment-spin { to { transform: rotate(360deg); } }
+@media (max-width: 1024px) {
+  .moment-split { grid-template-columns: 1fr; }
+  .moment-split__right { grid-row: 1; min-height: auto; border-left: 0; border-bottom: 1px solid var(--moment-line); }
+  .moment-panel__inner { max-width: 600px; padding: 40px 28px 32px; }
+  .moment-panel__head { margin-bottom: 24px; }
+  .moment-panel__head::before { width: 40px; margin-bottom: 18px; }
+  .moment-panel__title { font-size: 34px; }
+  .moment-form__input { min-height: 160px; }
+  .moment-panel__stats { margin-top: 24px; padding-top: 18px; }
+  .moment-split__left { height: min(68dvh, 620px); min-height: 340px; padding: 24px 16px; }
+}
+@media (max-width: 380px) {
+  .moment-panel__inner { padding: 32px 20px 28px; }
+  .moment-panel__title { font-size: 30px; }
+  .moment-form__input { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.memory-letter { padding: 22px; margin: 0 0 30px; background: #fffaf0; border: 1px solid #ded8c9; box-shadow: 0 6px 18px #554c3610; }
+.memory-letter__eyebrow { color: #748170; font-size: 11px; letter-spacing: 3px; margin: 0; }
+.memory-letter > img { display: block; width: 100%; height: 150px; object-fit: contain; margin: 16px auto; }
+.memory-letter blockquote { margin: 12px 0; color: #51483e; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
+.memory-letter time { display: block; font: 12px Georgia, serif; color: #81796b; margin-top: 14px; }
+.memory-letter__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.memory-letter__actions button, .memory-status button { border: 1px solid #b8c1b4; border-radius: 5px; background: transparent; color: #496253; padding: 9px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.memory-letter__actions button:first-child { background: #587784; color: white; border-color: #587784; }
+.memory-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.memory-prompts button { border: 1px solid #d6d0c3; border-radius: 20px; color: #625f53; background: #f8f5ed; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; transition: background .2s; }
+.memory-prompts button:hover { background: #e2e8dc; }
+.memory-prompts button:disabled { opacity: .5; cursor: wait; }
+.memory-letter button:focus-visible, .memory-prompts button:focus-visible { outline: 2px solid #587784; outline-offset: 3px; }
+.memory-status { font-size: 13px; color: #6b7665; line-height: 1.8; }
+.moment-form__privacy { margin: 10px 0 0; color: #75766d; font-size: 11px; line-height: 1.6; text-align: center; }
 </style>

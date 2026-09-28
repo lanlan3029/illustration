@@ -1,7 +1,7 @@
 import { hashSeed } from '@/utils/avatarCrowd'
 
 const SCENE_ASPECT = 0.82
-const ITEM_WIDTH_RATIO = 0.105
+const ITEM_WIDTH_RATIO = 0.15
 const MIN_GAP = 18
 const PAD = 12
 const MAX_RESOLVE_STEPS = 72
@@ -153,7 +153,7 @@ export function layoutGalleryScenes(people, containerWidth) {
     }
 
     const { widthRatio, rotate, baseScale, jx, jy } = itemMetrics(person, index)
-    const width = containerWidth * widthRatio
+    const width = Math.min(cellW * 0.76, Math.max(90, containerWidth * widthRatio))
     const height = width * SCENE_ASPECT
     rowMaxH = Math.max(rowMaxH, height)
 

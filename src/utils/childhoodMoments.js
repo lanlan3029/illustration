@@ -10,53 +10,27 @@ const SHARE_TITLE_MAX = 28
 /** 生图背景色（抠图用） */
 export const CHILDHOOD_MATTING_BG = { r: 255, g: 43, b: 214, hex: '#FF2BD6' }
 
-export const CHILDHOOD_STYLE_PROMPT = `One isolated lifestyle vignette. Not a repeating pattern, not a sticker sheet.
+export const CHILDHOOD_STYLE_PROMPT = `Draw the Scene as ONE charming, flat 2D cartoon vignette for a collection of childhood memories. Every vignette must look drawn by the same illustrator for the same cheerful family picture book.
 
-STYLE PRIORITY (most important):
-Contemporary editorial flat illustration for a children's magazine — NOT cute commercial picture book art, NOT kawaii, NOT anime, NOT Disney-style.
+Character design — rounded and distinctly cartoon:
+Use compact, softly rounded bodies, slightly large round heads, short simple limbs and gentle, playful poses. Adults are about 4–5 heads tall; young children about 2.5–3 heads tall. Give each face tiny dark dot eyes, a small curved smile, a minimal nose mark and optional soft peach cheeks. Show affection through these simple expressions and body language. Hair is a solid warm dark-brown shape with a few rounded waves or curls, never individual strands. Hands are small rounded cartoon shapes with very few finger marks; shoes are simple rounded shapes.
 
-Linework:
-Bold thick dark brown contour lines (#3D2E24), clearly visible from a distance.
-Slightly imperfect hand-drawn edges — but STRONG silhouettes, not delicate thin outlines.
-Each major shape gets ONE outer contour; avoid inner detail lines.
+Linework and flat fills:
+Use delicate warm-brown hand-drawn contour lines around people, clothing and important objects, with slightly organic curves and rounded joins. Keep the line weight thin and consistent, never a heavy black comic outline. Fill each shape with one clean, opaque, uniform color. Use only a few simple interior lines for clothing, bowls, windows and furniture. Clothing may have a sparse check or dot pattern where appropriate, drawn as simple flat marks. Do not model volume with tonal shading. Draw food as a few colorful symbolic shapes, not realistic ingredients.
 
-Figures (keep extremely simple):
-Elongated bodies (~6–7 head heights), slim relaxed proportions — NOT chibi, NOT big-head cute kids.
-Faces are almost blank: tiny dot eyes OR two dots only — NO nose lines, NO mouth details, NO ears drawn, NO eyebrows, NO blush, NO teeth.
-Hair = one solid flat shape (bob / short block / simple ponytail), NO hair strands, NO highlights, NO inner hair lines.
-Hands and feet = simplified mitten-like or rounded stubs, NO fingers, NO shoe laces.
-Clothing = 1–2 flat color blocks per garment, NO fabric folds, NO shading, NO patterns (no checks, stripes, logos), NO zippers, pockets, or backpack details.
-Express emotion through POSE and silhouette only, not facial rendering.
+Consistent family-cartoon palette:
+Warm dark-brown hair and outlines #653D2D, soft peach skin #F2BA87, creamy white #FFF9E9, pastel lavender #C3A0CF, mint/seafoam #91BFA9, cheerful soft cornflower blue #779CD6, mellow yellow #F3CC72, warm peach ground #F5C99D, olive green #859746 and occasional soft pink #E9ADB5. Favor lavender, mint, cream and yellow for clothing; use blue and olive for vehicles and props. Keep colors distinct, clean and gently cheerful, not smoky, gray-brown, monochrome beige or realistic skin rendering. Avoid neon colors in the subject.
 
-Objects & environment:
-Reduce everything to large readable shapes — door, table, tree, floor as flat color masses.
-Bricks, tiles, brooms, plants: flat symbolic shapes only — NO surface texture, NO grain, NO wet reflections, NO cast shadows on ground.
-Background minimal: a few props max; leave breathing room.
+Scene construction:
+Follow only the people, actions and objects in the supplied Scene. Show the complete group in one small isolated composition, with generous empty space around it. Props are cute simplified cartoon shapes: softly rounded tables, chairs, bowls, beds, cars or houses. Use a shallow, simple view with minimal perspective and a small peach-colored oval or irregular ground patch. Keep architecture symbolic and small, not a detailed room or architectural cutaway. Use a few lines at most to suggest a floor, never a detailed brick grid. If the Scene calls for a sun or moon, use a tiny flat yellow/orange symbol.
 
-Color:
-Soft muted retro pastels: cream, dusty pink, muted lavender, sage, olive, dusty blue, coral, mustard.
-Fill with flat solid colors only.
+Strict style exclusions:
+No realistic or semi-realistic people; no tall slender fashion figures; no blank faceless editorial figures; no anatomical detail, realistic hands, individual hair strands, fabric rendering, complex clothing folds, realistic food, wood grain, brick textures, watercolor washes, paper grain, gradients, dimensional shading, cast shadows, dramatic lighting, 3D or photographic detail. No typography, labels, logos, frame, sticker border or white halo.
 
-Rendering rules:
-Flat color fills, zero gradients, zero 3D, zero photorealism, zero glossy highlights, zero ambient occlusion.
+Removable background — technical requirement:
+Use exactly solid ${CHILDHOOD_MATTING_BG.hex} as the entire background, including EVERY enclosed opening between arms and torsos, between legs, under tables, between chair rails, and between overlapping objects. No background shadows, glow or background color variation. This key color is reserved ONLY for background: never use magenta, fuchsia, hot pink or a purple-pink shade close to it in clothes, skin, props or outline strokes. Pastel lavender and soft dusty pink must stay pale and clearly different from the saturated key. The application removes this color to produce a genuinely transparent PNG.
 
-Composition / matting:
-NO outer contour, die-cut, white halo, or sticker border around the whole group.
-All elements sit DIRECTLY on flat solid #FF2BD6 magenta background with generous empty margin.
-
-People variety:
-Mix boys and girls across scenes — different hair shapes, not the same face recycled.
-
-Scene logic:
-People stand on land/floor. Trees and flowers grow from soil. Water is only water.
-No impossible scale mixes (no train on a beach). Vehicles/buildings may appear large without tiny foreground people.
-
-Strict negative:
-no thin delicate linework, no detailed faces, no nose/mouth/ear drawing, no hair strands,
-no clothing folds or patterns, no kawaii/chibi/big-head cute style, no anime eyes,
-no picture-book realism, no brick texture, no floor reflections, no gradients, no drop shadows,
-no orange faceless silhouettes, no geometric icon people, no 3D, no photorealism,
-no signature, no brand logos, no white sticker border, no outer halo around the whole vignette.`
+Return only the single cartoon vignette image.`
 
 export function buildChildhoodPrompt(scene) {
   const text = (scene || '').trim()
@@ -83,19 +57,16 @@ export function buildShareTitle(story) {
   return `${text.slice(0, SHARE_TITLE_MAX)}…`
 }
 
-/** 微信分享描述：社会证明 + 轻邀请 */
-export function buildShareDesc(count) {
-  const n = Number(count) || 0
-  if (n > 0) {
-    return `今日已有 ${n} 人在收集童年瞬间 · 你也来加一张？`
-  }
-  return '我把童年画出来了，你也来加一张？'
+/** 用一个问题邀请朋友留下自己的回忆。 */
+export function buildShareDesc() {
+  return '这让你想起了什么？留下一段回忆，画成你的童年。'
 }
 
 export function buildShareLink(pictureId, baseHref) {
   try {
-    const base = (baseHref || (typeof window !== 'undefined' ? window.location.href : '')).split('#')[0]
-    const url = new URL(base)
+    const origin = typeof window !== 'undefined' && /(^|\.)kidstory\.cc$/.test(window.location.hostname)
+      ? window.location.origin : 'https://www.kidstory.cc'
+    const url = new URL('/childhood', baseHref || origin)
     if (pictureId) {
       url.searchParams.set('mine', pictureId)
     } else {

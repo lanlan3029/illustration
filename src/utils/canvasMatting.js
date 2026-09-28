@@ -1,5 +1,6 @@
 import { applyStickerStyle, loadImage } from '@/utils/lassoCrop';
 import { loadHtmlImage, loadImageBlob } from '@/utils/canvasImageCompose';
+import { applyChromaKey } from '@/utils/chromaKeyMatting';
 
 export { loadImage, downloadDataUrl, readFileAsDataUrl } from '@/utils/lassoCrop';
 
@@ -167,7 +168,7 @@ export function mattingWhiteBackground(image, options = {}) {
     const isBg = floodFromEdges
       ? bgMask[pixelIdx] === 1
       : isNearWhite(r, g, b, threshold, tolerance);
-    data[i + 3] = isBg ? 0 : 255;
+    data[i + 3] = isBg ? 0 : data[i + 3];
   }
 
   featherAlpha(data, width, height, feather);
@@ -185,7 +186,7 @@ export async function mattingFromDataUrl(dataUrl, options = {}) {
 /** 相对路径 / OSS 路径 → 可加载的完整 URL */
 export function resolveImageSourceUrl(url) {
   if (!url) return '';
-  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/')) return `https://static.kidstory.cc${url}`;
   return `https://static.kidstory.cc/${String(url).replace(/^\/+/, '')}`;
 }
@@ -215,20 +216,21 @@ export function mattingSolidBackground(image, bgColor, options = {}) {
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const { data, width, height } = imageData;
 
-  let bgMask = null;
-  if (floodFromEdges) {
-    bgMask = buildEdgeBackgroundMaskColor(data, width, height, bgColor, maxDistance);
+  if (options.reservedBackground) {
+    applyChromaKey(data, width, height, bgColor, { ...options, colorTolerance: maxDistance });
+  } else {
+    const bgMask = floodFromEdges
+      ? buildEdgeBackgroundMaskColor(data, width, height, bgColor, maxDistance)
+      : null;
+    for (let i = 0; i < data.length; i += 4) {
+      const pixelIdx = i / 4;
+      const isBg = floodFromEdges
+        ? bgMask[pixelIdx] === 1
+        : isNearColor(data[i], data[i + 1], data[i + 2], bgColor, maxDistance);
+      data[i + 3] = isBg ? 0 : data[i + 3];
+    }
+    featherAlpha(data, width, height, feather);
   }
-
-  for (let i = 0; i < data.length; i += 4) {
-    const pixelIdx = i / 4;
-    const isBg = floodFromEdges
-      ? bgMask[pixelIdx] === 1
-      : isNearColor(data[i], data[i + 1], data[i + 2], bgColor, maxDistance);
-    data[i + 3] = isBg ? 0 : 255;
-  }
-
-  featherAlpha(data, width, height, feather);
   ctx.putImageData(imageData, 0, 0);
 
   if (sticker === false) return canvas;
@@ -272,7 +274,12 @@ async function loadMattingImage(url, options = {}) {
 /** 童年场景：洋红底 → 透明 PNG canvas */
 export async function matChildhoodCutoutFromUrl(url, bgColor, options = {}) {
   const image = await loadMattingImage(url, options);
-  return mattingSolidBackground(image, bgColor, { sticker: false, ...options });
+  return mattingSolidBackground(image, bgColor, {
+    sticker: false,
+    reservedBackground: true,
+    edgeRadius: 3,
+    ...options,
+  });
 }
 
 /** 白底抠图 → PNG data URL（供编辑器 / 保存角色使用） */
