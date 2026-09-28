@@ -539,15 +539,16 @@ import {
 } from '@/utils/handrawStyleReference'
 import {
     HANDRAW_GROUP_LETTERS,
-    handrawGroupFromNumber,
-    handrawNumberFromStyle,
-    isHandrawFullLibraryStyle,
     isHandrawLibraryStyle as isHandrawLibStyle,
 } from '@/utils/handrawStyleGroups'
 import {
     isFeaturedIllustrationStyle,
     sortStylesFeaturedFirst,
 } from '@/utils/illustrationStyleSort'
+import {
+    stylesForIllustrationTab,
+    visibleIllustrationMainTabIds,
+} from '@/utils/illustrationStyleTabs'
 
 export default {
     name: 'AIPicture',
@@ -655,15 +656,19 @@ export default {
                 .filter((x) => x && set.has(x.id))
         },
         illustrationTabItems() {
-            return [
-                { id: 'curated', label: this.$t('aiPicture.styleTabCurated') || '精选' },
-                { id: 'all', label: this.$t('aiPicture.styleTabAll') || '全部' },
-                { id: 'sketch', label: this.$t('aiPicture.styleTabSketch') || '线稿手绘' },
-                { id: 'paint', label: this.$t('aiPicture.styleTabPaint') || '色彩综合' },
-                { id: 'toon', label: this.$t('aiPicture.styleTabToon') || '卡通 / 3D' },
-                { id: 'skill', label: this.$t('aiPicture.styleTabSkill') || 'SKILL' },
-                { id: 'handraw', label: this.$t('aiPicture.styleTabHandraw') || '手绘库' },
-            ]
+            const labelById = {
+                curated: this.$t('aiPicture.styleTabCurated') || '精选',
+                all: this.$t('aiPicture.styleTabAll') || '全部',
+                sketch: this.$t('aiPicture.styleTabSketch') || '线稿手绘',
+                paint: this.$t('aiPicture.styleTabPaint') || '色彩综合',
+                toon: this.$t('aiPicture.styleTabToon') || '卡通 / 3D',
+                skill: this.$t('aiPicture.styleTabSkill') || 'SKILL',
+                handraw: this.$t('aiPicture.styleTabHandraw') || '手绘库',
+            }
+            const visibleIds = visibleIllustrationMainTabIds(this.styles, {
+                oaiTemplateCount: (this.visibleOaiItems || []).length,
+            })
+            return visibleIds.map((id) => ({ id, label: labelById[id] || id }))
         },
         handrawGroupTabItems() {
             const items = [
@@ -699,26 +704,8 @@ export default {
             return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
         visibleStyles() {
-            if (this.activeIllustrationTab === 'curated') {
-                return this.styles.filter((s) => isFeaturedIllustrationStyle(s))
-            }
-            if (this.activeIllustrationTab === 'all') {
-                return this.styles.filter((s) => !isHandrawFullLibraryStyle(s))
-            }
-            if (this.activeIllustrationTab === 'handraw') {
-                let list = this.styles.filter((s) => isHandrawLibStyle(s))
-                if (this.activeHandrawGroup !== 'all') {
-                    list = list.filter((s) => {
-                        const g = s.handrawGroup || handrawGroupFromNumber(handrawNumberFromStyle(s))
-                        return g === this.activeHandrawGroup
-                    })
-                }
-                return list
-            }
-            return this.styles.filter((s) => {
-                if (isHandrawFullLibraryStyle(s)) return false
-                if (isFeaturedIllustrationStyle(s)) return false
-                return (s.uiTab || s.category) === this.activeIllustrationTab
+            return stylesForIllustrationTab(this.activeIllustrationTab, this.styles, {
+                handrawGroup: this.activeHandrawGroup,
             })
         },
         handrawStyleReferenceActive() {
@@ -863,6 +850,18 @@ export default {
         }
     },
     watch: {
+        illustrationTabItems: {
+            handler(items) {
+                const ids = (items || []).map((t) => t.id)
+                if (!ids.length) return
+                if (!ids.includes(this.activeIllustrationTab)) {
+                    this.activeIllustrationTab = ids.includes('curated') ? 'curated' : ids[0]
+                    this.activeHandrawGroup = 'all'
+                    this.displayOrder = []
+                }
+            },
+            immediate: true,
+        },
         selectedStyle: {
             handler(newStyle) {
                 if (newStyle && this.selectedStyleId !== null) {
