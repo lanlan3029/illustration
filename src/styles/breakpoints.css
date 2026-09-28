@@ -59,3 +59,9 @@
     display: none !important;
   }
 }
+
+@media (max-width: 768px) {
+  .only-desktop {
+    display: none !important;
+  }
+}

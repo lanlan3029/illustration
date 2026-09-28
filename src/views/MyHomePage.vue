@@ -36,6 +36,9 @@
             <span>{{ $t('guides.contact.title') || '联系我们' }}</span>
           </button>
         </div>
+        <button type="button" class="mp-about-link" @click="goAboutUs">
+          {{ $t('aboutUs.title') }}
+        </button>
       </div>
 
       <header v-if="studioMode" class="studio-dash-header">
@@ -374,6 +377,9 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
     },
     goContact() {
       this.$router.push({ path: '/connection', hash: '#contact' });
+    },
+    goAboutUs() {
+      this.$router.push('/user/about');
     },
     goRecharge() {
       this.$router.push("/member/recharge");
@@ -1706,6 +1712,23 @@ overflow: hidden;
 .mp-quick-ico--home { background: var(--kid-primary-soft, #efeaff); color: var(--kid-primary, #6c5ce7); }
 .mp-quick-ico--set { background: #e7f6f1; color: #2bb894; }
 .mp-quick-ico--contact { background: #eef4ff; color: #5b7fd6; }
+
+.mp-about-link {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: center;
+  font-size: 12px;
+  color: #909399;
+  cursor: pointer;
+}
+
+.mp-about-link:active {
+  color: #8167a9;
+}
 
 /* 响应式设计 - 移动端改为单列（断点统一 768） */
 @media (max-width: 768px) {

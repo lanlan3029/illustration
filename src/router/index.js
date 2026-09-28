@@ -145,6 +145,16 @@ const routes = [{
         }
     },
     {
+        path: '/user/about',
+        name: 'about-us',
+        component: () =>
+            import(/* webpackChunkName: "about-us" */ '../views/AboutUs.vue'),
+        meta: {
+            requiresAuth: true,
+            seoTitle: '关于我们',
+        },
+    },
+    {
         path: '/user/upload',
         name: 'upload',
         component: () =>

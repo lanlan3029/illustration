@@ -1999,6 +1999,12 @@
     "closingSpread": "末页 · 环衬",
     "finalPage": "单页"
   },
+  "aboutUs": {
+    "title": "关于我们",
+    "lead": "KidStory 在部分功能中参考或使用了以下开源项目，特此致谢。",
+    "creditsHeading": "借鉴的开源项目",
+    "footnote": "完整 npm 依赖清单见项目构建配置；此处仅列出与产品功能直接相关的 GitHub 仓库。"
+  },
   "userProfile": {
     "avatar": "头像",
     "uploadAvatar": "上传头像",

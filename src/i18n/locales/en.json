@@ -1984,6 +1984,12 @@
     "closingSpread": "Final · Endpaper",
     "finalPage": "Final Page"
   },
+  "aboutUs": {
+    "title": "About",
+    "lead": "KidStory acknowledges the following open-source projects referenced in product features.",
+    "creditsHeading": "Referenced GitHub projects",
+    "footnote": "For the full npm dependency list, see the build configuration; only product-related repos are listed here."
+  },
   "userProfile": {
     "avatar": "Avatar",
     "uploadAvatar": "Upload Avatar",

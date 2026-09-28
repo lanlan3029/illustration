@@ -531,7 +531,6 @@ import {
     paperPosterModeFromStyle,
     resolveStyleBasePrompt,
 } from '@/utils/illustrationStyles'
-import { isHandrawLibraryStyle } from '@/utils/handrawStyleGroups'
 import { loadImageBlob } from '@/utils/canvasImageCompose'
 import {
     appendHandrawReferenceIsolation,
@@ -543,7 +542,7 @@ import {
     handrawGroupFromNumber,
     handrawNumberFromStyle,
     isHandrawFullLibraryStyle,
-    isHandrawLibraryStyle,
+    isHandrawLibraryStyle as isHandrawLibStyle,
 } from '@/utils/handrawStyleGroups'
 import {
     isFeaturedIllustrationStyle,
@@ -707,7 +706,7 @@ export default {
                 return this.styles.filter((s) => !isHandrawFullLibraryStyle(s))
             }
             if (this.activeIllustrationTab === 'handraw') {
-                let list = this.styles.filter((s) => isHandrawLibraryStyle(s))
+                let list = this.styles.filter((s) => isHandrawLibStyle(s))
                 if (this.activeHandrawGroup !== 'all') {
                     list = list.filter((s) => {
                         const g = s.handrawGroup || handrawGroupFromNumber(handrawNumberFromStyle(s))
@@ -725,7 +724,7 @@ export default {
         handrawStyleReferenceActive() {
             return (
                 this.handrawStyleReferenceAuto
-                && isHandrawLibraryStyle(this.selectedStyle)
+                && isHandrawLibStyle(this.selectedStyle)
                 && this.handrawAutoReferenceIndex >= 0
                 && (this.referenceImageUrls[this.handrawAutoReferenceIndex] || '')
             )
@@ -819,7 +818,7 @@ export default {
             const isDoodle = this.isObjectDoodleStyle(style)
             const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
-            if (isZine || isDoodle || style?.prependBaseOnGenerate || isHandrawLibraryStyle(style)) {
+            if (isZine || isDoodle || style?.prependBaseOnGenerate || isHandrawLibStyle(style)) {
                 let base = ''
                 if (isDoodle) {
                     // 喜茶无字：始终用本地强化底词，避免线上旧文案未绑定参考图
@@ -829,7 +828,7 @@ export default {
                         || style?.elementDetails
                         || ''
                     ).trim()
-                } else if (isHandrawLibraryStyle(style)) {
+                } else if (isHandrawLibStyle(style)) {
                     base = resolveStyleBasePrompt(style)
                 } else {
                     base = String(
@@ -897,7 +896,7 @@ export default {
     },
     methods: {
         isHandrawLibraryStyle(style) {
-            return isHandrawLibraryStyle(style)
+            return isHandrawLibStyle(style)
         },
         styleListImage(style) {
             if (!style) return ''
@@ -1152,7 +1151,7 @@ export default {
         },
         async syncHandrawStyleReference(style) {
             this.removeHandrawAutoReference()
-            if (!style || !isHandrawLibraryStyle(style) || !this.handrawStyleReferenceAuto) {
+            if (!style || !isHandrawLibStyle(style) || !this.handrawStyleReferenceAuto) {
                 return
             }
             const previewUrl = this.styleListImage(style) || style.image || style.imageUrl
@@ -1584,7 +1583,7 @@ export default {
             }
             let refs = (this.referenceImageUrls || []).filter(Boolean)
             if (
-                isHandrawLibraryStyle(this.selectedStyle)
+                isHandrawLibStyle(this.selectedStyle)
                 && this.handrawStyleReferenceAuto
                 && this.handrawAutoReferenceIndex < 0
             ) {
