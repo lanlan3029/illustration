@@ -114,6 +114,10 @@
                 <i class="iconfont icon-lianxiwomen1"></i>
                 <span>{{ $t('nav.connection') }}</span>
               </a></li>
+              <li><a @click.prevent="toAboutUs(); closeSubmenu();" class="dropdown-item dropdown-item--muted">
+                <i class="iconfont icon-other"></i>
+                <span>{{ $t('nav.aboutUs') }}</span>
+              </a></li>
               <li><a @click.prevent="toFeedback(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-lianxiwomen1"></i>
                 <span>{{ $t('nav.feedback') }}</span>
@@ -310,6 +314,10 @@ export default {
 
         const toFeedback = () => {
             router.push('/feedback')
+        }
+
+        const toAboutUs = () => {
+            router.push('/user/about')
         }
 
         const toggleMobileMenu = () => {
@@ -547,6 +555,7 @@ export default {
             toMemberRecharge,
             contactUs,
             toFeedback,
+            toAboutUs,
             goPointsHistory,
             goToRecharge,
             logout,
@@ -867,6 +876,16 @@ export default {
 
 .dropdown-item i {
 	font-size: 16px;
+}
+
+.dropdown-item--muted span {
+	font-size: 13px;
+	color: #909399;
+}
+
+.dropdown-item--muted:hover span,
+.dropdown-item--muted:focus span {
+	color: #8167a9;
 }
 
 /* 语言切换器样式 */

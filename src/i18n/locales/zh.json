@@ -541,6 +541,7 @@
     "subscription": "订阅管理",
     "connection": "创作指南",
     "feedback": "投诉建议",
+    "aboutUs": "关于我们",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
     "websites": "网站推荐",
@@ -2001,6 +2002,7 @@
   },
   "aboutUs": {
     "title": "关于我们",
+    "back": "返回",
     "lead": "KidStory 在部分功能中参考或使用了以下开源项目，特此致谢。",
     "creditsHeading": "借鉴的开源项目",
     "footnote": "完整 npm 依赖清单见项目构建配置；此处仅列出与产品功能直接相关的 GitHub 仓库。"

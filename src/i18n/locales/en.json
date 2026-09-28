@@ -526,6 +526,7 @@
     "subscription": "Subscription",
     "connection": "Guides",
     "feedback": "Feedback",
+    "aboutUs": "About",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
     "websites": "Websites",
@@ -1986,6 +1987,7 @@
   },
   "aboutUs": {
     "title": "About",
+    "back": "Back",
     "lead": "KidStory acknowledges the following open-source projects referenced in product features.",
     "creditsHeading": "Referenced GitHub projects",
     "footnote": "For the full npm dependency list, see the build configuration; only product-related repos are listed here."

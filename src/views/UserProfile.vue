@@ -1,6 +1,6 @@
 <template>
 <div class="container">
-<div class="profile-links only-mobile">
+<div class="profile-links">
   <button type="button" class="profile-link-item" @click="goGenerationHistory">
     <span class="profile-link-label">{{ $t('generationHistory.title') }}</span>
     <span class="profile-link-arrow" aria-hidden="true">›</span>
@@ -9,14 +9,9 @@
     <span class="profile-link-label">{{ $t('guides.contact.title') }}</span>
     <span class="profile-link-arrow" aria-hidden="true">›</span>
   </button>
-  <button type="button" class="profile-link-item" @click="goAboutUs">
-    <span class="profile-link-label profile-link-label--muted">{{ $t('aboutUs.title') }}</span>
+  <button type="button" class="profile-link-item profile-link-item--muted" @click="goAboutUs">
+    <span class="profile-link-label">{{ $t('nav.aboutUs') }}</span>
     <span class="profile-link-arrow" aria-hidden="true">›</span>
-  </button>
-</div>
-<div class="profile-about-desktop only-desktop">
-  <button type="button" class="profile-about-link" @click="goAboutUs">
-    {{ $t('aboutUs.title') }}
   </button>
 </div>
 <div class="box">
@@ -651,43 +646,10 @@ export default {
     line-height: 1;
 }
 
-.profile-link-label--muted {
+.profile-link-item--muted .profile-link-label {
     font-weight: 400;
     font-size: 14px;
     color: #909399;
-}
-
-.profile-about-desktop {
-    width: 100%;
-    max-width: 900px;
-    margin: 16px auto 0;
-    text-align: center;
-}
-
-.profile-about-link {
-    border: none;
-    background: none;
-    padding: 0;
-    font-size: 12px;
-    color: #909399;
-    cursor: pointer;
-}
-
-.profile-about-link:hover {
-    color: #8167a9;
-    text-decoration: underline;
-}
-
-@media (max-width: 768px) {
-    .only-desktop {
-        display: none !important;
-    }
-}
-
-@media (min-width: 769px) {
-    .profile-links.only-mobile {
-        display: none;
-    }
 }
 
 /* 响应式设计 */

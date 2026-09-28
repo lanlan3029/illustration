@@ -35,10 +35,11 @@
             <span class="mp-quick-ico mp-quick-ico--contact">✉</span>
             <span>{{ $t('guides.contact.title') || '联系我们' }}</span>
           </button>
+          <button type="button" class="mp-quick-item mp-quick-item--about" @click="goAboutUs">
+            <span class="mp-quick-ico mp-quick-ico--about">i</span>
+            <span>{{ $t('nav.aboutUs') || '关于我们' }}</span>
+          </button>
         </div>
-        <button type="button" class="mp-about-link" @click="goAboutUs">
-          {{ $t('aboutUs.title') }}
-        </button>
       </div>
 
       <header v-if="studioMode" class="studio-dash-header">
@@ -1712,22 +1713,11 @@ overflow: hidden;
 .mp-quick-ico--home { background: var(--kid-primary-soft, #efeaff); color: var(--kid-primary, #6c5ce7); }
 .mp-quick-ico--set { background: #e7f6f1; color: #2bb894; }
 .mp-quick-ico--contact { background: #eef4ff; color: #5b7fd6; }
+.mp-quick-ico--about { background: #f3f4f6; color: #909399; font-size: 14px; font-weight: 600; font-style: italic; }
 
-.mp-about-link {
-  display: block;
-  width: 100%;
-  margin-top: 10px;
-  padding: 0;
-  border: none;
-  background: none;
-  text-align: center;
-  font-size: 12px;
+.mp-quick-item--about span:last-child {
+  font-size: 13px;
   color: #909399;
-  cursor: pointer;
-}
-
-.mp-about-link:active {
-  color: #8167a9;
 }
 
 /* 响应式设计 - 移动端改为单列（断点统一 768） */
