@@ -1,6 +1,10 @@
 import { backendCategoryToUiTab } from '@/data/illustrationStyleCategories'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
+import { isHandrawIllustrationStyle } from '@/data/handrawStyleCurated'
+import { enrichHandrawMeta } from '@/utils/handrawStyleGroups'
 import { fetchPublicIllustrationStyles } from '@/utils/illustrationStylesApi'
+
+export { isHandrawIllustrationStyle }
 
 /**
  * @typedef {{
@@ -76,7 +80,7 @@ export function normalizeIllustrationStyle(item) {
     skillMode: item.skillMode || '',
     requiresReference: Boolean(item.requiresReference),
   }
-  return sealHiddenBasePrompt(style)
+  return enrichHandrawMeta(sealHiddenBasePrompt(style))
 }
 
 /**
@@ -88,14 +92,24 @@ export function buildFallbackIllustrationStyles(t) {
     const inputKey = `aibooks.styles.${config.key}.inputTemplate`
     const inputRaw = t(inputKey)
     const inputTemplate = inputRaw && inputRaw !== inputKey ? inputRaw : ''
-    const details = t(`aibooks.styles.${config.key}.elementDetails`)
+    const detailsKey = `aibooks.styles.${config.key}.elementDetails`
+    const artKey = `aibooks.styles.${config.key}.artStyle`
+    const detailsFromI18n = t(detailsKey)
+    const artFromI18n = t(artKey)
+    const basePrompt = String(config.basePrompt || '').trim()
+    const details =
+      basePrompt || (detailsFromI18n !== detailsKey ? detailsFromI18n : '')
+    const artStyle =
+      config.artStyleLabel
+      || (artFromI18n !== artKey ? artFromI18n : config.key)
     return sealHiddenBasePrompt({
       id: config.id,
       key: config.key,
       category: config.category,
       uiTab: backendCategoryToUiTab(config.category),
-      artStyle: t(`aibooks.styles.${config.key}.artStyle`),
+      artStyle,
       elementDetails: details,
+      basePrompt: basePrompt || details,
       image: config.image,
       imageUrl: typeof config.image === 'string' ? config.image : String(config.image),
       inputTemplate,
@@ -275,6 +289,7 @@ export function mergeLocalSpecialIllustrationStyles(apiItems, t) {
         || special.key === 'truePhotoAbstractPanel'
         || special.key === 'scenesGatheredZine'
         || special.key === 'sceneDistillationZine'
+        || isHandrawIllustrationStyle(special)
       const base = String(
         preferLocalBase
           ? (special.basePrompt || special.elementDetails || existing.basePrompt || existing.elementDetails || '')

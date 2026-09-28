@@ -32,6 +32,27 @@
                             </button>
                         </div>
 
+                        <div
+                            v-if="activeIllustrationTab === 'handraw'"
+                            class="style-tab-row style-tab-row--handraw"
+                            role="tablist"
+                            :aria-label="$t('aiPicture.handrawGroupTabs') || '手绘库 A–H 分组'"
+                        >
+                            <button
+                                v-for="tab in handrawGroupTabItems"
+                                :key="'hg-' + tab.id"
+                                type="button"
+                                class="style-tab style-tab--compact"
+                                :class="{ active: activeHandrawGroup === tab.id }"
+                                role="tab"
+                                :aria-selected="activeHandrawGroup === tab.id"
+                                :title="tab.title || tab.label"
+                                @click="setHandrawGroup(tab.id)"
+                            >
+                                {{ tab.label }}
+                            </button>
+                        </div>
+
                         <div class="style-list" ref="styleListRef">
                             <button
                                 v-for="style in displayedStyles"
@@ -492,6 +513,13 @@ import {
     isTruePhotoAbstractPanelStyle,
     paperPosterModeFromStyle,
 } from '@/utils/illustrationStyles'
+import {
+    HANDRAW_GROUP_LETTERS,
+    handrawGroupFromNumber,
+    handrawNumberFromStyle,
+    isHandrawFullLibraryStyle,
+    isHandrawLibraryStyle,
+} from '@/utils/handrawStyleGroups'
 
 export default {
     name: 'AIPicture',
@@ -514,6 +542,7 @@ export default {
         return {
             selectedStyleId: null,
             activeIllustrationTab: 'all',
+            activeHandrawGroup: 'all',
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
             displayOrderOai: [],
@@ -598,7 +627,26 @@ export default {
                 { id: 'paint', label: this.$t('aiPicture.styleTabPaint') || '色彩综合' },
                 { id: 'toon', label: this.$t('aiPicture.styleTabToon') || '卡通 / 3D' },
                 { id: 'skill', label: this.$t('aiPicture.styleTabSkill') || 'SKILL' },
+                { id: 'handraw', label: this.$t('aiPicture.styleTabHandraw') || '手绘库' },
             ]
+        },
+        handrawGroupTabItems() {
+            const items = [
+                {
+                    id: 'all',
+                    label: this.$t('aiPicture.handrawGroupAll') || '全部',
+                    title: this.$t('aiPicture.handrawGroupAll') || '全部',
+                },
+            ]
+            for (const letter of HANDRAW_GROUP_LETTERS) {
+                const name = this.$t(`aiPicture.handrawGroup${letter}`) || letter
+                items.push({
+                    id: letter,
+                    label: letter,
+                    title: `${letter} · ${name}`,
+                })
+            }
+            return items
         },
         promptPlaceholder() {
             if (this.isXiaoheiStyle(this.selectedStyle)) {
@@ -617,7 +665,20 @@ export default {
         },
         visibleStyles() {
             if (this.activeIllustrationTab === 'all') return this.styles
-            return this.styles.filter((s) => (s.uiTab || s.category) === this.activeIllustrationTab)
+            if (this.activeIllustrationTab === 'handraw') {
+                let list = this.styles.filter((s) => isHandrawLibraryStyle(s))
+                if (this.activeHandrawGroup !== 'all') {
+                    list = list.filter((s) => {
+                        const g = s.handrawGroup || handrawGroupFromNumber(handrawNumberFromStyle(s))
+                        return g === this.activeHandrawGroup
+                    })
+                }
+                return list
+            }
+            return this.styles.filter((s) => {
+                if (isHandrawFullLibraryStyle(s)) return false
+                return (s.uiTab || s.category) === this.activeIllustrationTab
+            })
         },
         canGenerate() {
             if (this.isPaperPosterStyle(this.selectedStyle) || this.isPhotoEditorialStyle(this.selectedStyle)) {
@@ -776,6 +837,16 @@ export default {
         setIllustrationTab(tabId) {
             if (this.activeIllustrationTab === tabId) return
             this.activeIllustrationTab = tabId
+            if (tabId !== 'handraw') this.activeHandrawGroup = 'all'
+            this.displayOrder = []
+            this.$nextTick(() => {
+                const list = this.$refs.styleListRef
+                if (list) list.scrollTo({ top: 0, behavior: 'auto' })
+            })
+        },
+        setHandrawGroup(groupId) {
+            if (this.activeHandrawGroup === groupId) return
+            this.activeHandrawGroup = groupId
             this.displayOrder = []
             this.$nextTick(() => {
                 const list = this.$refs.styleListRef
@@ -2361,6 +2432,19 @@ export default {
     border-color: #8167a9;
     color: #3d3550;
     font-weight: 500;
+}
+
+.style-tab-row--handraw {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed #e8eaef;
+}
+
+.style-tab--compact {
+    min-width: 2rem;
+    padding: 4px 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .style-item-fallback,

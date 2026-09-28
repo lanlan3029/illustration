@@ -1,3 +1,5 @@
+import { buildHandrawIllustrationStyleConfigs } from '@/data/handrawStyleCurated'
+
 /**
  * AI 插画风格预览图 CDN（与后端 public/prompt/{id}.webp 一致）。
  */
@@ -113,4 +115,5 @@ export const ILLUSTRATION_STYLE_CONFIGS = [
     skillMode: 'photoEditorial',
     requiresReference: true,
   },
+  ...buildHandrawIllustrationStyleConfigs(),
 ]
