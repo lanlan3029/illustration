@@ -6,7 +6,8 @@
  *   TOKEN=<admin_jwt> API_BASE=https://api.kidstory.cc node scripts/import-handraw-styles.mjs
  *   TOKEN=... node scripts/import-handraw-styles.mjs --dry-run
  *
- * 预览图：导入前请将 prompt/37.webp … prompt/48.webp 放到后端 public/prompt/ 并同步 CDN
+ * 预览图：id 为 1018 等（1000+编号）；须 multipart 上传或运维放置 public/prompt/{id}.webp
+ * 仅 JSON 无图请用 upload-handraw-styles-full.mjs；import 单次最多 200 条
  * 可从 handraw 画廊截取对应编号风格图（遵守 MIT / 作者署名约定）。
  */
 

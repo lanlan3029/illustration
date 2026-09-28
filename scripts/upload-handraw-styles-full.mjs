@@ -19,11 +19,20 @@
  *   node scripts/upload-handraw-styles-full.mjs --delay 300
  *
  * id 规则：1000 + handraw 编号（001 → 1001），避免与现有 1–36 冲突
+ *
+ * 上传成功后须把后端 public/prompt/*.webp 同步到 static.kidstory.cc（与 deploy 一致），
+ * 否则前端只能走 api.kidstory.cc/prompt/；若该路径未开放静态文件则会裂图。
  */
 
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import {
+  buildHandrawArtStyleEn,
+  buildHandrawArtStyleZh,
+  buildHandrawElementDetailsEn,
+  buildHandrawElementDetailsZh,
+} from './lib/handrawStyleText.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -102,23 +111,6 @@ function toCamelKey(num, generationName) {
   return key.slice(0, 56)
 }
 
-function buildElementDetails(entry) {
-  const num = entry.number
-  const ref = entry.reference || ''
-  const name = entry.generation_name || ''
-  const traits = entry.traits || ''
-  return [
-    `Handraw style #${num} · ${name}.`,
-    ref ? `Reference index: ${ref}.` : '',
-    `Core visual traits: ${traits}`,
-    'Single illustration vignette. Pure image mode unless user asks for text in picture.',
-    'Flat hand-drawn editorial quality; avoid photorealism and 3D.',
-    'Source: yang0/handraw-style (MIT prompt library).',
-  ]
-    .filter(Boolean)
-    .join('\n\n')
-}
-
 function buildRecords(styles) {
   return styles
     .map((entry) => {
@@ -129,17 +121,16 @@ function buildRecords(styles) {
       if (!imagePath) return null
       const id = ID_OFFSET + numInt
       const key = toCamelKey(num, entry.generation_name)
-      const element = buildElementDetails(entry)
       return {
         id,
         key,
         num,
         numInt,
         category: categoryFromGroup(entry.group),
-        art_style_zh: `#${num} · ${entry.generation_name || entry.reference || 'Handraw'}`,
-        art_style_en: `#${num} · ${entry.generation_name || ''}`.trim(),
-        element_details_zh: element,
-        element_details_en: element,
+        art_style_zh: buildHandrawArtStyleZh(entry),
+        art_style_en: buildHandrawArtStyleEn(entry),
+        element_details_zh: buildHandrawElementDetailsZh(entry),
+        element_details_en: buildHandrawElementDetailsEn(entry),
         imagePath,
         sort_order: numInt,
       }
@@ -166,9 +157,21 @@ async function uploadOne(record) {
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   })
-  const data = await res.json().catch(() => ({}))
+  const text = await res.text()
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    data = { message: text.slice(0, 200) }
+  }
   if (!res.ok || (data.code !== 0 && data.code !== '0')) {
-    throw new Error(data.message || `HTTP ${res.status}`)
+    const hint =
+      res.status === 403 || data.code === 1004
+        ? '（需管理员 JWT，且账号 isadmin）'
+        : res.status === 401
+          ? '（TOKEN 无效或过期）'
+          : ''
+    throw new Error(`${data.message || `HTTP ${res.status}`}${hint}`)
   }
   return data
 }
@@ -210,6 +213,22 @@ async function main() {
 
   if (!token) {
     console.error('缺少 TOKEN（管理员 JWT，与 style-prompt 页登录同一账号）')
+    process.exit(1)
+  }
+
+  try {
+    const probe = await fetch(`${apiBase}/api/admin/illustration-styles/?is_enabled=true`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const probeData = await probe.json().catch(() => ({}))
+    if (!probe.ok || (probeData.code !== 0 && probeData.code !== '0')) {
+      console.error('管理员接口不可用:', probe.status, probeData.message || probeData)
+      console.error('请确认 TOKEN 为管理员登录 token，且 API_BASE 指向生产/测试后端')
+      process.exit(1)
+    }
+    console.log(`管理端当前风格数: ${(probeData.data || []).length}`)
+  } catch (e) {
+    console.error('无法连接 API:', e.message)
     process.exit(1)
   }
 

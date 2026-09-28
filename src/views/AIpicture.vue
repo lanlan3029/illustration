@@ -68,10 +68,11 @@
                                     @mouseleave="beginLeaveStylePreview"
                                 >
                                     <img
-                                        :src="style.image"
+                                        :src="styleListImage(style)"
                                         :alt="style.artStyle"
                                         class="style-list-item-img"
                                         loading="lazy"
+                                        @error="onStyleImageError(style)"
                                     />
                                 </div>
                                 <span class="style-list-item-text">{{ style.artStyle }}</span>
@@ -246,6 +247,10 @@
                                 class="ref-thumb-wrap"
                             >
                                 <img :src="url" alt="reference" class="ref-thumb" />
+                                <span
+                                    v-if="idx === handrawAutoReferenceIndex"
+                                    class="ref-thumb-badge"
+                                >{{ $t('aiPicture.handrawStyleRefBadge') || '风格' }}</span>
                                 <button
                                     type="button"
                                     class="ref-thumb-clear"
@@ -339,6 +344,18 @@
                                 </button>
                             </div>
                         </div>
+
+                        <label
+                            v-if="isHandrawLibraryStyle(selectedStyle)"
+                            class="handraw-ref-toggle advanced-field-row"
+                        >
+                            <input
+                                type="checkbox"
+                                v-model="handrawStyleReferenceAuto"
+                                @change="onHandrawStyleReferenceAutoChange"
+                            />
+                            <span>{{ $t('aiPicture.handrawStyleReferenceAuto') || '垫入手绘库风格示意图作参考（仅学画风）' }}</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -512,7 +529,15 @@ import {
     isMoodScenePaperRedrawStyle,
     isTruePhotoAbstractPanelStyle,
     paperPosterModeFromStyle,
+    resolveStyleBasePrompt,
 } from '@/utils/illustrationStyles'
+import { isHandrawLibraryStyle } from '@/utils/handrawStyleGroups'
+import { loadImageBlob } from '@/utils/canvasImageCompose'
+import {
+    appendHandrawReferenceIsolation,
+    readHandrawStyleReferenceAutoPreference,
+    writeHandrawStyleReferenceAutoPreference,
+} from '@/utils/handrawStyleReference'
 import {
     HANDRAW_GROUP_LETTERS,
     handrawGroupFromNumber,
@@ -520,6 +545,10 @@ import {
     isHandrawFullLibraryStyle,
     isHandrawLibraryStyle,
 } from '@/utils/handrawStyleGroups'
+import {
+    isFeaturedIllustrationStyle,
+    sortStylesFeaturedFirst,
+} from '@/utils/illustrationStyleSort'
 
 export default {
     name: 'AIPicture',
@@ -541,7 +570,7 @@ export default {
     data() {
         return {
             selectedStyleId: null,
-            activeIllustrationTab: 'all',
+            activeIllustrationTab: 'curated',
             activeHandrawGroup: 'all',
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
@@ -568,6 +597,12 @@ export default {
             referenceImageUrls: [],
 
             displayOrder: [],
+            /** 预览图 CDN/API 互为 fallback */
+            styleImageOverrides: {},
+            /** 手绘库：自动垫入 prompt/{id}.webp 作为首张参考图 */
+            handrawStyleReferenceAuto: readHandrawStyleReferenceAutoPreference(),
+            handrawAutoReferenceIndex: -1,
+            handrawStyleReferenceLoading: false,
 
             generating: false,
             generatedImageUrl: null,
@@ -622,6 +657,7 @@ export default {
         },
         illustrationTabItems() {
             return [
+                { id: 'curated', label: this.$t('aiPicture.styleTabCurated') || '精选' },
                 { id: 'all', label: this.$t('aiPicture.styleTabAll') || '全部' },
                 { id: 'sketch', label: this.$t('aiPicture.styleTabSketch') || '线稿手绘' },
                 { id: 'paint', label: this.$t('aiPicture.styleTabPaint') || '色彩综合' },
@@ -664,7 +700,12 @@ export default {
             return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
         visibleStyles() {
-            if (this.activeIllustrationTab === 'all') return this.styles
+            if (this.activeIllustrationTab === 'curated') {
+                return this.styles.filter((s) => isFeaturedIllustrationStyle(s))
+            }
+            if (this.activeIllustrationTab === 'all') {
+                return this.styles.filter((s) => !isHandrawFullLibraryStyle(s))
+            }
             if (this.activeIllustrationTab === 'handraw') {
                 let list = this.styles.filter((s) => isHandrawLibraryStyle(s))
                 if (this.activeHandrawGroup !== 'all') {
@@ -677,8 +718,17 @@ export default {
             }
             return this.styles.filter((s) => {
                 if (isHandrawFullLibraryStyle(s)) return false
+                if (isFeaturedIllustrationStyle(s)) return false
                 return (s.uiTab || s.category) === this.activeIllustrationTab
             })
+        },
+        handrawStyleReferenceActive() {
+            return (
+                this.handrawStyleReferenceAuto
+                && isHandrawLibraryStyle(this.selectedStyle)
+                && this.handrawAutoReferenceIndex >= 0
+                && (this.referenceImageUrls[this.handrawAutoReferenceIndex] || '')
+            )
         },
         canGenerate() {
             if (this.isPaperPosterStyle(this.selectedStyle) || this.isPhotoEditorialStyle(this.selectedStyle)) {
@@ -748,6 +798,12 @@ export default {
             const vis = this.visibleStyles
             const inTab = new Set(vis.map(s => s.id))
             if (!this.displayOrder || !this.displayOrder.length) {
+                if (this.activeIllustrationTab === 'all') {
+                    return sortStylesFeaturedFirst(vis)
+                }
+                if (this.activeIllustrationTab === 'curated') {
+                    return [...vis].sort((a, b) => Number(a.id) - Number(b.id))
+                }
                 return vis
             }
             return this.displayOrder
@@ -763,7 +819,7 @@ export default {
             const isDoodle = this.isObjectDoodleStyle(style)
             const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
-            if (isZine || isDoodle || style?.prependBaseOnGenerate) {
+            if (isZine || isDoodle || style?.prependBaseOnGenerate || isHandrawLibraryStyle(style)) {
                 let base = ''
                 if (isDoodle) {
                     // 喜茶无字：始终用本地强化底词，避免线上旧文案未绑定参考图
@@ -773,6 +829,8 @@ export default {
                         || style?.elementDetails
                         || ''
                     ).trim()
+                } else if (isHandrawLibraryStyle(style)) {
+                    base = resolveStyleBasePrompt(style)
                 } else {
                     base = String(
                         style?.basePrompt
@@ -793,6 +851,10 @@ export default {
                 if (isDoodle) {
                     prompt = this.enrichObjectDoodlePrompt(prompt)
                 }
+            }
+            if (this.handrawStyleReferenceActive) {
+                const loc = this.$i18n?.locale === 'en' ? 'en' : 'zh'
+                prompt = appendHandrawReferenceIsolation(prompt, loc)
             }
             if (this.isCharacterInput(prompt)) {
                 const characterAccuracy = '每个角色严格保持2只手、2只脚，肢体数量准确，解剖结构正常，肢体形态自然连贯，无重复或多余肢体。'
@@ -834,6 +896,39 @@ export default {
         this.stylePreview.show = false
     },
     methods: {
+        isHandrawLibraryStyle(style) {
+            return isHandrawLibraryStyle(style)
+        },
+        styleListImage(style) {
+            if (!style) return ''
+            const id = style.id
+            if (id != null && this.styleImageOverrides[id]) {
+                return this.styleImageOverrides[id]
+            }
+            return style.image || style.imageUrl || ''
+        },
+        onStyleImageError(style) {
+            if (!style || style.id == null) return
+            const current = this.styleListImage(style)
+            if (!current || this.styleImageOverrides[style.id + ':exhausted']) return
+            let next = ''
+            if (current.includes('static.kidstory.cc')) {
+                next = current.replace('static.kidstory.cc', 'api.kidstory.cc')
+            } else if (current.includes('api.kidstory.cc')) {
+                next = current.replace('api.kidstory.cc', 'static.kidstory.cc')
+            }
+            if (next && next !== current) {
+                this.styleImageOverrides = {
+                    ...this.styleImageOverrides,
+                    [style.id]: next,
+                }
+            } else {
+                this.styleImageOverrides = {
+                    ...this.styleImageOverrides,
+                    [`${style.id}:exhausted`]: true,
+                }
+            }
+        },
         setIllustrationTab(tabId) {
             if (this.activeIllustrationTab === tabId) return
             this.activeIllustrationTab = tabId
@@ -1037,13 +1132,60 @@ export default {
         },
 
         clearSelectedStyle() {
+            this.removeHandrawAutoReference()
             this.selectedStyleId = null
+        },
+        removeHandrawAutoReference() {
+            const idx = this.handrawAutoReferenceIndex
+            if (idx >= 0 && idx < this.referenceImageUrls.length) {
+                this.referenceImageUrls.splice(idx, 1)
+            }
+            this.handrawAutoReferenceIndex = -1
+        },
+        async blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onload = () => resolve(reader.result)
+                reader.onerror = () => reject(new Error('read blob failed'))
+                reader.readAsDataURL(blob)
+            })
+        },
+        async syncHandrawStyleReference(style) {
+            this.removeHandrawAutoReference()
+            if (!style || !isHandrawLibraryStyle(style) || !this.handrawStyleReferenceAuto) {
+                return
+            }
+            const previewUrl = this.styleListImage(style) || style.image || style.imageUrl
+            if (!previewUrl) return
+            this.handrawStyleReferenceLoading = true
+            try {
+                const blob = await loadImageBlob(previewUrl, {
+                    http: this.$http,
+                    apiBaseUrl: this.apiBaseUrl,
+                })
+                let dataUrl = await this.blobToDataUrl(blob)
+                dataUrl = await this.compressDataUrlIfNeeded(dataUrl, 420 * 1024)
+                this.referenceImageUrls.unshift(dataUrl)
+                this.handrawAutoReferenceIndex = 0
+            } catch (err) {
+                console.warn('[AIpicture] handraw style reference load failed', err)
+            } finally {
+                this.handrawStyleReferenceLoading = false
+            }
+        },
+        onHandrawStyleReferenceAutoChange() {
+            writeHandrawStyleReferenceAutoPreference(this.handrawStyleReferenceAuto)
+            if (this.handrawStyleReferenceAuto && this.selectedStyle) {
+                this.syncHandrawStyleReference(this.selectedStyle)
+            } else {
+                this.removeHandrawAutoReference()
+            }
         },
         clearSelectedOai() {
             this.selectedOaiTemplateId = null
         },
 
-        selectStyle(styleId) {
+        async selectStyle(styleId) {
             this.selectedStyleId = styleId
             this.selectedOaiTemplateId = null
             const style = this.styles.find(s => s.id === styleId)
@@ -1051,6 +1193,7 @@ export default {
                 this.editableArtStyle = style.artStyle
                 this.editableElementDetails = style.elementDetails
                 this.applyStylePromptToInput(style)
+                await this.syncHandrawStyleReference(style)
                 if (
                     style.preferredSize ||
                     style.prependBaseOnGenerate ||
@@ -1073,6 +1216,7 @@ export default {
         },
         selectOaiTemplate(item) {
             if (!item) return
+            this.removeHandrawAutoReference()
             this.selectedOaiTemplateId = item.id
             this.selectedStyleId = null
             this.subjectScene = (item.prompt || '').trim()
@@ -1235,6 +1379,13 @@ export default {
         },
         removeReferenceAt(index) {
             if (index < 0 || index >= this.referenceImageUrls.length) return
+            if (index === this.handrawAutoReferenceIndex) {
+                this.handrawAutoReferenceIndex = -1
+                this.handrawStyleReferenceAuto = false
+                writeHandrawStyleReferenceAutoPreference(false)
+            } else if (index < this.handrawAutoReferenceIndex) {
+                this.handrawAutoReferenceIndex -= 1
+            }
             this.referenceImageUrls.splice(index, 1)
             this.clearPlansTiedToReference()
         },
@@ -1432,6 +1583,14 @@ export default {
                 return
             }
             let refs = (this.referenceImageUrls || []).filter(Boolean)
+            if (
+                isHandrawLibraryStyle(this.selectedStyle)
+                && this.handrawStyleReferenceAuto
+                && this.handrawAutoReferenceIndex < 0
+            ) {
+                await this.syncHandrawStyleReference(this.selectedStyle)
+                refs = (this.referenceImageUrls || []).filter(Boolean)
+            }
             if (
                 (
                   this.isObjectDoodleStyle(this.selectedStyle)
@@ -2324,6 +2483,41 @@ export default {
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid #e6e8ec;
+}
+
+.ref-thumb-badge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    font-size: 9px;
+    line-height: 1.1;
+    text-align: center;
+    color: #fff;
+    background: rgba(129, 103, 169, 0.92);
+    border-radius: 0 0 6px 6px;
+    padding: 1px 0;
+    pointer-events: none;
+}
+
+.handraw-ref-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #4a4f57;
+    cursor: pointer;
+    max-width: 320px;
+}
+
+.handraw-ref-toggle input {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.advanced-field-row {
+    width: 100%;
 }
 
 .ref-thumb-clear {

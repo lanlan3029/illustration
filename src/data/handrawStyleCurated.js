@@ -1,4 +1,10 @@
-const HANDRAW_PREVIEW_CDN = 'https://static.kidstory.cc'
+import { illustrationStyleImageUrl } from '@/utils/illustrationStyleImages'
+import { HANDRAW_ID_OFFSET } from '@/utils/handrawStyleGroups'
+
+export function handrawStyleApiId(handrawNo) {
+  const n = parseInt(String(handrawNo).replace(/^0+/, '') || '0', 10)
+  return HANDRAW_ID_OFFSET + n
+}
 
 /**
  * 精选 handraw-style 编号 → KidStory AI 插画
@@ -9,8 +15,8 @@ const HANDRAW_PREVIEW_CDN = 'https://static.kidstory.cc'
  * - 预览图：运维放置 public/prompt/{id}.webp 或从 handraw 画廊导出后上传 CDN
  */
 
-/** 新风格占用 id 37–48，与 illustrationStyleConfigs 一致 */
-export const HANDRAW_STYLE_ID_START = 37
+/** handraw 全库 id：1000 + 编号（018 → 1018） */
+export const HANDRAW_STYLE_ID_START = HANDRAW_ID_OFFSET + 1
 
 export const HANDRAW_CURATED_STYLES = [
   {
@@ -220,34 +226,40 @@ export function buildHandrawBasePrompt(item, extras = {}) {
 
 /** POST /api/admin/illustration-styles/import/ 的 items */
 export function buildHandrawImportItems() {
-  return HANDRAW_CURATED_STYLES.map((item) => ({
-    id: item.id,
-    key: item.key,
-    category: item.category,
-    art_style_zh: item.art_style_zh,
-    art_style_en: item.art_style_en,
-    element_details_zh: buildHandrawBasePrompt(item),
-    element_details_en: buildHandrawBasePrompt(item),
-    image_path: `prompt/${item.id}.webp`,
-    sort_order: item.id,
-    is_enabled: true,
-  }))
+  return HANDRAW_CURATED_STYLES.map((item) => {
+    const id = handrawStyleApiId(item.handrawNo)
+    return {
+      id,
+      key: item.key,
+      category: item.category,
+      art_style_zh: item.art_style_zh,
+      art_style_en: item.art_style_en,
+      element_details_zh: buildHandrawBasePrompt(item),
+      element_details_en: buildHandrawBasePrompt(item),
+      image_path: `prompt/${id}.webp`,
+      sort_order: parseInt(item.handrawNo, 10) || id,
+      is_enabled: true,
+    }
+  })
 }
 
 /** 与 ILLUSTRATION_STYLE_CONFIGS 合并的本地条目 */
 export function buildHandrawIllustrationStyleConfigs() {
-  return HANDRAW_CURATED_STYLES.map((item) => ({
-    key: item.key,
-    id: item.id,
-    image: `${HANDRAW_PREVIEW_CDN}/prompt/${item.id}.webp`,
-    category: item.category,
-    prependBaseOnGenerate: true,
-    preferredSize: item.preferredSize || '1024x1024',
-    requiresReference: Boolean(item.requiresReference),
-    basePrompt: buildHandrawBasePrompt(item),
-    artStyleLabel: item.art_style_zh,
-    handrawNo: item.handrawNo,
-  }))
+  return HANDRAW_CURATED_STYLES.map((item) => {
+    const id = handrawStyleApiId(item.handrawNo)
+    return {
+      key: item.key,
+      id,
+      image: illustrationStyleImageUrl(id),
+      category: item.category,
+      prependBaseOnGenerate: true,
+      preferredSize: item.preferredSize || '1024x1024',
+      requiresReference: Boolean(item.requiresReference),
+      basePrompt: buildHandrawBasePrompt(item),
+      artStyleLabel: item.art_style_zh,
+      handrawNo: item.handrawNo,
+    }
+  })
 }
 
 export function isHandrawIllustrationStyle(style) {
@@ -255,5 +267,5 @@ export function isHandrawIllustrationStyle(style) {
   const key = String(style.key || '').toLowerCase()
   if (key.startsWith('handraw')) return true
   const id = Number(style.id)
-  return id >= HANDRAW_STYLE_ID_START && id < HANDRAW_STYLE_ID_START + HANDRAW_CURATED_STYLES.length
+  return id >= HANDRAW_ID_OFFSET + 1 && id <= HANDRAW_ID_OFFSET + 279
 }

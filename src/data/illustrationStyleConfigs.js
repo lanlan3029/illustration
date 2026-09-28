@@ -1,14 +1,12 @@
 import { buildHandrawIllustrationStyleConfigs } from '@/data/handrawStyleCurated'
+import { illustrationStyleImageUrl } from '@/utils/illustrationStyleImages'
+
+export { illustrationStyleImageUrl, resolveIllustrationStyleImageUrl } from '@/utils/illustrationStyleImages'
 
 /**
- * AI 插画风格预览图 CDN（与后端 public/prompt/{id}.webp 一致）。
+ * AI 插画风格预览图 CDN（legacy id 1–36；handraw 全库见 illustrationStyleImages.js）。
  */
 export const ILLUSTRATION_STYLE_CDN_BASE = 'https://static.kidstory.cc'
-
-/** @param {number|string} id */
-export function illustrationStyleImageUrl(id) {
-  return `${ILLUSTRATION_STYLE_CDN_BASE}/prompt/${id}.webp`
-}
 
 /**
  * AI 插画页与心情日记生成页共用的风格列表（fallback；线上优先走 API）。

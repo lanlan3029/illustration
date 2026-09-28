@@ -1,7 +1,9 @@
 import { backendCategoryToUiTab } from '@/data/illustrationStyleCategories'
 import { ILLUSTRATION_STYLE_CONFIGS } from '@/data/illustrationStyleConfigs'
 import { isHandrawIllustrationStyle } from '@/data/handrawStyleCurated'
-import { enrichHandrawMeta } from '@/utils/handrawStyleGroups'
+import { enrichHandrawMeta, handrawNumberFromStyle, isHandrawLibraryStyle } from '@/utils/handrawStyleGroups'
+import { HANDRAW_LIBRARY_INDEX } from '@/data/handrawLibraryIndex'
+import { resolveIllustrationStyleImageUrl } from '@/utils/illustrationStyleImages'
 import { fetchPublicIllustrationStyles } from '@/utils/illustrationStylesApi'
 
 export { isHandrawIllustrationStyle }
@@ -61,7 +63,6 @@ export function resolveStyleBasePrompt(style) {
 }
 
 export function normalizeIllustrationStyle(item) {
-  const imageUrl = item.imageUrl || item.image || ''
   const category = item.category || 'sketch'
   const style = {
     id: item.id,
@@ -71,16 +72,29 @@ export function normalizeIllustrationStyle(item) {
     artStyle: item.artStyle || '',
     elementDetails: item.elementDetails || '',
     basePrompt: item.basePrompt || '',
-    image: imageUrl,
-    imageUrl,
+    handrawNo: item.handrawNo || '',
+    image: '',
+    imageUrl: '',
     inputTemplate: item.inputTemplate || '',
     prependBaseOnGenerate: Boolean(item.prependBaseOnGenerate || item.inputTemplate),
     preferredSize: item.preferredSize || '',
     customGenerate: item.customGenerate || '',
     skillMode: item.skillMode || '',
     requiresReference: Boolean(item.requiresReference),
+    sort_order: item.sort_order,
   }
-  return enrichHandrawMeta(sealHiddenBasePrompt(style))
+  if (isHandrawLibraryStyle({ id: style.id, key: style.key, handrawNo: style.handrawNo })) {
+    style.prependBaseOnGenerate = true
+  }
+  const sealed = enrichHandrawMeta(sealHiddenBasePrompt(style))
+  const resolvedImage = resolveIllustrationStyleImageUrl({
+    ...sealed,
+    imageUrl: item.imageUrl || item.image || '',
+    image: item.image || item.imageUrl || '',
+  })
+  sealed.image = resolvedImage
+  sealed.imageUrl = resolvedImage
+  return sealed
 }
 
 /**
@@ -250,7 +264,69 @@ function findSpecialMatchInList(list, special) {
   if (specialKey === 'truephotoabstractpanel') {
     return list.find((s) => isTruePhotoAbstractPanelStyle(s)) || null
   }
+  if (isHandrawIllustrationStyle(special)) {
+    const no = handrawNumberFromStyle(special)
+    if (no) {
+      return list.find((s) => handrawNumberFromStyle(s) === no) || null
+    }
+  }
   return null
+}
+
+/**
+ * API 未入库时，用本地 handraw 全库索引补全 279 条（与 upload 脚本 id 1000+编号 一致）。
+ * @param {NormalizedStyle[]} list
+ */
+export function mergeHandrawLibraryStyles(list, locale = 'zh') {
+  const out = Array.isArray(list) ? [...list] : []
+  const byId = new Set(out.map((s) => Number(s.id)).filter((n) => n > 0))
+  const loc = locale === 'en' ? 'en' : 'zh'
+
+  for (const row of HANDRAW_LIBRARY_INDEX) {
+    if (byId.has(row.id)) {
+      const existing = out.find((s) => Number(s.id) === row.id)
+      if (existing) {
+        existing.artStyle = loc === 'en' ? row.art_style_en : row.art_style_zh
+        const bp =
+          loc === 'en'
+            ? (row.basePromptEn || row.basePrompt)
+            : row.basePrompt
+        if (bp && (!existing.basePrompt || /^Handraw/i.test(String(existing.basePrompt)) || /^风格编号/i.test(String(existing.basePrompt)))) {
+          existing.basePrompt = bp
+        }
+        existing.prependBaseOnGenerate = true
+        if (!existing.handrawNo) existing.handrawNo = row.handrawNo
+        Object.assign(existing, enrichHandrawMeta(sealHiddenBasePrompt(existing)))
+      }
+      continue
+    }
+    const artStyle = loc === 'en' ? row.art_style_en : row.art_style_zh
+    const basePrompt =
+      loc === 'en'
+        ? (row.basePromptEn || row.basePrompt)
+        : row.basePrompt
+    out.push(
+      normalizeIllustrationStyle({
+        id: row.id,
+        key: row.key,
+        category: row.category,
+        artStyle,
+        elementDetails: '',
+        basePrompt,
+        handrawNo: row.handrawNo,
+        prependBaseOnGenerate: true,
+        sort_order: row.sort_order,
+      })
+    )
+    byId.add(row.id)
+  }
+
+  out.sort((a, b) => {
+    const sa = Number(a.sort_order ?? a.id) || 0
+    const sb = Number(b.sort_order ?? b.id) || 0
+    return sa - sb || Number(a.id) - Number(b.id)
+  })
+  return out
 }
 
 /**
@@ -343,9 +419,10 @@ export async function loadIllustrationStyles(options = {}) {
     .then((items) => {
       const normalized = (items || []).map(normalizeIllustrationStyle)
       if (normalized.length) {
-        const merged = t
-          ? mergeLocalSpecialIllustrationStyles(normalized, t)
-          : normalized
+        const merged = mergeHandrawLibraryStyles(
+          t ? mergeLocalSpecialIllustrationStyles(normalized, t) : normalized,
+          locale
+        )
         cache.items = merged
         cache.locale = locale
         cache.category = category
@@ -363,10 +440,14 @@ export async function loadIllustrationStyles(options = {}) {
         }))
       }
       const fallback = buildFallbackIllustrationStyles(t)
-      cache.items = fallback
+      const merged = mergeHandrawLibraryStyles(
+        t ? mergeLocalSpecialIllustrationStyles(fallback, t) : fallback,
+        locale
+      )
+      cache.items = merged
       cache.locale = locale
       cache.category = category
-      return fallback
+      return merged
     })
     .finally(() => {
       cache.promise = null
