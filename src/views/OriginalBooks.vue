@@ -55,7 +55,7 @@
                   v-if="item.cover"
                   :src="coverUrl(item.cover)"
                   class="book-image"
-                  fit="cover"
+                  fit="contain"
                   :lazy="true"
                   loading="lazy"
                   :preview-src-list="[]"
@@ -513,29 +513,23 @@ export default {
   box-shadow: 0 16px 36px -14px rgba(49, 35, 82, 0.2);
 }
 
-/* ---------- Cover：竖版 3:4，第一页居中裁剪 ---------- */
+/* ---------- Cover：完整封面落在纸色衬底上，不裁切 ---------- */
 .book-cover {
   position: relative;
   width: 100%;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  background: #f0ebe3;
+  background:
+    radial-gradient(90% 50% at 50% 100%, rgba(49, 35, 82, 0.06), transparent 62%),
+    #f4f0ea;
   flex-shrink: 0;
 }
 
-.book-cover::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 6px;
-  z-index: 1;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
-  pointer-events: none;
-}
-
 .book-image {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 14px 12px 12px;
+  width: auto;
+  height: auto;
   display: block;
 }
 
@@ -547,13 +541,14 @@ export default {
 .book-image :deep(.el-image__inner) {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 10px 16px rgba(40, 28, 18, 0.16));
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .book-card:hover .book-image :deep(.el-image__inner) {
-  transform: scale(1.04);
+  transform: translateY(-4px);
 }
 
 .cover-overlay {
