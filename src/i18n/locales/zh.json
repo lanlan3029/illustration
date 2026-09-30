@@ -3127,6 +3127,8 @@
     "postcardTitle": "寄出一张国庆明信片",
     "postcardAlt": "国庆明信片：上方是圆角插画，下方是感受、日期与参与二维码",
     "postcardLoading": "正在装好这份国庆感受…",
+    "memoryLoading": "正在打开这张明信片…",
+    "memoryUnavailable": "这张明信片暂时找不到，可以先写下你的国庆。",
     "retryPostcard": "重新试试",
     "postcardHeading": "让你的国庆，\n唤起另一段假期。",
     "postcardIntro": "把明信片发给朋友。有人想吐槽，有人想铭记，都可以写下来。",

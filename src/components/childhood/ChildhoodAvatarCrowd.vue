@@ -64,7 +64,6 @@
             :src="person.imageUrl"
             alt=""
             decoding="async"
-            referrerpolicy="no-referrer"
           />
           <div v-else class="scene-gallery__text-chip">
             {{ person.note ? person.note.slice(0, 2) : '…' }}
@@ -653,8 +652,6 @@ export default {
 }
 
 .scene-gallery__img {
-  position: absolute;
-  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -730,6 +727,8 @@ export default {
   background: #f6f1e6;
 }
 .scene-gallery--square .scene-gallery__img {
+  position: absolute;
+  inset: 0;
   object-fit: cover;
   object-position: center center;
   border-radius: 22px;

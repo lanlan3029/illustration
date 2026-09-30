@@ -3112,6 +3112,8 @@
     "postcardTitle": "Send a National Day postcard",
     "postcardAlt": "A National Day postcard with a rounded illustration, the feeling, date and QR code",
     "postcardLoading": "Putting this feeling onto a postcard…",
+    "memoryLoading": "Opening this postcard…",
+    "memoryUnavailable": "This postcard can’t be found right now. You can still write your own.",
     "retryPostcard": "Try again",
     "postcardHeading": "One holiday feeling\nbrings back another.",
     "postcardIntro": "Send the postcard to a friend. Complaints and memories both belong here.",

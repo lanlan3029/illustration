@@ -29,7 +29,11 @@
               <button type="button" @click="startWriting">{{ $t('nationalDayMoments.writeMine') }}</button>
             </div>
           </section>
+          <p v-else-if="$route.query.mine" class="nd-postcard__pending" role="status">
+            {{ $t(memoriesReady ? 'nationalDayMoments.memoryUnavailable' : 'nationalDayMoments.memoryLoading') }}
+          </p>
 
+          <div class="moment-panel__body">
           <header class="moment-panel__head">
             <h1 class="moment-panel__title">{{ $t('nationalDayMoments.pageTitle') }}</h1>
             <p class="moment-panel__guide">{{ $t('nationalDayMoments.formGuide') }}</p>
@@ -97,6 +101,7 @@
               }}</span>
             </div>
           </footer>
+          </div>
         </div>
       </aside>
     </section>
@@ -154,6 +159,7 @@ export default {
       posterDataUrl: '',
       posterToken: 0,
       lastMemory: null,
+      memoriesReady: false,
       savedPictureId: '',
       savedImageUrl: '',
       savedStory: '',
@@ -274,6 +280,11 @@ export default {
       this.sceneCount = payload?.count || 0
       this.sceneAvatars = payload?.avatars || []
       this.memories = payload?.memories || []
+      this.memoriesReady = true
+      const sharedId = String(this.$route.query.mine || '')
+      if (!sharedId || this.selectedMemory) return
+      const shared = this.memories.find((memory) => String(memory.id) === sharedId)
+      if (shared) this.selectedMemory = shared
     },
     startWriting() {
       this.$nextTick(() => {
@@ -708,23 +719,33 @@ export default {
     flex-direction: column;
     min-height: 0;
   }
-  .moment-split__left {
-    order: 0;
-    height: 40dvh;
-    min-height: 260px;
-    padding: 6px 10px 0;
+  .moment-split__right,
+  .moment-panel__inner {
+    display: contents;
   }
-  .moment-split__right {
+  .nd-postcard {
     order: 1;
-    margin-top: -22px;
-    border: 0;
+    margin: 0;
+    padding: 16px 16px 8px;
+  }
+  .moment-split__left {
+    order: 2;
+    height: 42dvh;
+    min-height: 240px;
+    margin: 0;
+    padding: 8px 10px 12px;
+  }
+  .moment-panel__body {
+    order: 3;
+    padding: 22px 20px 8px;
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgba(232, 184, 74, 0.28), transparent 46%),
+      linear-gradient(180deg, #fff6ef 0%, #fde8dc 100%);
     border-radius: 28px 28px 0 0;
-    box-shadow: 0 -18px 40px rgba(155, 44, 38, 0.08);
-    min-height: 0;
   }
   .moment-panel__inner {
     max-width: none;
-    padding: 26px 20px 8px;
+    padding: 0;
   }
   .moment-panel__head {
     margin-bottom: 16px;

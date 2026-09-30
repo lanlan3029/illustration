@@ -49,10 +49,11 @@ export function buildShareTitle(story) {
 
 export function buildShareLink(pictureId, baseHref) {
   try {
-    const origin = typeof window !== 'undefined' && /(^|\.)kidstory\.cc$/.test(window.location.hostname)
-      ? window.location.origin : 'https://www.kidstory.cc'
-    const url = new URL('/national-day', baseHref || origin)
-    if (pictureId) url.searchParams.set('mine', pictureId)
+    const origin = baseHref
+      || (typeof window !== 'undefined' ? window.location.origin : 'https://www.kidstory.cc')
+    const url = new URL('/national-day', origin)
+    const id = String(pictureId || '').trim()
+    if (id && !id.startsWith('nd-')) url.searchParams.set('mine', id)
     return url.toString()
   } catch {
     return baseHref || ''
