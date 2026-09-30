@@ -22,7 +22,7 @@
             <blockquote>{{ activeMemory.note }}</blockquote>
             <time v-if="memoryDate">{{ memoryDate }}</time>
             <div class="memory-letter__actions">
-              <button type="button" @click="copyShareLink">{{ $t('nationalDayMoments.copyLink') }}</button>
+              <button type="button" @click="postcardOpen = true">{{ $t('nationalDayMoments.makePostcard') }}</button>
               <button type="button" @click="startWriting">{{ $t('nationalDayMoments.writeMine') }}</button>
             </div>
           </section>
@@ -97,6 +97,7 @@
         </div>
       </aside>
     </section>
+    <NationalDayPostcard v-model="postcardOpen" :memory="activeMemory" :crowd-srcs="postcardCrowdUrls" />
   </div>
 </template>
 
@@ -104,6 +105,7 @@
 import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
+import NationalDayPostcard from '@/components/national-day/NationalDayPostcard.vue'
 import { formatPostcardDate } from '@/utils/childhoodSharePoster'
 import {
   extractPictureId,
@@ -133,12 +135,13 @@ import {
 
 export default {
   name: 'NationalDay',
-  components: { ChildhoodAvatarCrowd },
+  components: { ChildhoodAvatarCrowd, NationalDayPostcard },
   data() {
     return {
       subjectScene: '',
       selectedMemory: null,
       memories: [],
+      postcardOpen: false,
       pictureType: NATIONAL_DAY_PICTURE_TYPE,
       generating: false,
       placeholderIndex: 0,
@@ -174,6 +177,12 @@ export default {
     },
     generatedPrompt() {
       return buildNationalDayPrompt(this.subjectScene)
+    },
+    postcardCrowdUrls() {
+      return this.memories
+        .filter((memory) => memory.id !== this.activeMemory?.id)
+        .slice(0, 4)
+        .map((memory) => memory.imageUrl)
     },
     memoryDate() {
       return this.activeMemory?.createdAt ? formatPostcardDate(this.activeMemory.createdAt) : ''
@@ -358,6 +367,7 @@ export default {
           // ignore quota
         }
         ElMessage.success(this.$t('nationalDayMoments.generateSuccess'))
+        this.postcardOpen = true
         this.applyWeChatShare()
       } catch (err) {
         console.error('[NationalDay] shareMoment failed', err)
@@ -368,18 +378,6 @@ export default {
         })
       } finally {
         this.generating = false
-      }
-    },
-    async copyShareLink() {
-      const memory = this.activeMemory
-      if (!memory) return
-      const url = memory.isSeed ? buildShareLink('') : buildShareLink(memory.id)
-      const text = `${buildShareTitle(memory.note)}\n\n${this.$t('nationalDayMoments.invitationText')}\n${url}`
-      try {
-        await navigator.clipboard.writeText(text)
-        ElMessage.success(this.$t('nationalDayMoments.linkCopied'))
-      } catch {
-        ElMessage.warning(this.$t('nationalDayMoments.copyManually'))
       }
     },
     buildSharePayload() {
@@ -606,5 +604,92 @@ export default {
   .moment-panel__title { font-size: 34px; }
   .moment-form__input { min-height: 160px; }
   .moment-split__left { height: min(68dvh, 620px); min-height: 340px; padding: 24px 16px; }
+}
+
+@media (max-width: 768px) {
+  .moment-page {
+    background: #f6efe8;
+  }
+  .moment-split {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .moment-split__left {
+    order: 0;
+    height: 40dvh;
+    min-height: 260px;
+    padding: 6px 10px 0;
+  }
+  .moment-split__right {
+    order: 1;
+    margin-top: -22px;
+    border: 0;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -18px 40px rgba(155, 44, 38, 0.08);
+    min-height: 0;
+  }
+  .moment-panel__inner {
+    max-width: none;
+    padding: 26px 20px 8px;
+  }
+  .moment-panel__head {
+    margin-bottom: 16px;
+  }
+  .moment-panel__head::before {
+    width: 36px;
+    height: 3px;
+    margin-bottom: 14px;
+  }
+  .moment-panel__title {
+    font-size: 30px;
+    margin-bottom: 8px;
+  }
+  .moment-panel__guide {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .memory-prompts {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -20px 14px;
+    padding: 0 20px 6px;
+    scrollbar-width: none;
+  }
+  .memory-prompts::-webkit-scrollbar { display: none; }
+  .memory-prompts button {
+    flex-shrink: 0;
+    padding: 8px 14px;
+  }
+  .moment-form__input {
+    min-height: 128px;
+    padding: 16px;
+    border-radius: 16px;
+    font-size: 16px;
+  }
+  .moment-form__actions { margin-top: 14px; }
+  .moment-btn {
+    min-height: 52px;
+    border-radius: 14px;
+  }
+  .moment-form__shortcut { display: none; }
+  .memory-letter {
+    padding: 14px;
+    margin-bottom: 18px;
+    border-radius: 18px;
+  }
+  .memory-letter blockquote {
+    font-size: 16px;
+    max-height: 140px;
+  }
+  .memory-letter__actions button {
+    min-height: 36px;
+    border-radius: 999px;
+    padding: 8px 14px;
+  }
+  .moment-panel__stats {
+    margin-top: 18px;
+    padding-top: 14px;
+  }
 }
 </style>

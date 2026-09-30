@@ -9,6 +9,17 @@
           </a>
         </div>
 
+        <button
+          v-if="isMobile"
+          type="button"
+          class="mobile-nav-button"
+          :aria-expanded="mobileMenuVisible"
+          :aria-label="$t('nav.menu')"
+          @click="toggleMobileMenu"
+        >
+          <span /><span /><span />
+        </button>
+
         <!-- 桌面导航 -->
         <ul class="navbar-nav desktop-nav">
           <!-- 首页（导航数据见 setup 中的 navItems） -->
@@ -154,6 +165,28 @@
         </ul>
       </div>
     </nav>
+    <div v-if="isMobile && mobileMenuVisible" class="mobile-nav-sheet">
+      <section>
+        <p class="mobile-nav-sheet__label">{{ $t('nav.activities') }}</p>
+        <router-link
+          v-for="item in activityItems"
+          :key="item.to"
+          :to="item.to"
+          class="mobile-nav-sheet__link"
+          @click="closeMobileMenu"
+        >{{ $t(item.label) }}</router-link>
+      </section>
+      <section>
+        <p class="mobile-nav-sheet__label">{{ $t('nav.tools') }}</p>
+        <router-link
+          v-for="item in creationItems"
+          :key="'tool-' + item.to"
+          :to="item.to"
+          class="mobile-nav-sheet__link"
+          @click="closeMobileMenu"
+        >{{ $t(item.label) }}</router-link>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -517,6 +550,7 @@ export default {
             // 监听路由变化，关闭下拉菜单并重置滚动状态
             watch(() => route.path, (to) => {
                 closeSubmenu()
+                mobileMenuVisible.value = false
                 // 如果跳转到 Editorpro 页面，重置滚动状态
                 if (to === '/editorpro') {
                     nextTick(() => {
@@ -646,6 +680,62 @@ export default {
 .navbar-header {
 	display: flex;
 	align-items: center;
+}
+
+.mobile-nav-button {
+	display: none;
+	width: 36px;
+	height: 36px;
+	margin-left: auto;
+	padding: 8px;
+	border: 0;
+	background: transparent;
+	flex-direction: column;
+	justify-content: center;
+	gap: 5px;
+	cursor: pointer;
+}
+
+.mobile-nav-button span {
+	display: block;
+	height: 2px;
+	border-radius: 2px;
+	background: #303133;
+}
+
+.mobile-nav-sheet {
+	position: absolute;
+	top: 50px;
+	left: 0;
+	right: 0;
+	max-height: calc(100dvh - 50px - 58px);
+	overflow-y: auto;
+	padding: 8px 16px 20px;
+	background: #fff;
+	border-bottom: 1px solid #ececf0;
+	box-shadow: 0 16px 32px -20px rgba(49, 35, 82, 0.35);
+}
+
+.mobile-nav-sheet__label {
+	margin: 14px 4px 6px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: #8a8aa3;
+}
+
+.mobile-nav-sheet__link {
+	display: block;
+	padding: 12px 8px;
+	border-radius: 8px;
+	color: #303133;
+	text-decoration: none;
+	font-size: 15px;
+}
+
+.mobile-nav-sheet__link.router-link-active {
+	color: #6c5ce7;
+	background: #f4f1fb;
 }
 
 .navbar-brand {
@@ -1081,7 +1171,8 @@ export default {
 		display: none;
 	}
 
-	.hamburger-button {
+	.hamburger-button,
+	.mobile-nav-button {
 		display: inline-flex;
 	}
 
