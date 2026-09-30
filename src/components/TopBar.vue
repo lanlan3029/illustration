@@ -27,6 +27,17 @@
             </ul>
           </li>
 
+          <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'activities', 'active': isActivitiesNavActive }">
+            <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('activities')">
+              {{ $t('nav.activities') }}
+            </a>
+            <ul class="dropdown-menu">
+              <li v-for="item in activityItems" :key="item.to">
+                <router-link :to="item.to" class="dropdown-item" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
+              </li>
+            </ul>
+          </li>
+
           <!-- 其余简单导航项（与手机端共用 navItems 配置） -->
           <li
             v-for="item in desktopRestItems"
@@ -193,7 +204,11 @@ export default {
             { key: 'websites', to: '/websites', label: 'nav.websites', mobile: true },
             { key: 'blog', to: '/blog', label: 'nav.blog', mobile: true },
             { key: 'moodDiary', to: '/mood-diary', label: 'nav.moodDiary', linkClass: 'nav-link-mood-diary', mobile: true },
-            { key: 'nationalDay', to: '/national-day', label: 'nav.nationalDay', mobile: true },
+        ]
+
+        const activityItems = [
+            { to: '/childhood', label: 'nav.childhood' },
+            { to: '/national-day', label: 'nav.nationalDay' },
         ]
 
         // 「创作」下拉项配置（同样集中管理）
@@ -225,6 +240,11 @@ export default {
                 p.startsWith('/user/upload/compose-illustration') ||
                 p.startsWith('/creation-studio/book/topdf')
             )
+        })
+
+        const isActivitiesNavActive = computed(() => {
+            const p = route.path
+            return p.startsWith('/childhood') || p.startsWith('/national-day') || p.startsWith('/guoqing')
         })
 
         const isMoodDiaryRoute = computed(() => route.path.startsWith('/mood-diary'))
@@ -522,6 +542,8 @@ export default {
             mobileMenuVisible,
             navItems,
             creationItems,
+            activityItems,
+            isActivitiesNavActive,
             homeNavItem,
             desktopRestItems,
             mobileItems,

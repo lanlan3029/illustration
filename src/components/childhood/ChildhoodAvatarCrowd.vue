@@ -77,14 +77,17 @@
 
 <script>
 import {
+  CHILDHOOD_PICTURE_TYPE,
   createFreshPersonFromRecord,
   extractPictureId,
-  fetchChildhoodScenes,
+  fetchPictureScenes,
 } from '@/utils/childhoodPictureApi'
 import {
   createPerson,
   createPersonFromPicture,
+  hashSeed,
   loadCrowdFromStorage,
+  makeSeededJitter,
   saveCrowdToStorage,
 } from '@/utils/avatarCrowd'
 import { layoutGalleryScenes } from '@/utils/childhoodSceneLayout'
@@ -108,6 +111,18 @@ export default {
     highlightId: {
       type: String,
       default: '',
+    },
+    pictureType: {
+      type: String,
+      default: '',
+    },
+    extraPeople: {
+      type: Array,
+      default: () => [],
+    },
+    useLocalCrowd: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
@@ -255,29 +270,53 @@ export default {
       return next
     },
 
+    localSeedPeople() {
+      return (this.extraPeople || []).map((person, index) => ({
+        ...person,
+        id: person.id || `seed-${index}`,
+        isSeed: true,
+        visible: false,
+        tipOpen: false,
+        jitter: person.jitter || makeSeededJitter(hashSeed(person.id || index)),
+      }))
+    },
+
     async loadInitialPeople(options = {}) {
+      const locals = this.localSeedPeople()
+      const knownNotes = new Set(locals.map((person) => String(person.note || '').replace(/\s+/g, '')))
       let seedPeople = []
       try {
-        const list = await fetchChildhoodScenes(this.$http)
+        const list = await fetchPictureScenes(
+          this.$http,
+          this.pictureType || CHILDHOOD_PICTURE_TYPE
+        )
         seedPeople = list
           .map((item, index) => createPersonFromPicture(item, index))
           .filter((person) => person.imageUrl)
-        seedPeople = this.mergeFreshPerson(seedPeople, options)
+          .filter((person) => !knownNotes.has(String(person.note || '').replace(/\s+/g, '')))
+        seedPeople = this.mergeFreshPerson([...locals, ...seedPeople], options)
         this.bootError = ''
       } catch (err) {
-        console.error('[ChildhoodAvatarCrowd] fetch childhood pictures failed', err)
-        this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
-        if (options.freshRecord) {
-          seedPeople = this.mergeFreshPerson([], options)
+        console.error('[ChildhoodAvatarCrowd] fetch pictures failed', err)
+        if (locals.length) {
+          seedPeople = this.mergeFreshPerson(locals, options)
+          this.bootError = ''
+        } else {
+          this.bootError = this.$t('childhoodMoments.crowdLoadFailed')
+          if (options.freshRecord) {
+            seedPeople = this.mergeFreshPerson([], options)
+          }
         }
       }
 
-      const userPeople = loadCrowdFromStorage().map((p) => ({
-        ...p,
-        isSeed: false,
-        visible: false,
-        tipOpen: false,
-      }))
+      const userPeople = this.useLocalCrowd
+        ? loadCrowdFromStorage().map((p) => ({
+          ...p,
+          isSeed: false,
+          visible: false,
+          tipOpen: false,
+        }))
+        : []
       this.people = [...seedPeople, ...userPeople]
       this.warmPeople(this.people)
       this.$nextTick(() => {

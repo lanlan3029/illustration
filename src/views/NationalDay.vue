@@ -2,25 +2,16 @@
   <div class="moment-page">
     <section class="moment-split">
       <div class="moment-split__left">
-        <div class="nd-gallery" :aria-label="$t('nationalDayMoments.galleryLabel')">
-          <header class="nd-gallery__head">
-            <p>{{ $t('nationalDayMoments.galleryLabel') }}</p>
-            <span>{{ $t('nationalDayMoments.galleryCount', { count: memories.length }) }}</span>
-          </header>
-          <div class="nd-gallery__grid">
-            <button
-              v-for="memory in memories"
-              :key="memory.id"
-              type="button"
-              class="nd-card"
-              :class="{ 'nd-card--active': activeMemory && activeMemory.id === memory.id }"
-              @click="selectMemory(memory)"
-            >
-              <img :src="memory.imageUrl" :alt="memory.title || memory.note" />
-              <span>{{ memory.title || excerpt(memory.note) }}</span>
-            </button>
-          </div>
-        </div>
+        <ChildhoodAvatarCrowd
+          ref="crowdRef"
+          variant="hero"
+          :picture-type="pictureType"
+          :extra-people="seedPeople"
+          :use-local-crowd="false"
+          :highlight-id="highlightPictureId"
+          @count-change="onCrowdUpdate"
+          @select-memory="selectMemory"
+        />
       </div>
 
       <aside class="moment-split__right">
@@ -29,6 +20,7 @@
             <p class="memory-letter__eyebrow">{{ $t('nationalDayMoments.memoryLetter') }}</p>
             <img :src="activeMemory.imageUrl" :alt="$t('nationalDayMoments.memoryImage')" />
             <blockquote>{{ activeMemory.note }}</blockquote>
+            <time v-if="memoryDate">{{ memoryDate }}</time>
             <div class="memory-letter__actions">
               <button type="button" @click="copyShareLink">{{ $t('nationalDayMoments.copyLink') }}</button>
               <button type="button" @click="startWriting">{{ $t('nationalDayMoments.writeMine') }}</button>
@@ -72,6 +64,7 @@
               >
                 <span v-if="generating" class="moment-btn__spinner" aria-hidden="true" />
                 {{ generating ? $t('nationalDayMoments.sharing') : $t('nationalDayMoments.share') }}
+                <svg v-if="!generating" class="moment-btn__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
             </div>
             <p class="moment-form__shortcut">{{ $t('nationalDayMoments.formShortcut') }}</p>
@@ -82,11 +75,21 @@
             </div>
           </div>
 
-          <footer class="moment-panel__stats">
+          <footer v-if="sceneCount > 0" class="moment-panel__stats">
+            <div v-if="sceneAvatars.length" class="moment-panel__stats-avatars" aria-hidden="true">
+              <img
+                v-for="(url, index) in sceneAvatars"
+                :key="`${url}-${index}`"
+                class="moment-panel__stats-avatar"
+                :src="url"
+                alt=""
+                decoding="async"
+              />
+            </div>
             <div class="moment-panel__stats-meta">
               <span class="moment-panel__stats-live">{{ $t('nationalDayMoments.communityLive') }}</span>
               <span class="moment-panel__stats-time">{{
-                $t('nationalDayMoments.communityTime', { count: memories.length })
+                $t('nationalDayMoments.communityTime', { count: sceneCount, time: communityTimeLabel })
               }}</span>
             </div>
           </footer>
@@ -99,11 +102,11 @@
 <script>
 import { ElMessage } from 'element-plus'
 import { mapState } from 'vuex'
-import { createPersonFromPicture } from '@/utils/avatarCrowd'
+import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
+import { formatPostcardDate } from '@/utils/childhoodSharePoster'
 import {
   extractPictureId,
   extractPictureRecord,
-  fetchPictureScenes,
   resolvePictureUrl,
 } from '@/utils/childhoodPictureApi'
 import { loadImageBlob } from '@/utils/canvasImageCompose'
@@ -124,21 +127,27 @@ import {
   buildNationalDayPictureTitle,
   buildShareLink,
   buildShareTitle,
-  normalizeFeeling,
   seedMemories,
   toAbsoluteShareUrl,
 } from '@/utils/nationalDayMoments'
 
 export default {
   name: 'NationalDay',
+  components: { ChildhoodAvatarCrowd },
   data() {
     return {
       subjectScene: '',
       selectedMemory: null,
-      memories: seedMemories(),
+      memories: [],
+      seedPeople: seedMemories(),
+      pictureType: NATIONAL_DAY_PICTURE_TYPE,
       generating: false,
       placeholderIndex: 0,
       placeholderTimer: null,
+      sceneCount: 0,
+      sceneAvatars: [],
+      communityClock: Date.now(),
+      clockTimer: null,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
       wxShareReady: false,
     }
@@ -167,6 +176,18 @@ export default {
     generatedPrompt() {
       return buildNationalDayPrompt(this.subjectScene)
     },
+    memoryDate() {
+      return this.activeMemory?.createdAt ? formatPostcardDate(this.activeMemory.createdAt) : ''
+    },
+    highlightPictureId() {
+      return this.$route.query.mine || localStorage.getItem(MY_PICTURE_ID_KEY) || ''
+    },
+    communityTimeLabel() {
+      const d = new Date(this.communityClock)
+      const hh = String(d.getHours()).padStart(2, '0')
+      const mm = String(d.getMinutes()).padStart(2, '0')
+      return `${hh}:${mm}`
+    },
   },
   watch: {
     '$route.query.mine'() {
@@ -178,8 +199,10 @@ export default {
   },
   mounted() {
     this.$store.commit('closeMask')
-    this.loadSharedFeelings()
     this.initWeChatShare()
+    this.clockTimer = setInterval(() => {
+      this.communityClock = Date.now()
+    }, 60000)
     this.placeholderTimer = setInterval(() => {
       if (this.subjectScene.trim()) return
       this.placeholderIndex = (this.placeholderIndex + 1) % this.scenePlaceholderList.length
@@ -187,14 +210,16 @@ export default {
   },
   beforeUnmount() {
     clearInterval(this.placeholderTimer)
+    clearInterval(this.clockTimer)
   },
   methods: {
-    excerpt(text) {
-      const value = String(text || '').trim()
-      return value.length > 18 ? `${value.slice(0, 18)}…` : value
-    },
     selectMemory(memory) {
       this.selectedMemory = memory
+    },
+    onCrowdUpdate(payload) {
+      this.sceneCount = payload?.count || 0
+      this.sceneAvatars = payload?.avatars || []
+      this.memories = payload?.memories || []
     },
     startWriting() {
       this.$nextTick(() => {
@@ -218,19 +243,6 @@ export default {
       ElMessage.warning(this.$t('nationalDayMoments.pleaseLogin'))
       this.$store.commit('showMask')
       return false
-    },
-    async loadSharedFeelings() {
-      try {
-        const list = await fetchPictureScenes(this.$http, NATIONAL_DAY_PICTURE_TYPE)
-        const seeds = seedMemories()
-        const known = new Set(seeds.map((item) => normalizeFeeling(item.note)))
-        const extra = list
-          .map((item, index) => createPersonFromPicture(item, index))
-          .filter((person) => person.imageUrl && !known.has(normalizeFeeling(person.note)))
-        this.memories = [...seeds, ...extra]
-      } catch (err) {
-        console.error('[NationalDay] load feelings failed', err)
-      }
     },
     async imageUrlToDataUrl(url) {
       const blob = await loadImageBlob(url, { http: this.$http, apiBaseUrl: this.apiBaseUrl })
@@ -289,7 +301,8 @@ export default {
           desc: sceneText,
           is_public: 1,
         })
-        const record = extractPictureRecord(response)
+        const record = extractPictureRecord(response) || {}
+        if (!record.description) record.description = sceneText
         const pictureId = extractPictureId(record)
         const uploadedUrl = resolvePictureUrl(record) || dataUrl
         const memory = {
@@ -298,11 +311,14 @@ export default {
           note: sceneText,
           imageUrl: uploadedUrl,
           isSeed: false,
-          createdAt: record?.createdAt || new Date().toISOString(),
+          createdAt: record.createdAt || new Date().toISOString(),
         }
-        const known = new Set(this.memories.map((item) => item.id))
-        if (!known.has(memory.id)) this.memories = [...this.memories, memory]
         this.selectedMemory = memory
+        await this.$refs.crowdRef?.refreshScenes({
+          anchorId: pictureId,
+          freshRecord: record,
+          freshImageUrl: uploadedUrl,
+        })
         this.subjectScene = ''
         try {
           localStorage.setItem(STORAGE_KEY, uploadedUrl.startsWith('data:') ? '' : uploadedUrl)
@@ -393,32 +409,36 @@ export default {
 <style scoped>
 .moment-page {
   --moment-stage-height: calc(100dvh - 90px);
-  --moment-cream: #f7f3ea;
-  --moment-panel-bg: #f3ebe3;
-  --moment-accent: #b85c4a;
-  --moment-accent-deep: #8d4336;
-  --moment-ink: #3e3834;
-  --moment-muted: #7a736c;
-  --moment-line: #e2d8ce;
+  --moment-cream: #f8f5ef;
+  --moment-panel-bg: #f0eae0;
+  --moment-accent: #587784;
+  --moment-accent-deep: #425e69;
+  --moment-ink: #3e403b;
+  --moment-muted: #75766d;
+  --moment-line: #d9d5cb;
   width: 100%;
   min-height: var(--moment-stage-height);
   background: var(--moment-cream);
   color: var(--moment-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
   text-align: left;
 }
 .moment-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(340px, 1fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(360px, 1fr);
   min-height: var(--moment-stage-height);
 }
 .moment-split__left {
+  display: flex;
   min-width: 0;
   height: var(--moment-stage-height);
-  overflow: auto;
-  padding: 28px 24px 40px;
+  padding: clamp(24px, 3vw, 48px) clamp(16px, 2vw, 36px);
   box-sizing: border-box;
 }
+.moment-split__left :deep(.scene-gallery--hero) { flex: 1; min-height: 0; }
 .moment-split__right {
+  display: flex;
+  min-width: 0;
   min-height: var(--moment-stage-height);
   background: var(--moment-panel-bg);
   border-left: 1px solid var(--moment-line);
@@ -427,192 +447,127 @@ export default {
   width: 100%;
   max-width: 560px;
   margin: auto;
-  padding: 48px clamp(24px, 3vw, 56px);
+  padding: 64px clamp(28px, 3.4vw, 64px);
   box-sizing: border-box;
+  animation: moment-arrive 700ms cubic-bezier(.22, 1, .36, 1) both;
 }
-.nd-gallery__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.nd-gallery__head p {
-  margin: 0;
-  font-family: 'Songti SC', 'Noto Serif SC', serif;
-  font-size: 18px;
-}
-.nd-gallery__head span { color: var(--moment-muted); font-size: 13px; }
-.nd-gallery__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-}
-.nd-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid rgba(62, 56, 52, 0.08);
-  border-radius: 16px;
-  background: #fffdf8;
-  cursor: pointer;
-  text-align: left;
-  color: inherit;
-  font: inherit;
-}
-.nd-card img {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: contain;
-  border-radius: 10px;
-  background: #f6f1e6;
-  display: block;
-}
-.nd-card span {
-  font-size: 13px;
-  line-height: 1.45;
-  padding: 0 4px 4px;
-}
-.nd-card--active,
-.nd-card:hover {
-  border-color: #e7c7be;
-  box-shadow: 0 10px 24px -16px rgba(141, 67, 54, 0.45);
-}
-.moment-panel__head { margin-bottom: 28px; }
+.moment-panel__head { margin-bottom: 36px; }
 .moment-panel__head::before {
   content: '';
   display: block;
   width: 56px;
   height: 4px;
-  margin-bottom: 22px;
-  background: var(--moment-accent);
+  margin-bottom: 26px;
+  background: #cf806a;
 }
 .moment-panel__title {
-  margin: 0 0 14px;
-  font-family: 'Songti SC', 'Noto Serif SC', serif;
-  font-size: clamp(30px, 3vw, 44px);
+  margin: 0 0 18px;
+  font-family: 'Songti SC', 'Noto Serif SC', 'STSong', 'SimSun', serif;
+  font-size: clamp(30px, 3.1vw, 48px);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
+  letter-spacing: .025em;
+  color: var(--moment-ink);
 }
-.moment-panel__guide { margin: 0; font-size: 14px; line-height: 1.85; color: var(--moment-muted); }
-.moment-form__card { position: relative; }
+.moment-panel__guide { margin: 0; font-size: 14px; line-height: 1.9; color: var(--moment-muted); }
+.moment-form__card { position: relative; width: 100%; }
 .moment-form__input {
   display: block;
   width: 100%;
-  min-height: 180px;
-  padding: 18px;
-  border: 1px solid #d8cfc6;
+  min-height: 214px;
+  padding: 22px;
+  border: 1px solid #d2cfc6;
   border-radius: 10px;
   background: #fff;
+  box-shadow: 0 4px 16px rgba(81, 78, 75, .025);
   font: inherit;
   font-size: 16px;
-  line-height: 1.8;
+  line-height: 1.85;
   color: var(--moment-ink);
   resize: vertical;
+  outline: none;
   box-sizing: border-box;
+  transition: border-color 220ms ease, box-shadow 220ms ease;
 }
-.moment-form__input:focus { outline: 2px solid rgba(184, 92, 74, 0.35); border-color: var(--moment-accent); }
-.moment-form__actions { margin-top: 16px; }
+.moment-form__input:focus {
+  border-color: var(--moment-accent);
+  box-shadow: 0 0 0 3px rgba(88, 119, 132, .12), 0 8px 22px rgba(81, 78, 75, .04);
+}
+.moment-form__input::placeholder { color: #86867d; }
+.moment-form__actions { margin-top: 22px; }
 .moment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  min-height: 48px;
-  border: 0;
+  min-height: 50px;
+  padding: 12px 24px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: var(--moment-accent);
-  color: #fff;
   font: inherit;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
-.moment-btn:disabled { background: #e4cfc8; color: #8a6a62; cursor: not-allowed; }
-.moment-form__shortcut,
-.moment-form__privacy { margin: 10px 0 0; color: var(--moment-muted); font-size: 12px; text-align: center; }
+.moment-btn--primary { background: var(--moment-accent); color: #fff; }
+.moment-btn--primary:hover:not(:disabled) {
+  background: var(--moment-accent-deep);
+  box-shadow: 0 6px 16px rgba(88, 119, 132, .16);
+  transform: translateY(-2px);
+}
+.moment-btn:disabled { background: #d2dcd9; color: #566a68; cursor: not-allowed; }
+.moment-btn__arrow { transition: transform 200ms ease; }
+.moment-btn:hover:not(:disabled) .moment-btn__arrow { transform: translateX(3px); }
+.moment-form__shortcut { margin: 12px 0 0; color: var(--moment-muted); font-size: 12px; text-align: center; line-height: 1.7; }
+.moment-form__privacy { margin: 10px 0 0; color: #75766d; font-size: 11px; line-height: 1.6; text-align: center; }
 .moment-form__overlay {
   position: absolute;
-  inset: -8px;
+  inset: -10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 22px;
   border-radius: 12px;
-  background: rgba(247, 243, 234, 0.94);
+  background: rgba(248, 245, 239, .96);
+  color: var(--moment-accent-deep);
+  font-size: 14px;
 }
-.moment-form__paint-dots { display: flex; gap: 8px; }
-.moment-form__paint-dots i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--moment-accent);
-  animation: nd-bounce 1.2s ease-in-out infinite;
-}
-.moment-form__paint-dots i:nth-child(2) { animation-delay: 120ms; }
-.moment-form__paint-dots i:nth-child(3) { animation-delay: 240ms; }
-.moment-btn__spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  margin-right: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.45);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: nd-spin 0.8s linear infinite;
-}
-.moment-panel__stats { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--moment-line); }
-.moment-panel__stats-live { display: block; font-size: 13px; font-weight: 600; color: var(--moment-accent-deep); }
-.moment-panel__stats-time { display: block; margin-top: 4px; font-size: 12px; color: var(--moment-muted); }
-.memory-letter {
-  margin: 0 0 28px;
-  padding: 16px;
-  background: #fffaf4;
-  border: 1px solid #eadfd4;
-  border-radius: 12px;
-}
-.memory-letter__eyebrow { margin: 0; font-size: 11px; letter-spacing: 0.18em; color: var(--moment-accent-deep); }
-.memory-letter img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: contain;
-  margin: 12px 0;
-  border-radius: 8px;
-  background: #f6f1e6;
-}
-.memory-letter blockquote {
-  margin: 0;
-  max-height: 180px;
-  overflow: auto;
-  font-family: 'Songti SC', 'Noto Serif SC', serif;
-  font-size: 16px;
-  line-height: 1.8;
-}
-.memory-letter__actions { display: flex; gap: 8px; margin-top: 14px; }
-.memory-letter__actions button {
-  border: 1px solid #e2cfc6;
-  border-radius: 6px;
-  background: transparent;
-  padding: 8px 12px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-.memory-letter__actions button:first-child { background: var(--moment-accent); color: #fff; border-color: var(--moment-accent); }
-.memory-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-.memory-prompts button {
-  border: 1px solid #e4d8cc;
-  border-radius: 999px;
-  background: #fffaf4;
-  padding: 7px 12px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-@keyframes nd-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes nd-spin { to { transform: rotate(360deg); } }
+.moment-form__paint-dots { display: flex; gap: 9px; align-items: center; height: 24px; }
+.moment-form__paint-dots i { width: 13px; height: 13px; border-radius: 50%; background: #86aaa1; animation: moment-paint 1.4s ease-in-out infinite; }
+.moment-form__paint-dots i:nth-child(2) { background: #cf806a; animation-delay: 160ms; }
+.moment-form__paint-dots i:nth-child(3) { background: #d5c17b; animation-delay: 320ms; }
+.moment-btn__spinner { width: 14px; height: 14px; border: 2px solid #b0c0bb; border-top-color: var(--moment-accent); border-radius: 50%; animation: moment-spin 900ms linear infinite; }
+.moment-panel__stats { display: flex; align-items: center; gap: 12px; margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--moment-line); }
+.moment-panel__stats-avatars { display: flex; flex-shrink: 0; }
+.moment-panel__stats-avatar { width: 30px; height: 30px; margin-left: -8px; border: 2px solid var(--moment-panel-bg); border-radius: 50%; object-fit: cover; background: var(--moment-cream); }
+.moment-panel__stats-avatar:first-child { margin-left: 0; }
+.moment-panel__stats-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.moment-panel__stats-live { font-size: 12px; font-weight: 600; color: var(--moment-accent-deep); }
+.moment-panel__stats-time { font-size: 11px; line-height: 1.6; color: var(--moment-muted); }
+.memory-letter { padding: 22px; margin: 0 0 30px; background: #fffaf0; border: 1px solid #ded8c9; box-shadow: 0 6px 18px #554c3610; }
+.memory-letter__eyebrow { color: #748170; font-size: 11px; letter-spacing: 3px; margin: 0; }
+.memory-letter > img { display: block; width: 100%; height: 150px; object-fit: contain; margin: 16px auto; }
+.memory-letter blockquote { margin: 12px 0; color: #51483e; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
+.memory-letter time { display: block; font: 12px Georgia, serif; color: #81796b; margin-top: 14px; }
+.memory-letter__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.memory-letter__actions button { border: 1px solid #b8c1b4; border-radius: 5px; background: transparent; color: #496253; padding: 9px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.memory-letter__actions button:first-child { background: #587784; color: white; border-color: #587784; }
+.memory-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.memory-prompts button { border: 1px solid #d6d0c3; border-radius: 20px; color: #625f53; background: #f8f5ed; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.memory-prompts button:hover { background: #e2e8dc; }
+.memory-prompts button:disabled { opacity: .5; cursor: wait; }
+@keyframes moment-arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes moment-paint { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+@keyframes moment-spin { to { transform: rotate(360deg); } }
 @media (max-width: 1024px) {
   .moment-split { grid-template-columns: 1fr; }
   .moment-split__right { grid-row: 1; min-height: auto; border-left: 0; border-bottom: 1px solid var(--moment-line); }
-  .moment-split__left { height: auto; max-height: none; }
-  .moment-panel__inner { padding: 32px 20px; }
+  .moment-panel__inner { max-width: 600px; padding: 40px 28px 32px; }
+  .moment-panel__title { font-size: 34px; }
+  .moment-form__input { min-height: 160px; }
+  .moment-split__left { height: min(68dvh, 620px); min-height: 340px; padding: 24px 16px; }
 }
 </style>

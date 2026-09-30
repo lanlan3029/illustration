@@ -510,6 +510,8 @@
     "aiIllustration": "AI Illustration",
     "aiBooks": "AI Picture Book",
     "creation": "Creation",
+    "activities": "Activities",
+    "childhood": "Childhood",
     "createCharacter": "Create Character",
     "characterStudio": "Creation Studio",
     "createGroupImages": "Create Group Images",
@@ -529,7 +531,7 @@
     "aboutUs": "About",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
-    "nationalDay": "National Day",
+    "nationalDay": "National Day feelings",
     "websites": "Websites",
     "blog": "Blog",
     "my": "Mine"
@@ -3125,7 +3127,7 @@
       "Traffic feels easier when I remember someone is still working overtime."
     ],
     "communityLive": "Collecting now",
-    "communityTime": "{count} feelings collected",
+    "communityTime": "{count} feelings collected · {time}",
     "pleaseLogin": "Please sign in before generating an illustration",
     "sceneRequired": "Write the feeling first",
     "quotaExceeded": "Free tries are used up. Sign in for more.",

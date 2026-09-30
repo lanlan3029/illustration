@@ -525,6 +525,8 @@
     "aiIllustration": "AI插画",
     "aiBooks": "AI绘本",
     "creation": "创作",
+    "activities": "活动",
+    "childhood": "幸福童年",
     "createCharacter": "创作角色",
     "characterStudio": "创作工作台",
     "createGroupImages": "创作组图",
@@ -544,7 +546,7 @@
     "aboutUs": "关于我们",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
-    "nationalDay": "国庆",
+    "nationalDay": "国庆感受",
     "websites": "网站推荐",
     "blog": "博客",
     "my": "我的"
@@ -3140,7 +3142,7 @@
       "和还在加班的人一比，堵车也没那么难受。"
     ],
     "communityLive": "正在收集",
-    "communityTime": "已有 {count} 段国庆感受",
+    "communityTime": "已收集 {count} 段感受 · {time}",
     "pleaseLogin": "请先登录后再生成插画",
     "sceneRequired": "请先写下这段感受",
     "quotaExceeded": "免费次数已用完，登录解锁更多免费次数吧！",
