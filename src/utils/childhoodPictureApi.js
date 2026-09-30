@@ -79,10 +79,10 @@ function normalizePictureList(payload) {
 /** 后端 config.per_page 默认 18，且 GET /picture/ 会忽略客户端 limit */
 const BACKEND_PAGE_SIZE = 18
 
-async function fetchChildhoodScenesPage(http, page, sort) {
+async function fetchScenesPage(http, pictureType, page, sort) {
   const res = await http.get('/picture/', {
     params: {
-      type: CHILDHOOD_PICTURE_TYPE,
+      type: pictureType,
       sort_param: sort.param,
       sort_num: sort.num,
       page,
@@ -90,7 +90,7 @@ async function fetchChildhoodScenesPage(http, page, sort) {
   })
   const data = res?.data || {}
   if (data.desc && data.desc !== 'success' && data.code !== 0 && data.code !== '0') {
-    throw new Error(data.message || '加载童年场景失败')
+    throw new Error(data.message || '加载场景失败')
   }
   return normalizePictureList(data)
 }
@@ -101,7 +101,7 @@ async function fetchChildhoodScenesPage(http, page, sort) {
  * @param {import('axios').AxiosInstance} http
  * @param {{ page?: number, fetchAll?: boolean, maxPages?: number, sort_param?: string, sort_num?: string }} options
  */
-export async function fetchChildhoodScenes(http, options = {}) {
+export async function fetchPictureScenes(http, pictureType, options = {}) {
   const sort = {
     param: options.sort_param || 'createdAt',
     num: options.sort_num || 'asc',
@@ -109,17 +109,21 @@ export async function fetchChildhoodScenes(http, options = {}) {
   const maxPages = options.maxPages || 40
 
   if (options.page && options.fetchAll === false) {
-    return fetchChildhoodScenesPage(http, options.page, sort)
+    return fetchScenesPage(http, pictureType, options.page, sort)
   }
 
   const all = []
   for (let page = 1; page <= maxPages; page += 1) {
-    const batch = await fetchChildhoodScenesPage(http, page, sort)
+    const batch = await fetchScenesPage(http, pictureType, page, sort)
     if (!batch.length) break
     all.push(...batch)
     if (batch.length < BACKEND_PAGE_SIZE) break
   }
   return all
+}
+
+export async function fetchChildhoodScenes(http, options = {}) {
+  return fetchPictureScenes(http, CHILDHOOD_PICTURE_TYPE, options)
 }
 
 /** 上传回执 → 画廊 person（可先用本地 dataUrl 即时展示） */

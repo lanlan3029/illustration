@@ -544,6 +544,7 @@
     "aboutUs": "关于我们",
     "promptFill": "提示词填空器",
     "moodDiary": "心情日记",
+    "nationalDay": "国庆",
     "websites": "网站推荐",
     "blog": "博客",
     "my": "我的"
@@ -3110,5 +3111,43 @@
     "author": "作者：",
     "time": "时间：",
     "anonymous": "网友"
+  },
+  "nationalDayMoments": {
+    "pageTitle": "国庆感受收集",
+    "formGuide": "这个国庆，你最真实的感受是什么？写下来，画成一张插画，和其他人放在一起。",
+    "galleryLabel": "大家的国庆",
+    "galleryCount": "已收集 {count} 段",
+    "memoryLetter": "一段国庆感受",
+    "memoryImage": "这段感受的插画",
+    "copyLink": "复制分享",
+    "writeMine": "我也写一段",
+    "promptLabel": "从一种心情开始",
+    "writingPrompts": [
+      { "label": "怕开工", "text": "虽然还没放假，但我已经在怕假期结束之后的开工：" },
+      { "label": "假期社交", "text": "这个国庆，我不想被喊去的局是" },
+      { "label": "对比加班", "text": "只要不上班，我就觉得这个假期已经够好了，因为" },
+      { "label": "躺在家里", "text": "我心目中最舒服的国庆，其实是" }
+    ],
+    "share": "画成我的国庆",
+    "sharing": "正在画下这段感受…",
+    "formShortcut": "⌘/Ctrl + Enter 生成插画",
+    "publicStoryHint": "生成后，这段感受和插画会公开展示在国庆收集里。",
+    "scenePlaceholder": "写下你这个国庆最真实的一句感受。",
+    "scenePlaceholders": [
+      "写下你这个国庆最真实的一句感受。",
+      "还没放假，已经开始怕开工了。",
+      "最理想的假期，可能就是待在家里。",
+      "和还在加班的人一比，堵车也没那么难受。"
+    ],
+    "communityLive": "正在收集",
+    "communityTime": "已有 {count} 段国庆感受",
+    "pleaseLogin": "请先登录后再生成插画",
+    "sceneRequired": "请先写下这段感受",
+    "quotaExceeded": "免费次数已用完，登录解锁更多免费次数吧！",
+    "generateFailed": "出错啦，请稍后再试",
+    "generateSuccess": "这段感受已经画好，并放进收集里了",
+    "invitationText": "这个国庆，你最真实的感受是什么？写下来，画成一张插画。",
+    "linkCopied": "分享文案和链接已复制",
+    "copyManually": "暂时无法自动复制，请手动复制页面链接"
   }
 }

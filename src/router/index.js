@@ -485,6 +485,19 @@ const routes = [{
         redirect: '/childhood',
     },
     {
+        path: '/national-day',
+        name: 'national-day',
+        component: () =>
+            import ( /* webpackChunkName: "national-day" */ '../views/NationalDay.vue'),
+        meta: {
+            seoTitle: '国庆感受收集',
+        },
+    },
+    {
+        path: '/guoqing',
+        redirect: '/national-day',
+    },
+    {
         path: '/mood-diary',
         component: () =>
             import ( /* webpackChunkName: "mood-diary-shell" */ '../views/mood-diary/MoodDiaryShell.vue'),

@@ -193,6 +193,7 @@ export default {
             { key: 'websites', to: '/websites', label: 'nav.websites', mobile: true },
             { key: 'blog', to: '/blog', label: 'nav.blog', mobile: true },
             { key: 'moodDiary', to: '/mood-diary', label: 'nav.moodDiary', linkClass: 'nav-link-mood-diary', mobile: true },
+            { key: 'nationalDay', to: '/national-day', label: 'nav.nationalDay', mobile: true },
         ]
 
         // 「创作」下拉项配置（同样集中管理）

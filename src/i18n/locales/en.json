@@ -529,6 +529,7 @@
     "aboutUs": "About",
     "promptFill": "PromptTool",
     "moodDiary": "Mood Diary",
+    "nationalDay": "National Day",
     "websites": "Websites",
     "blog": "Blog",
     "my": "Mine"
@@ -3095,5 +3096,43 @@
     "author": "Author: ",
     "time": "Date: ",
     "anonymous": "Guest"
+  },
+  "nationalDayMoments": {
+    "pageTitle": "National Day feelings",
+    "formGuide": "What does this National Day actually feel like? Write it down and turn it into an illustration.",
+    "galleryLabel": "Everyone's holiday",
+    "galleryCount": "{count} collected",
+    "memoryLetter": "A National Day feeling",
+    "memoryImage": "Illustration for this feeling",
+    "copyLink": "Copy to share",
+    "writeMine": "Write mine",
+    "promptLabel": "Start from a mood",
+    "writingPrompts": [
+      { "label": "Dreading work", "text": "The holiday has not even started, and I am already afraid of going back:" },
+      { "label": "Social plans", "text": "This National Day, the invitation I do not want is" },
+      { "label": "Compared with overtime", "text": "As long as I am not at work, this holiday already feels good because" },
+      { "label": "Staying home", "text": "The most comfortable National Day I can imagine is" }
+    ],
+    "share": "Draw my holiday",
+    "sharing": "Drawing this feeling…",
+    "formShortcut": "⌘/Ctrl + Enter to generate",
+    "publicStoryHint": "After generating, your words and illustration appear publicly in this collection.",
+    "scenePlaceholder": "Write the most honest sentence about this National Day.",
+    "scenePlaceholders": [
+      "Write the most honest sentence about this National Day.",
+      "The holiday has not started, and I am already dreading work.",
+      "The best plan might just be staying home.",
+      "Traffic feels easier when I remember someone is still working overtime."
+    ],
+    "communityLive": "Collecting now",
+    "communityTime": "{count} feelings collected",
+    "pleaseLogin": "Please sign in before generating an illustration",
+    "sceneRequired": "Write the feeling first",
+    "quotaExceeded": "Free tries are used up. Sign in for more.",
+    "generateFailed": "Something went wrong. Please try again.",
+    "generateSuccess": "Your feeling is illustrated and added to the collection",
+    "invitationText": "What does this National Day feel like for you? Write it, and turn it into an illustration.",
+    "linkCopied": "Invitation and link copied",
+    "copyManually": "Could not copy automatically. Copy the page link instead."
   }
 }
