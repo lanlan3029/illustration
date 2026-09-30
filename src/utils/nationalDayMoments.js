@@ -8,39 +8,6 @@ export const SHARE_STORY_KEY = 'national_day_share_story'
 
 const SHARE_TITLE_MAX = 28
 
-export const NATIONAL_DAY_SEEDS = [
-  {
-    id: 'nd-seed-01',
-    title: '还没放假已经怕开工',
-    content: '虽然还没放假但是已经恐惧开工了，一想到国庆假期回来又要重新适应上班好痛苦',
-    image: require('@/assets/national-day/01-dread-back-to-work.jpg'),
-  },
-  {
-    id: 'nd-seed-02',
-    title: '两年没联系别喊我',
-    content: '马上快国庆了，郑重声明一下：超过两年未联系的不管是同学还是朋友，结婚都不要喊我，感情一般没什么交集的更是想都别想。',
-    image: require('@/assets/national-day/02-wedding-distance.jpg'),
-  },
-  {
-    id: 'nd-seed-03',
-    title: '幸福在于对比',
-    content: '国庆长假一开始，我明白了一个道理：幸福在于对比，比如你觉得长假只能在家无聊，那你想想还有加班的呢，你觉得堵在高速上很闹心，那你想想还有加班的呢，你觉得在家被父母亲友奚落很伤心，那你想想还有加班的呢，你觉得吃吃喝喝七天会胖，那你想想还有加班的呢，反正我一想还有加班的人，我只要不上班就十分满足了。',
-    image: require('@/assets/national-day/03-compare-overtime.jpg'),
-  },
-  {
-    id: 'nd-seed-04',
-    title: '躺家吹空调',
-    content: '国庆节最舒服最快乐的度假方式果然就是躺在家里吹空调玩手机。',
-    image: require('@/assets/national-day/04-home-ac-phone.jpg'),
-  },
-  {
-    id: 'nd-seed-05',
-    title: '距离假期只剩一天',
-    content: '听过周杰伦的《晴天》听过莫文蔚的《阴天》听过林俊杰的《明天》听过李玖哲的《夏天》但我最喜欢的还是《距离国庆假期只剩1天》',
-    image: require('@/assets/national-day/05-one-day-left.jpg'),
-  },
-]
-
 export const NATIONAL_DAY_STYLE_PROMPT = `Draw the Scene as ONE quiet lifestyle editorial illustration, matching a single illustrator across a National Day feelings collection.
 
 Composition:
@@ -101,15 +68,4 @@ export function toAbsoluteShareUrl(url) {
   } catch {
     return url
   }
-}
-
-export function seedMemories() {
-  return NATIONAL_DAY_SEEDS.map((seed) => ({
-    id: seed.id,
-    title: seed.title,
-    note: seed.content,
-    imageUrl: seed.image,
-    isSeed: true,
-    createdAt: '',
-  }))
 }

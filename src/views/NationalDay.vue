@@ -6,7 +6,6 @@
           ref="crowdRef"
           variant="hero"
           :picture-type="pictureType"
-          :extra-people="seedPeople"
           :use-local-crowd="false"
           :highlight-id="highlightPictureId"
           @count-change="onCrowdUpdate"
@@ -127,7 +126,6 @@ import {
   buildNationalDayPictureTitle,
   buildShareLink,
   buildShareTitle,
-  seedMemories,
   toAbsoluteShareUrl,
 } from '@/utils/nationalDayMoments'
 
@@ -139,7 +137,6 @@ export default {
       subjectScene: '',
       selectedMemory: null,
       memories: [],
-      seedPeople: seedMemories(),
       pictureType: NATIONAL_DAY_PICTURE_TYPE,
       generating: false,
       placeholderIndex: 0,
@@ -437,11 +434,18 @@ export default {
 }
 .moment-split__left :deep(.scene-gallery--hero) { flex: 1; min-height: 0; }
 .moment-split__right {
+  --moment-accent: #c23b32;
+  --moment-accent-deep: #9b2c26;
+  --moment-ink: #4a2c28;
+  --moment-muted: #8a675f;
+  --moment-line: #f0d2c4;
   display: flex;
   min-width: 0;
   min-height: var(--moment-stage-height);
-  background: var(--moment-panel-bg);
-  border-left: 1px solid var(--moment-line);
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(232, 184, 74, 0.28), transparent 46%),
+    linear-gradient(180deg, #fff6ef 0%, #fde8dc 100%);
+  border-left: 1px solid #f0c8b4;
 }
 .moment-panel__inner {
   width: 100%;
@@ -458,7 +462,7 @@ export default {
   width: 56px;
   height: 4px;
   margin-bottom: 26px;
-  background: #cf806a;
+  background: linear-gradient(90deg, #c23b32, #e8b84a);
 }
 .moment-panel__title {
   margin: 0 0 18px;
@@ -476,7 +480,7 @@ export default {
   width: 100%;
   min-height: 214px;
   padding: 22px;
-  border: 1px solid #d2cfc6;
+  border: 1px solid #f0cfc0;
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 4px 16px rgba(81, 78, 75, .025);
@@ -491,7 +495,7 @@ export default {
 }
 .moment-form__input:focus {
   border-color: var(--moment-accent);
-  box-shadow: 0 0 0 3px rgba(88, 119, 132, .12), 0 8px 22px rgba(81, 78, 75, .04);
+  box-shadow: 0 0 0 3px rgba(194, 59, 50, .14), 0 8px 22px rgba(155, 44, 38, .06);
 }
 .moment-form__input::placeholder { color: #86867d; }
 .moment-form__actions { margin-top: 22px; }
@@ -514,10 +518,10 @@ export default {
 .moment-btn--primary { background: var(--moment-accent); color: #fff; }
 .moment-btn--primary:hover:not(:disabled) {
   background: var(--moment-accent-deep);
-  box-shadow: 0 6px 16px rgba(88, 119, 132, .16);
+  box-shadow: 0 6px 16px rgba(194, 59, 50, .22);
   transform: translateY(-2px);
 }
-.moment-btn:disabled { background: #d2dcd9; color: #566a68; cursor: not-allowed; }
+.moment-btn:disabled { background: #f0cfc4; color: #a87870; cursor: not-allowed; }
 .moment-btn__arrow { transition: transform 200ms ease; }
 .moment-btn:hover:not(:disabled) .moment-btn__arrow { transform: translateX(3px); }
 .moment-form__shortcut { margin: 12px 0 0; color: var(--moment-muted); font-size: 12px; text-align: center; line-height: 1.7; }
@@ -531,15 +535,15 @@ export default {
   justify-content: center;
   gap: 22px;
   border-radius: 12px;
-  background: rgba(248, 245, 239, .96);
+  background: rgba(255, 246, 239, .96);
   color: var(--moment-accent-deep);
   font-size: 14px;
 }
 .moment-form__paint-dots { display: flex; gap: 9px; align-items: center; height: 24px; }
-.moment-form__paint-dots i { width: 13px; height: 13px; border-radius: 50%; background: #86aaa1; animation: moment-paint 1.4s ease-in-out infinite; }
-.moment-form__paint-dots i:nth-child(2) { background: #cf806a; animation-delay: 160ms; }
-.moment-form__paint-dots i:nth-child(3) { background: #d5c17b; animation-delay: 320ms; }
-.moment-btn__spinner { width: 14px; height: 14px; border: 2px solid #b0c0bb; border-top-color: var(--moment-accent); border-radius: 50%; animation: moment-spin 900ms linear infinite; }
+.moment-form__paint-dots i { width: 13px; height: 13px; border-radius: 50%; background: #c23b32; animation: moment-paint 1.4s ease-in-out infinite; }
+.moment-form__paint-dots i:nth-child(2) { background: #e8b84a; animation-delay: 160ms; }
+.moment-form__paint-dots i:nth-child(3) { background: #e07a5f; animation-delay: 320ms; }
+.moment-btn__spinner { width: 14px; height: 14px; border: 2px solid #f3c2b8; border-top-color: #fff; border-radius: 50%; animation: moment-spin 900ms linear infinite; }
 .moment-panel__stats { display: flex; align-items: center; gap: 12px; margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--moment-line); }
 .moment-panel__stats-avatars { display: flex; flex-shrink: 0; }
 .moment-panel__stats-avatar { width: 30px; height: 30px; margin-left: -8px; border: 2px solid var(--moment-panel-bg); border-radius: 50%; object-fit: cover; background: var(--moment-cream); }
@@ -547,17 +551,17 @@ export default {
 .moment-panel__stats-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .moment-panel__stats-live { font-size: 12px; font-weight: 600; color: var(--moment-accent-deep); }
 .moment-panel__stats-time { font-size: 11px; line-height: 1.6; color: var(--moment-muted); }
-.memory-letter { padding: 22px; margin: 0 0 30px; background: #fffaf0; border: 1px solid #ded8c9; box-shadow: 0 6px 18px #554c3610; }
-.memory-letter__eyebrow { color: #748170; font-size: 11px; letter-spacing: 3px; margin: 0; }
+.memory-letter { padding: 22px; margin: 0 0 30px; background: #fffdf8; border: 1px solid #f0c4a8; box-shadow: 0 8px 20px rgba(194, 59, 50, 0.08); }
+.memory-letter__eyebrow { color: #c23b32; font-size: 11px; letter-spacing: 3px; margin: 0; }
 .memory-letter > img { display: block; width: 100%; height: 150px; object-fit: contain; margin: 16px auto; }
 .memory-letter blockquote { margin: 12px 0; color: #51483e; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
 .memory-letter time { display: block; font: 12px Georgia, serif; color: #81796b; margin-top: 14px; }
 .memory-letter__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
-.memory-letter__actions button { border: 1px solid #b8c1b4; border-radius: 5px; background: transparent; color: #496253; padding: 9px 12px; font: inherit; font-size: 12px; cursor: pointer; }
-.memory-letter__actions button:first-child { background: #587784; color: white; border-color: #587784; }
+.memory-letter__actions button { border: 1px solid #efc2b0; border-radius: 5px; background: transparent; color: #9b2c26; padding: 9px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.memory-letter__actions button:first-child { background: #c23b32; color: white; border-color: #c23b32; }
 .memory-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
-.memory-prompts button { border: 1px solid #d6d0c3; border-radius: 20px; color: #625f53; background: #f8f5ed; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; }
-.memory-prompts button:hover { background: #e2e8dc; }
+.memory-prompts button { border: 1px solid #efd0a2; border-radius: 20px; color: #8a4030; background: #fff8ec; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+.memory-prompts button:hover { background: #ffe8c2; border-color: #e8b84a; }
 .memory-prompts button:disabled { opacity: .5; cursor: wait; }
 @keyframes moment-arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes moment-paint { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
