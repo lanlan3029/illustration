@@ -123,9 +123,6 @@ export async function drawNationalDaySharePoster({ heroSrc, crowdSrcs = [], stor
   ctx.clip()
   ctx.drawImage(collage, 130, 166, 820, 470)
   ctx.restore()
-  ctx.fillStyle = INK
-  ctx.font = `24px ${SERIF}`
-  ctx.fillText('这个国庆，寄给还没开工的我们。', 138, 674)
   ctx.font = `15px ${SANS}`
   ctx.textAlign = 'right'
   ctx.fillStyle = '#c23b32'
