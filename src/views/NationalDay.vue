@@ -18,7 +18,7 @@
         <div class="moment-panel__inner">
           <section v-if="activeMemory" class="memory-letter" :aria-label="$t('nationalDayMoments.memoryLetter')">
             <p class="memory-letter__eyebrow">{{ $t('nationalDayMoments.memoryLetter') }}</p>
-            <img :src="activeMemory.imageUrl" :alt="$t('nationalDayMoments.memoryImage')" />
+            <img :src="activeMemory.imageUrl" :alt="$t('nationalDayMoments.memoryImage')" referrerpolicy="no-referrer" />
             <blockquote>{{ activeMemory.note }}</blockquote>
             <time v-if="memoryDate">{{ memoryDate }}</time>
             <div class="memory-letter__actions">
@@ -84,6 +84,7 @@
                 :src="url"
                 alt=""
                 decoding="async"
+                referrerpolicy="no-referrer"
               />
             </div>
             <div class="moment-panel__stats-meta">
@@ -292,34 +293,65 @@ export default {
         const imageUrl = resolveGenerationImageUrl(result, this.apiBaseUrl)
         if (!imageUrl) throw new Error('no image url')
 
-        const dataUrl = await this.imageUrlToDataUrl(imageUrl)
-        const response = await uploadPictureElement(this.$http, dataUrl, {
-          title: buildNationalDayPictureTitle(sceneText),
-          type: NATIONAL_DAY_PICTURE_TYPE,
-          desc: sceneText,
-          is_public: 1,
-        })
-        const record = extractPictureRecord(response) || {}
-        if (!record.description) record.description = sceneText
-        const pictureId = extractPictureId(record)
-        const uploadedUrl = resolvePictureUrl(record) || dataUrl
-        const memory = {
-          id: pictureId || `nd-${Date.now()}`,
-          title: buildNationalDayPictureTitle(sceneText),
-          note: sceneText,
-          imageUrl: uploadedUrl,
-          isSeed: false,
-          createdAt: record.createdAt || new Date().toISOString(),
+        const previewId = `nd-${Date.now()}`
+        const title = buildNationalDayPictureTitle(sceneText)
+        const createdAt = new Date().toISOString()
+        const previewRecord = {
+          _id: previewId,
+          title,
+          description: sceneText,
+          createdAt,
+          content: /^https?:\/\//i.test(imageUrl) ? imageUrl : '',
         }
-        this.selectedMemory = memory
+        this.selectedMemory = {
+          id: previewId,
+          title,
+          note: sceneText,
+          imageUrl,
+          isSeed: false,
+          createdAt,
+        }
         await this.$refs.crowdRef?.refreshScenes({
-          anchorId: pictureId,
-          freshRecord: record,
-          freshImageUrl: uploadedUrl,
+          anchorId: previewId,
+          freshRecord: previewRecord,
+          freshImageUrl: imageUrl,
         })
+
+        let pictureId = ''
+        let storedUrl = /^https?:\/\//i.test(imageUrl) ? imageUrl : ''
+        try {
+          const dataUrl = await this.imageUrlToDataUrl(imageUrl)
+          const response = await uploadPictureElement(this.$http, dataUrl, {
+            title,
+            type: NATIONAL_DAY_PICTURE_TYPE,
+            desc: sceneText,
+            is_public: 1,
+          })
+          const record = extractPictureRecord(response) || {}
+          if (!record.description) record.description = sceneText
+          pictureId = extractPictureId(record)
+          const uploadedUrl = resolvePictureUrl(record)
+          if (uploadedUrl && !uploadedUrl.startsWith('data:')) storedUrl = uploadedUrl
+          if (pictureId) {
+            this.selectedMemory = {
+              ...this.selectedMemory,
+              id: pictureId,
+              createdAt: record.createdAt || createdAt,
+            }
+            await this.$refs.crowdRef?.refreshScenes({
+              anchorId: pictureId,
+              replaceId: previewId,
+              freshRecord: record,
+              freshImageUrl: imageUrl,
+            })
+          }
+        } catch (persistErr) {
+          console.warn('[NationalDay] picture persist failed, gallery keeps generated image', persistErr)
+        }
+
         this.subjectScene = ''
         try {
-          localStorage.setItem(STORAGE_KEY, uploadedUrl.startsWith('data:') ? '' : uploadedUrl)
+          localStorage.setItem(STORAGE_KEY, storedUrl)
           localStorage.setItem(SHARE_STORY_KEY, sceneText)
           if (pictureId) localStorage.setItem(MY_PICTURE_ID_KEY, pictureId)
         } catch {
@@ -554,7 +586,7 @@ export default {
 .moment-panel__stats-time { font-size: 11px; line-height: 1.6; color: var(--moment-muted); }
 .memory-letter { padding: 22px; margin: 0 0 30px; background: #fffdf8; border: 1px solid #f0c4a8; box-shadow: 0 8px 20px rgba(194, 59, 50, 0.08); }
 .memory-letter__eyebrow { color: #c23b32; font-size: 11px; letter-spacing: 3px; margin: 0; }
-.memory-letter > img { display: block; width: 100%; height: 150px; object-fit: contain; margin: 16px auto; }
+.memory-letter > img { display: block; width: min(100%, 220px); aspect-ratio: 1; height: auto; object-fit: cover; margin: 16px auto; border-radius: 18px; background: #f6f1e6; }
 .memory-letter blockquote { margin: 12px 0; color: #51483e; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
 .memory-letter time { display: block; font: 12px Georgia, serif; color: #81796b; margin-top: 14px; }
 .memory-letter__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }

@@ -8,17 +8,21 @@ export const SHARE_STORY_KEY = 'national_day_share_story'
 
 const SHARE_TITLE_MAX = 28
 
-export const NATIONAL_DAY_STYLE_PROMPT = `Handraw 风格 #015 · Soft Relationship Editorial Line Art
+export const NATIONAL_DAY_STYLE_PROMPT = `Style: Handraw #015, Brian Rea soft relationship editorial line art.
 
-参考作者：Brian Rea。
+Draw exactly ONE square illustration of ONE frozen moment. Choose a single instant from the feeling below. Do not illustrate a sequence, a day, or several actions.
 
-视觉要点：极简人物线稿、人与关系、柔和色块、生活型社论；脸部与服装主动做减法，依靠清楚轮廓、眼口和少量关键形状建立人物辨识度；配色控制在柔和低刺激色域，用少量点色区分层次，背景保持轻和干净。
+Picture:
+- One or two simplified people, seen once. Thin warm line, almost no facial detail: two small marks for eyes and a short mouth.
+- Clothes and objects are a few flat soft color blocks. Background is mostly empty cream or pale paper, with at most one or two props.
+- Quiet lifestyle editorial, lots of negative space, no interior detail, no furniture catalog, no cute anime rendering.
 
-单幅正方形插画，构图按 1:1 展开，不要画成横幅。默认纯画面，除非用户要求图中带字。
+Forbidden:
+- No comic panels, storyboard, collage, or repeated copies of the same person.
+- No arrows, speech bubbles, thought clouds, captions, letters, or logos.
+- No photorealism, 3D, thick manga shading, or dense background.
 
-扁平手绘 editorial；避免写实摄影与 3D。
-
-Scene:`
+Feeling, depict only one moment:`
 
 export function buildNationalDayPrompt(scene) {
   const text = (scene || '').trim()

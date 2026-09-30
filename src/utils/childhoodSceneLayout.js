@@ -182,11 +182,12 @@ export function layoutGalleryScenes(people, containerWidth, options = {}) {
   })
 
   const maxBottom = placed.reduce((m, p) => Math.max(m, p.top + p.height), PAD)
-  const positions = placed.map(({ id, left, top, width, rotate, baseScale }) => ({
+  const positions = placed.map(({ id, left, top, width, height, rotate, baseScale }) => ({
     id,
     left,
     top,
     width,
+    height,
     rotate,
     baseScale,
   }))

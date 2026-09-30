@@ -64,6 +64,7 @@
             :src="person.imageUrl"
             alt=""
             decoding="async"
+            referrerpolicy="no-referrer"
           />
           <div v-else class="scene-gallery__text-chip">
             {{ person.note ? person.note.slice(0, 2) : '…' }}
@@ -254,7 +255,7 @@ export default {
     },
 
     mergeFreshPerson(people, options = {}) {
-      const { freshRecord, freshImageUrl } = options
+      const { freshRecord, freshImageUrl, replaceId } = options
       if (!freshRecord) return people
 
       const fresh = createFreshPersonFromRecord(
@@ -265,6 +266,22 @@ export default {
       if (!fresh.imageUrl) return people
 
       const freshId = extractPictureId(freshRecord) || fresh.id
+      const replaceIndex = replaceId
+        ? people.findIndex((p) => String(p.id) === String(replaceId))
+        : -1
+      if (replaceIndex !== -1) {
+        const next = [...people]
+        const previous = next[replaceIndex]
+        next[replaceIndex] = {
+          ...previous,
+          ...fresh,
+          id: freshId || previous.id,
+          imageUrl: fresh.imageUrl || previous.imageUrl,
+          visible: true,
+        }
+        return next
+      }
+
       const index = people.findIndex((p) => String(p.id) === String(freshId))
       if (index === -1) {
         return [...people, fresh]
@@ -349,10 +366,12 @@ export default {
         return { opacity: 0, width: '96px' }
       }
       const rotate = pos.rotate || 0
+      const height = pos.height || pos.width * (Number(this.sceneAspect) > 0 ? Number(this.sceneAspect) : 0.82)
       return {
         left: `${pos.left}px`,
         top: `${pos.top}px`,
         width: `${pos.width}px`,
+        height: `${height}px`,
         zIndex: person.id === this.focusPersonId ? 10000 : 10 + Math.round(pos.top),
         '--base-scale': String(pos.baseScale || 1),
         '--item-rotate': `${rotate}deg`,
@@ -634,6 +653,8 @@ export default {
 }
 
 .scene-gallery__img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -704,9 +725,14 @@ export default {
 }
 .scene-gallery--square .scene-gallery__item {
   aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #f6f1e6;
 }
 .scene-gallery--square .scene-gallery__img {
+  object-fit: cover;
   object-position: center center;
+  border-radius: 22px;
 }
 .scene-gallery__item:focus-visible { outline: 2px solid var(--gallery-accent); outline-offset: 5px; border-radius: 8px; }
 .scene-gallery--hero .scene-gallery__wrap { scrollbar-width: thin; scrollbar-color: #c9cfc5 transparent; }
