@@ -3116,7 +3116,7 @@
   },
   "nationalDayMoments": {
     "pageTitle": "国庆感受收集",
-    "formGuide": "这个国庆，你最真实的感受是什么？写下来，画成一张插画，和其他人放在一起。",
+    "formGuide": "这个国庆，你是想吐槽还是想铭记？",
     "galleryLabel": "大家的国庆",
     "galleryCount": "已收集 {count} 段",
     "memoryLetter": "一段国庆感受",
@@ -3130,7 +3130,7 @@
       { "label": "对比加班", "text": "只要不上班，我就觉得这个假期已经够好了，因为" },
       { "label": "躺在家里", "text": "我心目中最舒服的国庆，其实是" }
     ],
-    "share": "画成我的国庆",
+    "share": "生成国庆插画",
     "sharing": "正在画下这段感受…",
     "formShortcut": "⌘/Ctrl + Enter 生成插画",
     "publicStoryHint": "生成后，这段感受和插画会公开展示在国庆收集里。",

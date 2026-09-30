@@ -8,19 +8,15 @@ export const SHARE_STORY_KEY = 'national_day_share_story'
 
 const SHARE_TITLE_MAX = 28
 
-export const NATIONAL_DAY_STYLE_PROMPT = `Draw the Scene as ONE quiet lifestyle editorial illustration, matching a single illustrator across a National Day feelings collection.
+export const NATIONAL_DAY_STYLE_PROMPT = `Handraw 风格 #015 · Soft Relationship Editorial Line Art
 
-Composition:
-One wide everyday scene with generous cream empty space. Show the feeling through a small number of people, furniture and objects. Keep the view flat and simple, like a magazine vignette, not a detailed room or a poster.
+参考作者：Brian Rea。
 
-People:
-Soft rounded cartoon bodies, slightly large heads, tiny dot eyes, a small curved mouth, peach skin, simple hair shapes. Hands and shoes are simplified. Poses are still and everyday: sitting, lying, looking at a phone, standing apart.
+视觉要点：极简人物线稿、人与关系、柔和色块、生活型社论；脸部与服装主动做减法，依靠清楚轮廓、眼口和少量关键形状建立人物辨识度；配色控制在柔和低刺激色域，用少量点色区分层次，背景保持轻和干净。
 
-Color and line:
-Warm cream paper background #F6F1E6 with a faint paper grain. Muted fills only: dusty blue, sage, butter yellow, blush, warm gray and soft peach. Thin warm-brown outlines, flat color, almost no shading. No neon, no photorealism, no 3D.
+单幅正方形插画，构图按 1:1 展开，不要画成横幅。默认纯画面，除非用户要求图中带字。
 
-Strict exclusions:
-No typography, captions, logos, watermarks, speech bubbles or holiday slogans inside the picture. No national flags as the main subject. No crowded parade unless the Scene explicitly asks for one.
+扁平手绘 editorial；避免写实摄影与 3D。
 
 Scene:`
 

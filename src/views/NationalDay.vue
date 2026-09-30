@@ -7,6 +7,7 @@
           variant="hero"
           :picture-type="pictureType"
           :use-local-crowd="false"
+          :scene-aspect="1"
           :highlight-id="highlightPictureId"
           @count-change="onCrowdUpdate"
           @select-memory="selectMemory"

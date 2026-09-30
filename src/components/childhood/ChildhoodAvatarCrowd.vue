@@ -4,6 +4,7 @@
     :class="{
       'scene-gallery--focus': isExpanded,
       'scene-gallery--hero': variant === 'hero',
+      'scene-gallery--square': sceneAspect >= 0.98,
     }"
   >
     <div v-if="variant === 'default'" class="scene-gallery__head">
@@ -123,6 +124,10 @@ export default {
     useLocalCrowd: {
       type: Boolean,
       default: true,
+    },
+    sceneAspect: {
+      type: Number,
+      default: 0.82,
     },
   },
   data() {
@@ -365,7 +370,9 @@ export default {
     relayout() {
       const wrap = this.$refs.wrapRef
       const width = wrap?.clientWidth || 360
-      const { height, positions } = layoutGalleryScenes(this.people, width)
+      const { height, positions } = layoutGalleryScenes(this.people, width, {
+        sceneAspect: this.sceneAspect,
+      })
       this.stageHeight = height
       this.positions = Object.fromEntries(positions.map((p) => [p.id, p]))
       this.$nextTick(() => {
@@ -694,6 +701,12 @@ export default {
 @keyframes scene-arrive {
   from { opacity: 0; transform: translateY(14px) scale(.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.scene-gallery--square .scene-gallery__item {
+  aspect-ratio: 1 / 1;
+}
+.scene-gallery--square .scene-gallery__img {
+  object-position: center center;
 }
 .scene-gallery__item:focus-visible { outline: 2px solid var(--gallery-accent); outline-offset: 5px; border-radius: 8px; }
 .scene-gallery--hero .scene-gallery__wrap { scrollbar-width: thin; scrollbar-color: #c9cfc5 transparent; }

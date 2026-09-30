@@ -3101,7 +3101,7 @@
   },
   "nationalDayMoments": {
     "pageTitle": "National Day feelings",
-    "formGuide": "What does this National Day actually feel like? Write it down and turn it into an illustration.",
+    "formGuide": "This National Day, do you want to complain, or to remember?",
     "galleryLabel": "Everyone's holiday",
     "galleryCount": "{count} collected",
     "memoryLetter": "A National Day feeling",
@@ -3115,7 +3115,7 @@
       { "label": "Compared with overtime", "text": "As long as I am not at work, this holiday already feels good because" },
       { "label": "Staying home", "text": "The most comfortable National Day I can imagine is" }
     ],
-    "share": "Draw my holiday",
+    "share": "Generate a National Day illustration",
     "sharing": "Drawing this feeling…",
     "formShortcut": "⌘/Ctrl + Enter to generate",
     "publicStoryHint": "After generating, your words and illustration appear publicly in this collection.",

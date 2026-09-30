@@ -123,7 +123,8 @@ function resolvePosition(candidate, placed, containerWidth, gap) {
 /**
  * 砖墙散落：按列居中 + 旋转外接盒碰撞检测，避免重叠
  */
-export function layoutGalleryScenes(people, containerWidth) {
+export function layoutGalleryScenes(people, containerWidth, options = {}) {
+  const sceneAspect = Number(options.sceneAspect) > 0 ? Number(options.sceneAspect) : SCENE_ASPECT
   const n = people.length
   if (!n || !containerWidth) {
     return { positions: [], height: 320 }
@@ -154,7 +155,7 @@ export function layoutGalleryScenes(people, containerWidth) {
 
     const { widthRatio, rotate, baseScale, jx, jy } = itemMetrics(person, index)
     const width = Math.min(cellW * 0.76, Math.max(90, containerWidth * widthRatio))
-    const height = width * SCENE_ASPECT
+    const height = width * sceneAspect
     rowMaxH = Math.max(rowMaxH, height)
 
     const brick = rowIndex % 2 === 1 ? cellW * 0.18 : 0
