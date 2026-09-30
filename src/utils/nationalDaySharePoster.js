@@ -1,5 +1,5 @@
 import QRCodeStyling from 'qr-code-styling'
-import { loadImage } from '@/utils/lassoCrop'
+import { dataUrlToBlob, loadImage } from '@/utils/lassoCrop'
 import { formatPostcardDate, wrapPostcardText } from '@/utils/childhoodSharePoster'
 
 const PAPER = '#fff8f2'
@@ -35,6 +35,30 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, radius)
   ctx.arcTo(x, y, x + w, y, radius)
   ctx.closePath()
+}
+
+function paintBackdrop(ctx) {
+  const wash = ctx.createLinearGradient(0, 0, 0, 1440)
+  wash.addColorStop(0, '#fff8f3')
+  wash.addColorStop(0.55, '#fde8dc')
+  wash.addColorStop(1, '#f7d9cb')
+  ctx.fillStyle = wash
+  ctx.fillRect(0, 0, 1080, 1440)
+
+  const glow = ctx.createRadialGradient(920, 40, 20, 920, 160, 480)
+  glow.addColorStop(0, 'rgba(232, 184, 74, 0.22)')
+  glow.addColorStop(1, 'rgba(232, 184, 74, 0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, 1080, 1440)
+
+  ctx.strokeStyle = 'rgba(194, 59, 50, 0.22)'
+  ctx.lineWidth = 2
+  roundRect(ctx, 36, 36, 1008, 1368, 28)
+  ctx.stroke()
+  ctx.strokeStyle = 'rgba(232, 184, 74, 0.7)'
+  ctx.lineWidth = 1
+  roundRect(ctx, 48, 48, 984, 1344, 22)
+  ctx.stroke()
 }
 
 function coverRounded(ctx, image, x, y, size, radius) {
@@ -81,12 +105,7 @@ export async function drawNationalDaySharePoster({ heroSrc, crowdSrcs = [], stor
   const canvas = canvasOf(width, Math.round(width * 4 / 3))
   const ctx = canvas.getContext('2d')
   ctx.scale(width / 1080, width / 1080)
-  ctx.fillStyle = '#f3d2c2'
-  ctx.fillRect(0, 0, 1080, 1440)
-  ctx.drawImage(collage, -450, -40, 1980, 1135)
-  ctx.drawImage(collage, -450, 1095, 1980, 1135)
-  ctx.fillStyle = 'rgba(155, 44, 38, 0.12)'
-  ctx.fillRect(0, 0, 1080, 1440)
+  paintBackdrop(ctx)
 
   function paper(x, y, w, h) {
     ctx.save()
@@ -148,4 +167,19 @@ export async function drawNationalDaySharePoster({ heroSrc, crowdSrcs = [], stor
   ctx.font = `18px Georgia, ${SERIF}`
   ctx.fillText('K I D S T O R Y   /   国 庆 来 信', 540, 1372)
   return canvas.toDataURL('image/png')
+}
+
+/** 用本地 blob 下载，避免超长 data URL 被浏览器当成页面打开。 */
+export function downloadPostcard(dataUrl, filename = 'national-day-postcard.png') {
+  if (!dataUrl || !dataUrl.startsWith('data:')) return false
+  const blob = dataUrlToBlob(dataUrl)
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500)
+  return true
 }

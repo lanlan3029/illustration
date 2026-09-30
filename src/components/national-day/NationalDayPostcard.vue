@@ -27,9 +27,8 @@
 
 <script>
 import { ElDialog } from 'element-plus'
-import { drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
+import { downloadPostcard, drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
 import { loadImageBlob } from '@/utils/canvasImageCompose'
-import { downloadDataUrl } from '@/utils/lassoCrop'
 import { buildShareLink, buildShareTitle } from '@/utils/nationalDayMoments'
 
 export default {
@@ -107,8 +106,8 @@ export default {
     },
     save() {
       if (!this.poster) return
-      downloadDataUrl(`national-day-postcard-${this.memory.id || Date.now()}.png`, this.poster)
-      this.status = this.$t('nationalDayMoments.postcardDownloaded')
+      const saved = downloadPostcard(this.poster, `national-day-postcard-${this.memory?.id || Date.now()}.png`)
+      if (saved) this.status = this.$t('nationalDayMoments.postcardDownloaded')
     },
     async copy() {
       try {

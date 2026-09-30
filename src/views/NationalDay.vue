@@ -21,16 +21,11 @@
               v-if="posterDataUrl"
               class="nd-postcard__sheet"
               :src="posterDataUrl"
-              :alt="$t('nationalDayMoments.memoryImage')"
+              :alt="$t('nationalDayMoments.postcardAlt')"
             />
-            <div v-else class="nd-postcard__paper">
-              <p class="nd-postcard__kicker">NATIONAL DAY</p>
-              <img class="nd-postcard__hero" :src="activeMemory.imageUrl" :alt="$t('nationalDayMoments.memoryImage')" referrerpolicy="no-referrer" />
-              <blockquote>{{ activeMemory.note }}</blockquote>
-              <time v-if="memoryDate">{{ memoryDate }}</time>
-            </div>
+            <p v-else class="nd-postcard__pending" role="status">{{ $t('nationalDayMoments.postcardLoading') }}</p>
             <div class="nd-postcard__actions">
-              <button type="button" @click="postcardOpen = true">{{ $t('nationalDayMoments.makePostcard') }}</button>
+              <button type="button" :disabled="!posterDataUrl" @click="savePostcard">{{ $t('nationalDayMoments.savePostcard') }}</button>
               <button type="button" @click="startWriting">{{ $t('nationalDayMoments.writeMine') }}</button>
             </div>
           </section>
@@ -120,7 +115,7 @@ import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
 import NationalDayPostcard from '@/components/national-day/NationalDayPostcard.vue'
 import { formatPostcardDate } from '@/utils/childhoodSharePoster'
-import { drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
+import { downloadPostcard, drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
 import {
   extractPictureId,
   extractPictureRecord,
@@ -472,6 +467,12 @@ export default {
         console.warn('[NationalDay] inline postcard failed', err)
       }
     },
+    savePostcard() {
+      if (!this.posterDataUrl) return
+      const filename = `national-day-postcard-${this.activeMemory?.id || Date.now()}.png`
+      const saved = downloadPostcard(this.posterDataUrl, filename)
+      if (saved) ElMessage.success(this.$t('nationalDayMoments.postcardDownloaded'))
+    },
     buildSharePayload() {
       const memory = this.activeMemory
       const story = memory?.note || localStorage.getItem(SHARE_STORY_KEY) || ''
@@ -678,11 +679,7 @@ export default {
 .moment-panel__stats-time { font-size: 11px; line-height: 1.6; color: var(--moment-muted); }
 .nd-postcard { margin: 0 0 28px; }
 .nd-postcard__sheet { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: 0 16px 36px rgba(155, 44, 38, 0.16); background: #f8e6d8; }
-.nd-postcard__paper { padding: 18px 18px 16px; background: #fff8f2; border: 1px solid #f0c4a8; border-radius: 16px; box-shadow: 0 12px 28px rgba(155, 44, 38, 0.1); }
-.nd-postcard__kicker { margin: 0 0 12px; color: #c23b32; font-size: 11px; letter-spacing: 3px; }
-.nd-postcard__hero { display: block; width: 100%; aspect-ratio: 1; height: auto; object-fit: cover; border-radius: 18px; background: #f6f1e6; }
-.nd-postcard blockquote { margin: 14px 0 0; color: #4a2c28; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
-.nd-postcard time { display: block; margin-top: 12px; font: 13px Georgia, serif; color: #8a675f; }
+.nd-postcard__pending { margin: 0; padding: 48px 16px; border-radius: 16px; background: #fff8f2; color: #9b2c26; text-align: center; }
 .nd-postcard__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 .nd-postcard__actions button { border: 1px solid #efc2b0; border-radius: 8px; background: transparent; color: #9b2c26; padding: 10px 14px; font: inherit; font-size: 13px; cursor: pointer; }
 .nd-postcard__actions button:first-child { background: #c23b32; color: white; border-color: #c23b32; }
