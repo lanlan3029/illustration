@@ -16,12 +16,20 @@
 
       <aside class="moment-split__right">
         <div class="moment-panel__inner">
-          <section v-if="activeMemory" class="memory-letter" :aria-label="$t('nationalDayMoments.memoryLetter')">
-            <p class="memory-letter__eyebrow">{{ $t('nationalDayMoments.memoryLetter') }}</p>
-            <img :src="activeMemory.imageUrl" :alt="$t('nationalDayMoments.memoryImage')" referrerpolicy="no-referrer" />
-            <blockquote>{{ activeMemory.note }}</blockquote>
-            <time v-if="memoryDate">{{ memoryDate }}</time>
-            <div class="memory-letter__actions">
+          <section v-if="activeMemory" class="nd-postcard" :aria-label="$t('nationalDayMoments.postcardTitle')">
+            <img
+              v-if="posterDataUrl"
+              class="nd-postcard__sheet"
+              :src="posterDataUrl"
+              :alt="$t('nationalDayMoments.memoryImage')"
+            />
+            <div v-else class="nd-postcard__paper">
+              <p class="nd-postcard__kicker">NATIONAL DAY</p>
+              <img class="nd-postcard__hero" :src="activeMemory.imageUrl" :alt="$t('nationalDayMoments.memoryImage')" referrerpolicy="no-referrer" />
+              <blockquote>{{ activeMemory.note }}</blockquote>
+              <time v-if="memoryDate">{{ memoryDate }}</time>
+            </div>
+            <div class="nd-postcard__actions">
               <button type="button" @click="postcardOpen = true">{{ $t('nationalDayMoments.makePostcard') }}</button>
               <button type="button" @click="startWriting">{{ $t('nationalDayMoments.writeMine') }}</button>
             </div>
@@ -97,7 +105,12 @@
         </div>
       </aside>
     </section>
-    <NationalDayPostcard v-model="postcardOpen" :memory="activeMemory" :crowd-srcs="postcardCrowdUrls" />
+    <NationalDayPostcard
+      v-model="postcardOpen"
+      :memory="activeMemory"
+      :crowd-srcs="postcardCrowdUrls"
+      :ready-poster="posterDataUrl"
+    />
   </div>
 </template>
 
@@ -107,6 +120,7 @@ import { mapState } from 'vuex'
 import ChildhoodAvatarCrowd from '@/components/childhood/ChildhoodAvatarCrowd.vue'
 import NationalDayPostcard from '@/components/national-day/NationalDayPostcard.vue'
 import { formatPostcardDate } from '@/utils/childhoodSharePoster'
+import { drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
 import {
   extractPictureId,
   extractPictureRecord,
@@ -142,6 +156,12 @@ export default {
       selectedMemory: null,
       memories: [],
       postcardOpen: false,
+      posterDataUrl: '',
+      posterToken: 0,
+      lastMemory: null,
+      savedPictureId: '',
+      savedImageUrl: '',
+      savedStory: '',
       pictureType: NATIONAL_DAY_PICTURE_TYPE,
       generating: false,
       placeholderIndex: 0,
@@ -161,10 +181,33 @@ export default {
       return Array.isArray(list) ? list : []
     },
     activeMemory() {
-      if (this.selectedMemory) return this.selectedMemory
+      if (this.selectedMemory?.imageUrl) return this.selectedMemory
       const sharedId = String(this.$route.query.mine || '')
-      if (sharedId) return this.memories.find((memory) => memory.id === sharedId) || null
-      return null
+      if (sharedId) return this.memories.find((memory) => String(memory.id) === sharedId) || null
+      if (this.lastMemory?.imageUrl) return this.lastMemory
+      const mineId = String(this.savedPictureId || '')
+      if (mineId) {
+        const mine = this.memories.find((memory) => String(memory.id) === mineId)
+        if (mine?.imageUrl) return mine
+      }
+      if (this.savedImageUrl) {
+        return {
+          id: mineId,
+          imageUrl: this.savedImageUrl,
+          note: this.savedStory,
+          createdAt: '',
+          isSeed: false,
+        }
+      }
+      return this.latestRecord
+    },
+    latestRecord() {
+      let latest = null
+      for (const memory of this.memories) {
+        if (!memory?.imageUrl) continue
+        if (!latest || (memory.createdAt || 0) >= (latest.createdAt || 0)) latest = memory
+      }
+      return latest
     },
     scenePlaceholderList() {
       const list = this.$tm('nationalDayMoments.scenePlaceholders')
@@ -201,12 +244,20 @@ export default {
     '$route.query.mine'() {
       this.selectedMemory = null
     },
-    activeMemory() {
+    activeMemory(memory) {
+      this.renderInlinePoster(memory)
       if (this.wxShareReady) this.applyWeChatShare()
     },
   },
   mounted() {
     this.$store.commit('closeMask')
+    try {
+      this.savedPictureId = localStorage.getItem(MY_PICTURE_ID_KEY) || ''
+      this.savedImageUrl = localStorage.getItem(STORAGE_KEY) || ''
+      this.savedStory = localStorage.getItem(SHARE_STORY_KEY) || ''
+    } catch {
+      // ignore private mode
+    }
     this.initWeChatShare()
     this.clockTimer = setInterval(() => {
       this.communityClock = Date.now()
@@ -320,6 +371,7 @@ export default {
           isSeed: false,
           createdAt,
         }
+        this.lastMemory = this.selectedMemory
         await this.$refs.crowdRef?.refreshScenes({
           anchorId: previewId,
           freshRecord: previewRecord,
@@ -347,6 +399,7 @@ export default {
               id: pictureId,
               createdAt: record.createdAt || createdAt,
             }
+            this.lastMemory = this.selectedMemory
             await this.$refs.crowdRef?.refreshScenes({
               anchorId: pictureId,
               replaceId: previewId,
@@ -359,6 +412,9 @@ export default {
         }
 
         this.subjectScene = ''
+        this.savedImageUrl = storedUrl
+        this.savedStory = sceneText
+        if (pictureId) this.savedPictureId = pictureId
         try {
           localStorage.setItem(STORAGE_KEY, storedUrl)
           localStorage.setItem(SHARE_STORY_KEY, sceneText)
@@ -367,7 +423,12 @@ export default {
           // ignore quota
         }
         ElMessage.success(this.$t('nationalDayMoments.generateSuccess'))
-        this.postcardOpen = true
+        await this.renderInlinePoster(this.selectedMemory)
+        this.$nextTick(() => {
+          const pane = this.$el.querySelector('.moment-split__right')
+          if (pane) pane.scrollTop = 0
+          this.$el.querySelector('.nd-postcard')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
         this.applyWeChatShare()
       } catch (err) {
         console.error('[NationalDay] shareMoment failed', err)
@@ -380,10 +441,41 @@ export default {
         this.generating = false
       }
     },
+    async renderInlinePoster(memory) {
+      const token = (this.posterToken += 1)
+      if (!memory?.imageUrl) {
+        this.posterDataUrl = ''
+        return
+      }
+      try {
+        const heroSrc = await this.imageUrlToDataUrl(memory.imageUrl)
+        if (token !== this.posterToken) return
+        const crowdSrcs = []
+        for (const url of this.postcardCrowdUrls) {
+          try {
+            crowdSrcs.push(await this.imageUrlToDataUrl(url))
+          } catch {
+            // 墙上一张图拉失败时，明信片仍用主图。
+          }
+        }
+        if (token !== this.posterToken) return
+        const dataUrl = await drawNationalDaySharePoster({
+          heroSrc,
+          story: memory.note,
+          date: memory.createdAt || Date.now(),
+          shareUrl: buildShareLink(memory.id),
+          crowdSrcs,
+        })
+        if (token !== this.posterToken) return
+        this.posterDataUrl = dataUrl
+      } catch (err) {
+        console.warn('[NationalDay] inline postcard failed', err)
+      }
+    },
     buildSharePayload() {
       const memory = this.activeMemory
       const story = memory?.note || localStorage.getItem(SHARE_STORY_KEY) || ''
-      const pictureId = memory && !memory.isSeed ? memory.id : ''
+      const pictureId = memory?.id || ''
       return {
         title: buildShareTitle(story),
         desc: this.$t('nationalDayMoments.invitationText'),
@@ -471,6 +563,8 @@ export default {
   --moment-muted: #8a675f;
   --moment-line: #f0d2c4;
   display: flex;
+  align-items: flex-start;
+  overflow: auto;
   min-width: 0;
   min-height: var(--moment-stage-height);
   background:
@@ -481,7 +575,7 @@ export default {
 .moment-panel__inner {
   width: 100%;
   max-width: 560px;
-  margin: auto;
+  margin: 0 auto;
   padding: 64px clamp(28px, 3.4vw, 64px);
   box-sizing: border-box;
   animation: moment-arrive 700ms cubic-bezier(.22, 1, .36, 1) both;
@@ -582,14 +676,16 @@ export default {
 .moment-panel__stats-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .moment-panel__stats-live { font-size: 12px; font-weight: 600; color: var(--moment-accent-deep); }
 .moment-panel__stats-time { font-size: 11px; line-height: 1.6; color: var(--moment-muted); }
-.memory-letter { padding: 22px; margin: 0 0 30px; background: #fffdf8; border: 1px solid #f0c4a8; box-shadow: 0 8px 20px rgba(194, 59, 50, 0.08); }
-.memory-letter__eyebrow { color: #c23b32; font-size: 11px; letter-spacing: 3px; margin: 0; }
-.memory-letter > img { display: block; width: min(100%, 220px); aspect-ratio: 1; height: auto; object-fit: cover; margin: 16px auto; border-radius: 18px; background: #f6f1e6; }
-.memory-letter blockquote { margin: 12px 0; color: #51483e; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
-.memory-letter time { display: block; font: 12px Georgia, serif; color: #81796b; margin-top: 14px; }
-.memory-letter__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
-.memory-letter__actions button { border: 1px solid #efc2b0; border-radius: 5px; background: transparent; color: #9b2c26; padding: 9px 12px; font: inherit; font-size: 12px; cursor: pointer; }
-.memory-letter__actions button:first-child { background: #c23b32; color: white; border-color: #c23b32; }
+.nd-postcard { margin: 0 0 28px; }
+.nd-postcard__sheet { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: 0 16px 36px rgba(155, 44, 38, 0.16); background: #f8e6d8; }
+.nd-postcard__paper { padding: 18px 18px 16px; background: #fff8f2; border: 1px solid #f0c4a8; border-radius: 16px; box-shadow: 0 12px 28px rgba(155, 44, 38, 0.1); }
+.nd-postcard__kicker { margin: 0 0 12px; color: #c23b32; font-size: 11px; letter-spacing: 3px; }
+.nd-postcard__hero { display: block; width: 100%; aspect-ratio: 1; height: auto; object-fit: cover; border-radius: 18px; background: #f6f1e6; }
+.nd-postcard blockquote { margin: 14px 0 0; color: #4a2c28; font-family: 'Songti SC', 'SimSun', serif; font-size: 18px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.nd-postcard time { display: block; margin-top: 12px; font: 13px Georgia, serif; color: #8a675f; }
+.nd-postcard__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.nd-postcard__actions button { border: 1px solid #efc2b0; border-radius: 8px; background: transparent; color: #9b2c26; padding: 10px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.nd-postcard__actions button:first-child { background: #c23b32; color: white; border-color: #c23b32; }
 .memory-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
 .memory-prompts button { border: 1px solid #efd0a2; border-radius: 20px; color: #8a4030; background: #fff8ec; padding: 8px 12px; font: inherit; font-size: 12px; cursor: pointer; }
 .memory-prompts button:hover { background: #ffe8c2; border-color: #e8b84a; }
@@ -673,16 +769,9 @@ export default {
     border-radius: 14px;
   }
   .moment-form__shortcut { display: none; }
-  .memory-letter {
-    padding: 14px;
-    margin-bottom: 18px;
-    border-radius: 18px;
-  }
-  .memory-letter blockquote {
-    font-size: 16px;
-    max-height: 140px;
-  }
-  .memory-letter__actions button {
+  .nd-postcard { margin-bottom: 18px; }
+  .nd-postcard blockquote { font-size: 16px; }
+  .nd-postcard__actions button {
     min-height: 36px;
     border-radius: 999px;
     padding: 8px 14px;

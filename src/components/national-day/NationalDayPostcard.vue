@@ -28,6 +28,7 @@
 <script>
 import { ElDialog } from 'element-plus'
 import { drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
+import { loadImageBlob } from '@/utils/canvasImageCompose'
 import { downloadDataUrl } from '@/utils/lassoCrop'
 import { buildShareLink, buildShareTitle } from '@/utils/nationalDayMoments'
 
@@ -38,6 +39,7 @@ export default {
     modelValue: Boolean,
     memory: { type: Object, default: null },
     crowdSrcs: { type: Array, default: () => [] },
+    readyPoster: { type: String, default: '' },
   },
   emits: ['update:modelValue'],
   data: () => ({ poster: '', busy: false, error: '', invitation: '', status: '', renderVersion: 0 }),
@@ -49,6 +51,7 @@ export default {
   },
   watch: {
     modelValue(open) { if (open) this.render() },
+    readyPoster(value) { if (value && this.modelValue) this.poster = value },
   },
   beforeUnmount() { this.renderVersion += 1 },
   methods: {
@@ -58,16 +61,27 @@ export default {
       const version = this.renderVersion + 1
       this.renderVersion = version
       const memory = this.memory
-      const url = buildShareLink(memory.isSeed ? '' : memory.id)
+      const url = buildShareLink(memory.id)
       this.poster = ''
       this.error = ''
       this.status = ''
       this.busy = true
       this.invitation = `${buildShareTitle(memory.note)}\n\n${this.$t('nationalDayMoments.invitationText')}\n${url}`
+      if (this.readyPoster) {
+        this.poster = this.readyPoster
+        this.busy = false
+        return
+      }
+      const objectUrls = []
       try {
+        const heroSrc = await this.toDrawable(memory.imageUrl, objectUrls)
+        const crowdSrcs = []
+        for (const src of this.crowdSrcs) {
+          try { crowdSrcs.push(await this.toDrawable(src, objectUrls)) } catch { /* skip one wall image */ }
+        }
         const poster = await drawNationalDaySharePoster({
-          heroSrc: memory.imageUrl,
-          crowdSrcs: this.crowdSrcs,
+          heroSrc,
+          crowdSrcs,
           story: memory.note,
           date: memory.createdAt,
           shareUrl: url,
@@ -77,8 +91,19 @@ export default {
         console.warn('[NationalDayPostcard] render failed', error)
         if (version === this.renderVersion) this.error = this.$t('nationalDayMoments.postcardError')
       } finally {
+        objectUrls.forEach((objectUrl) => URL.revokeObjectURL(objectUrl))
         if (version === this.renderVersion) this.busy = false
       }
+    },
+    async toDrawable(src, objectUrls) {
+      if (!src || src.startsWith('data:') || src.startsWith('blob:')) return src
+      const blob = await loadImageBlob(src, {
+        http: this.$http,
+        apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
+      })
+      const objectUrl = URL.createObjectURL(blob)
+      objectUrls.push(objectUrl)
+      return objectUrl
     },
     save() {
       if (!this.poster) return
