@@ -33,27 +33,29 @@
                         </div>
 
                         <div
-                            v-if="activeIllustrationTab === 'handraw'"
-                            class="style-tab-row style-tab-row--handraw"
+                            class="style-tab-row style-tab-row--categories"
                             role="tablist"
-                            :aria-label="$t('aiPicture.handrawGroupTabs') || '手绘库 A–H 分组'"
+                            :aria-label="$t('aiPicture.illustrationSubTabs')"
                         >
                             <button
-                                v-for="tab in handrawGroupTabItems"
-                                :key="'hg-' + tab.id"
+                                v-for="tab in styleCategoryTabItems"
+                                :key="'category-' + tab.id"
                                 type="button"
                                 class="style-tab style-tab--compact"
-                                :class="{ active: activeHandrawGroup === tab.id }"
+                                :class="{ active: activeStyleCategory === tab.id }"
                                 role="tab"
-                                :aria-selected="activeHandrawGroup === tab.id"
+                                :aria-selected="activeStyleCategory === tab.id"
                                 :title="tab.title || tab.label"
-                                @click="setHandrawGroup(tab.id)"
+                                @click="setStyleCategory(tab.id)"
                             >
                                 {{ tab.label }}
                             </button>
                         </div>
 
                         <div class="style-list" ref="styleListRef">
+                            <p v-if="!stylesLoading && !displayedStyles.length && !(activeIllustrationTab === 'all' && activeStyleCategory === 'all' && displayedOaiItems.length)" class="style-empty-state">
+                                {{ $t('aiPicture.styleCategoryEmpty') }}
+                            </p>
                             <button
                                 v-for="style in displayedStyles"
                                 :key="'style-' + style.id"
@@ -78,7 +80,7 @@
                                 <span class="style-list-item-text">{{ style.artStyle }}</span>
                             </button>
 
-                            <template v-if="activeIllustrationTab === 'all'">
+                            <template v-if="activeIllustrationTab === 'all' && activeStyleCategory === 'all'">
                                 <button
                                     v-for="item in displayedOaiItems"
                                     :key="'oai-' + item.id"
@@ -503,7 +505,7 @@
 </template>
 
 <script>
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
@@ -541,12 +543,12 @@ import {
     isHandrawLibraryStyle as isHandrawLibStyle,
 } from '@/utils/handrawStyleGroups'
 import {
-    isFeaturedIllustrationStyle,
     sortStylesFeaturedFirst,
 } from '@/utils/illustrationStyleSort'
 import {
     stylesForIllustrationTab,
     visibleIllustrationMainTabIds,
+    visibleIllustrationCategoryIds,
 } from '@/utils/illustrationStyleTabs'
 
 export default {
@@ -570,7 +572,7 @@ export default {
         return {
             selectedStyleId: null,
             activeIllustrationTab: 'curated',
-            activeHandrawGroup: 'all',
+            activeStyleCategory: 'all',
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
             displayOrderOai: [],
@@ -655,39 +657,19 @@ export default {
                 .filter((x) => x && set.has(x.id))
         },
         illustrationTabItems() {
-            const labelById = {
-                curated: this.$t('aiPicture.styleTabCurated') || '精选',
-                all: this.$t('aiPicture.styleTabAll') || '全部',
-                sketch: this.$t('aiPicture.styleTabSketch') || '线稿手绘',
-                paint: this.$t('aiPicture.styleTabPaint') || '色彩综合',
-                toon: this.$t('aiPicture.styleTabToon') || '卡通 / 3D',
-                collage: this.$t('aiPicture.styleTabCollage'),
-                other: this.$t('aiPicture.styleTabOther'),
-                skill: this.$t('aiPicture.styleTabSkill') || 'SKILL',
-                handraw: this.$t('aiPicture.styleTabHandraw') || '手绘库',
-            }
-            const visibleIds = visibleIllustrationMainTabIds(this.styles, {
-                oaiTemplateCount: (this.visibleOaiItems || []).length,
-            })
-            return visibleIds.map((id) => ({ id, label: labelById[id] || id }))
+            return visibleIllustrationMainTabIds().map(id => ({
+                id,
+                label: this.$t(id === 'curated' ? 'aiPicture.styleTabCurated' : 'aiPicture.styleTabAll'),
+            }))
         },
-        handrawGroupTabItems() {
-            const items = [
-                {
-                    id: 'all',
-                    label: this.$t('aiPicture.handrawGroupAll') || '全部',
-                    title: this.$t('aiPicture.handrawGroupAll') || '全部',
-                },
-            ]
-            for (const letter of ['A', 'B', 'C', 'D', 'E', 'F', 'other']) {
-                const name = this.$t(letter === 'other' ? 'aiPicture.handrawGroupOther' : `aiPicture.handrawGroup${letter}`)
-                items.push({
-                    id: letter,
-                    label: name,
-                    title: name,
-                })
+        styleCategoryTabItems() {
+            const keys = {
+                sketch: 'styleTabSketch', paint: 'styleTabPaint', toon: 'styleTabToon',
+                collage: 'styleTabCollage', chinese: 'styleTabChinese', other: 'styleTabOther', skill: 'styleTabSkill',
             }
-            return items
+            return [{ id: 'all', label: this.$t('aiPicture.styleCategoryAll') },
+                ...visibleIllustrationCategoryIds(this.styles).map(id => ({ id, label: this.$t(`aiPicture.${keys[id]}`) })),
+            ]
         },
         promptPlaceholder() {
             if (this.isXiaoheiStyle(this.selectedStyle)) {
@@ -706,7 +688,7 @@ export default {
         },
         visibleStyles() {
             return stylesForIllustrationTab(this.activeIllustrationTab, this.styles, {
-                handrawGroup: this.activeHandrawGroup,
+                category: this.activeStyleCategory,
             })
         },
         handrawStyleReferenceActive() {
@@ -859,7 +841,7 @@ export default {
                 if (!ids.length) return
                 if (!ids.includes(this.activeIllustrationTab)) {
                     this.activeIllustrationTab = ids.includes('curated') ? 'curated' : ids[0]
-                    this.activeHandrawGroup = 'all'
+                    this.activeStyleCategory = 'all'
                     this.displayOrder = []
                 }
             },
@@ -933,16 +915,16 @@ export default {
         setIllustrationTab(tabId) {
             if (this.activeIllustrationTab === tabId) return
             this.activeIllustrationTab = tabId
-            if (tabId !== 'handraw') this.activeHandrawGroup = 'all'
+            this.activeStyleCategory = 'all'
             this.displayOrder = []
             this.$nextTick(() => {
                 const list = this.$refs.styleListRef
                 if (list) list.scrollTo({ top: 0, behavior: 'auto' })
             })
         },
-        setHandrawGroup(groupId) {
-            if (this.activeHandrawGroup === groupId) return
-            this.activeHandrawGroup = groupId
+        setStyleCategory(groupId) {
+            if (this.activeStyleCategory === groupId) return
+            this.activeStyleCategory = groupId
             this.displayOrder = []
             this.$nextTick(() => {
                 const list = this.$refs.styleListRef
@@ -2629,7 +2611,15 @@ export default {
     font-weight: 500;
 }
 
-.style-tab-row--handraw {
+.style-empty-state {
+    grid-column: 1 / -1;
+    padding: 24px 12px;
+    text-align: center;
+    color: #737784;
+    font-size: 13px;
+}
+
+.style-tab-row--categories {
     margin-top: 4px;
     padding-top: 6px;
     border-top: 1px dashed #e8eaef;
