@@ -4,6 +4,8 @@ KidStory 前端静态文件目录：`/home/ubuntu/www/illustration/dist`
 
 完整配置示例见 [`Caddyfile.example`](./Caddyfile.example)。
 
+构建会输出首页、AI 绘本介绍和教程的静态正文，以及其他固定公开页的独立元信息。服务规则须优先匹配 `{path}/index.html`，再匹配 `{path}`，最后使用 `/app.html` 作为 Vue History 路由外壳。不要将 SPA fallback 指向带首页 canonical 的 `/index.html`。`app.html` 与所有公开页均由正常生产构建生成，无需额外安装浏览器或运行内容接口。
+
 ## 1. SSH 登录
 
 ```bash

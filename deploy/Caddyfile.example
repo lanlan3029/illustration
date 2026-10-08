@@ -21,6 +21,8 @@ kidstory.cc {
 
 www.kidstory.cc {
 	root * /home/ubuntu/www/illustration/dist
+	@private path /creation-studio /creation-studio/* /user /user/* /member/* /wechat/callback /forgot-password
+	header @private X-Robots-Tag "noindex, follow"
 
 	# 静态资源：直接 file_server，禁止 fallback 到 index.html
 	@static path /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
@@ -28,14 +30,17 @@ www.kidstory.cc {
 		file_server
 	}
 
-	# SPA（Vue History）：其余路径 try_files → index.html
+	# 公开页优先读取独立 HTML，其余 Vue History 路由使用无 canonical 的 SPA 外壳
 	handle {
-		try_files {path} /index.html
+		try_files {path}/index.html {path} /app.html
 		file_server
 	}
 
 	# 缓存：index.html / sitemap / robots 不长期缓存，便于 Google 重新抓取
 	header /index.html Cache-Control "no-cache, no-store, must-revalidate"
+	header /app.html Cache-Control "no-cache, no-store, must-revalidate"
+	header /ai-picture-book* Cache-Control "no-cache, must-revalidate"
+	header /guides/ai-picture-book-tutorial* Cache-Control "no-cache, must-revalidate"
 	header /sitemap.xml Cache-Control "no-cache, must-revalidate"
 	header /robots.txt Cache-Control "no-cache, must-revalidate"
 	header /js/* Cache-Control "public, max-age=604800, immutable"

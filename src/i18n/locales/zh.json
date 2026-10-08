@@ -860,8 +860,8 @@
     "recapChooseRangeFirst": "请选择统计时段后开始 AI 分析"
   },
   "home": {
-    "welcomeTitle": "您的专属创作工作台",
-    "welcomeSubtitle": "选择您想要使用的创作功能",
+    "welcomeTitle": "用 AI 创作绘本，从故事走向完整作品",
+    "welcomeSubtitle": "编写故事、设置角色参考、生成插画，再编辑排版完成绘本",
     "aiIllustrationDesc": "选择风格模版，一句话生成精美插画",
     "aiBooksDesc": "AI智能生成绘本故事",
     "createCharacterDesc": "创作专属角色形象",

@@ -12,6 +12,16 @@ const routes = [{
         component: () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
     },
     {
+        path: '/ai-picture-book',
+        name: 'ai-picture-book-intro',
+        component: () => import(/* webpackChunkName: "public-seo-pages" */ '../views/PublicSeoPage.vue'),
+    },
+    {
+        path: '/guides/ai-picture-book-tutorial',
+        name: 'ai-picture-book-tutorial',
+        component: () => import(/* webpackChunkName: "public-seo-pages" */ '../views/PublicSeoPage.vue'),
+    },
+    {
         path: '/wechat/callback',
         name: 'WeChatCallback',
         component: () => import(/* webpackChunkName: "wechat-callback" */ '../views/WeChatCallback.vue')

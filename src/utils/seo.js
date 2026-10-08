@@ -1,10 +1,12 @@
 /** 站点 SEO 默认值与路由标题 */
+import publicPages from '@/data/publicSeoPages.json'
+
 export const SEO = {
   siteName: 'KidStory',
   siteUrl: 'https://www.kidstory.cc',
-  defaultTitle: 'KidStory | AI插画与绘本创作平台',
+  defaultTitle: publicPages.pages[0].title,
   defaultDescription:
-    'KidStory 是 AI 插画与绘本创作平台，支持 AI 生图、角色与组图绘本、心情日记、在线编辑与 PDF 导出，浏览原创插画与绘本作品。',
+    publicPages.pages[0].description,
   defaultKeywords:
     'KidStory,AI插画,AI绘本,儿童绘本,插画创作,绘本创作,在线编辑器,图元上传,PDF导出,心情日记,原创插画',
 }
@@ -30,13 +32,37 @@ function canonicalForPath(path) {
  * @param {import('vue-router').RouteLocationNormalized} route
  */
 export function applyRouteSeo(route) {
+  if (typeof document === 'undefined') return
   const record = route.matched
     .slice()
     .reverse()
     .find((r) => r.meta?.seoTitle)
   const seoTitle = record?.meta?.seoTitle
-  document.title = seoTitle ? `${seoTitle} | ${SEO.siteName}` : SEO.defaultTitle
+  const normalizedPath = route.path.replace(/\/+$/, '') || '/'
+  const page = [...publicPages.pages, ...publicPages.metadata].find(page => page.path === normalizedPath)
+  const title = page?.title || (seoTitle ? `${seoTitle} | ${SEO.siteName}` : SEO.defaultTitle)
+  const description = page?.description || record?.meta?.seoDescription || SEO.defaultDescription
+  document.title = title
   setLinkRel('canonical', canonicalForPath(route.path))
+  setMeta('description', description)
+  setMeta('og:title', title)
+  setMeta('og:description', description)
+  setMeta('og:url', canonicalForPath(route.path))
+  setMeta('twitter:title', title)
+  setMeta('twitter:description', description)
+  const isPrivate = route.matched.some(record => record.meta?.requiresAuth) || /^\/(user|member|creation-studio)(\/|$)/.test(route.path)
+  setMeta('robots', isPrivate || route.name === 'NotFound' ? 'noindex, follow' : 'index, follow')
 }
 
-export { setLinkRel, canonicalForPath }
+function setMeta(name, content) {
+  const attribute = name.startsWith('og:') ? 'property' : 'name'
+  let element = document.querySelector(`meta[${attribute}="${name}"]`)
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute(attribute, name)
+    document.head.appendChild(element)
+  }
+  element.setAttribute('content', content)
+}
+
+export { setLinkRel, canonicalForPath, setMeta }

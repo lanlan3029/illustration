@@ -6,7 +6,8 @@
         "serve": "vue-cli-service serve",
         "build": "vue-cli-service build",
         "build:analyze": "ANALYZE=true vue-cli-service build",
-        "lint": "vue-cli-service lint"
+        "lint": "vue-cli-service lint",
+        "test:seo": "node scripts/test-public-seo.cjs"
     },
     "dependencies": {
         "@vueuse/core": "^10.7.0",

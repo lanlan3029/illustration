@@ -4,6 +4,7 @@
       <p class="blog-kicker">{{ $t('blog.kicker') }}</p>
       <h1>{{ $t('blog.pageTitle') }}</h1>
       <p class="blog-desc">{{ $t('blog.pageDesc') }}</p>
+      <router-link to="/guides/ai-picture-book-tutorial">如何用 AI 制作一本绘本：从故事到 PDF →</router-link>
     </header>
 
     <div v-if="loading" class="blog-state">{{ $t('blog.loading') }}</div>

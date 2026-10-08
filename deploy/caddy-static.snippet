@@ -3,4 +3,4 @@
 #
 # 核心规则（不可颠倒顺序）：
 #   @static → file_server（/js /css /sitemap.xml 等）
-#   handle  → try_files {path} /index.html（SPA History 路由）
+#   handle  → try_files {path}/index.html {path} /app.html（静态公开页优先，其他 Vue History 路由使用无 canonical 的外壳）

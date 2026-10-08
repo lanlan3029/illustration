@@ -4,6 +4,7 @@
       <p class="guides-kicker">{{ $t('guides.hero.kicker') }}</p>
       <h1>{{ $t('guides.hero.title') }}</h1>
       <p class="guides-lead">{{ $t('guides.hero.subtitle') }}</p>
+      <router-link to="/guides/ai-picture-book-tutorial" class="feature-link">AI 绘本完整制作教程：从故事到 PDF →</router-link>
       <nav class="guides-nav">
         <a v-for="item in navItems" :key="item.id" :href="`#${item.id}`" class="guides-nav-link">
           {{ $t(item.labelKey) }}

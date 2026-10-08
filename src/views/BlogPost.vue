@@ -38,7 +38,7 @@
 
 <script>
 import { fetchBlogPost } from '@/utils/blogApi'
-import { SEO, setLinkRel, canonicalForPath } from '@/utils/seo'
+import { SEO, setLinkRel, canonicalForPath, applyRouteSeo } from '@/utils/seo'
 
 export default {
   name: 'BlogPost',
@@ -52,6 +52,7 @@ export default {
     return {
       loading: true,
       post: null,
+      requestId: 0,
     }
   },
   watch: {
@@ -63,10 +64,11 @@ export default {
     },
   },
   beforeUnmount() {
-    this.resetSeo()
+    this.requestId += 1
   },
   methods: {
     async loadPost() {
+      const requestId = ++this.requestId
       const slug = String(this.slug || this.$route?.params?.slug || '').trim()
       if (!slug) {
         this.post = null
@@ -75,17 +77,21 @@ export default {
       }
       this.loading = true
       try {
-        this.post = await fetchBlogPost(this.$http, slug)
+        const post = await fetchBlogPost(this.$http, slug)
+        if (requestId !== this.requestId) return
+        this.post = post
         if (this.post?.slug && this.post.slug !== slug) {
           this.$router.replace({ name: 'blog-post', params: { slug: this.post.slug } })
         }
-        this.applySeo(this.post)
+        if (this.post) this.applySeo(this.post)
+        else this.resetSeo()
       } catch (e) {
+        if (requestId !== this.requestId) return
         this.post = null
         this.$message?.error?.(e?.message || this.$t('blog.loadFailed'))
         this.resetSeo()
       } finally {
-        this.loading = false
+        if (requestId === this.requestId) this.loading = false
       }
     },
     applySeo(post) {
@@ -97,13 +103,14 @@ export default {
       this.setMeta('og:title', title)
       this.setMeta('og:description', post.metaDescription || post.excerpt || SEO.defaultDescription)
       this.setMeta('og:url', canonicalForPath(`/blog/${post.slug}`))
+      this.setMeta('twitter:title', title)
+      this.setMeta('twitter:description', post.metaDescription || post.excerpt || SEO.defaultDescription)
       if (post.coverImageUrl) this.setMeta('og:image', post.coverImageUrl)
     },
     resetSeo() {
       if (typeof document === 'undefined') return
-      document.title = SEO.defaultTitle
-      setLinkRel('canonical', `${SEO.siteUrl}/`)
-      this.setMeta('description', SEO.defaultDescription)
+      applyRouteSeo(this.$route)
+      if (!this.post) this.setMeta('robots', 'noindex, follow')
     },
     setMeta(name, content) {
       if (!content || typeof document === 'undefined') return

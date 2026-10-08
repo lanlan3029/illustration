@@ -12,13 +12,12 @@
             <!-- 功能卡片：上排四个 + 下排三个工具入口 -->
             <div class="feature-cards-group">
                 <section class="feature-cards">
-                    <button
+                    <router-link
                         v-for="card in featureCards"
                         :key="card.key"
-                        type="button"
+                        :to="card.to"
                         class="feature-card"
                         :class="card.cls"
-                        @click="go(card.to)"
                     >
                         <span class="feature-rings"></span>
                         <div class="feature-text">
@@ -28,23 +27,22 @@
                         <span class="feature-icon">
                             <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
                         </span>
-                    </button>
+                    </router-link>
                 </section>
                 <section class="feature-cards feature-cards--compact">
-                    <button
+                    <router-link
                         v-for="card in toolCards"
                         :key="card.key"
-                        type="button"
+                        :to="card.to"
                         class="feature-card feature-card--compact"
                         :class="card.cls"
-                        @click="go(card.to)"
                     >
                         <span class="feature-rings"></span>
                         <div class="feature-text">
                             <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
                             <p class="feature-desc">{{ $t(card.descKey) }}</p>
                         </div>
-                    </button>
+                    </router-link>
                 </section>
             </div>
 
@@ -156,15 +154,18 @@
                     </div>
                 </div>
             </section>
+            <PublicSeoContent path="/" compact />
         </div>
     </div>
 </template>
 
 <script>
 import { loadIllustrationStyles } from '@/utils/illustrationStyles'
+import PublicSeoContent from '@/components/PublicSeoContent.vue'
 
 export default {
     name: 'Home',
+    components: { PublicSeoContent },
     computed: {
         carouselStyles() {
             return [...this.styleImages, ...this.styleImages];
@@ -303,6 +304,7 @@ export default {
 }
 
 .feature-card {
+    text-decoration: none;
     position: relative;
     display: block;
     border: none;

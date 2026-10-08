@@ -2,6 +2,7 @@ const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
 const Components = require('unplugin-vue-components/webpack').default
 const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
+const { PublicSeoBuildPlugin } = require('./scripts/lib/publicSeoBuild.cjs')
 
 module.exports = defineConfig({
     pages: {
@@ -78,7 +79,7 @@ module.exports = defineConfig({
         }
     },
     configureWebpack: {
-        plugins: [Components({
+        plugins: [new PublicSeoBuildPlugin(), Components({
             // 仅解析 UI 库，避免自动扫描业务组件改变现有注册行为。
             dirs: [],
             dts: false,
