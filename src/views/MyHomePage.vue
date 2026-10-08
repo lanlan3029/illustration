@@ -200,6 +200,22 @@
         v-infinite-scroll="loadMoreBooks"
         :infinite-scroll-disabled="bookScrollDisabled"
         :infinite-scroll-distance="120">
+        <div class="book-source-filters" role="group" :aria-label="$t('bookLibrary.sourceFilter')">
+          <el-button v-for="source in ['all', 'ai', 'upload']" :key="source"
+            :type="bookSourceFilter === source ? 'primary' : 'default'"
+            :aria-pressed="bookSourceFilter === source" @click="changeBookSource(source)">
+            {{ $t(`bookLibrary.${source}`) }}
+          </el-button>
+        </div>
+        <div v-if="localAiBook && bookSourceFilter !== 'upload'" class="local-ai-book">
+          <div>
+            <el-tag size="small">{{ $t('bookLibrary.ai') }}</el-tag>
+            <strong>{{ localAiBook.title || $t('myHomePage.unnamedBook') }}</strong>
+            <p>{{ $t('bookLibrary.localOnly') }}</p>
+            <p>{{ $t('bookLibrary.progress', { completed: localAiBook.completed, total: localAiBook.total }) }}</p>
+          </div>
+          <el-button type="primary" @click="$router.push({ name: 'AIbooks' })">{{ $t('bookLibrary.continue') }}</el-button>
+        </div>
         <!-- 加载中（首次） -->
         <div v-if="loadingBooks && (!myBooks || myBooks.length === 0)" class="empty-state">
           <p>{{ $t('myHomePage.loading') }}</p>
@@ -232,12 +248,15 @@
             <div class="card-content">
               <div class="card-header">
                 <h3 class="card-title">{{item.title || $t('myHomePage.unnamedBook')}}</h3>
+              </div>
+              <div class="book-labels">
+                <el-tag size="small" type="info">{{ $t(`bookLibrary.${getBookSource(item)}`) }}</el-tag>
                 <el-tag 
-                  :type="getBookStatusType(item.status)" 
+                  :type="item.is_public === 0 ? 'info' : getBookStatusType(item.status)"
                   size="small" 
                   class="book-status-tag"
                 >
-                  {{ getBookStatusLabel(item.status) }}
+                  {{ item.is_public === 0 ? $t('bookLibrary.private') : getBookStatusLabel(item.status) }}
                 </el-tag>
               </div>
               <p class="card-description">{{item.description || $t('myHomePage.noDescription')}}</p>
@@ -252,7 +271,7 @@
         </transition-group>
         <!-- 加载完成但没有绘本 -->
         <div v-else-if="!loadingBooks" class="empty-state">
-          <p>{{ $t('myHomePage.noBooks') }}</p>
+          <p>{{ $t('bookLibrary.noCloudBooks') }}</p>
         </div>
         <!-- 加载更多时底部提示 -->
         <div v-if="loadingBooks && myBooks && myBooks.length > 0" class="load-more-tip">
@@ -316,6 +335,7 @@ import MyCollectionBook from '../components/MyCollectionBook.vue'
 import MyAttention from '../components/MyAttention.vue'
 import MyFans from '../components/MyFans.vue'
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage'
+import { getBookSource, readLocalAiBook } from '@/utils/bookLibrary'
 export default {
   components:{
 MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
@@ -351,6 +371,9 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
 
       // 我的绘本 - 分页/滚动加载
       bookPage: 1,
+      bookSourceFilter: 'all',
+      bookRequestId: 0,
+      localAiBook: readLocalAiBook(localStorage, localStorage.getItem('id')),
       bookPerPage: 20,
       bookScrollDisabled: false,
       hasMoreBooks: true,
@@ -373,6 +396,19 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
     },
   },
   methods: {
+    getBookSource,
+    changeBookSource(source) {
+      if (source === this.bookSourceFilter) return
+      this.bookSourceFilter = source
+      this.toolArr = []
+      this.setBooks()
+      this.getBook()
+    },
+    bookListUrl(page) {
+      const params = new URLSearchParams({ page: String(page), sort_param: 'createdAt', sort_num: 'desc', ownerid: this.id })
+      if (this.bookSourceFilter !== 'all') params.set('source', this.bookSourceFilter)
+      return `/book/?${params}`
+    },
     goProfile() {
       this.$router.push("/user/profile");
     },
@@ -994,6 +1030,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
 
    // 获取我的绘本（第 1 页）
     async getBook(){
+      const requestId = ++this.bookRequestId
       this.bookPage = 1
       this.hasMoreBooks = true
       this.bookScrollDisabled = false
@@ -1006,9 +1043,10 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
           }
           
           const res = await this.$http.get(
-            `/book/?page=1&sort_param=createdAt&sort_num=desc&ownerid=${this.id}`,
+            this.bookListUrl(1),
             { headers }
           )
+          if (requestId !== this.bookRequestId) return
           if (res.data && (res.data.code === 0 || res.data.code === '0' || res.data.desc === 'success')) {
             const list = res.data.message || []
             this.toolArr = Array.isArray(list) ? list : []
@@ -1016,6 +1054,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
             // 仅当后续某页返回空数组时再判定没有更多
 
             await this.loadBookCovers()
+            if (requestId !== this.bookRequestId) return
             this.setBooks()
             this.loadAllBookImages()
           } else {
@@ -1024,12 +1063,13 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
             console.warn('获取绘本数据格式异常:', res.data)
           }
         } catch(err){
+          if (requestId !== this.bookRequestId) return
           console.error('获取我的绘本失败:', err)
           this.toolArr = []
           this.hasMoreBooks = false
           ElMessage.error(this.$t('myHomePage.loadBooksFailed'))
         } finally {
-          this.loadingBooks = false
+          if (requestId === this.bookRequestId) this.loadingBooks = false
         }
     },
 
@@ -1039,6 +1079,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
       if (this.activeIndex !== '4') return
 
       const nextPage = this.bookPage + 1
+      const requestId = this.bookRequestId
       this.bookScrollDisabled = true
       this.loadingBooks = true
       try {
@@ -1049,9 +1090,11 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
         }
 
         const res = await this.$http.get(
-          `/book/?page=${nextPage}&sort_param=createdAt&sort_num=desc&ownerid=${this.id}`,
+          this.bookListUrl(nextPage),
           { headers }
         )
+        if (requestId !== this.bookRequestId) return
+        if (!(res.data?.code === 0 || res.data?.code === '0' || res.data?.desc === 'success')) throw new Error('Invalid book list response')
         const list = res.data?.message || res.data?.data || []
         const newBooks = Array.isArray(list) ? list : []
         if (newBooks.length === 0) {
@@ -1063,16 +1106,20 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
         this.bookPage = nextPage
 
         await this.loadBookCovers()
+        if (requestId !== this.bookRequestId) return
         this.setBooks()
         this.loadAllBookImages()
 
         // 同上：不使用返回条数 < perPage 来判断是否结束
       } catch (err) {
+        if (requestId !== this.bookRequestId) return
         console.error('加载更多绘本失败:', err)
         this.bookScrollDisabled = false
       } finally {
-        this.loadingBooks = false
-        this.bookScrollDisabled = false
+        if (requestId === this.bookRequestId) {
+          this.loadingBooks = false
+          this.bookScrollDisabled = false
+        }
       }
     },
     
@@ -1090,7 +1137,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
       
       for(let i = 0; i < this.toolArr.length; i++){
         const book = this.toolArr[i];
-        if(book.content && book.content.length > 0 && typeof book.content[0] === 'string'){
+        if(book.content && /^[a-f\d]{24}$/i.test(book.content[0] || '')){
           // 如果第一项是图片ID（字符串），需要获取URL
           const coverId = book.content[0];
           coverPromises.push(
@@ -1098,7 +1145,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
               .then(res => {
                 if(res.data && res.data.message && res.data.message.content){
                   // 只更新封面（第一张图片）
-                  this.toolArr[i].content[0] = res.data.message.content;
+                  book.content[0] = res.data.message.content;
                 }
               })
               .catch(err => {
@@ -1127,12 +1174,12 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
         if(book.content && Array.isArray(book.content)){
           // 从第二张图片开始加载（第一张封面已经加载了）
           for(let j = 1; j < book.content.length; j++){
-            if(typeof book.content[j] === 'string'){
+            if(/^[a-f\d]{24}$/i.test(book.content[j] || '')){
               // 如果是图片ID（字符串），需要获取URL
               try{
                 const res = await this.$http.get(`/ill/${book.content[j]}`, { headers });
                 if(res.data && res.data.message && res.data.message.content){
-                  this.toolArr[i].content[j] = res.data.message.content;
+                  book.content[j] = res.data.message.content;
                   // 更新store中的数据
                   this.setBooks();
                 }
@@ -1215,6 +1262,12 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
 </script>
 
 <style scoped>
+.book-source-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.book-source-filters .el-button { margin-left: 0; }
+.local-ai-book { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #e4dcef; border-radius: 12px; background: #faf8ff; }
+.local-ai-book strong { margin-left: 10px; }
+.local-ai-book p { margin: 8px 0 0; color: #606266; }
+.book-labels { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .container.studio-mode {
   background: transparent;
   min-height: auto;

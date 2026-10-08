@@ -435,6 +435,7 @@ export default {
             formData.append('title', this.form.name);
             formData.append('description', this.form.desc || '');
             formData.append('type', this.form.category);
+            formData.append('source', 'upload');
             // 默认状态为 1（待审核）
             formData.append('status', '1');
             

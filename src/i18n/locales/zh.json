@@ -1408,6 +1408,18 @@
     "cancelCollectFailed": "取消收藏失败",
     "cancelCollectFailedRetry": "取消收藏失败，请重试"
   },
+  "bookLibrary": {
+    "sourceFilter": "绘本来源筛选",
+    "all": "全部",
+    "ai": "AI 创作",
+    "upload": "上传导入",
+    "private": "仅自己可见",
+    "localOnly": "本机草稿 · 仅保存在此浏览器，尚未同步到账号",
+    "progress": "已生成 {completed} / {total} 页",
+    "continue": "继续创作",
+    "noCloudBooks": "暂无符合条件的账号绘本",
+    "saveFailed": "草稿保存失败，已保留上次成功保存的内容。请勿关闭页面，并先下载已有图片。"
+  },
   "myHomePage": {
     "myCharacters": "我的角色",
     "myIllustrations": "我的插画",

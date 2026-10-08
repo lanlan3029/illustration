@@ -1393,6 +1393,18 @@
     "cancelCollectFailed": "Failed to cancel collection",
     "cancelCollectFailedRetry": "Failed to cancel collection, please try again"
   },
+  "bookLibrary": {
+    "sourceFilter": "Filter by book source",
+    "all": "All",
+    "ai": "AI creation",
+    "upload": "Uploaded",
+    "private": "Private",
+    "localOnly": "Local draft · Saved in this browser only; not synced to your account",
+    "progress": "{completed} / {total} pages generated",
+    "continue": "Continue creating",
+    "noCloudBooks": "No matching books in your account",
+    "saveFailed": "Draft could not be saved. Your last saved draft is preserved. Keep this page open and download your existing images first."
+  },
   "myHomePage": {
     "myCharacters": "My Characters",
     "myIllustrations": "My Illustrations",

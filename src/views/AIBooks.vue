@@ -333,6 +333,7 @@ import {
 } from '@/utils/aibooksPageVersions'
 import { getImageUrl } from '@/utils/characterStudioPrompt'
 import AibooksInpaintDialog from '@/components/aibooks/AibooksInpaintDialog.vue'
+import { getAiDraftStorageKey, loadLocalAiDraft } from '@/utils/bookLibrary'
 import {
     handleInsufficientPointsError,
     extractApiErrorMessage,
@@ -389,7 +390,8 @@ export default {
             // API 配置（模型名称由前端使用，具体 API 地址和密钥在后端配置）
             doubaoSeedModel: 'doubao-seed-1-6',
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
-            autoSaveTimer: null // 自动保存定时器
+            autoSaveTimer: null, // 自动保存定时器
+            draftSaveFailed: false
         }
     },
     computed: {
@@ -426,8 +428,11 @@ export default {
         this.fetchMyCharacters();
         // 设置自动保存
         this.setupAutoSave();
+        window.addEventListener('pagehide', this.saveToLocalStorage);
     },
     beforeUnmount() {
+        window.removeEventListener('pagehide', this.saveToLocalStorage);
+        this.saveToLocalStorage();
         // 组件销毁前清除定时器
         if (this.autoSaveTimer) {
             clearTimeout(this.autoSaveTimer);
@@ -1357,76 +1362,66 @@ export default {
         // 从本地存储恢复数据
         loadFromLocalStorage() {
             try {
-                const savedData = localStorage.getItem('aibooks_data');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    
-                    // 检查数据是否过期（7天内有效）
-                    const now = Date.now();
-                    const dataAge = now - (data.timestamp || 0);
-                    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7天
-                    
-                    if (dataAge < maxAge) {
-                        // 恢复用户输入
-                        if (data.form) {
-                            this.form = { ...this.form, ...data.form };
-                        }
-                        
-                        // 恢复故事数据
-                        if (data.storyData) {
-                            this.storyData = data.storyData;
-                        }
-                        
-                        // 恢复编辑后的提示词
-                        if (data.imagePrompts && data.imagePrompts.length > 0) {
-                            this.imagePrompts = data.imagePrompts;
-                            if (Array.isArray(data.promptSceneIndexes) && data.promptSceneIndexes.length === data.imagePrompts.length) {
-                                this.promptSceneIndexes = data.promptSceneIndexes;
-                            } else {
-                                this.promptSceneIndexes = data.imagePrompts.map((_, i) => i);
-                            }
-                        }
+                const data = loadLocalAiDraft(localStorage, localStorage.getItem('id'));
+                if (data) {
 
-                        if (data.characterProfiles) {
-                            this.characterProfiles = data.characterProfiles;
-                        }
-                        if (data.characterCard) {
-                            this.characterCard = data.characterCard;
-                        }
-                        if (data.protagonistRefs) {
-                            this.protagonistRefs = {
-                                1: { characterId: '', preview: '', base64: '', ...data.protagonistRefs[1] },
-                                2: { characterId: '', preview: '', base64: '', ...data.protagonistRefs[2] },
-                            }
-                        } else if (data.selectedCharacterId || data.characterReferencePreview) {
-                            this.protagonistRefs[1].characterId = data.selectedCharacterId || ''
-                            this.protagonistRefs[1].preview = data.characterReferencePreview || ''
-                            this.protagonistRefs[1].base64 = data.characterReferencePreview || ''
-                        }
-
-                        // 恢复生成的绘本数据
-                        if (data.bookData) {
-                            this.bookData = data.bookData;
-                            initPageVersionsFromImages(this.bookData);
-                            syncImagesFromCurrentVersions(this.bookData);
-                        }
-
-                        console.log('已从本地存储恢复AI绘本数据');
-                    } else {
-                        // 数据已过期，清除
-                        localStorage.removeItem('aibooks_data');
-                        console.log('本地存储的AI绘本数据已过期，已清除');
+                    // 恢复用户输入
+                    if (data.form) {
+                        this.form = { ...this.form, ...data.form };
                     }
+
+                    // 恢复故事数据
+                    if (data.storyData) {
+                        this.storyData = data.storyData;
+                    }
+
+                    // 恢复编辑后的提示词
+                    if (data.imagePrompts && data.imagePrompts.length > 0) {
+                        this.imagePrompts = data.imagePrompts;
+                        if (Array.isArray(data.promptSceneIndexes) && data.promptSceneIndexes.length === data.imagePrompts.length) {
+                            this.promptSceneIndexes = data.promptSceneIndexes;
+                        } else {
+                            this.promptSceneIndexes = data.imagePrompts.map((_, i) => i);
+                        }
+                    }
+
+                    if (data.characterProfiles) {
+                        this.characterProfiles = data.characterProfiles;
+                    }
+                    if (data.characterCard) {
+                        this.characterCard = data.characterCard;
+                    }
+                    if (data.protagonistRefs) {
+                        this.protagonistRefs = {
+                            1: { characterId: '', preview: '', base64: '', ...data.protagonistRefs[1] },
+                            2: { characterId: '', preview: '', base64: '', ...data.protagonistRefs[2] },
+                        }
+                    } else if (data.selectedCharacterId || data.characterReferencePreview) {
+                        this.protagonistRefs[1].characterId = data.selectedCharacterId || ''
+                        this.protagonistRefs[1].preview = data.characterReferencePreview || ''
+                        this.protagonistRefs[1].base64 = data.characterReferencePreview || ''
+                    }
+
+                    // 恢复生成的绘本数据
+                    if (data.bookData) {
+                        this.bookData = data.bookData;
+                        initPageVersionsFromImages(this.bookData);
+                        syncImagesFromCurrentVersions(this.bookData);
+                    }
+
+                    console.log('已从本地存储恢复AI绘本数据');
+
                 }
             } catch (error) {
                 console.error('从本地存储恢复AI绘本数据失败:', error);
             }
         },
-        
+
         // 保存数据到本地存储
         saveToLocalStorage() {
             try {
                 const dataToSave = {
+                    ownerId: localStorage.getItem('id'),
                     form: {
                         prompt: this.form.prompt,
                         artStyle: this.form.artStyle
@@ -1450,38 +1445,14 @@ export default {
                     timestamp: Date.now()
                 };
 
-                localStorage.setItem('aibooks_data', JSON.stringify(dataToSave));
+                localStorage.setItem(getAiDraftStorageKey(dataToSave.ownerId), JSON.stringify(dataToSave));
+                this.draftSaveFailed = false;
             } catch (error) {
                 console.error('保存AI绘本数据到本地存储失败:', error);
-                // 如果存储失败（可能是存储空间不足），尝试清除旧数据
-                try {
-                    localStorage.removeItem('aibooks_data');
-                    const dataToSave = {
-                        form: {
-                            prompt: this.form.prompt,
-                            artStyle: this.form.artStyle,
-                        },
-                        storyData: this.storyData,
-                        imagePrompts: this.imagePrompts,
-                        promptSceneIndexes: this.promptSceneIndexes,
-                        characterProfiles: this.characterProfiles,
-                        characterCard: this.characterCard,
-                        protagonistRefs: {
-                            1: {
-                                characterId: this.protagonistRefs[1]?.characterId || '',
-                                preview: this.protagonistRefs[1]?.preview || '',
-                            },
-                            2: {
-                                characterId: this.protagonistRefs[2]?.characterId || '',
-                                preview: this.protagonistRefs[2]?.preview || '',
-                            },
-                        },
-                        bookData: this.bookData,
-                        timestamp: Date.now()
-                    };
-                    localStorage.setItem('aibooks_data', JSON.stringify(dataToSave));
-                } catch (e) {
-                    console.error('清除旧数据后重新保存失败:', e);
+                // setItem is atomic: retain the last successful draft when quota is exceeded.
+                if (!this.draftSaveFailed) {
+                    ElMessage.warning(this.$t('bookLibrary.saveFailed'));
+                    this.draftSaveFailed = true;
                 }
             }
         },
