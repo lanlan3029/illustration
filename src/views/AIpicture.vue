@@ -538,7 +538,6 @@ import {
     writeHandrawStyleReferenceAutoPreference,
 } from '@/utils/handrawStyleReference'
 import {
-    HANDRAW_GROUP_LETTERS,
     isHandrawLibraryStyle as isHandrawLibStyle,
 } from '@/utils/handrawStyleGroups'
 import {
@@ -662,6 +661,8 @@ export default {
                 sketch: this.$t('aiPicture.styleTabSketch') || '线稿手绘',
                 paint: this.$t('aiPicture.styleTabPaint') || '色彩综合',
                 toon: this.$t('aiPicture.styleTabToon') || '卡通 / 3D',
+                collage: this.$t('aiPicture.styleTabCollage'),
+                other: this.$t('aiPicture.styleTabOther'),
                 skill: this.$t('aiPicture.styleTabSkill') || 'SKILL',
                 handraw: this.$t('aiPicture.styleTabHandraw') || '手绘库',
             }
@@ -678,12 +679,12 @@ export default {
                     title: this.$t('aiPicture.handrawGroupAll') || '全部',
                 },
             ]
-            for (const letter of HANDRAW_GROUP_LETTERS) {
-                const name = this.$t(`aiPicture.handrawGroup${letter}`) || letter
+            for (const letter of ['A', 'B', 'C', 'D', 'E', 'F', 'other']) {
+                const name = this.$t(letter === 'other' ? 'aiPicture.handrawGroupOther' : `aiPicture.handrawGroup${letter}`)
                 items.push({
                     id: letter,
-                    label: letter,
-                    title: `${letter} · ${name}`,
+                    label: name,
+                    title: name,
                 })
             }
             return items
@@ -852,6 +853,8 @@ export default {
     watch: {
         illustrationTabItems: {
             handler(items) {
+                // 等风格加载完成再校正分类，避免模板先返回时把默认精选切成全部。
+                if (!this.styles.length) return
                 const ids = (items || []).map((t) => t.id)
                 if (!ids.length) return
                 if (!ids.includes(this.activeIllustrationTab)) {

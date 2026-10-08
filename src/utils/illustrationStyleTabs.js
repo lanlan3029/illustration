@@ -1,10 +1,10 @@
 import {
   handrawGroupFromNumber,
   handrawNumberFromStyle,
-  isHandrawFullLibraryStyle,
   isHandrawLibraryStyle,
 } from '@/utils/handrawStyleGroups'
 import { isFeaturedIllustrationStyle } from '@/utils/illustrationStyleSort'
+import { backendCategoryToUiTab } from '@/data/illustrationStyleCategories'
 
 /** AI 插画左侧主 Tab id（顺序即展示优先级） */
 export const ILLUSTRATION_MAIN_TAB_IDS = [
@@ -13,6 +13,8 @@ export const ILLUSTRATION_MAIN_TAB_IDS = [
   'sketch',
   'paint',
   'toon',
+  'collage',
+  'other',
   'skill',
   'handraw',
 ]
@@ -28,7 +30,7 @@ export function stylesForIllustrationTab(tabId, styles, options = {}) {
     return list.filter((s) => isFeaturedIllustrationStyle(s))
   }
   if (tabId === 'all') {
-    return list.filter((s) => !isHandrawFullLibraryStyle(s))
+    return list
   }
   if (tabId === 'handraw') {
     let out = list.filter((s) => isHandrawLibraryStyle(s))
@@ -36,15 +38,13 @@ export function stylesForIllustrationTab(tabId, styles, options = {}) {
     if (group && group !== 'all') {
       out = out.filter((s) => {
         const g = s.handrawGroup || handrawGroupFromNumber(handrawNumberFromStyle(s))
-        return g === group
+        return group === 'other' ? g === 'G' || g === 'H' : g === group
       })
     }
     return out
   }
   return list.filter((s) => {
-    if (isHandrawFullLibraryStyle(s)) return false
-    if (isFeaturedIllustrationStyle(s)) return false
-    return (s.uiTab || s.category) === tabId
+    return backendCategoryToUiTab(s.category) === tabId
   })
 }
 
