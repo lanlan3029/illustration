@@ -27,6 +27,7 @@
 
 <script>
 import { ElDialog } from 'element-plus'
+import 'element-plus/es/components/dialog/style/css'
 import { drawChildhoodSharePoster } from '@/utils/childhoodSharePoster'
 import { downloadDataUrl } from '@/utils/lassoCrop'
 import { buildShareLink, buildShareTitle } from '@/utils/childhoodMoments'

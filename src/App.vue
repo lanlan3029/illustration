@@ -12,18 +12,18 @@
   </el-config-provider>
 </template>
 <script>
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElConfigProvider } from 'element-plus'
 import { getElementPlusLocale } from '@/i18n/elementPlusLocale'
 import TopBar from './components/TopBar.vue'
-import LoginRegister from "./components/LoginRegister.vue"
 import TheFooter from './components/TheFooter.vue'
 import MobileTabBar from './components/MobileTabBar.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
-import { hydrateMoodAssets } from '@/utils/moodDiary/moodAssetsApi'
+
+const LoginRegister = defineAsyncComponent(() => import('./components/LoginRegister.vue'))
 
 document.oncontextmenu = function () {
         return false;
@@ -56,8 +56,6 @@ export default {
       )
     })
 
-    // 心情图标清单：启动时拉取 CDN PNG
-    hydrateMoodAssets()
     
     return {
       elementPlusLocale,

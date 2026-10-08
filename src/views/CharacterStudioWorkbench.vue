@@ -270,6 +270,7 @@ import { useIllustrationStyles } from '@/composables/useIllustrationStyles';
 import { ElMessage } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { ElImageViewer } from 'element-plus';
+import 'element-plus/es/components/image-viewer/style/css';
 import { generateCharacterImage, saveCharacterView } from '@/utils/characterStudioApi';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
 import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';

@@ -448,6 +448,8 @@ export default {
         }
 
         const tokenFail = () => {
+            // 匿名首页无需校验空 token，也避免因此自动加载登录弹窗。
+            if (!localStorage.getItem('token')) return Promise.resolve()
             return $http.post(`/user/iflogin`, {}, {
                 headers: {
                     "Authorization": "Bearer " + localStorage.getItem("token")

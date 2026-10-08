@@ -1,5 +1,7 @@
 const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
+const Components = require('unplugin-vue-components/webpack').default
+const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
 
 module.exports = defineConfig({
     pages: {
@@ -76,6 +78,12 @@ module.exports = defineConfig({
         }
     },
     configureWebpack: {
+        plugins: [Components({
+            // 仅解析 UI 库，避免自动扫描业务组件改变现有注册行为。
+            dirs: [],
+            dts: false,
+            resolvers: [ElementPlusResolver({ importStyle: 'css', directives: true })]
+        })],
         resolve: {
             extensions: ['.ts', '.js', '.vue', '.json'],
             fallback: {
@@ -93,9 +101,9 @@ module.exports = defineConfig({
                 minSize: 20000, // 最小 chunk 大小（20KB）
                 maxSize: 244000, // 最大 chunk 大小（244KB，符合推荐限制）
                 cacheGroups: {
-                    // 将 Element Plus 单独打包
+                    // 保留同步/异步组件边界，避免固定包名将功能页依赖带入首页。
                     elementPlus: {
-                        name: 'chunk-elementPlus',
+                        name: false,
                         test: /[\\/]node_modules[\\/]element-plus[\\/]/,
                         priority: 30,
                         chunks: 'all',
@@ -125,9 +133,9 @@ module.exports = defineConfig({
                         chunks: 'all',
                         enforce: true
                     },
-                    // 将其他大型库单独打包（限制大小）
+                    // 共享依赖按实际引用关系拆分，不聚合所有路由到同一个 vendor 包。
                     libs: {
-                        name: 'chunk-libs',
+                        name: false,
                         test: /[\\/]node_modules[\\/]/,
                         priority: 10,
                         chunks: 'all',

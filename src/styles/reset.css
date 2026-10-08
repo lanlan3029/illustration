@@ -28,6 +28,38 @@ canvas {
 
 body {
     overflow: hidden;
+    /* 页面基础排版由应用拥有，避免依赖编辑器 UI 库的全局 reset。 */
+    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #515a6e;
+    background-color: #fff;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4, h5, h6, dl, dt, dd, fieldset, legend, blockquote, hr, figure {
+    margin: 0;
+    padding: 0;
+}
+
+button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+a {
+    color: #2d8cf0;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+img {
+    border-style: none;
 }
 
 li {

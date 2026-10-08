@@ -273,6 +273,7 @@
 
 <script>
 import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus';
+import 'element-plus/es/components/image-viewer/style/css';
 import {
   createDefaultPrintLayout,
   getIllustrationUrl,

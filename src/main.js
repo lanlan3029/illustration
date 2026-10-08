@@ -7,16 +7,15 @@ import store from './store'
 import '@/styles/reset.css'
 // 响应式断点 token 与公共工具类（需在业务样式之前引入）
 import '@/styles/breakpoints.css'
-// Element Plus - 保持全量导入以确保兼容性
-// 如需按需导入，建议使用 unplugin-vue-components（需要额外配置）
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
-import ViewUIPlus from 'view-ui-plus'
-import 'view-ui-plus/dist/styles/viewuiplus.css'
+// 模板组件及指令由构建插件按需导入。
+import { ElMessage } from 'element-plus'
+// JS 调用的服务不会经过模板组件解析，单独保留其样式。
+import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/message-box/style/css'
+import 'element-plus/es/components/notification/style/css'
+import 'element-plus/es/components/loading/style/css'
 import '@/assets/iconfont/iconfont.css'
 import i18n from './i18n'
-import '@/styles/editorPro.css';
-import '@/assets/editorpro/fonts/font.css';
 
 // 非关键 CSS - 延迟加载
 // cropper.css 和 animate.css 在需要时动态导入
@@ -48,11 +47,17 @@ redirectLegacyHashRoutes()
 
 const app = createApp(App)
 
+// View UI Plus 仅用于编辑器，首次直达和站内跳转都在渲染前完成注册。
+router.beforeResolve(async (to) => {
+  if (to.name === 'editorpro') {
+    const { installEditorUi } = await import('./utils/editorPro/installEditorUi')
+    installEditorUi(app)
+  }
+})
+
 app.use(router)
 app.use(store)
 app.use(i18n)
-app.use(ElementPlus)
-app.use(ViewUIPlus)
 app.use(customComponents)
 
 // 配置 axios
@@ -107,7 +112,7 @@ axios.interceptors.response.use(
 // 将 axios 挂载到全局属性
 app.config.globalProperties.$http = axios
 // 将 Element Plus 的 message 挂载到全局属性（为了兼容性）
-app.config.globalProperties.$message = ElementPlus.ElMessage
+app.config.globalProperties.$message = ElMessage
 
 app.mount('#app')
 
