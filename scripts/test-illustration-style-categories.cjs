@@ -26,7 +26,7 @@ const {
   ILLUSTRATION_STYLE_CATEGORY_IDS: categoryIds,
   illustrationStyleCategory: categoryOf,
 } = load('src/data/illustrationStyleClassification.js')
-const { stylesForIllustrationTab: filter, visibleIllustrationMainTabIds } = load('src/utils/illustrationStyleTabs.js')
+const { stylesForIllustrationTab: filter, visibleIllustrationCategoryIds } = load('src/utils/illustrationStyleTabs.js')
 const numbers = Object.values(groups).flat()
 assert.equal(numbers.length, 279)
 assert.equal(new Set(numbers).size, 279, 'Each library style must have exactly one category')
@@ -45,7 +45,8 @@ const styles = [featured, ...library]
 assert.deepEqual(filter('curated', styles, { category: 'sketch' }), [featured])
 assert.equal(filter('curated', styles, { category: 'collage' }).length, 0)
 assert.equal(filter('all', styles).length, styles.length)
-assert.deepEqual(visibleIllustrationMainTabIds(), ['curated', 'all'])
+assert.deepEqual(visibleIllustrationCategoryIds(library), ['curated', 'sketch', 'paint', 'toon', 'collage', 'chinese', 'other'])
+assert.equal(filter('collage', library).length, 9, 'A visual category includes non-featured styles directly')
 assert.equal(categoryOf({ id: 5000, category: 'unknown' }), 'other')
 assert.equal(categoryOf({ id: 31, category: 'skill' }), 'skill')
 assert.equal(categoryOf({ key: 'keithHaringDoodle', category: 'marker' }), 'sketch')

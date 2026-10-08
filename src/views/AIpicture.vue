@@ -17,24 +17,6 @@
                         <div
                             class="style-tab-row"
                             role="tablist"
-                            :aria-label="$t('aiPicture.illustrationSubTabs') || '插画分类'">
-                            <button
-                                v-for="tab in illustrationTabItems"
-                                :key="tab.id"
-                                type="button"
-                                class="style-tab"
-                                :class="{ active: activeIllustrationTab === tab.id }"
-                                role="tab"
-                                :aria-selected="activeIllustrationTab === tab.id"
-                                @click="setIllustrationTab(tab.id)"
-                            >
-                                {{ tab.label }}
-                            </button>
-                        </div>
-
-                        <div
-                            class="style-tab-row style-tab-row--categories"
-                            role="tablist"
                             :aria-label="$t('aiPicture.illustrationSubTabs')"
                         >
                             <button
@@ -53,7 +35,7 @@
                         </div>
 
                         <div class="style-list" ref="styleListRef">
-                            <p v-if="!stylesLoading && !displayedStyles.length && !(activeIllustrationTab === 'all' && activeStyleCategory === 'all' && displayedOaiItems.length)" class="style-empty-state">
+                            <p v-if="!stylesLoading && !displayedStyles.length && !(activeStyleCategory === 'skill' && displayedOaiItems.length)" class="style-empty-state">
                                 {{ $t('aiPicture.styleCategoryEmpty') }}
                             </p>
                             <button
@@ -80,7 +62,7 @@
                                 <span class="style-list-item-text">{{ style.artStyle }}</span>
                             </button>
 
-                            <template v-if="activeIllustrationTab === 'all' && activeStyleCategory === 'all'">
+                            <template v-if="activeStyleCategory === 'skill'">
                                 <button
                                     v-for="item in displayedOaiItems"
                                     :key="'oai-' + item.id"
@@ -547,7 +529,6 @@ import {
 } from '@/utils/illustrationStyleSort'
 import {
     stylesForIllustrationTab,
-    visibleIllustrationMainTabIds,
     visibleIllustrationCategoryIds,
 } from '@/utils/illustrationStyleTabs'
 
@@ -571,8 +552,7 @@ export default {
     data() {
         return {
             selectedStyleId: null,
-            activeIllustrationTab: 'curated',
-            activeStyleCategory: 'all',
+            activeStyleCategory: 'curated',
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
             displayOrderOai: [],
@@ -656,20 +636,13 @@ export default {
                 .map((id) => this.oaiItems.find((x) => x.id === id))
                 .filter((x) => x && set.has(x.id))
         },
-        illustrationTabItems() {
-            return visibleIllustrationMainTabIds().map(id => ({
-                id,
-                label: this.$t(id === 'curated' ? 'aiPicture.styleTabCurated' : 'aiPicture.styleTabAll'),
-            }))
-        },
         styleCategoryTabItems() {
             const keys = {
+                curated: 'styleTabCurated',
                 sketch: 'styleTabSketch', paint: 'styleTabPaint', toon: 'styleTabToon',
                 collage: 'styleTabCollage', chinese: 'styleTabChinese', other: 'styleTabOther', skill: 'styleTabSkill',
             }
-            return [{ id: 'all', label: this.$t('aiPicture.styleCategoryAll') },
-                ...visibleIllustrationCategoryIds(this.styles).map(id => ({ id, label: this.$t(`aiPicture.${keys[id]}`) })),
-            ]
+            return visibleIllustrationCategoryIds(this.styles).map(id => ({ id, label: this.$t(`aiPicture.${keys[id]}`) }))
         },
         promptPlaceholder() {
             if (this.isXiaoheiStyle(this.selectedStyle)) {
@@ -687,9 +660,7 @@ export default {
             return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
         visibleStyles() {
-            return stylesForIllustrationTab(this.activeIllustrationTab, this.styles, {
-                category: this.activeStyleCategory,
-            })
+            return stylesForIllustrationTab(this.activeStyleCategory, this.styles)
         },
         handrawStyleReferenceActive() {
             return (
@@ -767,10 +738,10 @@ export default {
             const vis = this.visibleStyles
             const inTab = new Set(vis.map(s => s.id))
             if (!this.displayOrder || !this.displayOrder.length) {
-                if (this.activeIllustrationTab === 'all') {
+                if (this.activeStyleCategory !== 'curated') {
                     return sortStylesFeaturedFirst(vis)
                 }
-                if (this.activeIllustrationTab === 'curated') {
+                if (this.activeStyleCategory === 'curated') {
                     return [...vis].sort((a, b) => Number(a.id) - Number(b.id))
                 }
                 return vis
@@ -833,15 +804,14 @@ export default {
         }
     },
     watch: {
-        illustrationTabItems: {
+        styleCategoryTabItems: {
             handler(items) {
                 // 等风格加载完成再校正分类，避免模板先返回时把默认精选切成全部。
                 if (!this.styles.length) return
                 const ids = (items || []).map((t) => t.id)
                 if (!ids.length) return
-                if (!ids.includes(this.activeIllustrationTab)) {
-                    this.activeIllustrationTab = ids.includes('curated') ? 'curated' : ids[0]
-                    this.activeStyleCategory = 'all'
+                if (!ids.includes(this.activeStyleCategory)) {
+                    this.activeStyleCategory = 'curated'
                     this.displayOrder = []
                 }
             },
@@ -911,16 +881,6 @@ export default {
                     [`${style.id}:exhausted`]: true,
                 }
             }
-        },
-        setIllustrationTab(tabId) {
-            if (this.activeIllustrationTab === tabId) return
-            this.activeIllustrationTab = tabId
-            this.activeStyleCategory = 'all'
-            this.displayOrder = []
-            this.$nextTick(() => {
-                const list = this.$refs.styleListRef
-                if (list) list.scrollTo({ top: 0, behavior: 'auto' })
-            })
         },
         setStyleCategory(groupId) {
             if (this.activeStyleCategory === groupId) return
@@ -1465,7 +1425,7 @@ export default {
                 return arr
             }
             this.displayOrder = shuffle(this.visibleStyles.map(s => s.id))
-            if (this.activeIllustrationTab === 'all') {
+            if (this.activeStyleCategory !== 'curated') {
                 this.displayOrderOai = shuffle(this.visibleOaiItems.map(x => x.id))
             }
             this.$nextTick(() => {
@@ -2619,11 +2579,7 @@ export default {
     font-size: 13px;
 }
 
-.style-tab-row--categories {
-    margin-top: 4px;
-    padding-top: 6px;
-    border-top: 1px dashed #e8eaef;
-}
+
 
 .style-tab--compact {
     min-width: 2rem;

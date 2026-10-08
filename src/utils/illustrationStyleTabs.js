@@ -1,9 +1,7 @@
 import { isFeaturedIllustrationStyle } from '@/utils/illustrationStyleSort'
 import { illustrationStyleCategory, ILLUSTRATION_STYLE_CATEGORY_IDS } from '@/data/illustrationStyleClassification'
 
-export const ILLUSTRATION_MAIN_TAB_IDS = ['curated', 'all']
-
-/** 精选/全部是浏览范围，category 是统一的表现形式筛选。 */
+/** 精选独立为分类；表现形式分类筛选完整风格列表，all 保留供统计使用。 */
 export function stylesForIllustrationTab(tabId, styles, options = {}) {
   let list = Array.isArray(styles) ? styles : []
   if (tabId === 'curated') list = list.filter(isFeaturedIllustrationStyle)
@@ -15,11 +13,7 @@ export function countStylesForIllustrationTab(tabId, styles, options = {}) {
   return stylesForIllustrationTab(tabId, styles, options).length
 }
 
-export function visibleIllustrationMainTabIds() {
-  return ILLUSTRATION_MAIN_TAB_IDS
-}
-
 export function visibleIllustrationCategoryIds(styles) {
   const present = new Set((styles || []).map(illustrationStyleCategory))
-  return ILLUSTRATION_STYLE_CATEGORY_IDS.filter(category => present.has(category))
+  return ['curated', ...ILLUSTRATION_STYLE_CATEGORY_IDS.filter(category => present.has(category))]
 }
