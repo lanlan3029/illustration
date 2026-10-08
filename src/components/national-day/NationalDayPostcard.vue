@@ -27,6 +27,7 @@
 
 <script>
 import { ElDialog } from 'element-plus'
+import 'element-plus/es/components/dialog/style/css'
 import { downloadPostcard, drawNationalDaySharePoster } from '@/utils/nationalDaySharePoster'
 import { loadImageBlob } from '@/utils/canvasImageCompose'
 import { buildShareLink, buildShareTitle } from '@/utils/nationalDayMoments'
