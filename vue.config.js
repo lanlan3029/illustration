@@ -26,6 +26,15 @@ module.exports = defineConfig({
     },
     // 链式配置 webpack
     chainWebpack: config => {
+        // 编辑器图标随懒加载样式一起交付，避免独立字体请求延迟或失败时显示缺字方框。
+        const editorIconFont = path.resolve(__dirname, 'node_modules/view-ui-plus/dist/styles/fonts/ionicons.woff2')
+        config.module.rule('fonts').exclude.add(editorIconFont)
+        config.module
+          .rule('editor-icon-font')
+          .test(/ionicons\.woff2$/)
+          .include.add(editorIconFont).end()
+          .type('asset/inline')
+
         // 优化 CSS 提取
         if (process.env.NODE_ENV === 'production') {
             // 配置 CSS 文件名
