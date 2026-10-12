@@ -2,34 +2,27 @@
   <div>
     <div class="content">
       <div class="content-left">
+        <header class="library-header">
+          <div><h1>{{ copy.title }}</h1><p>{{ copy.subtitle }}</p></div>
+          <form class="library-search" role="search" @submit.prevent="searchBooks">
+            <input v-model="searchDraft" type="search" :placeholder="copy.search" :aria-label="copy.search" :disabled="loading || loadControl" />
+            <button type="submit" :disabled="loading || loadControl">{{ copy.searchAction }}</button>
+          </form>
+        </header>
         <div class="books-toolbar">
-          <div class="toolbar-row toolbar-row--sort">
-            <span class="toolbar-label">{{ $t('books.sortLabel') }}</span>
-            <el-radio-group v-model="sortType" size="small" @change="handleSortChange">
-              <el-radio-button
-                v-for="item in sortList"
-                :key="item.value"
-                :label="item.value"
-              >
-                {{ item.label }}
-              </el-radio-button>
-            </el-radio-group>
+          <span class="toolbar-label">{{ $t('books.categoryLabel') }}</span>
+          <div class="category-scroll">
+            <button v-for="option in categoryOptions" :key="option.value || 'all'" type="button"
+              class="category-chip" :class="{ active: button2 === option.value }"
+              :aria-pressed="button2 === option.value" :disabled="loading || loadControl"
+              @click="selectCategory(option.value)">{{ option.value ? option.label : copy.all }}</button>
           </div>
-          <div class="toolbar-row toolbar-row--cats">
-            <span class="toolbar-label">{{ $t('books.categoryLabel') }}</span>
-            <div class="category-scroll">
-              <button
-                v-for="option in categoryOptions"
-                :key="option.value || 'all'"
-                type="button"
-                class="category-chip"
-                :class="{ active: button2 === option.value }"
-                @click="selectCategory(option.value)"
-              >
-                {{ option.label }}
-              </button>
-            </div>
-          </div>
+        </div>
+        <div class="results-toolbar">
+          <h2>{{ copy.discover }} <span v-if="!loading">{{ copy.loaded(books.length) }}</span></h2>
+          <el-radio-group v-model="sortType" :disabled="loading || loadControl" size="small" :aria-label="$t('books.sortLabel')" @change="handleSortChange">
+            <el-radio-button v-for="item in sortList" :key="item.value" :label="item.value">{{ item.label }}</el-radio-button>
+          </el-radio-group>
         </div>
 
         <div class="box">
@@ -39,21 +32,18 @@
           <div
             v-show="(!loading)"
             class="items"
-            v-infinite-scroll="loadMore"
-            :infinite-scroll-disabled="scrollDisabled || loadControl || !initialLoaded"
-            :infinite-scroll-immediate="false"
-            :infinite-scroll-distance="120"
           >
             <article
               class="book-card"
               v-for="(item, index) in books"
               :key="item._id || index"
-              @click="toDetail(item._id)"
+
             >
               <div class="book-cover">
                 <el-image
                   v-if="item.cover"
                   :src="coverUrl(item.cover)"
+                  :alt="item.title"
                   class="book-image"
                   fit="contain"
                   :lazy="true"
@@ -74,8 +64,11 @@
                 <div v-else class="img-placeholder">
                   <div class="shimmer" />
                 </div>
-                <div class="cover-overlay">
-                  <span class="cover-chip">{{ getCategoryLabel(item.type) }}</span>
+              </div>
+              <div class="book-meta">
+                <h3 class="book-title"><router-link :to="{ name: 'bookdetails', params: { bookId: item._id } }" :title="item.title">{{ item.title }}</router-link></h3>
+                <div class="book-meta-bottom">
+                  <span class="category-tag" :data-category="item.type">{{ getCategoryLabel(item.type) }}</span>
                   <button
                     class="cover-fab"
                     :class="{
@@ -84,6 +77,7 @@
                       visible: collectBookArr.includes(item._id),
                     }"
                     type="button"
+                    :aria-pressed="collectBookArr.includes(item._id)"
                     :aria-label="collectBookArr.includes(item._id) ? $t('books.cancelCollect') || 'uncollect' : $t('books.collect') || 'collect'"
                     @click.stop="handleCollectClick(item._id)"
                   >
@@ -94,10 +88,13 @@
                   </button>
                 </div>
               </div>
-              <div class="book-meta">
-                <h3 class="book-title">{{ item.title }}</h3>
-              </div>
+
             </article>
+          </div>
+          <div v-if="!loading && !books.length" class="empty-state" role="status">{{ loadError ? $t('books.errorOccurred') : copy.empty }}<button v-if="loadError" type="button" @click="reloadBooks">{{ copy.retry }}</button></div>
+          <div v-if="!loading && books.length" class="load-more">
+            <button v-if="!scrollDisabled" type="button" :disabled="loadControl" @click="loadMore">{{ loadControl ? $t('books.loading') : copy.more }}</button>
+            <p v-else>{{ copy.end }}</p>
           </div>
         </div>
       </div>
@@ -118,11 +115,21 @@ export default {
   },
   computed: {
     ...mapState(["books", "collectBookArr"]),
+    copy() {
+      const en = this.$i18n.locale === 'en'
+      return en ? {
+        title: 'Picture Book Library', subtitle: 'Discover stories your child will love', search: 'Search picture books by title or topic', searchAction: 'Search',
+        all: 'All', discover: 'Discover a good story', loaded: n => `${n} books loaded`, more: 'Load more', end: 'You have reached the end', empty: 'No books found. Try another search or category.', retry: 'Retry',
+      } : {
+        title: '绘本馆', subtitle: '发现适合孩子的好故事', search: '搜索绘本名称、主题', searchAction: '搜索',
+        all: '全部', discover: '为你发现好故事', loaded: n => `已加载 ${n} 本绘本`, more: '加载更多', end: '已经看完全部绘本了', empty: '暂无相关绘本，试试其他关键词或分类吧', retry: '重试',
+      }
+    },
     sortList() {
       return [
-        { value: "default", label: this.$t('books.sortDefault') },
-        { value: "hot", label: this.$t('books.sortHot') },
-        { value: "time", label: this.$t('books.sortTime') },
+        { value: "default", label: this.$i18n.locale === 'en' ? 'Recommended' : '推荐' },
+        { value: "hot", label: this.$i18n.locale === 'en' ? 'Popular' : '最受欢迎' },
+        { value: "time", label: this.$i18n.locale === 'en' ? 'Newest' : '最新发布' },
       ]
     },
     categoryOptions() {
@@ -139,6 +146,9 @@ export default {
   },
   data() {
     return {
+      searchDraft: '',
+      searchKeyword: '',
+      loadError: false,
       userid:localStorage.getItem("id"),
       toolArry:[],
       num:1,
@@ -153,6 +163,10 @@ export default {
     };
   },
   methods: {
+    searchBooks() {
+      this.searchKeyword = this.searchDraft.trim()
+      return this.reloadBooks()
+    },
     getCategoryLabel(type) {
       const map = {
         reading: this.$t('upload.categoryReading'),
@@ -203,6 +217,7 @@ export default {
       if (this.button2 && this.button2.trim() !== '') {
         url += `&type=${this.button2}`
       }
+      if (this.searchKeyword) url += `&keyword=${encodeURIComponent(this.searchKeyword)}`
       return url
     },
 
@@ -212,6 +227,7 @@ export default {
         const raw = Array.isArray(res.data && res.data.message) ? res.data.message : []
         this.toolArry = this.dedupById(raw)
       } catch (err) {
+        this.loadError = true
         this.loading = false
         ElMessage({ message: this.$t('books.errorOccurred'), type: 'error' })
       }
@@ -277,7 +293,7 @@ export default {
         this.$store.commit('addBooks', newBooks)
         this.num = nextPage
       } catch (err) {
-        // 网络异常不禁用滚动，允许后续重试
+        ElMessage.error(this.$t('books.errorOccurred'))
       } finally {
         this.loadControl = false
       }
@@ -423,6 +439,7 @@ export default {
 
     async reloadBooks() {
       this.loading = true
+      this.loadError = false
       this.resetListState()
       this.$store.commit('removeBooks')
       await this.getBooks()
@@ -457,390 +474,53 @@ export default {
 };
 </script>
 <style scoped>
-/* =========================================================
-   2026 Book List — soft-light / glass-chip / ambient-shadow
-   ========================================================= */
-.content {
-  width: 100%;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(129, 103, 169, 0.12), transparent 60%),
-    radial-gradient(1000px 500px at 100% 0%, rgba(255, 180, 170, 0.12), transparent 55%),
-    #f6f6fb;
-  margin: auto;
-  display: flex;
-  justify-content: center;
-}
-
-.content-left {
-  width: 86vw;
-  max-width: 1280px;
-  height: 88vh;
-  overflow-y: auto;
-  margin: 0 auto;
-  padding-bottom: 24px;
-}
-
-.items {
-  width: 100%;
-  margin-top: 8px;
-  padding: 0 4px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 24px 18px;
-  align-items: stretch;
-  justify-items: stretch;
-}
-
-/* ---------- Card ---------- */
-.book-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: #ffffff;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid rgba(24, 24, 40, 0.06);
-  box-shadow: 0 8px 24px -16px rgba(24, 24, 40, 0.18);
-  transition:
-    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.book-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 36px -14px rgba(49, 35, 82, 0.2);
-}
-
-/* ---------- Cover：完整封面落在纸色衬底上，不裁切 ---------- */
-.book-cover {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  overflow: hidden;
-  background:
-    radial-gradient(90% 50% at 50% 100%, rgba(49, 35, 82, 0.06), transparent 62%),
-    #f4f0ea;
-  flex-shrink: 0;
-}
-
-.book-image {
-  position: absolute;
-  inset: 14px 12px 12px;
-  width: auto;
-  height: auto;
-  display: block;
-}
-
-.book-image :deep(.el-image) {
-  width: 100%;
-  height: 100%;
-}
-
-.book-image :deep(.el-image__inner) {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center center;
-  filter: drop-shadow(0 10px 16px rgba(40, 28, 18, 0.16));
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.book-card:hover .book-image :deep(.el-image__inner) {
-  transform: translateY(-4px);
-}
-
-.cover-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.28) 0%,
-    transparent 32%,
-    transparent 68%,
-    rgba(0, 0, 0, 0.12) 100%
-  );
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.book-card:hover .cover-overlay,
-.book-card:focus-within .cover-overlay {
-  opacity: 1;
-}
-
-/* ---------- Floating chip (category, hover) ---------- */
-.cover-chip {
-  align-self: flex-start;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.42);
-  border-radius: 999px;
-  backdrop-filter: blur(6px);
-}
-
-/* ---------- Floating FAB (collect, hover) ---------- */
-.cover-fab {
-  align-self: flex-end;
-  margin-left: auto;
-  pointer-events: auto;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.92);
-  color: #8a8a9a;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  opacity: 0;
-  transform: translateY(4px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    color 0.2s ease,
-    background 0.2s ease;
-}
-
-.book-card:hover .cover-fab,
-.book-card:focus-within .cover-fab,
-.cover-fab.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.cover-fab .iconfont {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.cover-fab:hover {
-  color: #8167a9;
-}
-
-.cover-fab.active {
-  color: #f7b500;
-  background: #fff8e0;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.cover-fab.pulse {
-  animation: collectPulse 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes collectPulse {
-  0%   { transform: scale(1); }
-  45%  { transform: scale(1.35) rotate(-8deg); }
-  70%  { transform: scale(0.94) rotate(6deg); }
-  100% { transform: scale(1) rotate(0); }
-}
-
-/* ---------- Meta ---------- */
-.book-meta {
-  flex: 1;
-  padding: 12px 12px 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  background: #fff;
-  min-height: 68px;
-}
-
-.book-title {
-  margin: 0;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
-  color: #2c2a38;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* ---------- Placeholders ---------- */
-.img-placeholder,
-.img-error {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #c0c4cc;
-  background: #f0ebe3;
-}
-
-.img-placeholder {
-  overflow: hidden;
-  position: relative;
-}
-
-.img-placeholder .shimmer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    110deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.55) 45%,
-    rgba(255, 255, 255, 0) 90%
-  );
-  background-size: 220% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0%   { background-position: 120% 0; }
-  100% { background-position: -20% 0; }
-}
-
-.img-error i {
-  font-size: 26px;
-}
-
-/* ---------- Filters / top bar ---------- */
-.books-toolbar {
-  margin-top: 16px;
-  padding: 0 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.toolbar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.toolbar-label {
-  flex-shrink: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b6578;
-  min-width: 36px;
-}
-
-.toolbar-row--cats {
-  align-items: flex-start;
-}
-
-.category-scroll {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
-}
-
-.category-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-
-.category-scroll::-webkit-scrollbar-thumb {
-  background: rgba(129, 103, 169, 0.25);
-  border-radius: 4px;
-}
-
-.category-chip {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  border: 1px solid #e4e0ec;
-  border-radius: 999px;
-  background: #fff;
-  color: #5a5568;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.category-chip:hover {
-  border-color: #8167a9;
-  color: #8167a9;
-}
-
-.category-chip.active {
-  background: #8167a9;
-  border-color: #8167a9;
-  color: #fff;
-}
-
-.box {
-  position: relative;
-  margin-bottom: 32px;
-  min-height: 200px;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 240px;
-  color: #c0c4cc;
-  font-size: 18px;
-}
-
-/* 自定义类别选择按钮的选中颜色 */
-:deep(.el-radio-button.is-active .el-radio-button__inner) {
-  background-color: #8167a9 !important;
-  border-color: #8167a9 !important;
-  color: #fff !important;
-  box-shadow: -1px 0 0 0 #8167a9 !important;
-}
-
-:deep(.el-radio-button__inner:hover) {
-  color: #8167a9;
-}
-
-:deep(.el-radio-button:first-child .el-radio-button__inner) {
-  border-left: 1px solid #dcdfe6;
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width: 1024px) {
-  .content-left { width: 92vw; }
-  .items { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
-}
-
-@media (max-width: 640px) {
-  .content-left { width: 100%; padding: 0 10px 24px; box-sizing: border-box; }
-  .books-toolbar { padding: 0 4px; }
-  .toolbar-label { display: none; }
-  .items {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 12px;
-  }
-  .book-card { border-radius: 14px; }
-  .book-meta { padding: 10px 8px 12px; min-height: 60px; }
-  .book-title { font-size: 12px; }
-  .cover-overlay { opacity: 1; }
-  .cover-fab { opacity: 1; transform: none; }
-}
-
-/* Respect users who dislike motion */
-@media (prefers-reduced-motion: reduce) {
-  .book-card,
-  .book-image :deep(.el-image__inner),
-  .cover-fab,
-  .cover-overlay { transition: none; }
-  .cover-fab.pulse { animation: none; }
-  .img-placeholder .shimmer { animation: none; }
-}
+.content { width: 100%; background: #f7f5fd; min-height: calc(100dvh - 130px); }
+.content-left { width: min(1280px, 90%); margin: 0 auto; padding: 32px 0 40px; text-align: left; }
+.library-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.3; color: #30204e; }
+.library-header p { margin: 0; color: #716481; font-size: 16px; }
+.library-search { display: flex; align-items: center; width: 370px; max-width: 100%; border: 1px solid #ded5ef; border-radius: 28px; background: #fff; padding: 5px; }
+.library-search input { width: 0; flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 14px; font: inherit; font-size: 14px; color: #30204e; }
+.library-search button { border: 0; border-radius: 22px; background: #f0eaf8; color: #705098; padding: 9px 16px; cursor: pointer; }
+.books-toolbar { display: flex; align-items: center; gap: 24px; padding: 20px 24px; border: 1px solid #efeaf7; border-radius: 12px; background: #fff; margin-bottom: 24px; }
+.toolbar-label { flex-shrink: 0; font-size: 14px; font-weight: 600; color: #30204e; }
+.category-scroll { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.category-chip { padding: 8px 18px; font: inherit; font-size: 14px; line-height: 20px; border: 1px solid #e9e3f2; border-radius: 24px; background: #faf9fc; color: #655776; cursor: pointer; }
+.category-chip:hover { border-color: #9473b9; }
+.category-chip.active { background: #8965b1; border-color: #8965b1; color: #fff; }
+.results-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+h2 { margin: 0; font-size: 22px; color: #30204e; line-height: 1.5; }
+h2 span { display: inline-block; margin-left: 12px; font-size: 13px; font-weight: 400; color: #776d86; }
+.items { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; }
+.book-card { position: relative; min-width: 0; display: flex; flex-direction: column; background: #fff; border: 1px solid #eee8f5; border-radius: 12px; padding: 10px; transition: border-color .2s, box-shadow .2s; }
+.book-card:hover, .book-card:focus-within { border-color: #b59ad4; box-shadow: 0 4px 16px #50346e0c; }
+.book-cover { position: relative; width: 100%; aspect-ratio: 4 / 3; background: #f7f6f3; border-radius: 8px; overflow: hidden; }
+.book-image { width: 100%; height: 100%; display: block; }
+.book-image :deep(.el-image__inner) { object-fit: contain; }
+.book-meta { padding: 10px 2px 0; flex: 1; display: flex; flex-direction: column; }
+.book-title { font-size: 16px; line-height: 24px; height: 48px; margin: 0 0 8px; font-weight: 600; }
+.book-title a { color: #302743; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.book-title a::after { content: ''; position: absolute; inset: 0; border-radius: 12px; }
+.book-meta-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+.category-tag { font-size: 12px; line-height: 22px; padding: 0 10px; border-radius: 16px; background: #f0eafa; color: #77549e; }
+.category-tag[data-category="knowledge"] { background: #e9f3ff; color: #427baa; }
+.category-tag[data-category="habit"] { background: #fff0e2; color: #a66834; }
+.category-tag[data-category="reading"] { background: #fcebf0; color: #b35c78; }
+.cover-fab { position: relative; z-index: 1; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: #8167a9; cursor: pointer; }
+.cover-fab .iconfont { font-size: 20px; }
+.cover-fab:hover, .cover-fab.active { background: #f3ecfb; color: #9960bc; }
+button:disabled { cursor: wait; opacity: .65; }
+button:focus-visible, input:focus-visible, .book-title a:focus-visible { outline: 2px solid #8965b1; outline-offset: 3px; }
+.img-placeholder, .img-error { height: 100%; display: flex; align-items: center; justify-content: center; color: #8b8096; background: #f1edf5; }
+.img-error i { font-size: 28px; }
+.loading, .empty-state { min-height: 240px; display: flex; align-items: center; justify-content: center; gap: 16px; color: #716481; }
+.load-more { text-align: center; padding-top: 28px; }
+.load-more button, .empty-state button { padding: 10px 28px; border: 1px solid #a78bc7; border-radius: 8px; color: #7954a0; background: #fff; cursor: pointer; font: inherit; font-size: 14px; }
+.load-more p { color: #82758e; font-size: 13px; }
+:deep(.el-radio-button__inner) { padding: 9px 16px; background: #fcfbfe; border-color: #e4dcef; color: #655776; }
+:deep(.el-radio-button.is-active .el-radio-button__inner), :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) { background: #8965b1 !important; border-color: #8965b1 !important; box-shadow: -1px 0 0 0 #8965b1 !important; color: #fff !important; }
+@media (max-width: 1100px) { .items { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
+@media (max-width: 850px) { .items { grid-template-columns: repeat(3, minmax(0, 1fr)); } .library-header { align-items: flex-start; } .library-search { width: 300px; } h2 span { display: block; margin-left: 0; } }
+@media (max-width: 600px) { .content-left { width: auto; padding: 24px 14px 32px; } .library-header { flex-direction: column; gap: 18px; } h1 { font-size: 28px; } .library-search { width: 100%; box-sizing: border-box; } .books-toolbar { gap: 12px; padding: 14px; align-items: flex-start; } .toolbar-label { padding-top: 7px; } .category-chip { padding: 5px 12px; font-size: 13px; } .category-scroll { gap: 8px; } .results-toolbar { align-items: flex-start; flex-direction: column; } h2 { font-size: 20px; } h2 span { display: inline-block; margin-left: 8px; } .items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .book-card { padding: 7px; } .book-title { font-size: 14px; line-height: 22px; height: 44px; } .category-tag { padding: 0 8px; } }
+@media (prefers-reduced-motion: reduce) { .book-card { transition: none; } }
 </style>

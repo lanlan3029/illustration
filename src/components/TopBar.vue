@@ -54,7 +54,7 @@
             v-for="item in desktopRestItems"
             :key="item.key"
             class="nav-item"
-            :class="{ 'active': isNavActive(item) }"
+            :class="{ 'active': isNavActive(item), 'book-library-nav': item.key === 'books' }"
           >
             <router-link :to="item.to" class="nav-link" :class="item.linkClass" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
           </li>
@@ -287,6 +287,7 @@ export default {
         // 统一的「当前项是否激活」判断，桌面与手机共用
         const isNavActive = (item) => {
             if (!item) return false
+            if (item.key === 'books') return /^\/books(?:\/|$)/.test(route.path)
             if (item.key === 'moodDiary') return isMoodDiaryRoute.value
             if (item.key === 'websites') return isWebsitesRoute.value
             if (item.key === 'blog') return isBlogRoute.value
@@ -913,6 +914,17 @@ export default {
 
 .nav-item.active .nav-link {
 	color: #777 !important;
+}
+
+.desktop-nav:has(.book-library-nav.active) { gap: clamp(4px, 1.2vw, 20px); }
+.desktop-nav:has(.book-library-nav.active) .nav-link { white-space: nowrap; padding-inline: 8px !important; }
+.desktop-nav:has(.book-library-nav.active) .nav-item { flex-shrink: 0; }
+.desktop-nav:has(.book-library-nav.active) .search-item { flex-shrink: 1; min-width: 100px; }
+
+.nav-item.book-library-nav.active .nav-link {
+  color: #8965b1 !important;
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 #8965b1;
 }
 
 /* 心情日记导航项：默认强调色 */

@@ -5,8 +5,9 @@
       <login-register v-if="isMask" />
       <main class="app-main">
         <router-view />
+        <the-footer v-if="!isMobile && route.name === 'books'" />
       </main>
-      <the-footer v-if="!isMobile" :class="{ 'fixed-footer': route.path==='/' }"/>
+      <the-footer v-if="!isMobile && route.name !== 'books'" :class="{ 'fixed-footer': route.path==='/' }"/>
       <mobile-tab-bar v-if="isMobile && !hideMobileTabBar" />
     </div>
   </el-config-provider>
