@@ -14,10 +14,10 @@ export const DEFAULT_REMBG_MODES = [
   { value: 'hard_edge', label: '利落切边', desc: '边缘更利落，适合深色主体' },
 ]
 
-/** 相对路径 → 可加载的完整 URL（供 image_url JSON 提交） */
+/** 相对路径 → 可加载的完整 URL（本地 blob 地址需读取后上传） */
 export function resolveImageSourceUrl(url) {
   if (!url) return ''
-  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) return url
   if (url.startsWith('/')) return `https://static.kidstory.cc${url}`
   return `https://static.kidstory.cc/${String(url).replace(/^\/+/, '')}`
 }
@@ -157,6 +157,12 @@ export async function rembgFromFile(http, file, options = {}) {
  */
 export async function rembgFromImageUrl(http, imageUrl, options = {}) {
   const payloadUrl = resolveImageSourceUrl(imageUrl) || imageUrl
+  // blob: 仅在创建它的浏览器中有效，后端无法通过 URL 下载。
+  if (payloadUrl.startsWith('blob:')) {
+    const response = await fetch(payloadUrl)
+    if (!response.ok) throw new Error('读取待抠图图片失败，请重新上传图片')
+    return rembgFromFile(http, await response.blob(), options)
+  }
   const response = await http.post(
     getRembgApiUrl(options.apiBaseUrl),
     { image_url: payloadUrl, ...modePayload(options) },

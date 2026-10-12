@@ -39,6 +39,9 @@ function openLassoCrop() {
       activeObject.setSrc(dataUrl, () => {
         activeObject.set('scaleX', (width * scaleX) / (activeObject.width || 1));
         activeObject.set('scaleY', (height * scaleY) / (activeObject.height || 1));
+        activeObject.set('originSrc', dataUrl);
+        activeObject.set('originWidth', activeObject.width);
+        activeObject.set('originHeight', activeObject.height);
         canvasEditor.canvas.renderAll();
       });
     }

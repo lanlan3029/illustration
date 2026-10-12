@@ -34,58 +34,65 @@
             ← {{ $t('lassoCrop.changeImage') }}
           </button>
 
-          <div class="tool-block">
-            <p class="tool-label">{{ $t('stickerLab.cropMode') }}</p>
-            <div class="pill-row">
-              <button
-                type="button"
-                class="tool-pill"
-                :class="{ active: cropMode === 'lasso' }"
-                @click="setCropMode('lasso')"
-              >
-                {{ $t('stickerLab.modeLasso') }}
-              </button>
-              <button
-                type="button"
-                class="tool-pill"
-                :class="{ active: cropMode === 'matte' }"
-                @click="setCropMode('matte')"
-              >
-                {{ $t('stickerLab.modeMatte') }}
-              </button>
+          <div class="editor-toolbar">
+            <div class="tool-block">
+              <p class="tool-label">{{ $t('stickerLab.cropMode') }}</p>
+              <div class="pill-row">
+                <button
+                  type="button"
+                  class="tool-pill"
+                  :class="{ active: cropMode === 'lasso' }"
+                  :aria-pressed="cropMode === 'lasso'"
+                  @click="setCropMode('lasso')"
+                >
+                  {{ $t('stickerLab.modeLasso') }}
+                </button>
+                <button
+                  type="button"
+                  class="tool-pill"
+                  :class="{ active: cropMode === 'matte' }"
+                  :aria-pressed="cropMode === 'matte'"
+                  @click="setCropMode('matte')"
+                >
+                  {{ $t('stickerLab.modeMatte') }}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div class="tool-block">
-            <p class="tool-label">{{ $t('stickerLab.borderStyle') }}</p>
-            <div class="pill-row">
-              <button
-                v-for="s in styleOptions"
-                :key="s.value"
-                type="button"
-                class="tool-pill"
-                :class="{ active: stickerStyle === s.value }"
-                @click="stickerStyle = s.value"
-              >
-                {{ s.label }}
-              </button>
+            <div class="tool-block">
+              <p class="tool-label">{{ $t('stickerLab.borderStyle') }}</p>
+              <div class="pill-row">
+                <button
+                  v-for="s in styleOptions"
+                  :key="s.value"
+                  type="button"
+                  class="tool-pill"
+                  :class="{ active: stickerStyle === s.value }"
+                  :aria-pressed="stickerStyle === s.value"
+                  @click="stickerStyle = s.value"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div v-if="stickerStyle !== 'raw'" class="tool-block">
-            <p class="tool-label">{{ $t('stickerLab.borderColor') }}</p>
-            <div class="color-row">
-              <button
-                v-for="c in borderColors"
-                :key="c"
-                type="button"
-                class="color-chip"
-                :class="{ active: borderColor === c }"
-                :style="{ background: c }"
-                :aria-label="c"
-                @click="borderColor = c"
-              />
+            <div v-if="stickerStyle !== 'raw'" class="tool-block">
+              <p class="tool-label">{{ $t('stickerLab.borderColor') }}</p>
+              <div class="color-row">
+                <button
+                  v-for="c in borderColors"
+                  :key="c"
+                  type="button"
+                  class="color-chip"
+                  :class="{ active: borderColor === c }"
+                  :style="{ background: c }"
+                  :aria-label="c"
+                  :aria-pressed="borderColor === c"
+                  @click="borderColor = c"
+                />
+              </div>
             </div>
+
           </div>
 
           <div class="canvas-panel">
@@ -455,74 +462,68 @@ export default {
 
 <style scoped>
 .sticker-workshop {
-  --cream: #f5efe1;
-  --cream-deep: #ebe3d3;
-  --ink: #3d3229;
-  --muted: #8a7f72;
-  --terra: #c97652;
-  --terra-light: #e8966f;
-  --dash: #d4c4b0;
+  --accent: #8167a9;
+  --accent-soft: #f5f0fa;
+  --border: #e8e0f4;
+  --ink: #1c345e;
+  --muted: #6b7280;
+  --el-color-primary: #8167a9;
   width: 100%;
-  min-height: calc(100vh - 50px);
-  background:
-    radial-gradient(ellipse 120% 80% at 50% 0%, #faf6ee 0%, var(--cream) 55%, #ebe3d3 100%);
+  min-height: calc(100vh - 100px);
+  padding: 28px 24px 56px;
+  box-sizing: border-box;
+  background: #faf9fc;
   color: var(--ink);
   text-align: left;
-  padding: 28px 24px 48px;
-  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
-
 .workshop-hero {
-  max-width: 1080px;
-  margin: 0 auto 28px;
+  max-width: 1280px;
+  margin: 0 auto 24px;
+  text-align: center;
 }
-
 .workshop-hero h1 {
   margin: 0 0 10px;
-  font-family: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
-  font-size: clamp(32px, 5vw, 42px);
+  font-family: inherit;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  line-height: 1.4;
   color: var(--ink);
-  line-height: 1.2;
 }
-
 .hero-desc {
-  margin: 0;
-  max-width: 420px;
-  font-size: 13px;
-  line-height: 1.6;
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 1.65;
   color: var(--muted);
 }
-
 .workshop-body {
-  max-width: 1080px;
+  max-width: 1280px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 36px;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 24px;
   align-items: start;
 }
-
-.col-work {
+.col-work, .col-gallery {
   min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(28, 52, 94, 0.04);
 }
-
-.upload-panel,
-.editor-panel {
+.col-work {
+  box-sizing: border-box;
+}
+.upload-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 20px;
 }
-
-.upload-el {
+.upload-el, .upload-el :deep(.el-upload) {
   width: 100%;
 }
-
-.upload-el :deep(.el-upload) {
-  width: 100%;
-}
-
 .upload-el :deep(.el-upload-dragger) {
   width: 100%;
   padding: 0;
@@ -530,287 +531,302 @@ export default {
   background: transparent;
   height: auto;
   display: block;
-  overflow: hidden;
 }
-
 .upload-drop {
-  border: 1.5px dashed var(--dash);
-  border-radius: 16px;
-  padding: 32px 16px 28px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.35);
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.upload-el :deep(.el-upload-dragger:hover) .upload-drop,
-.upload-el :deep(.el-upload-dragger.is-dragover) .upload-drop {
-  border-color: var(--terra);
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.upload-circle {
-  display: inline-flex;
-  width: 52px;
-  height: 52px;
+  min-height: 320px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  border: 2px solid var(--terra);
-  color: var(--terra);
-  font-size: 24px;
-  margin-bottom: 16px;
+  border: 1px dashed #d9d0e6;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  background: #fcfbfd;
+  transition: border-color .2s, background .2s;
 }
-
+.upload-el :deep(.el-upload-dragger:hover) .upload-drop, .upload-el :deep(.el-upload-dragger.is-dragover) .upload-drop {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.upload-circle {
+  display: inline-flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 32px;
+  margin-bottom: 20px;
+}
 .upload-title {
   margin: 0 0 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--ink);
 }
-
 .upload-sub {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
 }
-
-.picker-btn {
-  width: 100%;
-}
-
-.picker-btn :deep(.my-ill-picker) {
-  width: 100%;
-}
-
 .picker-btn :deep(.el-button) {
-  width: 100%;
-  height: auto;
-  padding: 12px 20px;
-  border-radius: 999px;
-  border: 1.5px solid var(--dash);
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--ink);
-  font-weight: 600;
-  font-size: 14px;
-  box-shadow: none;
+  height: 40px;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border-color: #c4b3dc;
+  background: #fff;
+  color: var(--accent);
+  font-weight: 500;
 }
-
 .picker-btn :deep(.el-button:hover) {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: var(--terra);
-  color: var(--ink);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
-
-.action-row {
+.editor-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 20px;
 }
-
-.btn-preview {
-  width: 100%;
-  padding: 14px 20px;
-  box-sizing: border-box;
-  border-radius: 999px;
-  border: 1.5px solid var(--dash);
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
-}
-
-.btn-preview:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: var(--terra);
-  color: var(--terra);
-}
-
-.btn-preview:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.btn-generate {
-  width: 100%;
-  padding: 14px 24px;
-  box-sizing: border-box;
-  border: none;
-  border-radius: 999px;
-  background: linear-gradient(180deg, var(--terra-light) 0%, var(--terra) 100%);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  box-shadow: 0 8px 22px rgba(201, 118, 82, 0.28);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-}
-
-.btn-generate:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgba(201, 118, 82, 0.34);
-}
-
-.btn-generate:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .link-back {
-  margin-bottom: 16px;
+  align-self: flex-start;
   padding: 0;
   border: none;
   background: none;
-  color: var(--muted);
+  color: var(--accent);
+  font: inherit;
   font-size: 13px;
   cursor: pointer;
-  font-family: inherit;
 }
-
-.link-back:hover {
-  color: var(--terra);
-}
-
-.tool-block {
-  margin-bottom: 14px;
-}
-
-.tool-label {
-  margin: 0 0 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.pill-row {
+.editor-toolbar {
   display: flex;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 20px 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
 }
-
-.tool-pill {
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1.5px solid var(--dash);
-  background: rgba(255, 255, 255, 0.45);
-  color: var(--ink);
+.tool-block {
+  min-width: 0;
+}
+.tool-label {
+  margin: 0 0 10px;
   font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
+  color: var(--muted);
 }
-
-.tool-pill.active {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: var(--terra);
-  color: var(--terra);
-}
-
-.color-row {
+.pill-row, .color-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-
+.tool-pill {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #4b5563;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tool-pill:hover, .tool-pill.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .color-chip {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 2px solid #fff;
   cursor: pointer;
   padding: 0;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 1px #e5e7eb, inset 0 0 0 1px rgba(0,0,0,.08);
+  margin: 4px 1px;
 }
-
 .color-chip.active {
-  border-color: var(--terra);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-
 .canvas-panel {
-  margin: 8px 0 16px;
-  padding: 10px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(212, 196, 176, 0.5);
+  min-width: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: #faf9fc;
+  border: 1px solid #eeeaf3;
 }
-
-.canvas-panel :deep(.lasso-crop-canvas),
-.canvas-panel :deep(.matte-brush-canvas) {
-  display: block;
-}
-
 .canvas-panel :deep(.lasso-crop-canvas) {
   flex-direction: column;
+  gap: 16px;
 }
-
-.canvas-panel :deep(.lasso-side),
-.canvas-panel :deep(.matte-tools) {
-  width: 100%;
-}
-
 .canvas-panel :deep(.matte-brush-canvas) {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
-
+.canvas-panel :deep(.lasso-stage), .canvas-panel :deep(.matte-stage) {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.canvas-panel :deep(.lasso-side), .canvas-panel :deep(.matte-tools) {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.canvas-panel :deep(.tool-row) {
+  flex-direction: row;
+  align-items: center;
+}
+.canvas-panel :deep(.matte-frame) {
+  min-height: 360px;
+}
+.canvas-panel :deep(.lasso-hint) {
+  margin: 0;
+}
+.action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+.btn-preview, .btn-generate {
+  min-height: 42px;
+  padding: 10px 28px;
+  border-radius: 10px;
+  border: 1px solid #c4b3dc;
+  background: #fff;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-preview:hover {
+  background: var(--accent-soft);
+}
+.btn-generate {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.btn-generate:hover {
+  background: #705795;
+}
+.btn-preview:disabled, .btn-generate:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
 .extra-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 16px;
-  margin-top: 14px;
-  justify-content: center;
+  gap: 12px 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
-
 .text-action {
   padding: 0;
   border: none;
   background: none;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
   cursor: pointer;
-  font-family: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
-
-.text-action:hover:not(:disabled) {
-  color: var(--terra);
+.sticker-workshop button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
-
-.text-action:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .col-gallery {
-  min-width: 0;
   position: sticky;
-  top: 62px;
-  max-height: calc(100vh - 80px);
+  top: 72px;
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
 }
-
-@media (max-width: 860px) {
+.col-gallery :deep(.sticker-collection) {
+  --ink: #1c345e;
+  --muted: #6b7280;
+  --dash: #e8e0f4;
+  --cream: #f5f0fa;
+}
+.col-gallery :deep(.collection-title) {
+  font-size: 16px;
+}
+.col-gallery :deep(.collection-count) {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--border);
+}
+.col-gallery :deep(.collection-empty) {
+  margin-top: 24px;
+  padding: 64px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #fcfbfd;
+  line-height: 1.6;
+}
+.col-gallery :deep(.sticker-grid) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 16px;
+}
+.col-gallery :deep(.sticker-cell:focus-within .sticker-actions) {
+  opacity: 1;
+}
+@media (max-width: 960px) {
   .workshop-body {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-
-  .col-gallery {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+}
+  .col-work, .col-gallery {
+  padding: 20px;
+}
+}
+@media (max-width: 760px) {
   .sticker-workshop {
-    padding: 20px 16px 40px;
-  }
+  padding: 24px 12px 40px;
+}
+  .workshop-hero h1 {
+  font-size: 22px;
+}
+  .workshop-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+  .col-work, .col-gallery {
+  padding: 16px;
+}
+  .col-gallery {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+  .col-gallery :deep(.sticker-grid) {
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+  .editor-toolbar {
+  gap: 16px 24px;
+}
+  .canvas-panel {
+  padding: 8px;
+}
+  .canvas-panel :deep(.matte-frame) {
+  min-height: 260px;
+  padding: 8px;
+}
+  .action-row > button {
+  flex: 1;
+  padding: 10px 12px;
+}
+  .upload-drop {
+  min-height: 280px;
+}
 }
 </style>
