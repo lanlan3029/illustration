@@ -35,12 +35,14 @@
         <div class="list">
           <div
             class="card"
-            v-for="(item, index) in showArr"
-            :key="`${isSearching ? 'search' : selectType}-${item._id || item.id || item.content || index}-${index}`"
+            v-for="item in showArr"
+            :key="item._id || item.id || getImageSrc(item)"
           >
             <img
               class="img"
-              :src="getImageSrc(item)"
+              :src="materialPreviewUrl(item)"
+              :alt="item.title || getTypeLabel(selectType)"
+              @error="handlePreviewError($event, item)"
               loading="lazy"
               decoding="async"
               @click="handlePick(item)"
@@ -50,7 +52,11 @@
           </div>
         </div>
 
-        <div v-if="loading && showArr.length > 0" class="load-more-tip">加载中...</div>
+        <div v-if="loading" class="load-more-tip">{{ $t('common.loading') }}</div>
+        <div v-else-if="state.error" class="load-more-tip" role="status">
+          {{ $t('books.errorOccurred') }}
+          <button type="button" @click="retryLoad">{{ $i18n.locale === 'en' ? 'Retry' : '重试' }}</button>
+        </div>
         <div v-else-if="!hasMore && showArr.length > 0" class="load-more-tip">没有更多了</div>
       </div>
     </div>
@@ -61,7 +67,8 @@
 import useSelect from '@/components/editorPro/hooks/select';
 import useCalculate from '@/components/editorPro/hooks/useCalculate';
 import axios from 'axios';
-import { computed, onMounted, ref, nextTick } from 'vue';
+import { computed, onMounted, onBeforeUnmount, onDeactivated, onActivated, reactive, ref, nextTick } from 'vue';
+import { createMaterialPager, materialImageUrl, materialPreviewUrl } from '@/utils/editorPro/materialLibrary';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'view-ui-plus';
 
@@ -89,167 +96,76 @@ const icons = [
 const selectType = ref('decoration');
 const selectIndex = ref(9);
 
-const pictureArr = ref([]);
-const searchArr = ref([]);
 const searchInput = ref('');
-const page = ref(1);
-const searchPage = ref(1);
-const hasMore = ref(true);
-const loading = ref(false);
-const hasRequestError = ref(false);
-let searchDebounceTimer = null;
-
-const isSearching = computed(() => String(searchInput.value || '').trim() !== '');
-const showArr = computed(() => (isSearching.value ? searchArr.value : pictureArr.value));
-
+const state = reactive({});
+const pager = createMaterialPager({
+  state,
+  request: async (query, page, signal) => {
+    const params = { sort_param: 'heat', sort_num: 'desc', page };
+    if (query.keyword) params.keyword = query.keyword;
+    else params.type = query.type;
+    const response = await axios.get('/picture/', { params, signal });
+    return response.data;
+  },
+});
+const showArr = computed(() => state.items);
+const loading = computed(() => state.loading);
+const hasMore = computed(() => state.hasMore);
 const scrollHeight = computed(() => 'calc(100vh - 140px)');
-
 const scrollEl = ref(null);
-let scrollTicking = false;
-
+let searchDebounceTimer = null;
+let scrollFrame = null;
+let viewRevision = 0;
+let initialized = false;
+let active = true;
 const getTypeLabel = (type) => t(`leftMenu.${type}`);
+const getImageSrc = materialImageUrl;
+const currentQuery = () => ({ type: selectType.value, keyword: searchInput.value.trim() });
 
-// 与 LeftMenu.vue 保持一致：content 不是完整 url 时拼接 static 域名
-const getImageSrc = (item) => {
-  if (!item) return '';
-  let content = item.content || item.image_url || item.character_image_url || '';
-  if (Array.isArray(content)) content = content[0];
-  if (typeof content === 'string' && (content.startsWith('http://') || content.startsWith('https://'))) {
-    return content;
-  }
-  return `https://static.kidstory.cc/${content || ''}`;
-};
-
-function extractListFromApi(data) {
-  if (!data) return [];
-  // 优先直接数组字段
-  if (Array.isArray(data.message)) return data.message;
-  if (Array.isArray(data.list)) return data.list;
-  if (Array.isArray(data.items)) return data.items;
-  // 常见嵌套：data.data / data.data.data / data.data.list ...
-  if (Array.isArray(data?.data)) return data.data;
-  if (Array.isArray(data?.data?.data)) return data.data.data;
-  if (Array.isArray(data?.data?.list)) return data.data.list;
-  if (Array.isArray(data?.data?.items)) return data.data.items;
-  if (Array.isArray(data?.data?.message)) return data.data.message;
-  return [];
+function handlePreviewError(event, item) {
+  const original = getImageSrc(item);
+  if (original && event.target.src !== original) event.target.src = original;
 }
 
-async function fetchPage(p) {
-  if (loading.value || !hasMore.value) return;
-  loading.value = true;
-  try {
-    const res = await axios.get(
-      `/picture/?sort_param=heat&sort_num=desc&type=${selectType.value}&page=${p}`
-    );
-    const data = res.data || {};
-    const items = extractListFromApi(data);
-    pictureArr.value = p === 1 ? items : pictureArr.value.concat(items);
-    // 不依赖后端分页 meta 的字段命名；用返回数据是否为空判断是否还有下一页。
-    // 避免 meta 解析失败导致 hasMore 在第一页就变成 false，从而无法继续滚动加载。
-    hasMore.value = items.length > 0;
-  } catch (e) {
-    // 网络错误/跨域错误等：停止继续翻页，避免重复触发弹窗
-    hasRequestError.value = true;
-    hasMore.value = false;
-    console.error('[material] fetchPage error', e);
-    Message.error('加载素材失败，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function fetchSearchPage(p) {
-  if (loading.value || !hasMore.value) return;
-  loading.value = true;
-  try {
-    const keyword = encodeURIComponent(String(searchInput.value || '').trim());
-    const res = await axios.get(`/picture/?sort_param=heat&sort_num=desc&keyword=${keyword}&page=${p}`);
-    const data = res.data || {};
-    const items = extractListFromApi(data);
-    searchArr.value = p === 1 ? items : searchArr.value.concat(items);
-    hasMore.value = items.length > 0;
-  } catch (e) {
-    hasRequestError.value = true;
-    hasMore.value = false;
-    console.error('[material] fetchSearchPage error', e);
-    Message.error('加载素材失败，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
-}
-
-const autoLoadIfNeeded = async (limit = 5) => {
-  // 若内容高度不足以触发滚动（没有滚动条），就持续补充下一页
+async function autoLoadIfNeeded(expectedRevision, limit = 5) {
   for (let i = 0; i < limit; i++) {
-    if (hasRequestError.value) return;
     await nextTick();
+    if (!active || expectedRevision !== viewRevision || state.error || state.loading || !state.hasMore) return;
     const el = scrollEl.value;
-    if (!el) return;
-    const canScroll = el.scrollHeight > el.clientHeight + 5;
-    if (canScroll) return;
-    if (!hasMore.value) return;
-    if (loading.value || loadMoreLock.value) return;
-    await loadMore();
+    if (!el || el.clientHeight === 0 || el.scrollHeight > el.clientHeight + 5) return;
+    if (!await pager.loadMore()) return;
   }
-};
+}
+
+async function reloadList() {
+  const expectedRevision = ++viewRevision;
+  if (scrollEl.value) scrollEl.value.scrollTop = 0;
+  const success = await pager.reset(currentQuery());
+  if (success) await autoLoadIfNeeded(expectedRevision);
+}
 
 const select = async (index, type) => {
+  if (selectType.value === type && !searchInput.value.trim() && !state.error) return;
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = null;
   selectIndex.value = index;
   selectType.value = type;
-  hasRequestError.value = false;
-  page.value = 1;
-  pictureArr.value = [];
-  hasMore.value = true;
-  // 切换分类时如果正在搜索，清空搜索回到分类列表
   searchInput.value = '';
-  searchArr.value = [];
-  await fetchPage(1);
-  page.value = 2;
-  await autoLoadIfNeeded();
+  await reloadList();
 };
 
 const loadMore = async () => {
-  if (!hasMore.value || loading.value) return;
-  // 防止连续触发导致翻页 page/searchPage 错乱
-  if (loadMoreLock.value) return;
-  // eslint-disable-next-line no-console
-  console.log('[material] loadMore', {
-    page: page.value,
-    searchPage: searchPage.value,
-    selectType: selectType.value,
-    isSearching: isSearching.value,
-  });
-  loadMoreLock.value = true;
-  try {
-  if (isSearching.value) {
-    await fetchSearchPage(searchPage.value);
-    if (hasMore.value) searchPage.value += 1;
-    return;
-  }
-  await fetchPage(page.value);
-  if (hasMore.value) page.value += 1;
-  } finally {
-    loadMoreLock.value = false;
-  }
+  const expectedRevision = viewRevision;
+  if (await pager.loadMore()) await autoLoadIfNeeded(expectedRevision);
 };
-
-const loadMoreLock = ref(false);
+const retryLoad = loadMore;
 
 const onScroll = () => {
-  if (scrollTicking) return;
-  scrollTicking = true;
-  requestAnimationFrame(() => {
-    scrollTicking = false;
+  if (scrollFrame !== null || state.error || searchDebounceTimer !== null) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = null;
     const el = scrollEl.value;
-    if (!el) return;
-    const remain = el.scrollHeight - el.scrollTop - el.clientHeight;
-    // 离底部不足 60px 时触发
-    if (remain <= 60) {
-      // eslint-disable-next-line no-console
-      console.log('[material] reach bottom', { remain });
-      loadMore();
-    }
+    if (el && el.scrollHeight - el.scrollTop - el.clientHeight <= 180) loadMore();
   });
 };
 
@@ -266,52 +182,59 @@ function loadImageEl(url) {
 const handlePick = async (item) => {
   const url = getImageSrc(item);
   if (!url) return;
-  const image = await loadImageEl(url);
-  const imgItem = await canvasEditor.createImgByElement(image);
-  canvasEditor.addBaseType(imgItem, { scale: true });
+  try {
+    const image = await loadImageEl(url);
+    const imgItem = await canvasEditor.createImgByElement(image);
+    canvasEditor.addBaseType(imgItem, { scale: true });
+  } catch {
+    Message.error(t('books.errorOccurred'));
+  }
 };
 
 const handleDragEnd = async (item, e) => {
   if (isOutsideCanvas(e.clientX, e.clientY)) return;
   const url = getImageSrc(item);
   if (!url) return;
-  const image = await loadImageEl(url);
-  const imgItem = await canvasEditor.createImgByElement(image);
-  canvasEditor.addBaseType(imgItem, { scale: true, event: e });
+  try {
+    const image = await loadImageEl(url);
+    const imgItem = await canvasEditor.createImgByElement(image);
+    canvasEditor.addBaseType(imgItem, { scale: true, event: e });
+  } catch {
+    Message.error(t('books.errorOccurred'));
+  }
 };
 
 const loadSearch = (value) => {
-  hasRequestError.value = false;
-  const v = String(value ?? '').trim();
-  // debounce，避免输入时疯狂请求
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(async () => {
-    searchInput.value = v;
-    searchArr.value = [];
-    hasMore.value = true;
-    searchPage.value = 1;
-    if (!v) {
-      // 回到分类列表
-      hasMore.value = true;
-      page.value = 1;
-      pictureArr.value = [];
-      await fetchPage(1);
-      page.value = 2;
-      await autoLoadIfNeeded();
-      return;
-    }
-    await fetchSearchPage(1);
-    searchPage.value = 2;
-    await autoLoadIfNeeded();
+  clearTimeout(searchDebounceTimer);
+  searchInput.value = String(value ?? '');
+  // Invalidate immediately, before debounce, so the old response cannot flash in new results.
+  viewRevision += 1;
+  pager.reset(currentQuery(), { defer: true });
+  searchDebounceTimer = setTimeout(() => {
+    searchDebounceTimer = null;
+    reloadList();
   }, 250);
 };
 
-onMounted(() => {
-  // 初次加载默认 decoration
-  fetchPage(1).then(() => {
-    page.value = 2;
-    autoLoadIfNeeded();
-  });
+onMounted(() => { initialized = true; reloadList(); });
+onActivated(() => {
+  active = true;
+  if (initialized && !state.loading && !state.items.length) reloadList();
+});
+onDeactivated(() => {
+  active = false;
+  viewRevision += 1;
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = null;
+  if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
+  scrollFrame = null;
+  pager.pause();
+});
+onBeforeUnmount(() => {
+  active = false;
+  clearTimeout(searchDebounceTimer);
+  if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
+  pager.dispose();
 });
 </script>
 
