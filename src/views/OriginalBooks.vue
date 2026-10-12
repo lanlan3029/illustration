@@ -3,7 +3,7 @@
     <div class="content">
       <div class="content-left">
         <header class="library-header">
-          <div><h1>{{ copy.title }}</h1><p>{{ copy.subtitle }}</p></div>
+          <h1>{{ copy.title }}</h1>
           <form class="library-search" role="search" @submit.prevent="searchBooks">
             <input v-model="searchDraft" type="search" :placeholder="copy.search" :aria-label="copy.search" :disabled="loading || loadControl" />
             <button type="submit" :disabled="loading || loadControl">{{ copy.searchAction }}</button>
@@ -19,7 +19,6 @@
           </div>
         </div>
         <div class="results-toolbar">
-          <h2>{{ copy.discover }} <span v-if="!loading">{{ copy.loaded(books.length) }}</span></h2>
           <el-radio-group v-model="sortType" :disabled="loading || loadControl" size="small" :aria-label="$t('books.sortLabel')" @change="handleSortChange">
             <el-radio-button v-for="item in sortList" :key="item.value" :label="item.value">{{ item.label }}</el-radio-button>
           </el-radio-group>
@@ -118,11 +117,11 @@ export default {
     copy() {
       const en = this.$i18n.locale === 'en'
       return en ? {
-        title: 'Picture Book Library', subtitle: 'Discover stories your child will love', search: 'Search picture books by title or topic', searchAction: 'Search',
-        all: 'All', discover: 'Discover a good story', loaded: n => `${n} books loaded`, more: 'Load more', end: 'You have reached the end', empty: 'No books found. Try another search or category.', retry: 'Retry',
+        title: 'Picture Book Library', search: 'Search picture books by title or topic', searchAction: 'Search',
+        all: 'All', more: 'Load more', end: 'You have reached the end', empty: 'No books found. Try another search or category.', retry: 'Retry',
       } : {
-        title: '绘本馆', subtitle: '发现适合孩子的好故事', search: '搜索绘本名称、主题', searchAction: '搜索',
-        all: '全部', discover: '为你发现好故事', loaded: n => `已加载 ${n} 本绘本`, more: '加载更多', end: '已经看完全部绘本了', empty: '暂无相关绘本，试试其他关键词或分类吧', retry: '重试',
+        title: '绘本馆', search: '搜索绘本名称、主题', searchAction: '搜索',
+        all: '全部', more: '加载更多', end: '已经看完全部绘本了', empty: '暂无相关绘本，试试其他关键词或分类吧', retry: '重试',
       }
     },
     sortList() {
@@ -477,7 +476,7 @@ export default {
 .content { width: 100%; background: #f7f5fd; min-height: calc(100dvh - 130px); }
 .content-left { width: min(1280px, 90%); margin: 0 auto; padding: 32px 0 40px; text-align: left; }
 .library-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
-h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.3; color: #30204e; }
+h1 { margin: 0; font-size: 32px; line-height: 1.3; color: #30204e; }
 .library-header p { margin: 0; color: #716481; font-size: 16px; }
 .library-search { display: flex; align-items: center; width: 370px; max-width: 100%; border: 1px solid #ded5ef; border-radius: 28px; background: #fff; padding: 5px; }
 .library-search input { width: 0; flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 14px; font: inherit; font-size: 14px; color: #30204e; }
@@ -488,7 +487,7 @@ h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.3; color: #30204e; }
 .category-chip { padding: 8px 18px; font: inherit; font-size: 14px; line-height: 20px; border: 1px solid #e9e3f2; border-radius: 24px; background: #faf9fc; color: #655776; cursor: pointer; }
 .category-chip:hover { border-color: #9473b9; }
 .category-chip.active { background: #8965b1; border-color: #8965b1; color: #fff; }
-.results-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+.results-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 16px; margin-bottom: 16px; }
 h2 { margin: 0; font-size: 22px; color: #30204e; line-height: 1.5; }
 h2 span { display: inline-block; margin-left: 12px; font-size: 13px; font-weight: 400; color: #776d86; }
 .items { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; }
