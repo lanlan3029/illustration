@@ -110,8 +110,8 @@
               <div class="book-half book-half--left">
                 <div :key="`sheet-${sheetIndex}-left`" class="book-face-art">
                   <img
-                    v-if="currentSheet.left && !currentSheet.left.blank && currentSheet.left.src"
-                    :src="currentSheet.left.src"
+                    v-if="leftUnderPage && !leftUnderPage.blank && leftUnderPage.src"
+                    :src="leftUnderPage.src"
                     alt=""
                   />
                   <div v-else class="book-placeholder book-placeholder--muted book-blank-slot">
@@ -506,6 +506,7 @@ export default {
       coverLeafFlipped: false,
       /** 翻页过程中强制下层右页（上一页），避免 prev 时闪成新图 */
       rightUnderOverride: null,
+      leftUnderOverride: null,
       dragIndex: null,
       dragOverIndex: null,
       replacingPageIndex: null,
@@ -560,6 +561,9 @@ export default {
     showSingleFace() {
       const t = this.currentSheet?.type;
       return (t === 'cover' || t === 'back') && !this.coverLeaf;
+    },
+    leftUnderPage() {
+      return this.leftUnderOverride || this.currentSheet.left || null;
     },
     rightUnderPage() {
       if (this.rightUnderOverride) return this.rightUnderOverride;
@@ -918,10 +922,13 @@ export default {
           };
           this.flipLeafFlipped = false;
           this.rightUnderOverride = null;
+          this.leftUnderOverride = fromSheet.left || { blank: true };
           this.sheetIndex = idx;
           this.$nextTick(() => {
             requestAnimationFrame(() => {
-              this.flipLeafFlipped = true;
+              requestAnimationFrame(() => {
+                this.flipLeafFlipped = true;
+              });
             });
           });
         } else {
@@ -937,7 +944,9 @@ export default {
           this.sheetIndex = idx;
           this.$nextTick(() => {
             requestAnimationFrame(() => {
-              this.flipLeafFlipped = false;
+              requestAnimationFrame(() => {
+                this.flipLeafFlipped = false;
+              });
             });
           });
         }
@@ -946,6 +955,7 @@ export default {
           this.flipLeaf = null;
           this.flipLeafFlipped = false;
           this.rightUnderOverride = null;
+          this.leftUnderOverride = null;
           this.isFlipping = false;
           this.flipTimer = null;
         }, 920);
@@ -1013,6 +1023,7 @@ export default {
       this.flipLeaf = null;
       this.coverLeaf = null;
       this.rightUnderOverride = null;
+      this.leftUnderOverride = null;
       this.sheetIndex = idx;
       this.flipTimer = setTimeout(() => {
         this.isFlipping = false;
@@ -1542,13 +1553,14 @@ export default {
 }
 
 .book-page-leaf__front {
+  transform: rotateY(0deg) translateZ(0.1px);
   box-shadow:
     8px 0 24px rgba(0, 0, 0, 0.18),
     inset -1px 0 0 rgba(255, 255, 255, 0.65);
 }
 
 .book-page-leaf__back {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(0.1px);
   background: #fff;
   box-shadow: inset 12px 0 18px rgba(0, 0, 0, 0.1);
 }

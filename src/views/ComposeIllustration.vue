@@ -145,6 +145,7 @@
                     size="large"
                     class="pick-sticky-btn"
                     :disabled="checkedImage.length === 0"
+                    :loading="enteringExport"
                     @click="enterFlow"
                 >
                     {{ $t('layoutExport.continueToExport') }}
@@ -177,6 +178,7 @@ export default {
   data() {
     return {
       step: 'format',
+      enteringExport: false,
       illusArr: [],
       illusPage: 1,
       hasMoreIlls: true,
@@ -278,8 +280,11 @@ export default {
       this.fetchIllustrations(true);
     },
     enterFlow() {
-      if (!this.commitSelected()) return;
-      this.$router.push({ name: 'topdf' });
+      if (this.enteringExport || !this.commitSelected()) return;
+      this.enteringExport = true;
+      // 选图和尺寸已存入 session，完整导航可避开发版后旧运行时的懒加载缓存。
+      // 直接打开目标页也让资源恢复刷新停留在预览页，而不是重新回到选图页。
+      window.location.assign(this.$router.resolve({ name: 'topdf' }).href);
     },
     async fetchIllustrations(reset = false) {
       if (this.loadingIll) return;
