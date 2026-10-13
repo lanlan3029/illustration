@@ -52,7 +52,8 @@
           </div>
         </div>
 
-        <div v-if="loading" class="load-more-tip">{{ $t('common.loading') }}</div>
+        <div v-if="loginRequired" class="load-more-tip" role="status">{{ $t('editorProLeft.loginRequired') }}</div>
+        <div v-else-if="loading" class="load-more-tip">{{ $t('common.loading') }}</div>
         <div v-else-if="state.error" class="load-more-tip" role="status">
           {{ $t('books.errorOccurred') }}
           <button type="button" @click="retryLoad">{{ $i18n.locale === 'en' ? 'Retry' : '重试' }}</button>
@@ -67,7 +68,8 @@
 import useSelect from '@/components/editorPro/hooks/select';
 import useCalculate from '@/components/editorPro/hooks/useCalculate';
 import axios from 'axios';
-import { computed, onMounted, onBeforeUnmount, onDeactivated, onActivated, reactive, ref, nextTick } from 'vue';
+import { computed, onMounted, onBeforeUnmount, onDeactivated, onActivated, reactive, ref, nextTick, watch } from 'vue';
+import { useStore } from 'vuex';
 import { createMaterialPager, materialImageUrl, materialPreviewUrl } from '@/utils/editorPro/materialLibrary';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'view-ui-plus';
@@ -97,15 +99,26 @@ const selectType = ref('decoration');
 const selectIndex = ref(9);
 
 const searchInput = ref('');
+const store = useStore();
+const loginRequired = ref(!localStorage.getItem('token'));
 const state = reactive({});
 const pager = createMaterialPager({
   state,
   request: async (query, page, signal) => {
+    loginRequired.value = !localStorage.getItem('token');
+    if (loginRequired.value) throw new Error('Login required');
     const params = { sort_param: 'heat', sort_num: 'desc', page };
     if (query.keyword) params.keyword = query.keyword;
     else params.type = query.type;
-    const response = await axios.get('/picture/', { params, signal });
-    return response.data;
+    try {
+      const response = await axios.get('/picture/', { params, signal });
+      return response.data;
+    } catch (error) {
+      if (!signal.aborted) {
+        loginRequired.value = !localStorage.getItem('token') || error.response?.status === 401;
+      }
+      throw error;
+    }
   },
 });
 const showArr = computed(() => state.items);
@@ -140,7 +153,8 @@ async function autoLoadIfNeeded(expectedRevision, limit = 5) {
 async function reloadList() {
   const expectedRevision = ++viewRevision;
   if (scrollEl.value) scrollEl.value.scrollTop = 0;
-  const success = await pager.reset(currentQuery());
+  loginRequired.value = !localStorage.getItem('token');
+  const success = await pager.reset(currentQuery(), { defer: loginRequired.value });
   if (success) await autoLoadIfNeeded(expectedRevision);
 }
 
@@ -155,6 +169,7 @@ const select = async (index, type) => {
 };
 
 const loadMore = async () => {
+  if (loginRequired.value) return;
   const expectedRevision = viewRevision;
   if (await pager.loadMore()) await autoLoadIfNeeded(expectedRevision);
 };
@@ -215,6 +230,11 @@ const loadSearch = (value) => {
     reloadList();
   }, 250);
 };
+
+watch(() => store.state.isLogin, () => {
+  loginRequired.value = !localStorage.getItem('token');
+  if (active) reloadList();
+});
 
 onMounted(() => { initialized = true; reloadList(); });
 onActivated(() => {

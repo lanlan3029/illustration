@@ -497,6 +497,7 @@ export default {
   color: var(--muted);
 }
 .workshop-body {
+  --upload-height: clamp(420px, 60vh, 720px);
   max-width: 1280px;
   margin: 0 auto;
   display: grid;
@@ -533,7 +534,7 @@ export default {
   display: block;
 }
 .upload-drop {
-  min-height: 320px;
+  min-height: var(--upload-height);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -747,6 +748,8 @@ export default {
   outline-offset: 3px;
 }
 .col-gallery {
+  min-height: calc(var(--upload-height) + 110px);
+  box-sizing: border-box;
   position: sticky;
   top: 72px;
   max-height: calc(100vh - 100px);
@@ -767,6 +770,11 @@ export default {
   border-color: var(--border);
 }
 .col-gallery :deep(.collection-empty) {
+  min-height: calc(var(--upload-height) - 36px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   margin-top: 24px;
   padding: 64px 12px;
   border: 1px dashed var(--border);
@@ -804,12 +812,17 @@ export default {
   padding: 16px;
 }
   .col-gallery {
+  min-height: 0;
   position: static;
   max-height: none;
   overflow: visible;
 }
   .col-gallery :deep(.sticker-grid) {
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+  .col-gallery :deep(.collection-empty) {
+  min-height: 180px;
+  padding: 40px 12px;
 }
   .editor-toolbar {
   gap: 16px 24px;
