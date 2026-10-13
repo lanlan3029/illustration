@@ -1863,6 +1863,17 @@
     "selectedIlls": "已选插画"
   },
   "bookExport": {
+    "formatLandscapePicture": "10×8 横向绘本",
+    "formatLandscapePictureDesc": "经典横版，适合故事场景与全景插画",
+    "formatLandscapeLetter": "11×8.5 横向画册",
+    "formatLandscapeLetterDesc": "Letter 横版，适合画册与作品展示",
+    "formatLandscapeCompact": "8.5×5.5 迷你绘本",
+    "formatLandscapeCompactDesc": "轻巧横版，适合随身阅读与短篇故事",
+    "orientationSquare": "方形",
+    "orientationPortrait": "竖向",
+    "orientationLandscape": "横向",
+    "selectSizeHint": "点击尺寸，继续选择插画",
+    "qualityBadge": "300 DPI 高清导出",
     "formatTitle": "印刷尺寸",
     "formatHint": "先选择印刷尺寸，导出将按该尺寸生成 300 DPI 的 PDF / PNG",
     "formatSquareKids": "8.5×8.5 儿童书",

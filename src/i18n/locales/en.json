@@ -1848,6 +1848,17 @@
     "selectedIlls": "Selected"
   },
   "bookExport": {
+    "formatLandscapePicture": "10×8 Landscape picture book",
+    "formatLandscapePictureDesc": "Classic landscape for story scenes and panoramic art",
+    "formatLandscapeLetter": "11×8.5 Landscape album",
+    "formatLandscapeLetterDesc": "Letter landscape for albums and portfolios",
+    "formatLandscapeCompact": "8.5×5.5 Compact picture book",
+    "formatLandscapeCompactDesc": "Compact landscape for short stories on the go",
+    "orientationSquare": "Square",
+    "orientationPortrait": "Portrait",
+    "orientationLandscape": "Landscape",
+    "selectSizeHint": "Choose a size to continue to illustrations",
+    "qualityBadge": "300 DPI high-resolution export",
     "formatTitle": "Print size",
     "formatHint": "Choose a print size first. Export will generate 300 DPI PDF / PNG at that size",
     "formatSquareKids": "8.5×8.5 Picture book",

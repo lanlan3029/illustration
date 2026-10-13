@@ -29,7 +29,7 @@
                 </el-button>
             </div>
             <div class="format-section format-section--solo">
-                <h3 class="format-section-title">{{ $t('bookExport.formatTitle') }}</h3>
+                <div class="format-section-heading"><h3 class="format-section-title">{{ $t('bookExport.formatTitle') }}</h3><span class="format-quality">{{ $t('bookExport.qualityBadge') }}</span></div>
                 <p class="format-section-hint">{{ $t('bookExport.formatHint') }}</p>
                 <div class="format-grid">
                     <button
@@ -40,15 +40,17 @@
                         :class="{ 'is-active': bookExportFormatId === fmt.id }"
                         @click="confirmFormat(fmt.id)"
                     >
-                        <span class="format-preview" :style="{ aspectRatio: fmt.aspectRatioCss }">
+                        <span class="format-card-top"><span class="format-orientation">{{ $t(fmt.trimWidthIn === fmt.trimHeightIn ? 'bookExport.orientationSquare' : fmt.trimWidthIn > fmt.trimHeightIn ? 'bookExport.orientationLandscape' : 'bookExport.orientationPortrait') }}</span><span class="format-card-arrow" aria-hidden="true">↗</span></span>
+                        <span class="format-preview-stage" aria-hidden="true"><span class="format-preview" :style="{ aspectRatio: fmt.aspectRatioCss, width: `${Math.round(132 * fmt.trimWidthIn / fmt.trimHeightIn)}px` }">
                             <span class="format-preview-fill"></span>
                             <span class="format-preview-safe-ring"></span>
-                        </span>
+                        </span></span>
                         <span class="format-card-title">{{ $t(fmt.nameKey) }}</span>
                         <span class="format-card-desc">{{ $t(fmt.descKey) }}</span>
                         <span class="format-card-meta">{{ formatMeta(fmt) }}</span>
                     </button>
                 </div>
+                <p class="format-next-hint">{{ $t('bookExport.selectSizeHint') }} →</p>
             </div>
         </div>
 
@@ -544,7 +546,7 @@ export default {
 
 .format-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 14px;
 }
 
@@ -552,7 +554,8 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 14px;
+    padding: 18px;
+    min-width: 0;
     border: 2px solid #ebeef5;
     border-radius: 12px;
     background: #fafbfc;
@@ -574,8 +577,10 @@ export default {
 
 .format-preview {
     position: relative;
-    width: 72%;
-    margin: 0 auto 6px;
+    max-width: 100%;
+    height: 132px;
+    margin: 0;
+    box-shadow: 0 10px 20px rgba(87, 65, 122, 0.16);
     border-radius: 6px;
     background: #eef0f4;
     overflow: hidden;
@@ -609,9 +614,25 @@ export default {
 }
 
 .format-card-meta {
+    margin-top: auto;
+    padding-top: 8px;
     font-size: 11px;
     color: #909399;
     line-height: 1.35;
+}
+
+ .format-section-heading, .format-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.format-section-heading { flex-wrap: wrap; margin-bottom: 8px; }
+.format-quality { color: #8167a9; background: #f3eef9; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+.format-orientation { color: #78638e; font-size: 12px; font-weight: 600; }
+.format-card-arrow { color: #a99aba; font-size: 20px; }
+.format-preview-stage { display: flex; align-items: center; justify-content: center; height: 178px; margin: 6px 0 12px; border-radius: 8px; background: radial-gradient(ellipse at center, #eee8f6, #f6f4fa); }
+.format-card-desc { min-height: 34px; }
+.format-card:focus-visible { outline: 3px solid #8167a9; outline-offset: 4px; }
+.format-next-hint { margin: 22px 0 0; color: #78638e; font-size: 13px; text-align: center; }
+@media (max-width: 600px) {
+    .format-section--solo { padding: 20px 16px; }
+    .resume-banner { flex-wrap: wrap; }
 }
 
 .pick-step {
