@@ -927,15 +927,8 @@ export default {
   box-shadow: inset 0 -3px 0 #8965b1;
 }
 
-/* 心情日记导航项：默认强调色 */
-.nav-link-mood-diary {
-	color: #8167a9 !important;
-	font-weight: 700;
-}
-
-.nav-item.active .nav-link-mood-diary {
-	color: #6a4f96 !important;
-}
+/* Diary uses the same inactive treatment as other navigation links. */
+.nav-item.active .nav-link-mood-diary { color:#8167a9 !important; }
 
 .nav-item:after {
 	display: none;
@@ -1239,5 +1232,20 @@ export default {
 	.search-wrapper {
 		width: 150px;
 	}
+}
+@media(min-width:769px) {
+    .navbar-nav.desktop-nav { gap:clamp(2px, 1vw, 16px); flex-wrap:nowrap; min-width:0; }
+    .desktop-nav > .nav-item { flex-shrink:0; }
+    .desktop-nav .nav-link { white-space:nowrap; padding-inline:8px !important; }
+    .desktop-nav .search-item { flex:1 1 180px; min-width:90px; max-width:220px; }
+    .desktop-nav .search-wrapper { width:100%; }
+    .desktop-nav .search { width:100%; min-width:0; }
+    .desktop-nav .language-radio-group { display:flex; flex-wrap:nowrap; white-space:nowrap; }
+    .nav-item.active > .nav-link { color:#8167a9 !important; box-shadow:inset 0 -2px 0 #8167a9; }
+    .navbar-brand { margin-right:16px; }
+}
+@media(min-width:769px) and (max-width:1100px) {
+    .desktop-nav .nav-link { padding-inline:5px !important; font-size:13px; }
+    .navbar-brand img { height:24px; }
 }
 </style>

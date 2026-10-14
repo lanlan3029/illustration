@@ -9,38 +9,14 @@
                 <p class="hero-subtitle">{{ $t('home.welcomeSubtitle') || '选择您想要使用的创作功能' }}</p>
             </header>
 
-            <!-- 功能卡片：上排四个 + 下排三个工具入口 -->
+            <!-- 八款分层贴纸入口 -->
             <div class="feature-cards-group">
                 <section class="feature-cards">
-                    <router-link
-                        v-for="card in featureCards"
-                        :key="card.key"
-                        :to="card.to"
-                        class="feature-card"
-                        :class="card.cls"
-                    >
-                        <span class="feature-rings"></span>
+                    <router-link v-for="(card, index) in [...featureCards, ...toolCards]" :key="card.key" :to="card.to" class="feature-card">
+                        <HomeSticker :index="index" />
                         <div class="feature-text">
-                            <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
-                            <p class="feature-desc">{{ $t(card.descKey) }}</p>
-                        </div>
-                        <span class="feature-icon">
-                            <img :src="card.img" :alt="$t(card.titleKey)" class="feature-icon-img" loading="lazy" />
-                        </span>
-                    </router-link>
-                </section>
-                <section class="feature-cards feature-cards--compact">
-                    <router-link
-                        v-for="card in toolCards"
-                        :key="card.key"
-                        :to="card.to"
-                        class="feature-card feature-card--compact"
-                        :class="card.cls"
-                    >
-                        <span class="feature-rings"></span>
-                        <div class="feature-text">
-                            <h3 class="feature-name">{{ $t(card.titleKey) }}</h3>
-                            <p class="feature-desc">{{ $t(card.descKey) }}</p>
+                            <h3 class="feature-name">{{ cardLabel(card) }}</h3>
+                            <p class="feature-desc">{{ cardDescription(card) }}</p>
                         </div>
                     </router-link>
                 </section>
@@ -162,10 +138,11 @@
 <script>
 import { loadIllustrationStyles } from '@/utils/illustrationStyles'
 import PublicSeoContent from '@/components/PublicSeoContent.vue'
+import HomeSticker from '@/components/HomeSticker.vue'
 
 export default {
     name: 'Home',
-    components: { PublicSeoContent },
+    components: { PublicSeoContent, HomeSticker },
     computed: {
         carouselStyles() {
             return [...this.styleImages, ...this.styleImages];
@@ -192,7 +169,8 @@ export default {
             toolCards: [
                 { key: 'editor', titleKey: 'nav.createIllustration', descKey: 'home.createIllustrationDesc', to: '/editorpro', cls: 'ic-editor' },
                 { key: 'segment', titleKey: 'nav.imageSegmentation', descKey: 'home.imageSegmentationDesc', to: '/image-segmentation', cls: 'ic-segment' },
-                { key: 'lasso', titleKey: 'home.lassoCropSticker', descKey: 'home.lassoCropStickerDesc', to: '/lasso-crop', cls: 'ic-lasso' }
+                { key: 'lasso', titleKey: 'home.lassoCropSticker', descKey: 'home.lassoCropStickerDesc', to: '/lasso-crop', cls: 'ic-lasso' },
+                { key: 'pdf', to: '/creation-studio/book/topdf' }
             ],
             styleImages: [],
         };
@@ -232,6 +210,14 @@ export default {
         }
     },
     methods: {
+        cardLabel(card) {
+            const labels = { segment: ['一键抠图', 'Remove Background'], pdf: ['图片转 PDF', 'Images to PDF'] };
+            return labels[card.key]?.[this.$i18n.locale === 'en' ? 1 : 0] || this.$t(card.titleKey);
+        },
+        cardDescription(card) {
+            const descriptions = { user: ['管理角色、插画和绘本', 'Manage characters, illustrations and books'], pdf: ['自由排版，多图合成 PDF', 'Arrange images into one PDF'] };
+            return descriptions[card.key]?.[this.$i18n.locale === 'en' ? 1 : 0] || this.$t(card.descKey);
+        },
         go(to) {
             this.$router.push(to);
         },
@@ -248,11 +234,7 @@ export default {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 36px 32px 72px;
-    background:
-        radial-gradient(ellipse 70% 50% at 8% 0%, rgba(139, 124, 240, 0.14), transparent 55%),
-        radial-gradient(ellipse 60% 45% at 92% 4%, rgba(88, 166, 240, 0.1), transparent 50%),
-        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(244, 169, 172, 0.08), transparent 55%),
-        #eef0f8;
+    background: #fff;
 }
 
 .home-inner {
@@ -1035,5 +1017,62 @@ export default {
     .style-carousel-card {
         width: clamp(108px, 42vw, 140px);
     }
+}
+
+/* Reference palette: white page, cream paper, dark plum captions. */
+.feature-card { padding: 0 12px 18px; min-height: 0; border-radius: 20px; background: transparent; box-shadow: none; text-align: center; overflow: visible; }
+.feature-card::before { display:none; }
+.feature-card:hover { transform:translateY(-4px) rotate(-.5deg); }
+.feature-card:focus-visible { outline:3px solid #be9fda; outline-offset:4px; }
+.feature-name { color:#412039; text-shadow:none; font-size:18px; }
+.feature-desc { color:#806e7c; max-width:none; font-size:13px; }
+.feature-card :deep(.home-sticker) { max-width:240px; margin:0 auto -16px; }
+@media(max-width:768px) {
+    .feature-card { padding:0 2px 14px; }
+    .feature-name { font-size:16px; }
+    .feature-desc { font-size:12px; max-width:none; }
+}
+@media(prefers-reduced-motion:reduce) { .feature-card { transition:none; } .feature-card:hover { transform:none; } }
+.feature-card:nth-child(4n+1) { --sticker-tilt:-3deg; }
+.feature-card:nth-child(4n+2) { --sticker-tilt:2deg; }
+.feature-card:nth-child(4n+3) { --sticker-tilt:-1.5deg; }
+.feature-card:nth-child(4n) { --sticker-tilt:3deg; }
+.feature-card:nth-child(even) :deep(.home-sticker) { translate:0 5px; }
+.feature-card:hover :deep(.home-sticker) { transform:rotate(0deg) translateY(-3px); }
+/* A rounded handwritten face complements the cut-paper illustrations. */
+@font-face {
+    font-family: 'Home Handwriting';
+    src: url('../assets/editorpro/fonts/cn/苦累蛙圓體-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+.home-container {
+    font-family: 'Home Handwriting', 'KaiTi', cursive;
+}
+.home-container button { font-family: inherit; }
+.hero-title, .feature-name, .showcase-kicker, .showcase-title, .showcase-cta, .styles-title {
+    font-weight: 400;
+    letter-spacing: .03em;
+}
+.hero-title { line-height: 1.5; }
+.feature-name { font-size: 21px; line-height: 1.5; }
+.hero-subtitle, .feature-desc { line-height: 1.8; }
+@media (max-width:768px) { .feature-name { font-size:18px; } }
+.hero-subtitle, .feature-desc, .showcase-desc, .styles-subtitle {
+    font-family: 'Home Rounded', 'Microsoft YaHei', sans-serif;
+    color: #685b67;
+    font-size:14px;
+    line-height:1.7;
+}
+@font-face { font-family:'Home Rounded'; src:url('../assets/editorpro/fonts/cn/寒蝉圆体.ttf') format('truetype'); font-weight:400; font-display:swap; }
+.home-hero { padding:8px 0 12px; }
+.hero-subtitle { margin-bottom:6px; }
+.feature-cards-group { --feature-card-gap:12px; }
+.feature-card :deep(.home-sticker) { max-width:216px; margin-bottom:-22px; }
+@media(max-width:768px) {
+    .home-hero { padding:4px 0 8px; }
+    .feature-desc { font-size:13px; }
+    .feature-cards-group { --feature-card-gap:10px; }
 }
 </style>
