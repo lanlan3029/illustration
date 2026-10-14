@@ -1,6 +1,5 @@
 <template>
   <div class="page-template-panel">
-    <CollagePanel :busy="applyingTemplate" @apply="applyTemplate" @filling="batchFilling = $event" />
     <p class="page-template-hint">{{ $t('editorProLeft.pageTemplateHint') }}</p>
 
     <p v-if="canvasSizeLabel" class="page-template-canvas-meta">
@@ -74,7 +73,6 @@ import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance } from 'v
 import { useI18n } from 'vue-i18n'
 import { Button, Modal, Spin, Message, Divider } from 'view-ui-plus'
 import useSelect from '@/components/editorPro/hooks/select'
-import CollagePanel from './collagePanel.vue'
 import {
   getLocalPageTemplateGroups,
   countMatchingTemplates,
@@ -126,8 +124,6 @@ function previewClass(aspectRatio) {
 const showIllPicker = ref(false)
 const illArr = ref([])
 const loadingIll = ref(false)
-const applyingTemplate = ref(false)
-const batchFilling = ref(false)
 
 const activeSlotFilled = computed(() =>
   activePhotoSlot.value ? isFilledPhotoSlot(activePhotoSlot.value) : false
@@ -135,8 +131,7 @@ const activeSlotFilled = computed(() =>
 
 const applyTemplate = async (item) => {
   if (!item?.json || !canvasEditor) return
-  if (applyingTemplate.value || batchFilling.value) return
-  if (!item.allowAnySize && !hasMatchingTemplates.value) {
+  if (!hasMatchingTemplates.value) {
     Message.warning(t('editorProLeft.pageTemplateNoMatch'))
     return
   }
@@ -147,8 +142,6 @@ const applyTemplate = async (item) => {
     okText: t('ok'),
     cancelText: t('cancel'),
     onOk: async () => {
-      if (applyingTemplate.value || batchFilling.value) return
-      applyingTemplate.value = true
       // 不用自定义 render：Vue3 下 h 未必注入，且字体预加载卡住时全屏 Spin 会像白屏
       Spin.show()
       try {
@@ -188,7 +181,6 @@ const applyTemplate = async (item) => {
         console.error('[pageTemplate] apply failed', e)
         Message.error(e?.message || t('editorProLeft.pageTemplateFailed'))
       } finally {
-        applyingTemplate.value = false
         Spin.hide()
       }
     },
@@ -196,10 +188,9 @@ const applyTemplate = async (item) => {
 }
 
 const fillActiveSlot = async (imageSrc) => {
-  if (!activePhotoSlot.value || !imageSrc || applyingTemplate.value || batchFilling.value) return
+  if (!activePhotoSlot.value || !imageSrc) return
   try {
     await fillPhotoSlotObject(activePhotoSlot.value, imageSrc, canvasEditor.canvas)
-    canvasEditor.canvas.fire('object:modified')
     Message.success(t('editorProLeft.photoSlotFilled'))
     showIllPicker.value = false
   } catch {
