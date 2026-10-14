@@ -19,6 +19,7 @@
         <FormItem :label="$t('attributes.scale')">
           <Slider
             v-model="baseAttr.scale"
+            show-input
             :min="10"
             :max="300"
             @on-change="(value) => changeCommon('scale', value)"
@@ -27,6 +28,7 @@
         <FormItem :label="$t('attributes.angle')">
           <Slider
             v-model="baseAttr.angle"
+            show-input
             :max="360"
             @on-change="(value) => changeCommon('angle', value)"
           />
@@ -34,6 +36,7 @@
         <FormItem :label="$t('attributes.opacity')">
           <Slider
             v-model="baseAttr.opacity"
+            show-input
             @on-change="(value) => changeCommon('opacity', value)"
           />
         </FormItem>
