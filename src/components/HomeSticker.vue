@@ -10,22 +10,45 @@ export default {
 };
 
 function attachPeel(button) { const svg=button.querySelector("svg"); let current=0,target=0,frame=0;
-const draw=t=>{
-  // The sticker is a complete rounded rectangle at rest. The mask starts
-  // empty and cuts away paper only after the user lifts its lower-right tip.
-  const A={x:276-32*t,y:230};
-  const B={x:286,y:220-32*t};
-  const fold={x:280-20*t,y:225-20*t};
-  const tip={x:276-30*t,y:224-30*t};
-  const cut=`M${A.x} ${A.y} Q${fold.x} ${fold.y} ${B.x} ${B.y} L320 205 L320 290 L250 290 Z`;
-  const back=`M${A.x} ${A.y} Q${tip.x-3*t} ${tip.y+7*t} ${tip.x} ${tip.y} Q${tip.x+8*t} ${tip.y-3*t} ${B.x} ${B.y} Q${fold.x} ${fold.y} ${A.x} ${A.y}Z`;
-  svg.querySelector('[data-peel=cut]').setAttribute('d',t<.001?'M0 0':cut);
-  svg.querySelector('[data-peel=back]').setAttribute('d',back);
-  svg.querySelector('[data-peel=rim]').setAttribute('d',`M${A.x} ${A.y} Q${tip.x-3*t} ${tip.y+7*t} ${tip.x} ${tip.y} Q${tip.x+8*t} ${tip.y-3*t} ${B.x} ${B.y}`);
-  svg.querySelector('[data-peel=shadow]').setAttribute('d',back);
-  svg.querySelector('[data-peel=shadow]').setAttribute('transform',`translate(${2*t} ${4*t})`);
-  svg.querySelector('[data-layer=back]').setAttribute('opacity',Math.min(1,t*5));
-  svg.querySelector('[data-layer=shadow]').setAttribute('opacity',t*.85);
+// Fold the actual paper silhouette across x + y = crease, so both edges meet.
+const ns = 'http://www.w3.org/2000/svg';
+const body = svg.querySelector('[data-layer=body]');
+const make = (tag, attributes = {}) => {
+  const node = document.createElementNS(ns, tag);
+  Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, value));
+  return node;
+};
+const prefix = body.id + '-fold-';
+const clip = make('clipPath', { id: prefix + 'clip', clipPathUnits: 'userSpaceOnUse' });
+const corner = make('path');
+clip.appendChild(corner);
+const paperFilter = make('filter', { id: prefix + 'paper', x:'-20%', y:'-20%', width:'140%', height:'140%', 'color-interpolation-filters':'sRGB' });
+paperFilter.appendChild(make('feFlood', { 'flood-color':'#fff8ec' }));
+paperFilter.appendChild(make('feComposite', { in2:'SourceAlpha', operator:'in' }));
+const shadowFilter = make('filter', { id: prefix + 'shadow', x:'-50%', y:'-50%', width:'200%', height:'200%' });
+shadowFilter.appendChild(make('feDropShadow', { dx:'1', dy:'2', stdDeviation:'1.5', 'flood-color':'#66462f', 'flood-opacity':'.22' }));
+svg.querySelector('defs').append(clip, paperFilter, shadowFilter);
+const folded = make('g', { 'pointer-events':'none', filter:'url(#' + prefix + 'shadow)' });
+const reflected = make('g');
+const clipped = make('g', { 'clip-path':'url(#' + prefix + 'clip)' });
+const paper = body.cloneNode(true);
+paper.removeAttribute('mask');
+paper.removeAttribute('id');
+paper.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+paper.setAttribute('filter', 'url(#' + prefix + 'paper)');
+clipped.appendChild(paper);
+reflected.appendChild(clipped);
+folded.appendChild(reflected);
+svg.appendChild(folded);
+const bounds = svg.querySelector('[data-layer=art]').getBBox();
+const outerCorner = bounds.x + bounds.width + bounds.y + bounds.height + 24;
+const draw = t => {
+  const crease = outerCorner - 72 * t;
+  const cut = 'M' + (crease - 360) + ' 360 L360 ' + (crease - 360) + ' L360 360Z';
+  corner.setAttribute('d', cut);
+  svg.querySelector('[data-peel=cut]').setAttribute('d', t < .001 ? 'M0 0' : cut);
+  reflected.setAttribute('transform', 'matrix(0 -1 -1 0 ' + crease + ' ' + crease + ')');
+  folded.setAttribute('opacity', t < .001 ? 0 : 1);
 };
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 let from=0,started=0,duration=420;
