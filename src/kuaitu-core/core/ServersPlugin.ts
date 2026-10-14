@@ -196,6 +196,19 @@ class ServersPlugin implements IPluginTempl {
       'extension',
       'verticalAlign',
       'roundValue',
+      // Photo-frame metadata must survive history, JSON export and draft reloads.
+      'kidstoryRole',
+      'kidstorySlotLeft',
+      'kidstorySlotTop',
+      'kidstorySlotW',
+      'kidstorySlotH',
+      'kidstoryPhotoFilled',
+      'originSrc',
+      'lockMovementX',
+      'lockMovementY',
+      'lockScalingX',
+      'lockScalingY',
+      'lockRotation',
     ];
   }
 

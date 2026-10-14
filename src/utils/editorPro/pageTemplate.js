@@ -388,8 +388,6 @@ export async function fillPhotoSlotObject(activeObject, imageSrc, canvas) {
   ensurePhotoSlotFrameMeta(activeObject)
   preparePhotoSlotForFill(activeObject)
   const frame = getPhotoSlotFrame(activeObject)
-  activeObject.kidstoryPhotoFilled = true
-
   const img = await loadImageElement(imageSrc)
 
   await new Promise((resolve, reject) => {
