@@ -6,7 +6,6 @@
                 <h1 class="hero-title">
                     {{ $t('home.welcomeTitle') || '让想象变成美丽的故事' }}
                 </h1>
-                <p class="hero-subtitle">{{ $t('home.welcomeSubtitle') || '选择您想要使用的创作功能' }}</p>
             </header>
 
             <!-- 八款分层贴纸入口 -->
@@ -16,7 +15,6 @@
                         <HomeSticker :index="index" />
                         <div class="feature-text">
                             <h3 class="feature-name">{{ cardLabel(card) }}</h3>
-                            <p class="feature-desc">{{ cardDescription(card) }}</p>
                         </div>
                     </router-link>
                 </section>
@@ -234,7 +232,7 @@ export default {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 36px 32px 72px;
-    background: #fff;
+    background: #e6d8c5;
 }
 
 .home-inner {
@@ -436,13 +434,11 @@ export default {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
     gap: 40px;
     align-items: center;
-    background: rgba(255, 255, 255, 0.62);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: #f5ecdf;
+    border: 1px solid #d6c3aa;
     border-radius: 28px;
     padding: 36px 36px 36px 40px;
-    box-shadow: 0 20px 48px -28px rgba(100, 90, 160, 0.35);
+    box-shadow: 0 12px 32px -24px rgba(106, 76, 49, 0.16);
 }
 
 .showcase-inner--reverse {
@@ -1020,7 +1016,7 @@ export default {
 }
 
 /* Reference palette: white page, cream paper, dark plum captions. */
-.feature-card { padding: 0 12px 18px; min-height: 0; border-radius: 20px; background: transparent; box-shadow: none; text-align: center; overflow: visible; }
+.feature-card { padding: 0 12px 10px; min-height: 0; border-radius: 20px; background: transparent; box-shadow: none; text-align: center; overflow: visible; }
 .feature-card::before { display:none; }
 .feature-card:hover { transform:translateY(-4px) rotate(-.5deg); }
 .feature-card:focus-visible { outline:3px solid #be9fda; outline-offset:4px; }
@@ -1053,9 +1049,10 @@ export default {
 .home-container button { font-family: inherit; }
 .hero-title, .feature-name, .showcase-kicker, .showcase-title, .showcase-cta, .styles-title {
     font-weight: 400;
-    letter-spacing: .03em;
+    letter-spacing: .01em;
 }
-.hero-title { line-height: 1.5; }
+.hero-title { line-height: 1.4; letter-spacing:0; -webkit-text-stroke:.35px currentColor; }
+.feature-name, .showcase-title, .styles-title { -webkit-text-stroke:.2px currentColor; }
 .feature-name { font-size: 21px; line-height: 1.5; }
 .hero-subtitle, .feature-desc { line-height: 1.8; }
 @media (max-width:768px) { .feature-name { font-size:18px; } }
@@ -1066,13 +1063,16 @@ export default {
     line-height:1.7;
 }
 @font-face { font-family:'Home Rounded'; src:url('../assets/editorpro/fonts/cn/寒蝉圆体.ttf') format('truetype'); font-weight:400; font-display:swap; }
-.home-hero { padding:8px 0 12px; }
+.home-hero { padding:4px 0 10px; }
 .hero-subtitle { margin-bottom:6px; }
-.feature-cards-group { --feature-card-gap:12px; }
-.feature-card :deep(.home-sticker) { max-width:216px; margin-bottom:-22px; }
+.feature-cards-group { --feature-card-gap:12px; margin-bottom:28px; }
+.feature-cards { row-gap:0; }
+.feature-card :deep(.home-sticker) { max-width:200px; margin-top:-6px; margin-bottom:-28px; }
 @media(max-width:768px) {
     .home-hero { padding:4px 0 8px; }
     .feature-desc { font-size:13px; }
     .feature-cards-group { --feature-card-gap:10px; }
+    .feature-cards { row-gap:6px; }
+    .feature-card :deep(.home-sticker) { margin-top:0; margin-bottom:-22px; }
 }
 </style>
