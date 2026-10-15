@@ -69,6 +69,15 @@ function photoTransform(slot) {
   return { ...slot.kidstoryCollagePhoto, zoom: clamp(slot.kidstoryCollagePhoto?.zoom || 1,1,4), panX: clamp(slot.kidstoryCollagePhoto?.panX || 0,-1,1), panY: clamp(slot.kidstoryCollagePhoto?.panY || 0,-1,1) }
 }
 
+function initializePhotoMovement(slot,cell,width,height) {
+  if(typeof slot.kidstoryCollagePhoto?.freeMove==='boolean')return
+  const photo=photoTransform(slot),position=imagePlacement({element:{width,height},...photo,freeMove:false},cell)
+  // Migrate old normalized cover crops without shifting their current appearance.
+  slot.kidstoryCollagePhoto={...photo,freeMove:true,
+    offsetX:(position.x-cell.x-(cell.width-position.width)/2)/cell.width,
+    offsetY:(position.y-cell.y-(cell.height-position.height)/2)/cell.height}
+}
+
 export function setPhotoFreeMove(editor,slot,enabled) {
   const frame={x:slot.kidstorySlotLeft,y:slot.kidstorySlotTop,width:slot.kidstorySlotW,height:slot.kidstorySlotH}
   const cx=frame.x+(frame.width-slot.width*slot.scaleX)/2,cy=frame.y+(frame.height-slot.height*slot.scaleY)/2
@@ -85,6 +94,7 @@ function offsetCell(cell, frame) {
 function applySlot(slot, cell, radius, template, frame, border) {
   const element=slot.getElement()
   const width=element.naturalWidth||element.width, height=element.naturalHeight||element.height
+  initializePhotoMovement(slot,cell,width,height)
   const position=imagePlacement({ element:{width,height}, ...photoTransform(slot) },cell)
   const scale=position.width/width
   const clip=fabricClip(cellPath(cell,radius,new SvgPath()))
@@ -149,7 +159,7 @@ export function zoomCollagePhoto(editor, slot, zoom) {
 }
 
 export function resetCollagePhoto(editor, slot) {
-  slot.kidstoryCollagePhoto={zoom:1,panX:0,panY:0}
+  slot.kidstoryCollagePhoto={zoom:1,panX:0,panY:0,offsetX:0,offsetY:0,freeMove:slot.kidstoryCollagePhoto?.freeMove!==false}
   reflowCollagePhoto(editor,slot);notify(editor,slot)
 }
 
@@ -159,6 +169,7 @@ function reflowCollagePhoto(editor, slot) {
   // Keep photos editable in old drafts whose former backdrop was deleted.
   const element=slot.getElement(),width=element.naturalWidth||element.width,height=element.naturalHeight||element.height
   const cell={x:slot.kidstorySlotLeft??slot.left,y:slot.kidstorySlotTop??slot.top,width:slot.kidstorySlotW||slot.width*slot.scaleX,height:slot.kidstorySlotH||slot.height*slot.scaleY}
+  initializePhotoMovement(slot,cell,width,height)
   const position=imagePlacement({element:{width,height},...photoTransform(slot)},cell),scale=position.width/width
   slot.set({left:position.x,top:position.y,width,height,scaleX:scale,scaleY:scale,selectable:true,evented:true,hasControls:false,lockMovementX:false,lockMovementY:false,lockScalingX:true,lockScalingY:true,lockRotation:true,objectCaching:false})
   slot.setCoords();editor.canvas.requestRenderAll()
@@ -215,7 +226,7 @@ export async function replaceCollagePhoto(editorOrCanvas, slot, src) {
   const element=await loadImage(src)
   slot.setElement(element)
   slot.originSrc=src;slot.kidstoryPhotoFilled=true
-  slot.kidstoryCollagePhoto={zoom:1,panX:0,panY:0}
+  slot.kidstoryCollagePhoto={zoom:1,panX:0,panY:0,offsetX:0,offsetY:0,freeMove:slot.kidstoryCollagePhoto?.freeMove!==false}
   // The runtime listener owns the editor and geometry, including irregular clip paths.
   canvas.fire('collage:replace',{target:slot})
   canvas.setActiveObject(slot);canvas.fire('object:modified',{target:slot});canvas.requestRenderAll()
