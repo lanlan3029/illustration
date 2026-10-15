@@ -75,9 +75,9 @@ if (isMobileEditor.value) {
     <div v-if="!isMobileEditor" class="right-bar" v-show="attrBarShow">
       <div style="padding-top: 10px">
         <collage-controls />
-        <div v-show="!mixinState.mSelectMode">
+        <div v-show="!mixinState.mSelectMode || isCollageSlot">
           <set-size></set-size>
-          <bg-bar></bg-bar>
+          <bg-bar :visible-while-selected="isCollageSlot"></bg-bar>
         </div>
 
         <div v-show="mixinState.mSelectMode === 'multiple' && !isCollageSlot">
@@ -135,9 +135,9 @@ if (isMobileEditor.value) {
     >
       <div class="right-bar right-bar--sheet">
         <collage-controls />
-        <div v-show="!mixinState.mSelectMode">
+        <div v-show="!mixinState.mSelectMode || isCollageSlot">
           <set-size></set-size>
-          <bg-bar></bg-bar>
+          <bg-bar :visible-while-selected="isCollageSlot"></bg-bar>
         </div>
         <div v-show="mixinState.mSelectMode === 'multiple' && !isCollageSlot">
           <group></group>

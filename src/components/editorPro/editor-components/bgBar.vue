@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isSelect">
+  <div v-if="!isSelect || visibleWhileSelected">
     <div class="attr-item-box">
       <!-- <h3>{{ $t('bgSeting.color') }}</h3> -->
       <Divider plain orientation="left">
@@ -39,6 +39,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import useSelect from '@/components/editorPro/hooks/select';
 
 const { isSelect, canvasEditor } = useSelect();
+defineProps({ visibleWhileSelected: { type: Boolean, default: false } });
 
 const colorList = ref([
   '#5F2B63',
@@ -75,23 +76,29 @@ const setThisColor = () => {
 // 背景颜色设置
 function setColor(c) {
   const workspace = canvasEditor.canvas.getObjects().find((item) => item.id === 'workspace');
+  if (!workspace) return;
+  if (workspace.fill === c) { color.value = c; return; }
   workspace.set('fill', c);
   canvasEditor.canvas.renderAll();
   color.value = c;
+  canvasEditor.canvas.fire('object:modified', { target: workspace });
 }
 
 // 加载模板时回显颜色值
 const handleChangeColor = () => {
   const workspace = canvasEditor.canvas.getObjects().find((item) => item.id === 'workspace');
-  color.value = workspace.fill;
+  if (workspace) color.value = workspace.fill;
 };
 
 onMounted(() => {
   canvasEditor.on('loadJson', handleChangeColor);
+  canvasEditor.canvas.on('object:modified', handleChangeColor);
+  handleChangeColor();
 });
 
 onUnmounted(() => {
   canvasEditor.off('loadJson', handleChangeColor);
+  canvasEditor.canvas.off('object:modified', handleChangeColor);
 });
 </script>
 

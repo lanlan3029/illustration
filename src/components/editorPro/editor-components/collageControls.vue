@@ -7,7 +7,7 @@
     <label>间距 <output>{{ values.spacing }}</output><input :value="values.spacing" type="range" min="0" max="60" aria-label="拼图间距" @change="changeSetting('spacing',$event.target.value)"></label>
     <label>外边框 <output>{{ values.border }}</output><input :value="values.border" type="range" min="0" max="80" aria-label="拼图外边框" @change="changeSetting('border',$event.target.value)"></label>
     <label>圆角 <output>{{ values.radius }}</output><input :value="values.radius" type="range" min="0" max="100" aria-label="拼图圆角" @change="changeSetting('radius',$event.target.value)"></label>
-    <label class="color-row">背景<input :value="values.background" type="color" aria-label="拼图背景" @change="changeSetting('background',$event.target.value)"></label>
+    <label class="color-row">画布背景<input :value="values.background" type="color" aria-label="画布背景颜色" @change="changeSetting('background',$event.target.value)"></label>
     <div v-if="slot" class="photo-controls"><h4>照片 {{ slot.kidstoryCollageIndex+1 }}</h4><p>在画布内拖动照片调整取景。</p><label>缩放 <output>{{ Math.round(zoom*100) }}%</output><input :value="zoom" type="range" min="1" max="4" step="0.01" aria-label="拼图照片缩放" @change="changeZoom($event.target.value)"></label><button type="button" @click="reset">重置取景</button><button type="button" :disabled="loading" @click="fileInput.click()">{{ loading?'正在读取…':'替换此照片' }}</button><input ref="fileInput" class="hidden-input" type="file" accept="image/*" aria-label="替换拼图照片" @change="replace($event)"></div>
     <p v-if="error" role="alert">{{ error }}</p>
   </section>
@@ -19,9 +19,9 @@ import useSelect from '@/components/editorPro/hooks/select'
 import templates from '@/data/collage/templates.json'
 import { collageRoots, collageSlots, rootForSlot, updateCollage, switchCollageTemplate, zoomCollagePhoto, resetCollagePhoto, replaceCollagePhoto, scaleCollageFrame, setCollageFrame, editCollageFrame, isEditingCollageFrame, COLLAGE_CHANGED } from '@/utils/editorPro/collageSlots'
 
-const { canvasEditor }=useSelect()
+const { canvasEditor, fabric }=useSelect()
 const root=shallowRef(null),slot=shallowRef(null),version=ref(0),fileInput=ref(null),loading=ref(false),error=ref('')
-const values=computed(()=>{version.value;return root.value?.kidstoryCollage.settings||{}})
+const values=computed(()=>{version.value;const fill=canvasEditor.getWorkspase()?.fill;return {...root.value?.kidstoryCollage.settings,background:typeof fill==='string'?'#'+new fabric.Color(fill).toHex():'#ffffff'}})
 const frame=computed(()=>{version.value;return root.value?.kidstoryCollage.frame||{x:0,y:0,width:1,height:1}})
 const editingFrame=computed(()=>{version.value;return root.value&&isEditingCollageFrame(root.value)})
 function scaleFrame(value){if(root.value)scaleCollageFrame(canvasEditor,root.value,Number(value))}
@@ -47,7 +47,7 @@ async function replace(event){
   loading.value=true;error.value=''
   try{const src=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});await replaceCollagePhoto(canvasEditor,target,src)}catch{error.value='图片无法读取，请选择有效的图片。'}finally{loading.value=false}
 }
-const events=['selection:created','selection:updated','selection:cleared',COLLAGE_CHANGED]
+const events=['selection:created','selection:updated','selection:cleared','object:modified',COLLAGE_CHANGED]
 onMounted(()=>{events.forEach(name=>canvasEditor.canvas.on(name,sync));sync()})
 onBeforeUnmount(()=>events.forEach(name=>canvasEditor.canvas.off(name,sync)))
 </script>

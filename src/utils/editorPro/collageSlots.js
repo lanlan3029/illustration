@@ -8,7 +8,7 @@ const frameEditing = new WeakSet()
 const DEFAULT_SETTINGS = { spacing: 10, border: 10, radius: 0, background: '#ffffff', mode: 'single', slides: 1 }
 
 // A logical group of independent Fabric images: each photo remains directly editable.
-// Metadata lives on its locked background, rather than baking children into one bitmap.
+// Metadata lives on a transparent layout controller, never on an opaque background.
 export function collageRoots(canvas) {
   return canvas.getObjects().filter(obj => obj.kidstoryCollage?.schema === 1)
 }
@@ -102,7 +102,7 @@ export function reflowCollage(editor, root, preserveRoot = false) {
   const factor=Math.min(frame.width,frame.height)/1080
   const border=settings.border*factor
   const cells=layoutCells(template,frame.width,frame.height,settings.spacing*factor,border)
-  if(!preserveRoot)root.set({ left:frame.left,top:frame.top,width:frame.width,height:frame.height,scaleX:1,scaleY:1,fill:settings.background,
+  if(!preserveRoot)root.set({ left:frame.left,top:frame.top,width:frame.width,height:frame.height,scaleX:1,scaleY:1,fill:'rgba(0,0,0,0)',
     originX:'left',originY:'top',selectable:editing,evented:editing,hasControls:editing,strokeWidth:0,
     lockMovementX:!editing,lockMovementY:!editing,lockScalingX:!editing,lockScalingY:!editing,lockRotation:true,lockScalingFlip:true,kidstoryRole:'decoration' })
   root.setCoords()
@@ -121,6 +121,7 @@ function notify(editor, target, modified = true) {
 }
 
 export function updateCollage(editor, root, patch) {
+  if(patch.background)editor.getWorkspase().set({fill:patch.background})
   // Replace metadata, never mutate an object held by a history snapshot.
   root.kidstoryCollage={ ...root.kidstoryCollage, settings:{...root.kidstoryCollage.settings,...patch} }
   reflowCollage(editor,root)

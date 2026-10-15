@@ -138,7 +138,7 @@ const getList = () => {
     ...canvasEditor.canvas.getObjects().filter((item) => {
       // return item;
       // 过滤掉辅助线
-      return !(item instanceof fabric.GuideLine || item.id === 'workspace');
+      return !(item instanceof fabric.GuideLine || item.id === 'workspace' || item.kidstoryCollage);
     }),
   ]
     .reverse()
