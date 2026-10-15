@@ -286,7 +286,7 @@ export function mergeHandrawLibraryStyles(list, locale = 'zh') {
     if (byId.has(row.id)) {
       const existing = out.find((s) => Number(s.id) === row.id)
       if (existing) {
-        existing.artStyle = loc === 'en' ? row.art_style_en : row.art_style_zh
+        if (!existing.artStyle) existing.artStyle = loc === 'en' ? row.art_style_en : row.art_style_zh
         const bp =
           loc === 'en'
             ? (row.basePromptEn || row.basePrompt)

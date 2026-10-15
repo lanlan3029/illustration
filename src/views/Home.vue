@@ -97,35 +97,17 @@
                 </div>
             </section>
 
-            <!-- 风格轮播：放在首屏之外，滚动后才进入视口并播放动画 -->
+            <!-- All illustration styles, presented as a paper photo album. -->
             <section class="styles-section">
                 <div class="styles-head">
-                    <h2 class="styles-title">{{ $t('home.stylesTitle') || '丰富的插画风格' }}</h2>
-                    <p class="styles-subtitle">{{ $t('home.stylesSubtitle') || '一键切换多种艺术风格' }}</p>
+                    <h2 class="styles-title">{{ $t('home.stylesTitle') }}</h2>
+                    <p class="styles-subtitle">{{ $t('home.stylesSubtitle') }}</p>
                 </div>
-                <div
-                    ref="stylesCarousel"
-                    class="styles-carousel-outer"
-                    :class="{ 'is-active': carouselActive }"
-                    @mouseenter="carouselHovered = true"
-                    @mouseleave="carouselHovered = false"
-                >
-                    <div class="styles-carousel-track">
-                        <button
-                            v-for="(style, idx) in carouselStyles"
-                            :key="`${style.id}-${idx}`"
-                            type="button"
-                            class="style-carousel-card"
-                            @click="go('/ai-picture')"
-                        >
-                            <img
-                                :src="style.image"
-                                :alt="styleLabel(style)"
-                                class="style-carousel-img"
-                                loading="lazy"
-                            />
-                        </button>
-                    </div>
+                <div class="style-gallery">
+                    <button v-for="style in styleImages" :key="style.id" type="button" class="style-photo" @click="go('/ai-picture')">
+                        <span class="style-photo-image"><img :src="style.image" :alt="styleLabel(style)" loading="lazy" decoding="async" /></span>
+                        <span class="style-photo-caption">{{ styleLabel(style) }}</span>
+                    </button>
                 </div>
             </section>
             <PublicSeoContent path="/" compact />
@@ -141,22 +123,8 @@ import HomeSticker from '@/components/HomeSticker.vue'
 export default {
     name: 'Home',
     components: { PublicSeoContent, HomeSticker },
-    computed: {
-        carouselStyles() {
-            return [...this.styleImages, ...this.styleImages];
-        },
-        carouselActive() {
-            if (this.prefersReducedMotion) return false;
-            return this.carouselInView || this.carouselHovered;
-        },
-    },
     data() {
         return {
-            carouselInView: false,
-            carouselHovered: false,
-            prefersReducedMotion: false,
-            carouselMotionObserver: null,
-            reducedMotionMedia: null,
             editorScreenshot: require('@/assets/images/home/showcase-editor.png'),
             featureCards: [
                 { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book', img: require('@/assets/images/cards/books.png') },
@@ -176,36 +144,8 @@ export default {
     async mounted() {
         const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh';
         const styles = await loadIllustrationStyles({ locale, t: this.$t.bind(this) });
-        this.styleImages = styles.map((s) => ({ key: s.key, id: s.id, image: s.image }));
+        this.styleImages = styles.map((s) => ({ key: s.key, id: s.id, image: s.image, artStyle: s.artStyle }));
 
-        if (typeof window === 'undefined') return;
-
-        this.reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
-        this.prefersReducedMotion = this.reducedMotionMedia.matches;
-        this.onReducedMotionChange = (event) => {
-            this.prefersReducedMotion = event.matches;
-        };
-        this.reducedMotionMedia.addEventListener('change', this.onReducedMotionChange);
-
-        const el = this.$refs.stylesCarousel;
-        if (el && typeof IntersectionObserver !== 'undefined') {
-            this.carouselMotionObserver = new IntersectionObserver(
-                ([entry]) => {
-                    this.carouselInView = Boolean(entry?.isIntersecting);
-                },
-                { threshold: 0.12, rootMargin: '40px 0px' }
-            );
-            this.carouselMotionObserver.observe(el);
-        } else {
-            this.carouselInView = true;
-        }
-    },
-    beforeUnmount() {
-        this.carouselMotionObserver?.disconnect();
-        this.carouselMotionObserver = null;
-        if (this.reducedMotionMedia && this.onReducedMotionChange) {
-            this.reducedMotionMedia.removeEventListener('change', this.onReducedMotionChange);
-        }
     },
     methods: {
         cardLabel(card) {
@@ -220,7 +160,8 @@ export default {
             this.$router.push(to);
         },
         styleLabel(style) {
-            return this.$t(`aibooks.styles.${style.key}.artStyle`);
+            const key = `aibooks.styles.${style.key}.artStyle`;
+            return style.artStyle || (this.$te(key) ? this.$t(key) : style.key);
         },
     }
 }
@@ -747,77 +688,6 @@ export default {
     margin: 0;
 }
 
-.styles-carousel-outer {
-    overflow: hidden;
-    width: 100vw;
-    max-width: 100vw;
-    margin-left: calc(50% - 50vw);
-    padding: 8px 0 24px;
-    -webkit-mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        #000 6%,
-        #000 94%,
-        transparent 100%
-    );
-    mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        #000 6%,
-        #000 94%,
-        transparent 100%
-    );
-}
-
-.styles-carousel-track {
-    display: flex;
-    align-items: stretch;
-    gap: 18px;
-    width: max-content;
-    padding: 0 24px;
-    animation: none;
-}
-
-.styles-carousel-outer.is-active .styles-carousel-track {
-    animation: styles-carousel-scroll 55s linear infinite;
-    will-change: transform;
-}
-
-@keyframes styles-carousel-scroll {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.style-carousel-card {
-    flex-shrink: 0;
-    width: clamp(148px, 16vw, 210px);
-    aspect-ratio: 3 / 4;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    border-radius: 22px;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 10px 28px -14px rgba(60, 50, 90, 0.38);
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
-}
-
-.style-carousel-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 18px 36px -12px rgba(60, 50, 90, 0.45);
-}
-
-.style-carousel-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
 /* ===== 平板 ===== */
 @media (max-width: 1024px) {
     .hero-title {
@@ -954,65 +824,21 @@ export default {
         font-size: 14px;
     }
 
-    .styles-carousel-outer {
-        -webkit-mask-image: linear-gradient(
-            to right,
-            transparent 0%,
-            #000 3%,
-            #000 97%,
-            transparent 100%
-        );
-        mask-image: linear-gradient(
-            to right,
-            transparent 0%,
-            #000 3%,
-            #000 97%,
-            transparent 100%
-        );
-    }
 
-    .styles-carousel-outer.is-active .styles-carousel-track {
-        animation-duration: 45s;
-    }
 
-    .styles-carousel-track {
-        gap: 12px;
-        padding: 0 14px;
-    }
 
-    .style-carousel-card {
-        width: clamp(120px, 38vw, 168px);
-        border-radius: 18px;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .styles-carousel-outer.is-active .styles-carousel-track {
-        animation: none;
-        will-change: auto;
-    }
 
-    .styles-carousel-track {
-        overflow-x: auto;
-        max-width: 100%;
-        scrollbar-width: none;
-    }
 
     .styles-carousel-track::-webkit-scrollbar {
         display: none;
     }
 
-    .styles-carousel-outer {
-        overflow-x: auto;
-        -webkit-mask-image: none;
-        mask-image: none;
-    }
 }
 
 @media (max-width: 420px) {
-    .style-carousel-card {
-        width: clamp(108px, 42vw, 140px);
-    }
 }
 
 /* Reference palette: white page, cream paper, dark plum captions. */
@@ -1075,4 +901,18 @@ export default {
     .feature-cards { row-gap:6px; }
     .feature-card :deep(.home-sticker) { margin-top:0; margin-bottom:-22px; }
 }
+.style-gallery { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:28px 22px; padding:12px 6px 28px; }
+.style-photo { --photo-tilt:-1.4deg; display:flex; flex-direction:column; min-width:0; padding:10px 10px 12px; border:1px solid #e6d9c5; border-radius:3px 5px 4px 6px; background:#fff7e9; box-shadow:0 5px 12px -7px #795b42; color:#412039; cursor:pointer; transform:rotate(var(--photo-tilt)); transition:transform .22s ease,box-shadow .22s ease; }
+.style-photo:nth-child(3n+2) { --photo-tilt:1.8deg; }
+.style-photo:nth-child(3n) { --photo-tilt:-.6deg; }
+.style-photo:nth-child(even) { translate:0 5px; }
+.style-photo-image { display:block; width:100%; aspect-ratio:3/4; overflow:hidden; background:#eee4d5; }
+.style-photo-image img { display:block; width:100%; height:100%; object-fit:cover; }
+.style-photo-caption { display:block; width:100%; padding:12px 2px 0; font-family:'Home Handwriting','KaiTi',cursive; font-size:17px; line-height:1.5; overflow-wrap:anywhere; }
+.style-photo:hover, .style-photo:focus-visible { transform:translateY(-5px) rotate(0deg); box-shadow:0 10px 18px -10px #795b42; }
+.style-photo:focus-visible { outline:2px solid #8167a9; outline-offset:4px; }
+@media(max-width:1200px) { .style-gallery { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(max-width:900px) { .style-gallery { grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px 16px; } }
+@media(max-width:600px) { .style-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 14px; } .style-photo { padding:7px 7px 10px; } .style-photo-caption { font-size:16px; padding-top:9px; } }
+@media(prefers-reduced-motion:reduce) { .style-photo { transition:none; } }
 </style>
