@@ -20,6 +20,7 @@
             </Col>
             <Col span="4">
               <Button
+                v-if="!item.isCollage"
                 long
                 :icon="item.isLock ? 'md-lock' : 'md-unlock'"
                 type="text"
@@ -150,6 +151,7 @@ const getList = () => {
         name,
         text,
         isLock: !selectable,
+        isCollage: Boolean(item.kidstoryCollageId),
       };
     });
   list.value = uniqBy(unref(list), 'id');

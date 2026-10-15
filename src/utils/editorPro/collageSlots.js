@@ -220,16 +220,28 @@ export function installCollageSlots(editor) {
     }
   }
   const onReplace=({target})=>{reflowCollage(editor,rootForSlot(canvas,target));canvas.fire(COLLAGE_CHANGED)}
+  const onSelection=()=>{
+    const slot=canvas.getActiveObject?.()
+    if(!slot?.kidstoryCollageId||slot.type!=='image')return
+    const root=rootForSlot(canvas,slot)
+    if(!root)return
+    // Layer-list selection explicitly means photo editing, even during frame editing.
+    frameEditing.delete(root)
+    reflowCollage(editor,root)
+    canvas.fire(COLLAGE_CHANGED)
+  }
   const onModified=({target}={})=>{if(target?.kidstoryCollage)reflowCollage(editor,target);canvas.fire(COLLAGE_CHANGED)}
   const onRemoved=()=>canvas.fire(COLLAGE_CHANGED)
   editor.on('sizeChange',onSizeChange);editor.on('loadJson',refresh)
   canvas.on('object:moving',onMoving);canvas.on('object:modified',onModified);canvas.on('object:removed',onRemoved)
   canvas.on('object:scaling',onMoving)
+  canvas.on('selection:created',onSelection);canvas.on('selection:updated',onSelection)
   canvas.on('history:undo',refresh);canvas.on('history:redo',refresh);canvas.on('collage:replace',onReplace)
   return ()=>{
     editor.off('sizeChange',onSizeChange);editor.off('loadJson',refresh)
     canvas.off('object:moving',onMoving);canvas.off('object:modified',onModified);canvas.off('object:removed',onRemoved)
     canvas.off('object:scaling',onMoving)
+    canvas.off('selection:created',onSelection);canvas.off('selection:updated',onSelection)
     canvas.off('history:undo',refresh);canvas.off('history:redo',refresh);canvas.off('collage:replace',onReplace)
   }
 }
