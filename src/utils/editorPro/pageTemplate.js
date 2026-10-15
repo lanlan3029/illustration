@@ -281,6 +281,7 @@ export function applyPageTemplateBehavior(canvas) {
 
   canvas.getObjects().forEach((obj) => {
     if (isWorkspaceObject(obj)) return
+    if (obj.kidstoryCollage || obj.kidstoryCollageId) return
 
     if (isEditableTextObject(obj)) {
       obj.set({
@@ -334,6 +335,7 @@ export function applyPageTemplateBehavior(canvas) {
   const recheckSlots = () => {
     canvas.getObjects().forEach((obj) => {
       if (obj.type !== 'image' || !obj.kidstorySlotW) return
+      if (obj.kidstoryCollageId) return
       ensurePhotoSlotFrameMeta(obj)
       if (isFilledPhotoSlot(obj)) {
         applyFilledPhotoSlotFromObject(obj)
@@ -383,6 +385,12 @@ export function loadImageElement(src) {
 export async function fillPhotoSlotObject(activeObject, imageSrc, canvas) {
   if (!activeObject || !canvas || activeObject.type !== 'image') {
     throw new Error('invalid photo slot')
+  }
+
+  if (activeObject.kidstoryCollageId) {
+    const { replaceCollagePhoto } = await import('./collageSlots')
+    await replaceCollagePhoto(canvas, activeObject, imageSrc)
+    return
   }
 
   ensurePhotoSlotFrameMeta(activeObject)

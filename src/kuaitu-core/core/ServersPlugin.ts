@@ -196,6 +196,19 @@ class ServersPlugin implements IPluginTempl {
       'extension',
       'verticalAlign',
       'roundValue',
+      // Editable collage geometry and normalized crop state must survive JSON/history/drafts.
+      'kidstoryCollage',
+      'kidstoryCollageId',
+      'kidstoryCollageIndex',
+      'kidstoryCollagePhoto',
+      'kidstoryRole',
+      'kidstoryPhotoFilled',
+      'kidstorySlotLeft',
+      'kidstorySlotTop',
+      'kidstorySlotW',
+      'kidstorySlotH',
+      'originSrc',
+      'name',
     ];
   }
 

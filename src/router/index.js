@@ -7,6 +7,11 @@ import { isCurrentUserAdmin } from '@/utils/auth'
 
 
 const routes = [{
+        path: '/photo-collage',
+        name: 'photo-collage',
+        component: () => import(/* webpackChunkName: "photo-collage" */ '../views/PhotoCollage.vue'),
+        meta: { requiresAuth: false, seoTitle: '在线图片拼图', seoDescription: '160 种图片拼图模板，上传照片、拖动缩放、调整间距与圆角，导出 PNG 或轮播拼图。' },
+    }, {
         path: '/',
         name: 'Home',
         component: () => import(/* webpackChunkName: "home" */ '../views/Home.vue')

@@ -36,6 +36,8 @@ import { reactive, onMounted, onUnmounted, provide, nextTick, computed } from 'v
 import { onBeforeRouteLeave } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { takeEditorproPendingImage, peekEditorproPendingImage } from '@/utils/editorproPendingImage';
+import { peekPendingCollage, takePendingCollage } from '@/utils/collage/pendingCollage';
+import { importEditableCollage, installCollageSlots } from '@/utils/editorPro/collageSlots';
 import Top from '@/components/editorPro/top/index.vue';
 import Left from '@/components/editorPro/left/index.vue';
 import Right from '@/components/editorPro/right/index.vue';
@@ -130,6 +132,7 @@ let canvas = null;
 const canvasEditor = new Editor();
 let uninstallPhotoSlotSync = null;
 let uninstallPhotoSlotPan = null;
+let uninstallCollageSlots = null;
 let draftSaveTimer = null;
 let draftRestoring = false;
 
@@ -303,12 +306,22 @@ onMounted(() => {
   state.show = true;
   uninstallPhotoSlotSync = installPhotoSlotSelectionSync(canvasEditor);
   uninstallPhotoSlotPan = installPhotoSlotPanConstraint(canvas);
+  uninstallCollageSlots = installCollageSlots(canvasEditor);
 
   // 优先载入「待编辑插画」；否则恢复本地草稿，避免切页后画布被清空
   nextTick(() => {
     setTimeout(async () => {
       const pending = peekEditorproPendingImage();
-      if (pending?.url) {
+      if (peekPendingCollage()) {
+        try {
+          await importEditableCollage(canvasEditor, peekPendingCollage());
+          takePendingCollage();
+          scheduleDraftSave();
+          ElMessage.success('已导入可编辑拼图，选择照片可调整取景、间距和圆角');
+        } catch (e) {
+          ElMessage.error(`拼图导入失败：${e.message}`);
+        }
+      } else if (pending?.url) {
         await loadPendingIllustrationImage();
       } else {
         await restoreLocalDraft();
@@ -349,6 +362,8 @@ onUnmounted(() => {
   uninstallPhotoSlotSync = null;
   uninstallPhotoSlotPan?.();
   uninstallPhotoSlotPan = null;
+  uninstallCollageSlots?.();
+  uninstallCollageSlots = null;
   if (canvas) {
     canvas.dispose();
     canvas = null;

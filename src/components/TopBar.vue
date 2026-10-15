@@ -248,6 +248,7 @@ export default {
         const creationItems = [
             { to: '/creation-studio', label: 'nav.characterStudio' },
             { to: '/editorpro', label: 'nav.createIllustration' },
+            { to: '/photo-collage', label: 'nav.photoCollage' },
             { to: '/diary-timeline', label: 'nav.diaryTimeline' },
             { to: '/image-segmentation', label: 'nav.imageSegmentation' },
             { to: '/lasso-crop', label: 'nav.lassoCrop' },
@@ -267,6 +268,7 @@ export default {
                 p.startsWith('/creation-studio') ||
                 p.startsWith('/character-studio') ||
                 p.startsWith('/editorpro') ||
+                p.startsWith('/photo-collage') ||
                 p.startsWith('/diary-timeline') ||
                 p.startsWith('/image-segmentation') ||
                 p.startsWith('/lasso-crop') ||

@@ -13,6 +13,8 @@ import dele from '@/components/editorPro/editor-components/del.vue';
 
 import bgBar from '@/components/editorPro/editor-components/bgBar.vue';
 import setSize from '@/components/editorPro/editor-components/setSize.vue';
+import CollageControls from '@/components/editorPro/editor-components/collageControls.vue';
+import { activePhotoSlot } from '@/utils/editorPro/photoSlotContext';
 import replaceImg from '@/components/editorPro/editor-components/replaceImg.vue';
 import filters from '@/components/editorPro/editor-components/filters.vue';
 import imgStroke from '@/components/editorPro/editor-components/imgStroke.vue';
@@ -41,6 +43,8 @@ const { isMobileEditor } = useEditorMobile();
 const { isRightOpen, openRight, close } = useEditorMobilePanel();
 
 const attrBarShow = ref(true);
+const isCollageSlot = computed(() => Boolean(activePhotoSlot.value?.kidstoryCollageId) ||
+  mixinState.mSelectActive.some(object => object.kidstoryCollage || object.kidstoryCollageId));
 const sheetTitle = computed(() => t('creation.attributes'));
 
 const switchAttrBar = () => {
@@ -70,18 +74,19 @@ if (isMobileEditor.value) {
     <!-- 桌面属性栏 -->
     <div v-if="!isMobileEditor" class="right-bar" v-show="attrBarShow">
       <div style="padding-top: 10px">
+        <collage-controls />
         <div v-show="!mixinState.mSelectMode">
           <set-size></set-size>
           <bg-bar></bg-bar>
         </div>
 
-        <div v-show="mixinState.mSelectMode === 'multiple'">
+        <div v-show="mixinState.mSelectMode === 'multiple' && !isCollageSlot">
           <group></group>
           <align></align>
           <center-align></center-align>
         </div>
 
-        <div v-show="mixinState.mSelectMode === 'one'" class="attr-item-box">
+        <div v-show="mixinState.mSelectMode === 'one' && !isCollageSlot" class="attr-item-box">
           <group></group>
           <Divider plain orientation="left">
             <h4>快捷操作</h4>
@@ -129,16 +134,17 @@ if (isMobileEditor.value) {
       @close="close"
     >
       <div class="right-bar right-bar--sheet">
+        <collage-controls />
         <div v-show="!mixinState.mSelectMode">
           <set-size></set-size>
           <bg-bar></bg-bar>
         </div>
-        <div v-show="mixinState.mSelectMode === 'multiple'">
+        <div v-show="mixinState.mSelectMode === 'multiple' && !isCollageSlot">
           <group></group>
           <align></align>
           <center-align></center-align>
         </div>
-        <div v-show="mixinState.mSelectMode === 'one'" class="attr-item-box">
+        <div v-show="mixinState.mSelectMode === 'one' && !isCollageSlot" class="attr-item-box">
           <group></group>
           <Divider plain orientation="left">
             <h4>快捷操作</h4>

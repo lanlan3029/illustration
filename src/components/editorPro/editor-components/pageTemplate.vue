@@ -1,5 +1,7 @@
 <template>
   <div class="page-template-panel">
+    <router-link class="collage-entry" to="/photo-collage" target="_blank" rel="noopener">图片拼图 ↗<small>160 种布局 · 多图拼接 · 轮播导出</small></router-link>
+    <collage-templates />
     <p class="page-template-hint">{{ $t('editorProLeft.pageTemplateHint') }}</p>
 
     <p v-if="canvasSizeLabel" class="page-template-canvas-meta">
@@ -85,6 +87,7 @@ import {
   pickLocalImageFile,
 } from '@/utils/editorPro/pageTemplate'
 import { activePhotoSlot } from '@/utils/editorPro/photoSlotContext'
+import CollageTemplates from './collageTemplates.vue'
 import {
   fitTemplateToCanvas,
   getCurrentWorkspaceSize,
@@ -248,6 +251,8 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.collage-entry { display:block; margin:12px 0; padding:12px; border:1px solid #dfd3ed; border-radius:8px; background:#faf7fd; color:#7952ac; font-size:14px; text-decoration:none; }
+.collage-entry small { display:block; margin-top:5px; font-size:11px; color:#96869e; }
 .page-template-panel {
   padding-bottom: 12px;
 }
