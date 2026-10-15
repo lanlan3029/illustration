@@ -99,6 +99,7 @@
 <script>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { bookReviewRequest } from '@/utils/bookReviewApi'
+import { resolveBookReviewImage, getBookReviewPages } from '@/utils/bookReviewImages'
 export default {
   name: 'AdminBooks',
   data() { return { books: [], total: 0, page: 1, pageSize: 20, keyword: '', status: '1', rewardStatus: '', loading: false, error: '', requestId: 0,
@@ -112,7 +113,7 @@ export default {
   methods: {
     awarded(book) { return Number(book.approval_points_awarded) || 0 },
     pageCount(book) { return book.content_snapshot?.length || book.content?.length || 0 },
-    cover(book) { return book.content_snapshot?.[0]?.path || '' },
+    cover(book) { return resolveBookReviewImage(book.content_snapshot?.[0]?.path) || resolveBookReviewImage(book.content?.[0]) },
     date(value) { return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—' },
     statusLabel(book) { return ({ 0: '已通过', 1: '待审核', '-1': '已驳回' })[Number(book.status)] || '未知状态' },
     statusType(book) { return ({ 0: 'success', 1: 'warning', '-1': 'danger' })[Number(book.status)] || 'info' },
@@ -140,11 +141,7 @@ export default {
         if (id !== this.detailRequestId) return
         this.detail = result.message.book
         this.rewardPoints = Math.min(100, Math.max(1, Number(this.detail.approval_points_expected) || Number(this.detail.pending_approval_points) || 100))
-        const illustrations = new Map((result.message.illustrations || []).map(p => [p._id, p]))
-        this.pages = this.detail.content_snapshot?.length ? this.detail.content_snapshot : (this.detail.content || []).map(id => {
-          const image = illustrations.get(id)
-          return { path: image?.content || image?.path || '' }
-        })
+        this.pages = getBookReviewPages(this.detail, result.message.illustrations || [])
       } catch (e) { if (id === this.detailRequestId) this.detailError = e.message }
       finally { if (id === this.detailRequestId) this.detailLoading = false }
     },
