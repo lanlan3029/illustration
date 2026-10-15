@@ -3,10 +3,10 @@
  * GET /user/points/history?page=1&pageSize=20&kind=all|earn|consume
  */
 
-export async function fetchPointsHistory(http, { page = 1, pageSize = 20, kind = 'all' } = {}) {
+export async function fetchPointsHistory(http, { page = 1, pageSize = 20, kind = 'all', bookId = '' } = {}) {
   const token = localStorage.getItem('token') || '';
   const res = await http.get('/user/points/history', {
-    params: { page, pageSize, kind },
+    params: { page, pageSize, kind, ...(bookId ? { bookId } : {}) },
     headers: {
       Authorization: `Bearer ${token}`,
     },

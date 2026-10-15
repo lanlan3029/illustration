@@ -251,13 +251,7 @@
               </div>
               <div class="book-labels">
                 <el-tag size="small" type="info">{{ $t(`bookLibrary.${getBookSource(item)}`) }}</el-tag>
-                <el-tag 
-                  :type="item.is_public === 0 ? 'info' : getBookStatusType(item.status)"
-                  size="small" 
-                  class="book-status-tag"
-                >
-                  {{ item.is_public === 0 ? $t('bookLibrary.private') : getBookStatusLabel(item.status) }}
-                </el-tag>
+                <BookReviewStatus :book="item" />
               </div>
               <p class="card-description">{{item.description || $t('myHomePage.noDescription')}}</p>
               
@@ -327,6 +321,7 @@
 </template>
 
 <script>
+import BookReviewStatus from '@/components/BookReviewStatus.vue';
 import {mapState} from "vuex"
 import { ElMessage } from 'element-plus'
 import { CloseBold, Delete } from '@element-plus/icons-vue'
@@ -338,6 +333,7 @@ import { setEditorproPendingImage } from '@/utils/editorproPendingImage'
 import { getBookSource, readLocalAiBook } from '@/utils/bookLibrary'
 export default {
   components:{
+    BookReviewStatus,
 MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
   },
   props: {

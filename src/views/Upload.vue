@@ -1,6 +1,7 @@
 <template>
     <div class="upload-page">
         <div class="upload-container">
+            <router-link v-if="isAdmin" to="/admin/books" class="admin-entry">管理后台 · 绘本审核与积分奖励 →</router-link>
           
             <div class="upload-cards">
                 <router-link to="/user/upload/upload-illustration" class="upload-card">
@@ -92,6 +93,8 @@ export default {
     align-items: center;
     justify-content: center;
 }
+
+.admin-entry { display: block; margin-bottom: 20px; color: #765a9e; text-align: right; font-weight: 600; text-decoration: none; }
 
 .upload-container {
     width: 100%;

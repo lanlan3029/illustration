@@ -120,6 +120,7 @@
               </div>
             </a>
             <ul class="dropdown-menu">
+              <li v-if="isAdmin"><router-link to="/admin/books" class="dropdown-item" @click="closeSubmenu()">{{ currentLanguage === 'en' ? 'Admin dashboard' : '管理后台' }}</router-link></li>
               <li><a @click.prevent="toProfile(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-zhanghu"></i>
                 <span>{{ $t('nav.accountSettings') }}</span>
@@ -191,6 +192,7 @@
 </template>
 
 <script>
+import { isCurrentUserAdmin } from '@/utils/auth'
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, getCurrentInstance } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
@@ -212,6 +214,7 @@ export default {
         const defaultAvatar = require('../assets/images/magic 2.svg')
         const userid = ref(localStorage.getItem("id"))
         const searchValue = ref('')
+        const isAdmin = computed(() => { void store.state.isLogin; void route.path; return isCurrentUserAdmin() })
         const userPoints = ref(0) // 用户积分
         const showMemberDialog = ref(false) // 是否显示会员信息对话框
         const activeSubmenu = ref(null) // 当前激活的子菜单
@@ -577,6 +580,7 @@ export default {
             userid,
             searchValue,
             userPoints,
+            isAdmin,
             isMobile,
             mobileMenuVisible,
             navItems,

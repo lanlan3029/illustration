@@ -569,6 +569,19 @@ const routes = [{
         ]
     },
     {
+        path: '/admin', redirect: '/admin/books',
+    },
+    {
+        path: '/admin/books', name: 'admin-books',
+        component: () => import(/* webpackChunkName: "admin-books" */ '../views/AdminBooks.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, seoTitle: '绘本审核 · 管理后台' },
+    },
+    {
+        path: '/admin/rewards', name: 'admin-rewards',
+        component: () => import(/* webpackChunkName: "admin-books" */ '../views/AdminBooks.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, seoTitle: '积分奖励 · 管理后台' },
+    },
+    {
         path: '/member/recharge',
         name: 'member-recharge',
         component: () =>

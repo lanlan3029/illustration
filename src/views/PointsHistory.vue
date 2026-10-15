@@ -19,7 +19,11 @@
       </div>
     </header>
 
-    <div class="ph-tabs">
+    <div v-if="$route.query.bookId" class="book-history-filter">
+      {{ $i18n.locale === 'en' ? 'Showing rewards for this book' : '正在查看此绘本的积分奖励记录' }}
+      <router-link to="/member/points-history">{{ $i18n.locale === 'en' ? 'View all points' : '查看全部积分' }}</router-link>
+    </div>
+    <div v-if="!$route.query.bookId" class="ph-tabs">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -90,6 +94,7 @@ export default {
       return (this.userInfo && (this.userInfo.points ?? this.userInfo.credits)) || 0;
     },
   },
+  watch: { '$route.query.bookId'() { this.page = 1; this.activeKind = 'all'; this.loadHistory(); } },
   mounted() {
     this.loadHistory();
   },
@@ -122,6 +127,7 @@ export default {
           page: this.page,
           pageSize: this.pageSize,
           kind: this.activeKind,
+          bookId: this.$route.query.bookId || '',
         });
         this.list = data.list || [];
         this.total = data.total || 0;
@@ -146,6 +152,8 @@ export default {
 </script>
 
 <style scoped>
+.book-history-filter { margin: 16px 0; padding: 12px 16px; border-radius: 10px; background: #fff7e7; color: #946c39; font-size: 14px; }
+.book-history-filter a { display: inline-block; margin-left: 16px; color: #765a9e; }
 .points-history-page {
   max-width: 720px;
   margin: 0 auto;

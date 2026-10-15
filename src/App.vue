@@ -51,6 +51,7 @@ export default {
     const hideMobileTabBar = computed(() => {
       const p = route.path || ''
       return (
+        p.startsWith('/admin') ||
         p === '/photo-collage' ||
         p === '/editorpro' ||
         p.startsWith('/editorpro/') ||
