@@ -78,8 +78,8 @@ export function imagePlacement(image, cell) {
   const scale = Math.max(cell.width / image.element.width, cell.height / image.element.height) * clamp(image.zoom || 1, 1, 4)
   const width = image.element.width * scale, height = image.element.height * scale
   // Normalized offsets survive canvas resolution, template and aspect changes.
-  const x = cell.x + (cell.width - width) * (clamp(image.panX || 0, -1, 1) + 1) / 2
-  const y = cell.y + (cell.height - height) * (clamp(image.panY || 0, -1, 1) + 1) / 2
+  const x = image.freeMove ? cell.x+(cell.width-width)/2+(image.offsetX||0)*cell.width : cell.x + (cell.width - width) * (clamp(image.panX || 0, -1, 1) + 1) / 2
+  const y = image.freeMove ? cell.y+(cell.height-height)/2+(image.offsetY||0)*cell.height : cell.y + (cell.height - height) * (clamp(image.panY || 0, -1, 1) + 1) / 2
   return { x, y, width, height }
 }
 

@@ -138,6 +138,7 @@ export function normalizePhotoSlotPlaceholder(obj) {
 /** 拖动时限制在槽位内，保证始终 cover 住外框 */
 export function clampPhotoSlotPan(obj) {
   if (!obj) return
+  if (obj.kidstoryCollagePhoto?.freeMove) return
   const frame = getPhotoSlotFrame(obj)
   const w = obj.width * (obj.scaleX || 1)
   const h = obj.height * (obj.scaleY || 1)

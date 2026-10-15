@@ -66,7 +66,15 @@ export function editCollageFrame(editor, root, enabled) {
 export function isEditingCollageFrame(root) { return frameEditing.has(root) }
 
 function photoTransform(slot) {
-  return { zoom: clamp(slot.kidstoryCollagePhoto?.zoom || 1,1,4), panX: clamp(slot.kidstoryCollagePhoto?.panX || 0,-1,1), panY: clamp(slot.kidstoryCollagePhoto?.panY || 0,-1,1) }
+  return { ...slot.kidstoryCollagePhoto, zoom: clamp(slot.kidstoryCollagePhoto?.zoom || 1,1,4), panX: clamp(slot.kidstoryCollagePhoto?.panX || 0,-1,1), panY: clamp(slot.kidstoryCollagePhoto?.panY || 0,-1,1) }
+}
+
+export function setPhotoFreeMove(editor,slot,enabled) {
+  const frame={x:slot.kidstorySlotLeft,y:slot.kidstorySlotTop,width:slot.kidstorySlotW,height:slot.kidstorySlotH}
+  const cx=frame.x+(frame.width-slot.width*slot.scaleX)/2,cy=frame.y+(frame.height-slot.height*slot.scaleY)/2
+  slot.kidstoryCollagePhoto={...photoTransform(slot),freeMove:enabled,offsetX:(slot.left-cx)/frame.width,offsetY:(slot.top-cy)/frame.height}
+  if(!enabled)capturePan(slot)
+  reflowCollagePhoto(editor,slot);notify(editor,slot)
 }
 
 function offsetCell(cell, frame) {
@@ -159,6 +167,7 @@ function reflowCollagePhoto(editor, slot) {
 function capturePan(slot) {
   const frame={x:slot.kidstorySlotLeft,y:slot.kidstorySlotTop,width:slot.kidstorySlotW,height:slot.kidstorySlotH}
   const excessX=slot.width*slot.scaleX-frame.width, excessY=slot.height*slot.scaleY-frame.height
+  if(slot.kidstoryCollagePhoto?.freeMove){slot.kidstoryCollagePhoto={...photoTransform(slot),offsetX:(slot.left-frame.x+excessX/2)/frame.width,offsetY:(slot.top-frame.y+excessY/2)/frame.height};return}
   slot.kidstoryCollagePhoto={...photoTransform(slot),panX:excessX>.01?clamp(2*(frame.x-slot.left)/excessX-1,-1,1):0,panY:excessY>.01?clamp(2*(frame.y-slot.top)/excessY-1,-1,1):0}
 }
 

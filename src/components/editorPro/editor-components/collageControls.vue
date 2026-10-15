@@ -2,7 +2,7 @@
   <section v-if="root || slot" class="collage-controls" aria-label="可编辑拼图设置">
     <h4>{{ root ? `可编辑拼图 · ${slotCount} 张` : '照片设置' }}</h4>
     <p v-if="root">切换画布尺寸后自动重新排版，照片保持等比。</p>
-    <div v-if="slot" class="photo-controls"><h4>照片 {{ slot.kidstoryCollageIndex+1 }}</h4><p>在画布内拖动照片调整取景。</p><label>缩放 <output>{{ Math.round(zoom*100) }}%</output><input :value="zoom" type="range" min="1" max="4" step="0.01" aria-label="拼图照片缩放" @change="changeZoom($event.target.value)"></label><button type="button" @click="reset">重置取景</button><button type="button" :disabled="loading" @click="fileInput.click()">{{ loading?'正在读取…':'替换此照片' }}</button><input ref="fileInput" class="hidden-input" type="file" accept="image/*" aria-label="替换拼图照片" @change="replace($event)"></div>
+    <div v-if="slot" class="photo-controls"><h4>照片 {{ slot.kidstoryCollageIndex+1 }}</h4><p>铺满取景时，放大照片可增加左右移动范围。</p><label><input type="checkbox" :checked="freeMove" aria-label="自由移动照片" @change="setPhotoFreeMove(canvasEditor,slot,$event.target.checked)"> 自由移动（允许露出背景）</label><label>缩放 <output>{{ Math.round(zoom*100) }}%</output><input :value="zoom" type="range" min="1" max="4" step="0.01" aria-label="拼图照片缩放" @change="changeZoom($event.target.value)"></label><button type="button" @click="reset">重置取景</button><button type="button" :disabled="loading" @click="fileInput.click()">{{ loading?'正在读取…':'替换此照片' }}</button><input ref="fileInput" class="hidden-input" type="file" accept="image/*" aria-label="替换拼图照片" @change="replace($event)"></div>
     <template v-if="root">
     <div class="photo-controls"><h4>模板整体</h4><label>整体缩放 <output>{{ Math.round(frame.width*100) }}%</output><input :value="frame.width" type="range" min="0.1" max="2" step="0.01" aria-label="模板整体缩放" @change="scaleFrame($event.target.value)"></label><button type="button" :aria-pressed="editingFrame" @click="toggleFrame">{{ editingFrame?'完成外框调整':'拖动 / 缩放模板外框' }}</button><button type="button" @click="resetFrame">恢复铺满画布</button><p v-if="editingFrame">拖动外框移动模板；拖动角点或边缘调整大小。完成后可继续调整照片取景。</p></div>
     <label>切换布局<select :value="templateIndex" aria-label="拼图布局" @change="switchLayout($event.target.value)"><option v-for="item in matchingTemplates" :key="item.index" :value="item.index">模板 {{ item.index+1 }}{{ item.clipShape?' · '+item.clipShape:'' }}</option></select></label>
@@ -20,7 +20,7 @@
 import { shallowRef, ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import useSelect from '@/components/editorPro/hooks/select'
 import templates from '@/data/collage/templates.json'
-import { collageRoots, collageSlots, rootForSlot, updateCollage, switchCollageTemplate, zoomCollagePhoto, resetCollagePhoto, replaceCollagePhoto, scaleCollageFrame, setCollageFrame, editCollageFrame, isEditingCollageFrame, COLLAGE_CHANGED } from '@/utils/editorPro/collageSlots'
+import { collageRoots, collageSlots, rootForSlot, updateCollage, switchCollageTemplate, zoomCollagePhoto, resetCollagePhoto, replaceCollagePhoto, scaleCollageFrame, setCollageFrame, editCollageFrame, isEditingCollageFrame, setPhotoFreeMove, COLLAGE_CHANGED } from '@/utils/editorPro/collageSlots'
 
 const { canvasEditor, fabric }=useSelect()
 const root=shallowRef(null),slot=shallowRef(null),version=ref(0),fileInput=ref(null),loading=ref(false),error=ref('')
@@ -32,6 +32,7 @@ function resetFrame(){if(root.value)setCollageFrame(canvasEditor,root.value,{x:0
 function toggleFrame(){if(root.value)editCollageFrame(canvasEditor,root.value,!editingFrame.value)}
 const slotCount=computed(()=>{version.value;return root.value?collageSlots(canvasEditor.canvas,root.value).length:0})
 const zoom=computed(()=>{version.value;return slot.value?.kidstoryCollagePhoto?.zoom||1})
+const freeMove=computed(()=>{version.value;return Boolean(slot.value?.kidstoryCollagePhoto?.freeMove)})
 const matchingTemplates=computed(()=>templates.map((t,index)=>({...t,index})).filter(t=>t.cells.length===slotCount.value))
 const templateIndex=computed(()=>{version.value;const template=root.value?.kidstoryCollage.template;return templates.findIndex(t=>JSON.stringify(t.cells)===JSON.stringify(template?.cells)&&t.clipShape===template?.clipShape)})
 function sync(){
