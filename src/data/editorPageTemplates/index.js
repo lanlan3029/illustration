@@ -206,18 +206,16 @@ const portraitTemplates = [
   },
 ]
 
+const retiredCategories = new Set(['story', 'album', 'collage'])
 const templates = [
   ...portraitTemplates,
   ...portraitCollageTemplates,
   ...singlePageTemplates,
   ...spreadTemplates,
   ...photoBookTemplates,
-]
+].filter(template => !retiredCategories.has(template.category))
 
 export const PAGE_TEMPLATE_CATEGORIES = [
-  { id: 'story', nameKey: 'editorProLeft.pageTemplateCatStory' },
-  { id: 'album', nameKey: 'editorProLeft.pageTemplateCatAlbum' },
-  { id: 'collage', nameKey: 'editorProLeft.pageTemplateCatCollage' },
   { id: 'albumPage', nameKey: 'editorProLeft.pageTemplateCatAlbumPage' },
   { id: 'photoBook', nameKey: 'editorProLeft.pageTemplateCatPhotoBook' },
   { id: 'cover', nameKey: 'editorProLeft.pageTemplateCatCover' },

@@ -4,6 +4,7 @@ import { layoutCells, cellPath, shapePath, imagePlacement, clamp } from '@/utils
 import { SvgPath } from '@/utils/collage/svgPath'
 
 export const COLLAGE_CHANGED = 'collage:changed'
+const frameEditing = new WeakSet()
 const DEFAULT_SETTINGS = { spacing: 10, border: 10, radius: 0, background: '#ffffff', mode: 'single', slides: 1 }
 
 // A logical group of independent Fabric images: each photo remains directly editable.
@@ -29,6 +30,40 @@ function workspaceFrame(editor) {
   const ws=editor.getWorkspase()
   return { left: ws.left || 0, top: ws.top || 0, width: ws.width*(ws.scaleX||1), height: ws.height*(ws.scaleY||1) }
 }
+
+export function collageFrame(editor, root) {
+  const ws=workspaceFrame(editor), frame=root.kidstoryCollage.frame||{x:0,y:0,width:1,height:1}
+  return {left:ws.left+frame.x*ws.width,top:ws.top+frame.y*ws.height,width:ws.width*frame.width,height:ws.height*frame.height}
+}
+
+export function setCollageFrame(editor, root, frame) {
+  const old=root.kidstoryCollage.frame||{x:0,y:0,width:1,height:1}
+  root.kidstoryCollage={...root.kidstoryCollage,frame:{...old,...frame}}
+  reflowCollage(editor,root);notify(editor,root)
+}
+
+export function scaleCollageFrame(editor, root, scale) {
+  const old=root.kidstoryCollage.frame||{x:0,y:0,width:1,height:1}
+  const next=clamp(Number(scale),.1,2), ratio=old.width/old.height
+  const width=next,height=next/ratio
+  setCollageFrame(editor,root,{x:old.x+(old.width-width)/2,y:old.y+(old.height-height)/2,width,height})
+}
+
+export function editCollageFrame(editor, root, enabled) {
+  if(enabled)frameEditing.add(root)
+  else frameEditing.delete(root)
+  reflowCollage(editor,root)
+  if(enabled)editor.canvas.setActiveObject(root)
+  else {
+    editor.canvas.discardActiveObject()
+    const slot=collageSlots(editor.canvas,root)[0]
+    if(slot)editor.canvas.setActiveObject(slot)
+  }
+  root.setControlsVisibility?.({mtr:false,lock:false})
+  editor.canvas.fire(COLLAGE_CHANGED)
+}
+
+export function isEditingCollageFrame(root) { return frameEditing.has(root) }
 
 function photoTransform(slot) {
   return { zoom: clamp(slot.kidstoryCollagePhoto?.zoom || 1,1,4), panX: clamp(slot.kidstoryCollagePhoto?.panX || 0,-1,1), panY: clamp(slot.kidstoryCollagePhoto?.panY || 0,-1,1) }
@@ -60,21 +95,23 @@ function applySlot(slot, cell, radius, template, frame, border) {
   slot.setCoords()
 }
 
-export function reflowCollage(editor, root) {
+export function reflowCollage(editor, root, preserveRoot = false) {
   if (!root?.kidstoryCollage) return
   const { template, settings }=root.kidstoryCollage
-  const frame=workspaceFrame(editor)
+  const frame=collageFrame(editor,root),editing=frameEditing.has(root)
   const factor=Math.min(frame.width,frame.height)/1080
   const border=settings.border*factor
   const cells=layoutCells(template,frame.width,frame.height,settings.spacing*factor,border)
-  root.set({ left:frame.left,top:frame.top,width:frame.width,height:frame.height,scaleX:1,scaleY:1,fill:settings.background,
-    originX:'left',originY:'top',selectable:false,evented:false,hasControls:false,strokeWidth:0,
-    lockMovementX:true,lockMovementY:true,lockScalingX:true,lockScalingY:true,lockRotation:true,kidstoryRole:'decoration' })
+  if(!preserveRoot)root.set({ left:frame.left,top:frame.top,width:frame.width,height:frame.height,scaleX:1,scaleY:1,fill:settings.background,
+    originX:'left',originY:'top',selectable:editing,evented:editing,hasControls:editing,strokeWidth:0,
+    lockMovementX:!editing,lockMovementY:!editing,lockScalingX:!editing,lockScalingY:!editing,lockRotation:true,lockScalingFlip:true,kidstoryRole:'decoration' })
   root.setCoords()
   for (const slot of collageSlots(editor.canvas,root)) {
     const cell=cells[slot.kidstoryCollageIndex]
     if (cell) applySlot(slot,offsetCell(cell,frame),settings.radius*factor,template,frame,border)
+    slot.evented=!editing;slot.selectable=!editing
   }
+  if(editing)root.setControlsVisibility?.({mtr:false,lock:false})
   editor.canvas.requestRenderAll()
 }
 
@@ -167,23 +204,31 @@ export function installCollageSlots(editor) {
   const canvas=editor.canvas
   const refresh=()=>{collageRoots(canvas).forEach(root=>reflowCollage(editor,root));canvas.fire(COLLAGE_CHANGED)}
   const onSizeChange=()=>{
-    const frame=workspaceFrame(editor), roots=collageRoots(canvas)
-    const changed=roots.some(root=>root.width!==frame.width||root.height!==frame.height)
+    const roots=collageRoots(canvas)
+    const changed=roots.some(root=>{const frame=collageFrame(editor,root);return root.width!==frame.width||root.height!==frame.height})
     refresh()
     if(changed)canvas.fire('object:modified',{target:editor.getWorkspase()})
   }
   const onMoving=({target})=>{
     if(target?.kidstoryCollageId&&target.type==='image')capturePan(target)
+    if(target?.kidstoryCollage&&frameEditing.has(target)) {
+      const ws=workspaceFrame(editor)
+      target.kidstoryCollage={...target.kidstoryCollage,frame:{x:(target.left-ws.left)/ws.width,y:(target.top-ws.top)/ws.height,width:Math.max(.05,target.width*target.scaleX/ws.width),height:Math.max(.05,target.height*target.scaleY/ws.height)}}
+      reflowCollage(editor,target,true)
+      canvas.fire(COLLAGE_CHANGED)
+    }
   }
   const onReplace=({target})=>{reflowCollage(editor,rootForSlot(canvas,target));canvas.fire(COLLAGE_CHANGED)}
-  const onModified=()=>canvas.fire(COLLAGE_CHANGED)
+  const onModified=({target}={})=>{if(target?.kidstoryCollage)reflowCollage(editor,target);canvas.fire(COLLAGE_CHANGED)}
   const onRemoved=()=>canvas.fire(COLLAGE_CHANGED)
   editor.on('sizeChange',onSizeChange);editor.on('loadJson',refresh)
   canvas.on('object:moving',onMoving);canvas.on('object:modified',onModified);canvas.on('object:removed',onRemoved)
+  canvas.on('object:scaling',onMoving)
   canvas.on('history:undo',refresh);canvas.on('history:redo',refresh);canvas.on('collage:replace',onReplace)
   return ()=>{
     editor.off('sizeChange',onSizeChange);editor.off('loadJson',refresh)
     canvas.off('object:moving',onMoving);canvas.off('object:modified',onModified);canvas.off('object:removed',onRemoved)
+    canvas.off('object:scaling',onMoving)
     canvas.off('history:undo',refresh);canvas.off('history:redo',refresh);canvas.off('collage:replace',onReplace)
   }
 }

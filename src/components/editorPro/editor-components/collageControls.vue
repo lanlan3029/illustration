@@ -2,6 +2,7 @@
   <section v-if="root" class="collage-controls" aria-label="可编辑拼图设置">
     <h4>可编辑拼图 · {{ slotCount }} 张</h4>
     <p>切换画布尺寸后自动重新排版，照片保持等比。</p>
+    <div class="photo-controls"><h4>模板整体</h4><label>整体缩放 <output>{{ Math.round(frame.width*100) }}%</output><input :value="frame.width" type="range" min="0.1" max="2" step="0.01" aria-label="模板整体缩放" @change="scaleFrame($event.target.value)"></label><button type="button" :aria-pressed="editingFrame" @click="toggleFrame">{{ editingFrame?'完成外框调整':'拖动 / 缩放模板外框' }}</button><button type="button" @click="resetFrame">恢复铺满画布</button><p v-if="editingFrame">拖动外框移动模板；拖动角点或边缘调整大小。完成后可继续调整照片取景。</p></div>
     <label>切换布局<select :value="templateIndex" aria-label="拼图布局" @change="switchLayout($event.target.value)"><option v-for="item in matchingTemplates" :key="item.index" :value="item.index">模板 {{ item.index+1 }}{{ item.clipShape?' · '+item.clipShape:'' }}</option></select></label>
     <label>间距 <output>{{ values.spacing }}</output><input :value="values.spacing" type="range" min="0" max="60" aria-label="拼图间距" @change="changeSetting('spacing',$event.target.value)"></label>
     <label>外边框 <output>{{ values.border }}</output><input :value="values.border" type="range" min="0" max="80" aria-label="拼图外边框" @change="changeSetting('border',$event.target.value)"></label>
@@ -16,11 +17,16 @@
 import { shallowRef, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import useSelect from '@/components/editorPro/hooks/select'
 import templates from '@/data/collage/templates.json'
-import { collageRoots, collageSlots, rootForSlot, updateCollage, switchCollageTemplate, zoomCollagePhoto, resetCollagePhoto, replaceCollagePhoto, COLLAGE_CHANGED } from '@/utils/editorPro/collageSlots'
+import { collageRoots, collageSlots, rootForSlot, updateCollage, switchCollageTemplate, zoomCollagePhoto, resetCollagePhoto, replaceCollagePhoto, scaleCollageFrame, setCollageFrame, editCollageFrame, isEditingCollageFrame, COLLAGE_CHANGED } from '@/utils/editorPro/collageSlots'
 
 const { canvasEditor }=useSelect()
 const root=shallowRef(null),slot=shallowRef(null),version=ref(0),fileInput=ref(null),loading=ref(false),error=ref('')
 const values=computed(()=>{version.value;return root.value?.kidstoryCollage.settings||{}})
+const frame=computed(()=>{version.value;return root.value?.kidstoryCollage.frame||{x:0,y:0,width:1,height:1}})
+const editingFrame=computed(()=>{version.value;return root.value&&isEditingCollageFrame(root.value)})
+function scaleFrame(value){if(root.value)scaleCollageFrame(canvasEditor,root.value,Number(value))}
+function resetFrame(){if(root.value)setCollageFrame(canvasEditor,root.value,{x:0,y:0,width:1,height:1})}
+function toggleFrame(){if(root.value)editCollageFrame(canvasEditor,root.value,!editingFrame.value)}
 const slotCount=computed(()=>{version.value;return root.value?collageSlots(canvasEditor.canvas,root.value).length:0})
 const zoom=computed(()=>{version.value;return slot.value?.kidstoryCollagePhoto?.zoom||1})
 const matchingTemplates=computed(()=>templates.map((t,index)=>({...t,index})).filter(t=>t.cells.length===slotCount.value))
