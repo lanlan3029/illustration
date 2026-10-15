@@ -2,15 +2,11 @@
   <div class="page-template-panel">
     <router-link class="collage-entry" to="/photo-collage" target="_blank" rel="noopener">图片拼图 ↗<small>160 种布局 · 多图拼接 · 轮播导出</small></router-link>
     <collage-templates />
-    <p class="page-template-hint">{{ $t('editorProLeft.pageTemplateHint') }}</p>
 
     <p v-if="canvasSizeLabel" class="page-template-canvas-meta">
       {{ canvasSizeLabel }}
     </p>
 
-    <p v-if="!hasMatchingTemplates" class="page-template-no-match">
-      {{ $t('editorProLeft.pageTemplateNoMatch') }}
-    </p>
 
     <div v-for="group in templateGroups" :key="group.id" class="template-group">
       <Divider plain orientation="left">{{ group.name }}</Divider>

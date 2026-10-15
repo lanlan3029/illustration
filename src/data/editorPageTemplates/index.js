@@ -206,7 +206,7 @@ const portraitTemplates = [
   },
 ]
 
-const retiredCategories = new Set(['story', 'album', 'collage'])
+const retiredCategories = new Set(['story', 'album', 'collage', 'photoBook'])
 const templates = [
   ...portraitTemplates,
   ...portraitCollageTemplates,
@@ -217,7 +217,6 @@ const templates = [
 
 export const PAGE_TEMPLATE_CATEGORIES = [
   { id: 'albumPage', nameKey: 'editorProLeft.pageTemplateCatAlbumPage' },
-  { id: 'photoBook', nameKey: 'editorProLeft.pageTemplateCatPhotoBook' },
   { id: 'cover', nameKey: 'editorProLeft.pageTemplateCatCover' },
   { id: 'spread', nameKey: 'editorProLeft.pageTemplateCatSpread' },
 ]
