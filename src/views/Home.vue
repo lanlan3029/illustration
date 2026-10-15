@@ -859,7 +859,16 @@ export default {
 .feature-card:nth-child(4n+2) { --sticker-tilt:2deg; }
 .feature-card:nth-child(4n+3) { --sticker-tilt:-1.5deg; }
 .feature-card:nth-child(4n) { --sticker-tilt:3deg; }
-.feature-card:nth-child(even) :deep(.home-sticker) { translate:0 5px; }
+/* Offset each whole sticker entry, including its caption. */
+.feature-card { --entry-offset:0px; translate:0 var(--entry-offset); }
+.feature-card:nth-child(8n+1) { --entry-offset:-7px; }
+.feature-card:nth-child(8n+2) { --entry-offset:13px; }
+.feature-card:nth-child(8n+3) { --entry-offset:-2px; }
+.feature-card:nth-child(8n+4) { --entry-offset:19px; }
+.feature-card:nth-child(8n+5) { --entry-offset:10px; }
+.feature-card:nth-child(8n+6) { --entry-offset:-6px; }
+.feature-card:nth-child(8n+7) { --entry-offset:16px; }
+.feature-card:nth-child(8n+8) { --entry-offset:3px; }
 .feature-card:hover :deep(.home-sticker) { transform:rotate(0deg) translateY(-3px); }
 /* A rounded handwritten face complements the cut-paper illustrations. */
 @font-face {
@@ -892,13 +901,14 @@ export default {
 .home-hero { padding:4px 0 10px; }
 .hero-subtitle { margin-bottom:6px; }
 .feature-cards-group { --feature-card-gap:12px; margin-bottom:28px; }
-.feature-cards { row-gap:0; }
+.feature-cards { row-gap:18px; padding-top:7px; padding-bottom:16px; }
 .feature-card :deep(.home-sticker) { max-width:200px; margin-top:-6px; margin-bottom:-28px; }
 @media(max-width:768px) {
     .home-hero { padding:4px 0 8px; }
     .feature-desc { font-size:13px; }
     .feature-cards-group { --feature-card-gap:10px; }
-    .feature-cards { row-gap:6px; }
+    .feature-cards { row-gap:16px; padding-top:4px; padding-bottom:10px; }
+    .feature-card { translate:0 calc(var(--entry-offset) * .5); }
     .feature-card :deep(.home-sticker) { margin-top:0; margin-bottom:-22px; }
 }
 .style-gallery { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:28px 22px; padding:12px 6px 28px; }
