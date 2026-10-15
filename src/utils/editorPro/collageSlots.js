@@ -137,12 +137,23 @@ export function switchCollageTemplate(editor, root, template) {
 
 export function zoomCollagePhoto(editor, slot, zoom) {
   slot.kidstoryCollagePhoto={...photoTransform(slot),zoom:clamp(Number(zoom),1,4)}
-  reflowCollage(editor,rootForSlot(editor.canvas,slot));notify(editor,slot)
+  reflowCollagePhoto(editor,slot);notify(editor,slot)
 }
 
 export function resetCollagePhoto(editor, slot) {
   slot.kidstoryCollagePhoto={zoom:1,panX:0,panY:0}
-  reflowCollage(editor,rootForSlot(editor.canvas,slot));notify(editor,slot)
+  reflowCollagePhoto(editor,slot);notify(editor,slot)
+}
+
+function reflowCollagePhoto(editor, slot) {
+  const root=rootForSlot(editor.canvas,slot)
+  if(root){reflowCollage(editor,root);return}
+  // Keep photos editable in old drafts whose former backdrop was deleted.
+  const element=slot.getElement(),width=element.naturalWidth||element.width,height=element.naturalHeight||element.height
+  const cell={x:slot.kidstorySlotLeft??slot.left,y:slot.kidstorySlotTop??slot.top,width:slot.kidstorySlotW||slot.width*slot.scaleX,height:slot.kidstorySlotH||slot.height*slot.scaleY}
+  const position=imagePlacement({element:{width,height},...photoTransform(slot)},cell),scale=position.width/width
+  slot.set({left:position.x,top:position.y,width,height,scaleX:scale,scaleY:scale,selectable:true,evented:true,hasControls:false,lockMovementX:false,lockMovementY:false,lockScalingX:true,lockScalingY:true,lockRotation:true,objectCaching:false})
+  slot.setCoords();editor.canvas.requestRenderAll()
 }
 
 function capturePan(slot) {
@@ -219,15 +230,14 @@ export function installCollageSlots(editor) {
       canvas.fire(COLLAGE_CHANGED)
     }
   }
-  const onReplace=({target})=>{reflowCollage(editor,rootForSlot(canvas,target));canvas.fire(COLLAGE_CHANGED)}
+  const onReplace=({target})=>{reflowCollagePhoto(editor,target);canvas.fire(COLLAGE_CHANGED)}
   const onSelection=()=>{
     const slot=canvas.getActiveObject?.()
     if(!slot?.kidstoryCollageId||slot.type!=='image')return
     const root=rootForSlot(canvas,slot)
-    if(!root)return
     // Layer-list selection explicitly means photo editing, even during frame editing.
-    frameEditing.delete(root)
-    reflowCollage(editor,root)
+    if(root)frameEditing.delete(root)
+    reflowCollagePhoto(editor,slot)
     canvas.fire(COLLAGE_CHANGED)
   }
   const onModified=({target}={})=>{if(target?.kidstoryCollage)reflowCollage(editor,target);canvas.fire(COLLAGE_CHANGED)}
