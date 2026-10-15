@@ -70,10 +70,17 @@
           <div class="detail-meta"><span class="status-badge" :class="statusType(detail)">{{ statusLabel(detail) }}</span><span>{{ rewardLabel(detail) }}</span><span>{{ pages.length }} 页</span></div>
           <p v-if="detail.reject_reason" class="failed">驳回原因：{{ detail.reject_reason }}</p>
           <el-alert v-if="detail.approval_reward_status === 'failed'" title="审核已通过，奖励发放未完成，请重试发奖。" type="warning" :closable="false" />
+          <p v-if="canRetry(detail) && Number(detail.approval_points_expected) > 0" class="cell-note">已确定奖励 {{ detail.approval_points_expected }} 积分，重试不会修改金额或重复发放。</p>
           <div v-if="pages.length" class="page-preview"><el-image :src="pages[previewIndex].path" fit="contain" :preview-src-list="pages.map(p => p.path)" :initial-index="previewIndex" preview-teleported><template #error><div class="image-failed">此页图片加载失败，请勿直接通过审核。</div></template></el-image></div>
           <el-empty v-else description="没有可预览的页面" />
           <div v-if="pages.length" class="page-navigation"><el-button :disabled="previewIndex === 0" @click="previewIndex--">上一页</el-button><span>{{ previewIndex + 1 }} / {{ pages.length }}</span><el-button :disabled="previewIndex >= pages.length - 1" @click="previewIndex++">下一页</el-button></div>
           <div v-if="Number(detail.status) === 1" class="review-decision">
+            <template v-if="!awarded(detail)">
+              <label for="reward-points">通过审核后的奖励积分 <span class="failed">（最高 100 积分）</span></label>
+              <el-input-number id="reward-points" v-model="rewardPoints" :min="1" :max="100" :step="1" :precision="0" :disabled="!!busyId || Number(detail.approval_points_expected) > 0" controls-position="right" aria-label="奖励积分" />
+              <p class="cell-note">{{ Number(detail.approval_points_expected) > 0 ? '奖励金额已确定，重新审核或重试均沿用此金额。' : '请输入 1～100 的整数，确认通过后发放给作者。' }}</p>
+            </template>
+            <p v-else class="cell-note">此绘本已获得 {{ awarded(detail) }} 积分，本次审核不重复发放。</p>
             <label for="reject-reason">驳回原因（驳回时必填）</label>
             <el-input id="reject-reason" v-model="reason" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="说明需要修改的内容，作者可在“我的绘本”中查看" />
           </div>
@@ -82,7 +89,7 @@
       <template #footer><el-button @click="detailVisible = false">关闭</el-button>
         <template v-if="detail && !detailLoading && !detailError">
           <el-button v-if="Number(detail.status) === 1" type="danger" :disabled="!!busyId || !reason.trim()" @click="reject">驳回</el-button>
-          <el-button v-if="Number(detail.status) === 1 || canRetry(detail)" type="primary" :loading="busyId === detail._id" :disabled="!!busyId || (!canRetry(detail) && !pages.length)" @click="approve(detail)">{{ canRetry(detail) ? '重试发奖' : '通过审核并发放奖励' }}</el-button>
+          <el-button v-if="Number(detail.status) === 1 || canRetry(detail)" type="primary" :loading="busyId === detail._id" :disabled="!!busyId || (!canRetry(detail) && (!pages.length || (!awarded(detail) && !validRewardPoints)))" @click="approve(detail)">{{ canRetry(detail) ? '重试发奖' : '通过审核并发放奖励' }}</el-button>
         </template>
       </template>
     </el-dialog>
@@ -95,8 +102,11 @@ import { bookReviewRequest } from '@/utils/bookReviewApi'
 export default {
   name: 'AdminBooks',
   data() { return { books: [], total: 0, page: 1, pageSize: 20, keyword: '', status: '1', rewardStatus: '', loading: false, error: '', requestId: 0,
-    detailVisible: false, detailLoading: false, detailError: '', detail: null, pages: [], previewIndex: 0, reason: '', busyId: '', detailRequestId: 0 } },
-  computed: { rewardsView() { return this.$route.name === 'admin-rewards' } },
+    detailVisible: false, detailLoading: false, detailError: '', detail: null, pages: [], previewIndex: 0, reason: '', rewardPoints: 100, busyId: '', detailRequestId: 0 } },
+  computed: {
+    rewardsView() { return this.$route.name === 'admin-rewards' },
+    validRewardPoints() { return Number.isInteger(this.rewardPoints) && this.rewardPoints >= 1 && this.rewardPoints <= 100 },
+  },
   watch: { '$route.name'() { this.page = 1; this.error = ''; this.loadBooks() } },
   mounted() { this.loadBooks() },
   methods: {
@@ -129,6 +139,7 @@ export default {
         const result = await bookReviewRequest(this.$http, `/${book._id}`)
         if (id !== this.detailRequestId) return
         this.detail = result.message.book
+        this.rewardPoints = Math.min(100, Math.max(1, Number(this.detail.approval_points_expected) || Number(this.detail.pending_approval_points) || 100))
         const illustrations = new Map((result.message.illustrations || []).map(p => [p._id, p]))
         this.pages = this.detail.content_snapshot?.length ? this.detail.content_snapshot : (this.detail.content || []).map(id => {
           const image = illustrations.get(id)
@@ -140,9 +151,11 @@ export default {
     async approve(book) {
       if (this.busyId) return
       try {
-        if (!this.canRetry(book)) await ElMessageBox.confirm('确认已检查绘本内容？通过后将公开展示（私有绘本除外），并自动发放积分奖励。', '通过审核', { confirmButtonText: '确认通过', cancelButtonText: '继续检查' })
+        const setsReward = Number(book.status) === 1 && !this.awarded(book)
+        if (setsReward && !this.validRewardPoints) { ElMessage.error('奖励积分必须为 1～100 的整数'); return }
+        if (!this.canRetry(book)) await ElMessageBox.confirm(`确认已检查绘本内容？${setsReward ? `通过后奖励作者 ${this.rewardPoints} 积分。` : '此绘本已有奖励记录，不重复发放。'}`, '通过审核', { confirmButtonText: '确认通过', cancelButtonText: '继续检查' })
         this.busyId = book._id
-        const result = await bookReviewRequest(this.$http, `/${book._id}/approve`, { method: 'post', data: { reviewedVersion: book.updatedAt } })
+        const result = await bookReviewRequest(this.$http, `/${book._id}/approve`, { method: 'post', data: { reviewedVersion: book.updatedAt, ...(setsReward ? { rewardPoints: this.rewardPoints } : {}) } })
         if (this.detail?._id === book._id) this.detail = result.message
         if (result.reward_error) ElMessage.warning(result.reward_error)
         else ElMessage.success(this.awarded(result.message) > 0 ? `审核通过，已发放 ${this.awarded(result.message)} 积分` : '审核通过')
