@@ -22,6 +22,7 @@
                             </div>
                             <h3 class="card-title">{{ $t('upload.uploadBook') }}</h3>
                             <p class="card-desc">{{ $t('upload.uploadBookDesc') }}</p>
+                            <BookUploadReward compact />
                         </div>
                     </el-card>
                 </router-link>
@@ -63,10 +64,12 @@
 <script>
 import { Picture as UploadPictureIcon, Reading as UploadReadingIcon, Brush as BrushIcon, Link as LinkIcon } from '@element-plus/icons-vue'
 import { isCurrentUserAdmin } from '@/utils/auth'
+import BookUploadReward from '@/components/BookUploadReward.vue'
 
 export default {
   name: 'UploadPage',
   components: {
+    BookUploadReward,
     UploadPictureIcon,
     UploadReadingIcon,
     BrushIcon,

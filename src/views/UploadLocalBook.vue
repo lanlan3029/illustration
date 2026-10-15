@@ -3,6 +3,7 @@
 <div class="box">
 
 <el-form ref="form" :model="form" label-width="100px">
+  <BookUploadReward v-if="!isEditMode" />
   <el-form-item :label="$t('upload.uploadWork')">
     <el-upload
         ref="upload"
@@ -71,9 +72,11 @@
 import { ElMessage } from 'element-plus'
 import { InfoFilled, Plus } from '@element-plus/icons-vue'
 import imageCompression from 'browser-image-compression'
+import BookUploadReward from '@/components/BookUploadReward.vue'
 
 export default {
   components: {
+    BookUploadReward,
     InfoFilled,
     Plus
   },
