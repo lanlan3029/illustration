@@ -104,7 +104,7 @@
                     <p class="styles-subtitle">{{ $t('home.stylesSubtitle') }}</p>
                 </div>
                 <div class="style-gallery">
-                    <button v-for="style in styleImages" :key="style.id" type="button" class="style-photo" @click="go('/ai-picture')">
+                    <button v-for="style in styleImages" :key="style.id" type="button" class="style-photo" @click="go({ name: 'AIPicture', query: { styleId: String(style.id) } })">
                         <span class="style-photo-image"><img :src="style.image" :alt="styleLabel(style)" loading="lazy" decoding="async" /></span>
                         <span class="style-photo-caption">{{ styleLabel(style) }}</span>
                     </button>

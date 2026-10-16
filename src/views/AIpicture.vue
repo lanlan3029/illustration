@@ -44,6 +44,7 @@
                                 type="button"
                                 class="style-list-item"
                                 :class="{ selected: selectedStyleId === style.id }"
+                                :data-style-id="style.id"
                                 @click="selectStyle(style.id)"
                             >
                                 <div
@@ -512,6 +513,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
+import { illustrationStyleCategory } from '@/data/illustrationStyleClassification'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElImageViewer } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
@@ -577,6 +579,7 @@ export default {
     data() {
         return {
             selectedStyleId: null,
+            appliedRouteStyleId: null,
             activeStyleCategory: 'curated',
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
@@ -838,6 +841,15 @@ export default {
         }
     },
     watch: {
+        '$route.query.styleId': {
+            handler() {
+                this.appliedRouteStyleId = null
+                this.applyRouteStyle()
+            },
+        },
+        styles() {
+            this.applyRouteStyle()
+        },
         styleCategoryTabItems: {
             handler(items) {
                 // 等风格加载完成再校正分类，避免模板先返回时把默认精选切成全部。
@@ -862,7 +874,8 @@ export default {
         }
     },
     mounted() {
-        // 不预选风格、不预填提示词；由用户在左侧点击风格/模板后再写入 subjectScene
+        // 首页风格入口携带 styleId；普通入口保持空输入。
+        this.applyRouteStyle()
         this.restoreLatestGeneratedImage()
         document.addEventListener('click', this.handleDocClick)
         this._onStyleListScroll = () => {
@@ -883,6 +896,27 @@ export default {
         this.stylePreview.show = false
     },
     methods: {
+        applyRouteStyle() {
+            const styleId = this.$route.query.styleId
+            if (typeof styleId !== 'string' || !styleId || this.appliedRouteStyleId === styleId) return
+            const style = this.styles.find(item => String(item.id) === styleId)
+            if (!style) return
+            this.appliedRouteStyleId = styleId
+            this.activeStyleCategory = stylesForIllustrationTab('curated', [style]).length
+                ? 'curated'
+                : illustrationStyleCategory(style)
+            this.displayOrder = []
+            this.selectStyle(style.id)
+            this.$nextTick(() => requestAnimationFrame(() => {
+                const list = this.$refs.styleListRef
+                const card = Array.from(list?.querySelectorAll('[data-style-id]') || [])
+                    .find(item => item.dataset.styleId === styleId)
+                if (list && card) {
+                    const offset = card.getBoundingClientRect().top - list.getBoundingClientRect().top
+                    list.scrollTo({ top: list.scrollTop + offset - 8, behavior: 'instant' })
+                }
+            }))
+        },
         clearPrompt() {
             this.subjectScene = ''
             this.$nextTick(() => this.$refs.promptInput?.focus())
