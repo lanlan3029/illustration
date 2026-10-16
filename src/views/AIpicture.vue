@@ -103,7 +103,7 @@
                     v-model="subjectScene"
                     class="prompt-textarea"
                     :placeholder="promptPlaceholder"
-                    rows="3"
+                    rows="6"
                     @focus="isFocused = true"
                     @blur="isFocused = false"
                     @keydown.enter.exact.prevent="generateIllustration"
@@ -251,6 +251,14 @@
                     </div>
 
                     <div class="toolbar-right">
+                        <button
+                            type="button"
+                            class="tool-btn pill clear-prompt-btn"
+                            :disabled="!subjectScene"
+                            @click="clearPrompt"
+                        >
+                            {{ $t('aiPicture.clearPrompt') }}
+                        </button>
                         <!-- 生成按钮 -->
                         <button
                             type="button"
@@ -849,6 +857,10 @@ export default {
         this.stylePreview.show = false
     },
     methods: {
+        clearPrompt() {
+            this.subjectScene = ''
+            this.$nextTick(() => this.$refs.promptInput?.focus())
+        },
         isHandrawLibraryStyle(style) {
             return isHandrawLibStyle(style)
         },
@@ -2096,7 +2108,7 @@ export default {
     color: #1f1f1f;
     font-family: inherit;
     padding: 0 4px;
-    min-height: 44px;
+    min-height: 144px;
 }
 
 .prompt-textarea::placeholder {
@@ -2270,6 +2282,11 @@ export default {
 
 .tool-btn.pill.active {
     background: #ebedf0;
+}
+
+.clear-prompt-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .caret {

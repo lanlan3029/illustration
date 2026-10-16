@@ -1105,6 +1105,7 @@
     "referenceTruncated": "Limit is {max} images; extra files were not added",
     "referenceFailed": "Failed to load reference image",
     "browseInspiration": "Browse inspiration",
+    "clearPrompt": "Clear",
     "refresh": "Refresh",
     "uploadPhoto": "Upload photo",
     "needPrompt": "Please describe what you want first",

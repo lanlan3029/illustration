@@ -1120,6 +1120,7 @@
     "referenceTruncated": "已达上限 {max} 张，其余未添加",
     "referenceFailed": "参考图加载失败",
     "browseInspiration": "浏览灵感",
+    "clearPrompt": "清空",
     "refresh": "更新内容",
     "uploadPhoto": "上传照片",
     "needPrompt": "请先描述你想要的画面",
