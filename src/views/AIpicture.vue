@@ -182,9 +182,9 @@
                                 :title="$t('aiPicture.sizeLabel') || '尺寸'"
                                 @click="toggleSizeMenu"
                             >
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                                </svg>
+                                <span class="size-icon-stage" aria-hidden="true">
+                                    <span class="size-icon" :style="currentSizeIconStyle"></span>
+                                </span>
                                 <span class="size-toolbar-text">{{ currentSizeLabel }}</span>
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="caret">
                                     <polyline points="6 9 12 15 18 9" />
@@ -230,7 +230,15 @@
                                 :key="url"
                                 class="ref-thumb-wrap"
                             >
-                                <img :src="url" alt="reference" class="ref-thumb" />
+                                <button
+                                    type="button"
+                                    class="ref-thumb-preview"
+                                    :aria-label="($t('preview') || '预览') + ' ' + (idx + 1)"
+                                    :title="$t('preview') || '预览'"
+                                    @click="openReferencePreview(idx)"
+                                >
+                                    <img :src="url" :alt="'reference ' + (idx + 1)" class="ref-thumb" />
+                                </button>
                                 <span
                                     v-if="idx === handrawAutoReferenceIndex"
                                     class="ref-thumb-badge"
@@ -469,6 +477,14 @@
                 </div>
             </div>
         </main>
+        <el-image-viewer
+            v-if="referencePreview"
+            :url-list="referencePreview.urls"
+            :initial-index="referencePreview.index"
+            hide-on-click-modal
+            teleported
+            @close="referencePreview = null"
+        />
         <teleport to="body">
             <div
                 v-if="stylePreview.show"
@@ -497,7 +513,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElImageViewer } from 'element-plus'
 import { checkWebPSupport } from '@/utils/imageOptimizer'
 import {
     postCreateCharacter,
@@ -542,6 +558,7 @@ import {
 
 export default {
     name: 'AIPicture',
+    components: { ElImageViewer },
     setup() {
         const { locale } = useI18n()
         const { styles, loading: stylesLoading } = useIllustrationStyles()
@@ -584,6 +601,7 @@ export default {
 
             /** 参考图 data URL 列表，最多 10 张（与 CreateLayoutIllustration 中 create-character 的 image 数组一致） */
             referenceImageUrls: [],
+            referencePreview: null,
 
             displayOrder: [],
             /** 预览图 CDN/API 互为 fallback */
@@ -694,11 +712,19 @@ export default {
                         { value: '640x960', compactLabel: '2:3', label: this.$t('aiPicture.ratio2_3'), iconW: 12, iconH: 18 },
                         { value: '768x1024', compactLabel: '3:4', label: this.$t('aiPicture.ratio3_4'), iconW: 12, iconH: 16 },
                         { value: '1280x960', compactLabel: '4:3', label: this.$t('aiPicture.ratio4_3'), iconW: 20, iconH: 15 },
-                        { value: '576x1024', compactLabel: '9:16', label: this.$t('aiPicture.ratio9_16'), iconW: 10, iconH: 18 },
-                        { value: '1024x576', compactLabel: '16:9', label: this.$t('aiPicture.ratio16_9'), iconW: 22, iconH: 12 }
+                        { value: '576x1024', compactLabel: '9:16', label: this.$t('aiPicture.ratio9_16'), iconW: 10.125, iconH: 18 },
+                        { value: '1024x576', compactLabel: '16:9', label: this.$t('aiPicture.ratio16_9'), iconW: 20, iconH: 11.25 }
                     ]
                 }
             ]
+        },
+        currentSizeIconStyle() {
+            const [width, height] = String(this.selectedSize).split('x').map(Number)
+            const ratio = width > 0 && height > 0 ? width / height : 1
+            return {
+                width: `${20 * Math.min(ratio, 1)}px`,
+                height: `${20 / Math.max(ratio, 1)}px`,
+            }
         },
         currentSizeLabel() {
             for (const g of this.sizeGroups) {
@@ -1279,6 +1305,9 @@ export default {
             if (this.qualityMenuOpen && qualityRef && !qualityRef.contains(e.target)) this.qualityMenuOpen = false
         },
 
+        openReferencePreview(index) {
+            this.referencePreview = { urls: [...this.referenceImageUrls], index }
+        },
         triggerReferenceUpload() {
             this.$refs.referenceUpload && this.$refs.referenceUpload.click()
         },
@@ -2401,7 +2430,17 @@ export default {
     color: #5b5bd6;
 }
 
+.size-icon-stage {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
 .size-icon {
+    box-sizing: border-box;
     display: inline-block;
     border: 1.5px solid currentColor;
     border-radius: 3px;
@@ -2424,24 +2463,44 @@ export default {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    max-width: min(280px, 100%);
+    gap: 12px;
+    padding: 6px;
+    max-width: 100%;
 }
 
 .ref-thumb-wrap {
     position: relative;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
     overflow: visible;
     flex-shrink: 0;
 }
 
-.ref-thumb {
+.ref-thumb-preview {
+    display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    background: #f5f6f8;
+    cursor: zoom-in;
+}
+
+.ref-thumb-preview:hover,
+.ref-thumb-preview:focus-visible {
+    outline: 2px solid #8167a9;
+    outline-offset: 2px;
+}
+
+.ref-thumb {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
     border: 1px solid #e6e8ec;
 }
 
@@ -3117,7 +3176,7 @@ export default {
         font-size: 12px;
     }
 
-    .tool-btn.pill span {
+    .tool-btn.pill > span:not(.size-icon-stage) {
         display: inline;
     }
 
