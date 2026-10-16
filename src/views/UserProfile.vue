@@ -1,14 +1,6 @@
 <template>
 <div class="container">
 <div class="profile-links">
-  <button type="button" class="profile-link-item" @click="goGenerationHistory">
-    <span class="profile-link-label">{{ $t('generationHistory.title') }}</span>
-    <span class="profile-link-arrow" aria-hidden="true">›</span>
-  </button>
-  <button type="button" class="profile-link-item" @click="goContact">
-    <span class="profile-link-label">{{ $t('guides.contact.title') }}</span>
-    <span class="profile-link-arrow" aria-hidden="true">›</span>
-  </button>
   <button type="button" class="profile-link-item profile-link-item--muted" @click="goAboutUs">
     <span class="profile-link-label">{{ $t('nav.aboutUs') }}</span>
     <span class="profile-link-arrow" aria-hidden="true">›</span>
@@ -377,12 +369,6 @@ export default {
         });
       },
 
-      goGenerationHistory() {
-        this.$router.push('/member/generation-history');
-      },
-      goContact() {
-        this.$router.push({ path: '/connection', hash: '#contact' });
-      },
       goAboutUs() {
         this.$router.push('/user/about');
       },

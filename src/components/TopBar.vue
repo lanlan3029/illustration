@@ -121,6 +121,10 @@
             </a>
             <ul class="dropdown-menu">
               <li v-if="isAdmin"><router-link to="/admin/books" class="dropdown-item" @click="closeSubmenu()">{{ currentLanguage === 'en' ? 'Admin dashboard' : '管理后台' }}</router-link></li>
+              <li><router-link to="/member/generation-history" class="dropdown-item" @click="closeSubmenu()">
+                <i class="el-icon-time"></i>
+                <span>{{ $t('generationHistory.title') }}</span>
+              </router-link></li>
               <li><a @click.prevent="toProfile(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-zhanghu"></i>
                 <span>{{ $t('nav.accountSettings') }}</span>

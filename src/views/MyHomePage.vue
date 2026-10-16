@@ -27,6 +27,10 @@
             <span class="mp-quick-ico mp-quick-ico--home">⌂</span>
             <span>{{ $t('nav.home') || '首页' }}</span>
           </button>
+          <button type="button" class="mp-quick-item" @click="goGenerationHistory">
+            <span class="mp-quick-ico">◷</span>
+            <span>{{ $t('generationHistory.title') }}</span>
+          </button>
           <button type="button" class="mp-quick-item" @click="goProfile">
             <span class="mp-quick-ico mp-quick-ico--set">⚙</span>
             <span>{{ $t('nav.accountSettings') || '设置' }}</span>
@@ -61,6 +65,7 @@
         <el-menu-item index="3">{{ $t('myHomePage.myIllustrations') }}</el-menu-item>
         <el-menu-item index="4">{{ $t('myHomePage.myBooks') }}</el-menu-item>
         <el-menu-item index="6">{{ $t('myHomePage.collectedBooks') }}</el-menu-item>
+        <el-menu-item index="history">{{ $t('generationHistory.title') }}</el-menu-item>
        
       </el-menu>
 
@@ -405,6 +410,9 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
       if (this.bookSourceFilter !== 'all') params.set('source', this.bookSourceFilter)
       return `/book/?${params}`
     },
+    goGenerationHistory() {
+      this.$router.push("/member/generation-history");
+    },
     goProfile() {
       this.$router.push("/user/profile");
     },
@@ -418,6 +426,10 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
       this.$router.push("/member/recharge");
     },
     handleSelect(key) {
+      if (key === "history") {
+        this.goGenerationHistory();
+        return;
+      }
       this.activeIndex = key;
       // 根据选中的标签加载对应的数据
       if (key === '2') {
