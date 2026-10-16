@@ -314,7 +314,7 @@ onMounted(() => {
       const pending = peekEditorproPendingImage();
       if (peekPendingCollage()) {
         try {
-          await importEditableCollage(canvasEditor, peekPendingCollage());
+          await importEditableCollage(canvasEditor, peekPendingCollage(), { preserveCanvasSize: true });
           takePendingCollage();
           scheduleDraftSave();
           ElMessage.success('已导入可编辑拼图，选择照片可调整取景、间距和圆角');

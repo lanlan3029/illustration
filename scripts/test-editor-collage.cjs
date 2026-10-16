@@ -13,6 +13,26 @@ function runtime(){
   return {api:context.api,editor,canvas,ws}
 }
 const templates=require('../src/data/collage/templates.json');
+test('continue editing preserves source canvas, background and exact crop geometry',async()=>{
+  for(const mode of ['single','carousel'])for(const aspect of ['1:1','3:4','4:3','9:16','16:9']){
+    const {api,editor,canvas,ws}=runtime();
+    const settings={mode,aspect,slides:3,spacing:37,border:23,radius:40,background:'#aabbcc'};
+    const template=templates.find(t=>t.cells.length===4&&!t.shape);
+    const images=template.cells.map(()=>({src:'ok',zoom:2.3,panX:.6,panY:-.4}));
+    await api.importEditableCollage(editor,{schema:1,template,settings,images},{preserveCanvasSize:true});
+    const [w,h]=aspect.split(':').map(Number);
+    const width=Math.round(1080*(mode==='carousel'?3:Math.max(1,w/h)));
+    const height=Math.round(1080*(mode==='carousel'?h/w:Math.max(1,h/w)));
+    assert.equal(ws.width,width);assert.equal(ws.height,height);assert.equal(ws.fill,settings.background);
+    const cells=api.layoutCells(template,width,height,settings.spacing,settings.border);
+    canvas.getObjects().filter(o=>o.type==='image').forEach((slot,i)=>{
+      const expected=api.imagePlacement({element:{width:1600,height:900},...images[i]},cells[i]);
+      for(const [actual,value] of [[slot.left,expected.x],[slot.top,expected.y],[slot.width*slot.scaleX,expected.width],[slot.height*slot.scaleY,expected.height]])assert.ok(Math.abs(actual-value)<1e-8);
+    });
+    await assert.rejects(api.importEditableCollage(editor,{schema:1,template,settings:{...settings,aspect:'1:1'},images:[{src:'invalid'},...images.slice(1)]},{preserveCanvasSize:true}));
+    assert.equal(ws.width,width);assert.equal(ws.height,height);
+  }
+});
 test('shared SVG geometry emits finite paths for all 160 layouts, corners and aspect ratios',()=>{const {api}=runtime();for(const t of templates)for(const [w,h] of [[900,1200],[1200,900],[1080,1080]])for(const radius of [0,80]){for(const c of api.layoutCells(t,w,h,20,10)){const p=api.cellPath(c,radius,new api.SvgPath()).toString();assert.ok(p.startsWith('M '));assert.ok(!/NaN|Infinity|undefined/.test(p));assert.ok(p.endsWith('Z'))}if(t.clipShape)assert.ok(!/NaN|Infinity/.test(api.shapePath(t.clipShape,10,10,w-20,h-20,new api.SvgPath()).toString()))}});
 test('editable import is atomic on bad images and preserves each original photo and crop',async()=>{const {api,editor,canvas}=runtime();const t=templates.find(t=>t.cells.length===4&&!t.shape);const images=Array.from({length:4},()=>({src:'data:image/png;base64,original',zoom:2,panX:.3,panY:-.2}));const root=await api.importEditableCollage(editor,{schema:1,template:t,images});assert.equal(canvas.getObjects().length,6);for(const slot of canvas.getObjects().filter(o=>o.type==='image'||o.kidstoryCollageId)){assert.equal(slot.originSrc,images[0].src);assert.equal(slot.kidstoryCollagePhoto.zoom,2);assert.equal(slot.scaleX,slot.scaleY);assert.ok(slot.clipPath.absolutePositioned);assert.equal(slot.kidstorySlotW>0,true)}assert.ok(root.kidstoryCollage);const before=canvas.getObjects().length;await assert.rejects(api.importEditableCollage(editor,{schema:1,template:t,images:[{src:'invalid'},...images.slice(1)]}));assert.equal(canvas.getObjects().length,before)});
 test('resize, movement and settings keep normalized crop; old history metadata stays immutable',async()=>{const {api,editor,canvas,ws}=runtime();const t=templates.find(t=>t.cells.length===2&&!t.shape);const root=await api.importEditableCollage(editor,{schema:1,template:t,images:[{src:'ok',zoom:2},{src:'ok'}]});const cleanup=api.installCollageSlots(editor);const slot=canvas.getObjects().find(o=>o.kidstoryCollageId);const old=root.kidstoryCollage;api.updateCollage(editor,root,{spacing:30,radius:40});assert.equal(old.settings.spacing,10);assert.equal(root.kidstoryCollage.settings.spacing,30);slot.left-=25;canvas.fire('object:moving',{target:slot});const photo=slot.kidstoryCollagePhoto;editor.setSize(1600,900);assert.equal(root.width,1600);assert.equal(root.height,900);assert.equal(slot.kidstoryCollagePhoto,photo);assert.equal(slot.scaleX,slot.scaleY);assert.ok(slot.left<=slot.kidstorySlotLeft);assert.ok(slot.left+slot.width*slot.scaleX>=slot.kidstorySlotLeft+slot.kidstorySlotW-1e-8);api.zoomCollagePhoto(editor,slot,3);assert.equal(photo.zoom,2);assert.equal(slot.kidstoryCollagePhoto.zoom,3);assert.throws(()=>api.switchCollageTemplate(editor,root,templates.find(t=>t.cells.length===3)));cleanup();const width=root.width;ws.width=2000;editor.fire('sizeChange');assert.equal(root.width,width)});

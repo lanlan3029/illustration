@@ -12,7 +12,8 @@
                             <el-input
                                 v-model="form.prompt"
                                 type="textarea"
-                                :rows="4"
+                                :autosize="{ minRows: 10, maxRows: 24 }"
+                                resize="vertical"
                                 :placeholder="$t('aibooks.promptPlaceholder')"
                                 class="prompt-input">
                             </el-input>
@@ -24,6 +25,7 @@
                                     v-for="style in styles"
                                     :key="style.key"
                                     type="button"
+                                    :disabled="generating || generatingImages"
                                     class="style-picker-item"
                                     :class="{ selected: form.artStyle === style.key }"
                                     :title="style.artStyle"
@@ -43,6 +45,12 @@
                                 </button>
                             </div>
                         </el-form-item>
+                        <el-form-item v-if="selectedHandrawStyle">
+                            <el-checkbox v-model="handrawStyleReferenceAuto" :disabled="generatingImages" @change="onStyleReferenceChange">
+                                {{ $t('aiPicture.handrawStyleReferenceAuto') }}
+                            </el-checkbox>
+                            <p class="style-reference-hint">{{ $t('aibooks.styleReferenceHint') }}</p>
+                        </el-form-item>
 
                    
 
@@ -52,7 +60,7 @@
                                 type="primary"
                                 @click="generateBook"
                                 :loading="generating"
-                                :disabled="!form.prompt || !form.prompt.trim() || generating"
+                                :disabled="!form.prompt || !form.prompt.trim() || generating || generatingImages"
                                 class="generate-btn">
                                 {{ generating ? $t('aibooks.generating') : $t('aibooks.generate') }}
                             </el-button>
@@ -62,7 +70,7 @@
                     </el-form>
 
                     <!-- 生成进度 -->
-                    <div v-if="generating" class="progress-info">
+                    <div v-if="generating || generatingImages || (bookData && progressStatus)" class="progress-info">
                         <el-progress
                             :percentage="progressPercentage"
                             :status="progressStatus"
@@ -160,7 +168,9 @@
                                 <el-input
                                     v-model="imagePrompts[index]"
                                     type="textarea"
-                                    :rows="3"
+                                    :autosize="{ minRows: 6, maxRows: 18 }"
+                                    resize="vertical"
+                                    :disabled="generatingImages"
                                     :placeholder="$t('aibooks.page', { page: (promptSceneIndexes[index] ?? index) + 1 }) + ' ' + $t('aibooks.promptPlaceholder')"
                                     class="prompt-textarea">
                                 </el-input>
@@ -248,7 +258,11 @@
                                     </el-image>
                                     <div v-else class="image-placeholder">
                                         <i class="el-icon-picture-outline"></i>
-                                        <p>{{ generatingImages ? $t('aibooks.imageGenerating') : $t('aibooks.imageMissing') }}</p>
+                                        <p>{{ pageGeneration[index] === 'queued' ? $t('aibooks.imageQueued') : pageGeneration[index] === 'generating' ? $t('aibooks.imageGenerating') : bookData.imageErrors?.[index] ? $t('aibooks.imageFailed') : $t('aibooks.imageMissing') }}</p>
+                                        <p v-if="bookData.imageErrors?.[index]" class="page-generation-error" role="status">{{ bookData.imageErrors[index] }}</p>
+                                        <el-button v-if="pageGeneration[index] !== 'queued' && pageGeneration[index] !== 'generating'" type="primary" :disabled="generatingImages || generating" @click="regeneratePage(index)">
+                                            {{ $t('aibooks.regeneratePage') }}
+                                        </el-button>
                                     </div>
                                     <div
                                         v-if="pageVersionList(index).length > 1"
@@ -268,7 +282,9 @@
                                 <div class="card-content">
                                     <h3 class="card-title">{{ bookData.title }} - 第 {{ index + 1 }} 页</h3>
                                     <p class="scene-text">{{ scene }}</p>
+                                    <p v-if="getPageImageUrl(index) && bookData.imageErrors?.[index]" class="page-generation-error" role="status">{{ bookData.imageErrors[index] }}</p>
                                     <div class="card-actions">
+                                        <el-button v-if="getPageImageUrl(index) && bookData.imageErrors?.[index]" type="primary" size="small" :disabled="generatingImages || generating" @click="regeneratePage(index)">{{ $t('aibooks.regeneratePage') }}</el-button>
                                         <el-button
                                             v-if="getPageImageUrl(index)"
                                             size="small"
@@ -276,6 +292,7 @@
                                             {{ $t('aibooks.aiEdit') }}
                                         </el-button>
                                         <el-button
+                                            v-if="getPageImageUrl(index)"
                                             type="primary"
                                             size="small"
                                             @click="collectIllustration(getPageImageUrl(index), index)">
@@ -300,7 +317,7 @@
 
 <script>
 import { ElMessage } from 'element-plus'
-import { getCurrentInstance, computed } from 'vue'
+import { getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { Download, Edit, DocumentCopy, Reading } from '@element-plus/icons-vue'
@@ -311,6 +328,9 @@ import {
 } from '@/utils/createCharacterTask'
 import { createImageWithText as composeImageWithCaption, loadImageBlob } from '@/utils/canvasImageCompose'
 import { useIllustrationStyles } from '@/composables/useIllustrationStyles'
+import { replaceBookStyle, runBookImageQueue } from '@/utils/aibooksGeneration'
+import { isHandrawLibraryStyle } from '@/utils/handrawStyleGroups'
+import { appendHandrawReferenceIsolation, readHandrawStyleReferenceAutoPreference, writeHandrawStyleReferenceAutoPreference } from '@/utils/handrawStyleReference'
 import {
     appendStorySchemaGuide,
     extractCharacterProfiles,
@@ -387,6 +407,8 @@ export default {
             loadingMyCharacters: false,
             inpaintSceneIndex: -1,
             generatingImages: false,
+            pageGeneration: {},
+            handrawStyleReferenceAuto: readHandrawStyleReferenceAutoPreference(),
             // API 配置（模型名称由前端使用，具体 API 地址和密钥在后端配置）
             doubaoSeedModel: 'doubao-seed-1-6',
             apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
@@ -395,6 +417,10 @@ export default {
         }
     },
     computed: {
+        selectedHandrawStyle() {
+            const style = this.styles.find(s => s.key === this.form.artStyle)
+            return isHandrawLibraryStyle(style) ? style : null
+        },
         bookPreviewImages() {
             return (this.bookData?.images || []).filter((img) => img);
         },
@@ -464,6 +490,7 @@ export default {
         },
         // 处理风格选择（单选模式），并将风格信息写入提示词
         handleStyleChange(styleKey, checked) {
+            if (this.generating || this.generatingImages) return
             if (!checked) {
                 // 单选模式下，取消勾选不改变当前选中风格
                 return;
@@ -475,22 +502,16 @@ export default {
             const style = this.styles.find(s => s.key === styleKey);
             if (!style) return;
 
-            // 底词前置风格：不把长 elementDetails/basePrompt 写进可见提示词
-            const styleText = (style.prependBaseOnGenerate || style.basePrompt || style.inputTemplate)
-                ? `【画风：${style.artStyle}】`
-                : `【画风：${style.artStyle}】${style.elementDetails || ''}`;
-
-            // 如果 prompt 中还没有这段风格描述，则追加到末尾
-            if (!this.form.prompt.includes(styleText)) {
-                this.form.prompt = this.form.prompt
-                    ? `${this.form.prompt}\n\n${styleText}`
-                    : styleText;
-            }
+            this.form.prompt = replaceBookStyle(this.form.prompt, this.styles, style);
+            this.saveToLocalStorage()
+        },
+        onStyleReferenceChange() {
+            writeHandrawStyleReferenceAutoPreference(this.handrawStyleReferenceAuto)
         },
 
         // 将图片转换为 Base64（直连失败走 fetch-image 代理，避免 getapib CORS）
-        async imageToBase64(imageUrl) {
-            if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
+        async imageToBase64(imageUrl, compress = false) {
+            if (!compress && typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
                 return imageUrl
             }
             try {
@@ -498,6 +519,7 @@ export default {
                     http: this.$http,
                     apiBaseUrl: this.apiBaseUrl,
                 })
+                if (compress) return this.fileToBase64(blob, true)
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader()
                     reader.onload = () => resolve(reader.result)
@@ -879,9 +901,21 @@ export default {
         },
 
         // 从编辑后的提示词生成图片（只提交列表中剩余的提示词；已删页不请求后端）
-        async generateImagesFromPrompts() {
+        async regeneratePage(sceneIndex) {
+            if (this.generatingImages || this.generating) return
             this.syncPromptSceneIndexes()
-            const jobs = this.pendingGenerateJobs
+            const listIndex = this.promptSceneIndexes.indexOf(sceneIndex)
+            const prompt = listIndex >= 0 ? this.imagePrompts[listIndex] : this.storyData?.scenes_detail?.[sceneIndex]
+            if (!String(prompt || '').trim()) {
+                ElMessage.warning(this.$t('aibooks.noPromptsToGenerate'))
+                return
+            }
+            await this.generateImagesFromPrompts([{sceneIndex, listIndex, prompt: String(prompt).trim()}])
+        },
+        async generateImagesFromPrompts(onlyJobs) {
+            if (this.generatingImages || this.generating) return
+            this.syncPromptSceneIndexes()
+            const jobs = Array.isArray(onlyJobs) ? onlyJobs : this.pendingGenerateJobs
             if (!jobs.length) {
                 ElMessage.warning(this.$t('aibooks.noPromptsToGenerate'));
                 return;
@@ -914,24 +948,23 @@ export default {
                 : []
             while (prevImages.length < sceneCount) prevImages.push(null)
 
-            const regenSet = new Set(jobs.map((j) => j.sceneIndex))
-            const nextImages = prevImages.map((img, idx) => (regenSet.has(idx) ? null : img))
-
             this.bookData = {
+                ...this.bookData,
                 title: this.storyData.title,
                 summary: this.storyData.summary,
                 scenes: this.storyData.scenes,
                 scenes_detail: this.storyData.scenes_detail,
                 character_profiles: this.characterProfiles,
                 character_card: this.characterCard,
-                images: nextImages,
+                images: prevImages,
+                imageErrors: { ...this.bookData?.imageErrors },
             }
             this.saveToLocalStorage()
             
             try {
                 await this.generateImagesForJobs(jobs)
 
-                const okCount = jobs.filter((j) => this.bookData.images?.[j.sceneIndex]).length
+                const okCount = jobs.filter((j) => this.pageGeneration[j.sceneIndex] === 'succeeded').length
                 const totalBookOk = (this.bookData.images || []).filter(Boolean).length
                 this.progressPercentage = 100
                 if (okCount === 0) {
@@ -959,6 +992,10 @@ export default {
                 await this.notifyApiError(error, '生成失败，请重试')
             } finally {
                 this.generatingImages = false
+                for (const job of jobs) {
+                    if (this.pageGeneration[job.sceneIndex] === 'queued') this.pageGeneration[job.sceneIndex] = 'idle'
+                }
+                this.saveToLocalStorage()
             }
         },
         
@@ -1017,7 +1054,7 @@ export default {
         },
         
         // 生成单页：POST /create-character（异步 task_id 会在工具内轮询至有图）
-        async generateOnePageImage(sceneIndex, scenePrompt, styleInfo, allProfiles, referenceImage) {
+        async generateOnePageImage(sceneIndex, scenePrompt, styleInfo, allProfiles, referenceImage, styleReference = '') {
             const sceneText = this.storyData?.scenes?.[sceneIndex] || ''
             const { card: pageCharacterCard, names: pageCharacterNames } = buildPageCharacterCard({
                 scenePrompt,
@@ -1044,11 +1081,14 @@ export default {
                 requestData.character_ids = characterIds
             }
 
-            if (referenceImage) {
-                const slotsLeft = Math.max(0, 2 - characterIds.length)
-                if (slotsLeft > 0) {
-                    requestData.image = referenceImage
-                }
+            const references = [referenceImage, styleReference].filter(Boolean)
+            if (references.length) requestData.image = references.length === 1 ? references[0] : references
+            if (styleReference) {
+                const isolation = appendHandrawReferenceIsolation('', this.locale)
+                    .replace('所附图片仅用于参考画风。', '本段指定的风格参考图仅用于参考画风。')
+                    .replace('Use the attached image only as a style reference.', 'Use only the image designated in this block as a style reference.')
+                requestData.prompt += `\n\n【风格参考图（image 字段第 ${references.length} 张）】${isolation}`
+                if (referenceImage || characterIds.length) requestData.prompt += '\n其余参考为角色或已生成的故事页，只保持出场角色的形象；不得照搬故事页构图。'
             }
 
             const responseData = await postCreateCharacter(
@@ -1103,7 +1143,7 @@ export default {
             for (let i = 0; i < images.length; i++) {
                 if (exclude.has(i) || !images[i]) continue
                 try {
-                    return await this.imageToBase64(images[i])
+                    return await this.imageToBase64(images[i], true)
                 } catch (e) {
                     console.warn('已有页参考图转换失败:', e)
                 }
@@ -1121,6 +1161,15 @@ export default {
             const allProfiles = this.characterProfiles?.length
                 ? this.characterProfiles
                 : parseCharacterCardText(this.characterCard)
+            let styleReference = ''
+            if (this.selectedHandrawStyle && this.handrawStyleReferenceAuto) {
+                try {
+                    styleReference = await this.imageToBase64(this.selectedHandrawStyle.imageUrl || this.selectedHandrawStyle.image, true)
+                } catch (error) {
+                    throw new Error(this.$t('aibooks.styleReferenceFailed'))
+                }
+            }
+            for (const job of jobList) this.pageGeneration[job.sceneIndex] = 'queued'
 
             const sceneCount = Array.isArray(this.storyData?.scenes)
                 ? this.storyData.scenes.length
@@ -1155,20 +1204,27 @@ export default {
 
             const runJob = async (job, referenceImage) => {
                 const sceneIndex = job.sceneIndex
+                this.pageGeneration[sceneIndex] = 'generating'
+                delete this.bookData.imageErrors?.[sceneIndex]
                 try {
                     const imageUrl = await this.generateOnePageImage(
                         sceneIndex,
                         job.prompt,
                         styleInfo,
                         allProfiles,
-                        referenceImage
+                        referenceImage,
+                        styleReference
                     )
                     this.setPageImage(sceneIndex, imageUrl)
+                    this.pageGeneration[sceneIndex] = 'succeeded'
                     bumpProgress(sceneIndex + 1)
                     return imageUrl
                 } catch (error) {
                     console.error(`生成第 ${sceneIndex + 1} 张图片失败:`, error)
-                    this.setPageImage(sceneIndex, null)
+                    this.pageGeneration[sceneIndex] = 'failed'
+                    if (!this.bookData.imageErrors) this.bookData.imageErrors = {}
+                    this.bookData.imageErrors[sceneIndex] = extractApiErrorMessage(error?.response?.data) || error?.message || this.$t('aibooks.imageFailed')
+                    this.saveToLocalStorage()
                     bumpProgress(sceneIndex + 1)
                     if (error?.insufficientPoints) throw error
                     return null
@@ -1180,8 +1236,8 @@ export default {
             const hasProtagonistRefs = this.getCharacterIdsForApi().length > 0
 
             if (anchorImageBase64 || hasProtagonistRefs) {
-                this.progressText = `正在并行生成 ${total} 张图片...`
-                await Promise.all(jobList.map((job) => runJob(job, anchorImageBase64 || '')))
+                this.progressText = `正在生成 ${total} 张图片（最多同时 2 张）...`
+                await runBookImageQueue(jobList, (job) => runJob(job, anchorImageBase64 || ''))
                 return this.bookData.images
             }
 
@@ -1198,10 +1254,8 @@ export default {
             }
 
             if (jobList.length > 1) {
-                this.progressText = `锚点页已出，正在并行生成其余 ${jobList.length - 1} 张...`
-                await Promise.all(
-                    jobList.slice(1).map((job) => runJob(job, firstPageImageBase64))
-                )
+                this.progressText = `正在生成其余 ${jobList.length - 1} 张（最多同时 2 张）...`
+                await runBookImageQueue(jobList.slice(1), (job) => runJob(job, firstPageImageBase64))
             }
 
             return this.bookData.images
@@ -1569,6 +1623,13 @@ export default {
 .prompt-input {
     width: 100%;
 }
+.book-form :deep(.el-form-item__content) { min-width: 0; }
+.prompt-input :deep(textarea), .prompt-textarea :deep(textarea) { line-height: 1.7; }
+.style-reference-hint { margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: #606266; }
+.book-form :deep(.el-checkbox) { height: auto; align-items: flex-start; }
+.book-form :deep(.el-checkbox__label) { white-space: normal; line-height: 1.6; }
+.page-generation-error { padding: 0 12px; font-size: 12px; color: #b84a35; line-height: 1.6; overflow-wrap: anywhere; max-height: 110px; overflow-y: auto; }
+.style-picker-item:disabled { cursor: wait; opacity: .65; }
 
 .reference-upload {
     width: 100%;

@@ -2,7 +2,7 @@
   <div class="collage-page" @dragover.prevent @drop.prevent="dropFiles">
     <header class="collage-header">
       <div><span class="eyebrow">COLLAGE STUDIO</span><h1>图片拼图</h1><p>把喜欢的画面，拼成一个故事。</p></div>
-      <div class="header-actions"><router-link to="/editorpro">图片编辑器 ↗</router-link><button :disabled="!canExport || busy" @click="sendEditable">可编辑槽位导入</button><button :disabled="!canExport || busy" @click="sendToEditor">合成图片导入</button><button class="primary" :disabled="!canExport || busy" @click="exportImage">{{ busy ? '正在处理…' : settings.mode === 'carousel' ? '导出轮播 ZIP' : '导出 PNG' }}</button></div>
+      <div class="header-actions"><button :disabled="!canExport || busy" @click="sendEditable">在编辑器中继续编辑</button><button class="primary" :disabled="!canExport || busy" @click="exportImage">{{ busy ? '正在处理…' : settings.mode === 'carousel' ? '导出轮播 ZIP' : '导出 PNG' }}</button></div>
     </header>
     <div class="collage-layout">
       <aside class="collage-sidebar">
@@ -36,7 +36,7 @@
         <p v-if="message" class="status-message" role="status">{{ message }}</p>
         <p v-if="photos.length && !canExport" class="status-message">当前模板需要 {{ currentTemplate.cells.length }} 张照片，已上传 {{ photos.length }} 张。请补充照片或选择匹配模板。</p>
         <section class="template-section"><div class="template-heading"><div><h2>{{ settings.mode==='single'?'拼图模板':'轮播布局' }} <span>{{ filteredTemplates.length }}</span></h2><p>{{ settings.mode==='single'?'包含全部 160 种布局，选择模板即可预览':'照片可以跨越分页线，组成连续的视觉故事' }}</p></div><label v-if="settings.mode=== 'single'">照片数量 <select v-model.number="countFilter"><option :value="0">全部</option><option v-for="n in 25" :key="n" :value="n">{{ n }} 张</option></select></label></div>
-          <div class="template-grid"><button v-for="item in filteredTemplates" :key="item.id" class="template-card" :class="{selected:templateId===item.id}" :aria-label="`模板 ${item.id}，${item.cells.length} 张照片`" :aria-pressed="templateId===item.id" @click="selectTemplate(item)"><canvas :ref="el=>drawThumbnail(el,item)"/><span>{{ item.cells.length }} 张 · {{ item.label }}</span></button></div>
+          <div class="template-grid"><button v-for="item in filteredTemplates" :key="item.id" class="template-card" :class="{selected:templateId===item.id}" :aria-label="`模板 ${item.id}，${item.cells.length} 张照片`" :aria-pressed="templateId===item.id" @click="selectTemplate(item)"><canvas v-thumbnail="{item,aspect:settings.aspect,mode:settings.mode,slides:settings.slides,radius:settings.radius,background:settings.background}"/><span>{{ item.cells.length }} 张 · {{ item.label }}</span></button></div>
         </section>
       </main>
     </div>
@@ -48,10 +48,11 @@ import { computed, ref, shallowRef, reactive, watch, onMounted, onBeforeUnmount,
 import { useRouter } from 'vue-router'
 import templates from '@/data/collage/templates.json'
 import { canvasSize, renderCollage, hitCell, imagePlacement, clamp } from '@/utils/collage/renderer'
+import { createThumbnailDirective } from '@/utils/collage/thumbnailDirective'
 import { generateCarouselLayouts } from '@/utils/collage/carousel'
 import { canvasBlob, downloadBlob, carouselZip } from '@/utils/collage/export'
-import { setEditorproPendingImage, takeEditorproPendingImage } from '@/utils/editorproPendingImage'
-import { createCollageTransfer, setPendingCollage, takePendingCollage } from '@/utils/collage/pendingCollage'
+import { takeEditorproPendingImage } from '@/utils/editorproPendingImage'
+import { createCollageTransfer, setPendingCollage } from '@/utils/collage/pendingCollage'
 
 const router=useRouter(), preview=ref(null), fileInput=ref(null), photos=ref([]), activeIndex=ref(-1)
 const settings=reactive({mode:'single',aspect:'1:1',slides:3,spacing:10,border:10,radius:0,background:'#ffffff'})
@@ -70,7 +71,7 @@ const canExport=computed(()=>photos.value.length>0&&currentTemplate.value?.cells
 
 function draw() { if(preview.value&&currentTemplate.value) geometry.value=renderCollage(preview.value,currentTemplate.value,photos.value,settings,{size:settings.mode==='carousel'?540:800,guides:true,selected:activeIndex.value}) }
 function scheduleDraw(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()})}
-function drawThumbnail(el,item){if(el)renderCollage(el,item,[],{...settings,spacing:16,border:16,radius:settings.radius},{size:120})}
+const vThumbnail=createThumbnailDirective((el,item,thumbnailSettings)=>renderCollage(el,item,[],{...thumbnailSettings,spacing:16,border:16},{size:120}))
 watch([settings,photos,templateId,activeIndex],scheduleDraw,{deep:true})
 watch(()=>settings.mode,()=>{if(!aspects.value.includes(settings.aspect))settings.aspect='1:1';templateId.value=availableTemplates.value.find(t=>t.cells.length===photos.value.length)?.id||availableTemplates.value[0].id;drag=null;pinch=null;pointers.clear()})
 function selectTemplate(item){templateId.value=item.id;activeIndex.value=-1;message.value=''}
@@ -121,7 +122,6 @@ function resetAt(event){activeIndex.value=indexAt(event);resetPhoto()}
 function exportCanvas(){const canvas=document.createElement('canvas');renderCollage(canvas,currentTemplate.value,photos.value,settings);return canvas}
 async function exportImage(){if(!canExport.value||busy.value)return;busy.value=true;message.value='';try{const canvas=exportCanvas();downloadBlob(settings.mode==='carousel'?await carouselZip(canvas,settings.slides):await canvasBlob(canvas),settings.mode==='carousel'?'collage-carousel.zip':'collage.png');message.value='已导出，请查看浏览器下载。'}catch(e){message.value=`导出失败：${e.message}`}finally{busy.value=false}}
 async function sendEditable(){if(!canExport.value||busy.value)return;busy.value=true;try{const payload=await createCollageTransfer(currentTemplate.value,settings,photos.value);takeEditorproPendingImage();setPendingCollage(payload);await router.push('/editorpro')}catch(e){message.value=`打开编辑器失败：${e.message}`}finally{busy.value=false}}
-async function sendToEditor(){if(!canExport.value||busy.value)return;busy.value=true;try{const canvas=exportCanvas();takePendingCollage();setEditorproPendingImage(canvas.toDataURL('image/png'),{title:'图片拼图'});await router.push('/editorpro')}catch(e){message.value=`打开编辑器失败：${e.message}`}finally{busy.value=false}}
 onMounted(draw)
 onBeforeUnmount(()=>{disposed=true;cancelAnimationFrame(raf);photos.value.forEach(photo=>URL.revokeObjectURL(photo.url));pointers.clear()})
 </script>

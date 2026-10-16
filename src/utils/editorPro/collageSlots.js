@@ -1,6 +1,6 @@
 import { fabric } from 'fabric'
 import { v4 as uuid } from 'uuid'
-import { layoutCells, cellPath, shapePath, imagePlacement, clamp } from '@/utils/collage/renderer'
+import { canvasSize, layoutCells, cellPath, shapePath, imagePlacement, clamp } from '@/utils/collage/renderer'
 import { SvgPath } from '@/utils/collage/svgPath'
 
 export const COLLAGE_CHANGED = 'collage:changed'
@@ -117,7 +117,7 @@ export function reflowCollage(editor, root, preserveRoot = false) {
   if (!root?.kidstoryCollage) return
   const { template, settings }=root.kidstoryCollage
   const frame=collageFrame(editor,root),editing=frameEditing.has(root)
-  const factor=Math.min(frame.width,frame.height)/1080
+  const factor=(settings.mode==='carousel'?frame.width/settings.slides:Math.min(frame.width,frame.height))/1080
   const border=settings.border*factor
   const cells=layoutCells(template,frame.width,frame.height,settings.spacing*factor,border)
   if(!preserveRoot)root.set({ left:frame.left,top:frame.top,width:frame.width,height:frame.height,scaleX:1,scaleY:1,fill:'rgba(0,0,0,0)',
@@ -199,7 +199,7 @@ function placeholder(index) {
   return canvas.toDataURL('image/png')
 }
 
-export async function importEditableCollage(editor, payload) {
+export async function importEditableCollage(editor, payload, { preserveCanvasSize = false } = {}) {
   if (payload.schema!==1||!Array.isArray(payload.template?.cells)||payload.template.cells.length>25) throw new Error('无效的拼图模板')
   const template=JSON.parse(JSON.stringify(payload.template))
   const settings={...DEFAULT_SETTINGS,...payload.settings}
@@ -213,6 +213,11 @@ export async function importEditableCollage(editor, payload) {
     id:uuid(),name:`拼图照片 ${i+1}`,originSrc:src,kidstoryCollageId:root.id,kidstoryCollageIndex:i,
     kidstoryCollagePhoto:{zoom:photo?.zoom||1,panX:photo?.panX||0,panY:photo?.panY||0},kidstoryPhotoFilled:Boolean(photo),
   }))
+  if (preserveCanvasSize) {
+    const size=canvasSize(settings.aspect,settings.mode==='carousel'?settings.slides:1)
+    editor.setSize(size.width,size.height)
+    editor.getWorkspase().set({fill:settings.background})
+  }
   editor.canvas.discardActiveObject()
   editor.canvas.add(root,...slots)
   reflowCollage(editor,root)
