@@ -33,6 +33,7 @@ function normalizeCheckedImages(items) {
       return {
         _id: item._id,
         content: item.content,
+        thumbnail: item.thumbnail || '',
         title: item.title,
       }
     })

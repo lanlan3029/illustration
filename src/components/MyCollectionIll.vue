@@ -8,7 +8,7 @@
           >
             <div class="index2-avatar">
               <el-image lazy loading="lazy" decoding="async"
-                :src="(`https://static.kidstory.cc/`+item.content)"
+                :src="$illustrationPreview(item)" @error="$thumbnailFailed(item)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"
                 @click="toDetail(item._id)"

@@ -47,7 +47,7 @@
               @click="goBookDetails(item._id)"
             >
               <el-image lazy loading="lazy" decoding="async"
-                :src="getBookCover(item)"
+                :src="$illustrationPreview({ content: getBookCover(item), cover_thumbnail: item.cover_thumbnail })" @error="$thumbnailFailed(item)"
                 style="width: 100%; height: 100%"
                 fit="cover"
               >
@@ -74,7 +74,7 @@
             @click="goIllusDetails(item._id)"
           >
             <el-image lazy loading="lazy" decoding="async"
-              :src="getIllImageUrl(item)"
+              :src="$illustrationPreview(item)" @error="$thumbnailFailed(item)"
               style="width: 250px; height: 176px"
               fit="contain"
             >
@@ -100,7 +100,7 @@
             @click="goBookDetails(item._id)"
           >
             <el-image lazy loading="lazy" decoding="async"
-              :src="getBookCover(item)"
+              :src="$illustrationPreview({ content: getBookCover(item), cover_thumbnail: item.cover_thumbnail })" @error="$thumbnailFailed(item)"
               style="width: 250px; height: 176px"
               fit="contain"
             >

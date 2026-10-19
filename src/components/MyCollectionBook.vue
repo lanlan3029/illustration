@@ -27,7 +27,7 @@
       >
         <div class="card-image" @click="goBookDetails(item._id)">
           <el-image lazy loading="lazy" decoding="async"
-            :src="getBookCoverUrl(item)"
+            :src="$illustrationPreview({ content: getBookCoverUrl(item), cover_thumbnail: item.cover_thumbnail })" @error="$thumbnailFailed(item)"
             fit="cover"
             class="cover-image"
           >

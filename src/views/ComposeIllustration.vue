@@ -95,7 +95,7 @@
                             }"
                         >
                             <img decoding="async"
-                                v-lazy-image="illThumbUrl(item)"
+                                v-lazy-image="$illustrationPreview(item)" @error="$thumbnailFailed(item)"
                                 style="width:100%; height:100%; object-fit:cover"
                                 :alt="item.title || ''"
                             />
@@ -121,7 +121,7 @@
                         @click="handleAdd(item)"
                         :class="{ selected: isSelected(item) }"
                     >
-                        <img v-lazy-image="illThumbUrl(item)" :alt="item.title || ''" class="illus-thumb" decoding="async" />
+                        <img v-lazy-image="$illustrationPreview(item)" @error="$thumbnailFailed(item)" :alt="item.title || ''" class="illus-thumb" decoding="async" />
                         <span v-if="isSelected(item)" class="check-mark">
                             <i class="el-icon-check"></i>
                         </span>

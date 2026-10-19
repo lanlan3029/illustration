@@ -15,7 +15,7 @@
             <div v-for="item in illArr" :key="item._id" class="ill-item">
               <img
                 class="ill-image"
-                v-lazy-image="`https://static.kidstory.cc/${item.content}`" decoding="async"
+                v-lazy-image="$illustrationPreview(item)" @error="$thumbnailFailed(item)" decoding="async"
                 :alt="item.title || '插画'"
                 @click="handlePickIll(item)"
               />

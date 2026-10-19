@@ -70,6 +70,7 @@ import useCalculate from '@/components/editorPro/hooks/useCalculate';
 import axios from 'axios';
 import { computed, onMounted, onBeforeUnmount, onDeactivated, onActivated, reactive, ref, nextTick, watch } from 'vue';
 import { useStore } from 'vuex';
+import { markIllustrationThumbnailFailed } from '@/utils/illustrationImages';
 import { createMaterialPager, materialImageUrl, materialPreviewUrl } from '@/utils/editorPro/materialLibrary';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'view-ui-plus';
@@ -136,6 +137,7 @@ const getImageSrc = materialImageUrl;
 const currentQuery = () => ({ type: selectType.value, keyword: searchInput.value.trim() });
 
 function handlePreviewError(event, item) {
+  markIllustrationThumbnailFailed(item);
   const original = getImageSrc(item);
   if (original && event.target.src !== original) event.target.src = original;
 }

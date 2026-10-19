@@ -65,7 +65,8 @@
                                     shadow="hover">
                                     <div class="card-image">
                                         <el-image lazy loading="lazy" decoding="async"
-                                            :src="getImageUrl(image)" 
+                                            :src="$illustrationPreview({ content: getImageUrl(image), thumbnail: group.image_thumbnails?.[imgIndex] })"
+                                            @error="$thumbnailFailed({ thumbnail: group.image_thumbnails?.[imgIndex] })"
                                             fit="cover"
                                             class="cover-image"
                                             :preview-src-list="group.image_urls.map(img => getImageUrl(img))">
@@ -217,6 +218,7 @@ export default {
                             title: '角色组图',
                             created_at: '',
                             image_urls: filtered.map(img => this.pickImageUrl(img)),
+                            image_thumbnails: filtered.map(img => img.thumbnail || ''),
                             image_ids: filtered.map(img => img._id || img.id).filter(Boolean)
                         }];
                         // 走缓存直接返回
@@ -243,7 +245,8 @@ export default {
                         title: '角色插画',
                         created_at: '',
                         image_urls: filtered.map(img => this.pickImageUrl(img)),
-                        image_ids: filtered.map(img => img._id || img.id).filter(Boolean)
+                        image_thumbnails: filtered.map(img => img.thumbnail || ''),
+                            image_ids: filtered.map(img => img._id || img.id).filter(Boolean)
                     }].filter(group => group.image_urls.length > 0);
                 } else {
                     console.warn('获取角色关联插画失败:', res.data);
@@ -384,6 +387,7 @@ export default {
                 if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
                     // 从本地数据中删除该图片
                     group.image_urls.splice(imgIndex, 1);
+                    group.image_thumbnails?.splice(imgIndex, 1);
                     
                     // 如果组图数据中有插画ID数组，也删除对应的ID
                     if (group.image_ids && Array.isArray(group.image_ids)) {

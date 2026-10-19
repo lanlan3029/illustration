@@ -58,7 +58,7 @@
             class="ill-picker-item"
             @click="fillFromIll(item)"
           >
-            <img :src="illThumb(item)" :alt="item.title || ''" loading="lazy" />
+            <img :src="$illustrationPreview(item)" @error="$thumbnailFailed(item)" :alt="item.title || ''" loading="lazy" />
           </button>
         </div>
       </div>

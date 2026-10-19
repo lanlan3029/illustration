@@ -36,7 +36,7 @@
           <div class="item" v-for="(item, index) in searchArry" :key="index">
             <el-card style="width: 20vw" >
               <div>
-                <el-image lazy loading="lazy" decoding="async" :src="(`https://static.kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)" />
+                <el-image lazy loading="lazy" decoding="async" :src="$illustrationPreview({ content: item.content[0], cover_thumbnail: item.cover_thumbnail })" @error="$thumbnailFailed(item)" class="image" fit="cover" @click="toDetail(item._id)" />
                  <div class="data">
                 <span class="name">{{item.title}}</span>
                 <div class="icon">

@@ -25,7 +25,7 @@
           class="ill-item"
           @click="pick(item)"
         >
-          <img :src="illUrl(item)" :alt="item.title || ''" loading="lazy" />
+          <img :src="$illustrationPreview(item)" @error="$thumbnailFailed(item)" :alt="item.title || ''" loading="lazy" />
           <span v-if="item.title" class="ill-title">{{ item.title }}</span>
         </button>
         <p v-if="loading && !list.length" class="ill-tip">{{ $t('common.loading') }}</p>

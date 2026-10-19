@@ -1,3 +1,4 @@
+import { illustrationPreviewUrl } from '../illustrationImages'
 const STATIC_ORIGIN = 'https://static.kidstory.cc/'
 
 export function materialImageUrl(item) {
@@ -10,8 +11,7 @@ export function materialImageUrl(item) {
 }
 
 export function materialPreviewUrl(item) {
-  const preview = item?.thumbnail || item?.thumbnail_url || item?.thumb_url
-  return materialImageUrl({ content: preview }) || materialImageUrl(item)
+  return illustrationPreviewUrl(item) || materialImageUrl(item)
 }
 
 export function extractMaterialList(data) {

@@ -160,7 +160,7 @@
                 <el-icon><Delete /></el-icon>
               </button>
               <el-image lazy loading="lazy" decoding="async"
-                :src="`https://static.kidstory.cc/${item.content}`"
+                :src="$illustrationPreview(item)" @error="$thumbnailFailed(item)"
                 fit="cover"
                 class="cover-image"
               >
@@ -239,7 +239,7 @@
           >
             <div class="card-image" @click="goReadBook(item._id)">
               <el-image lazy loading="lazy" decoding="async"
-                :src="getBookCoverUrl(item)"
+                :src="$illustrationPreview({ content: getBookCoverUrl(item), cover_thumbnail: item.cover_thumbnail })" @error="$thumbnailFailed(item)"
                 fit="cover"
                 class="cover-image"
               >

@@ -67,7 +67,7 @@
               @dragstart="onDragStartIll($event, item)"
               @dragend="onDragEndIll"
             >
-              <img v-lazy-image="illUrl(item)" decoding="async" alt="" />
+              <img v-lazy-image="$illustrationPreview(item)" @error="$thumbnailFailed(item)" decoding="async" alt="" />
               <span class="pbl-order">{{ idx + 1 }}</span>
             </div>
           </div>
@@ -87,7 +87,7 @@
             :class="{ 'is-selected': isIllSelected(item), 'is-active-pick': activeIllId === item._id }"
             @click="pickIll(item, $event)"
           >
-            <img v-lazy-image="illUrl(item)" decoding="async" alt="" />
+            <img v-lazy-image="$illustrationPreview(item)" @error="$thumbnailFailed(item)" decoding="async" alt="" />
             <span v-if="isIllSelected(item)" class="pbl-batch-mark">{{ $t('printBookLayout.batchMark') }}</span>
           </button>
           <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>
@@ -135,7 +135,7 @@
                     >
                       <img
                         v-if="block.pages[0].illustration"
-                        :src="illUrl(block.pages[0].illustration)"
+                        v-lazy-image="$illustrationPreview(block.pages[0].illustration)" @error="$thumbnailFailed(block.pages[0].illustration)"
                         class="pbl-face-img"
                         alt=""
                       />
@@ -158,7 +158,7 @@
                       </span>
                       <img
                         v-if="pg.illustration"
-                        :src="illUrl(pg.illustration)"
+                        v-lazy-image="$illustrationPreview(pg.illustration)" @error="$thumbnailFailed(pg.illustration)"
                         class="pbl-face-img"
                         alt=""
                       />

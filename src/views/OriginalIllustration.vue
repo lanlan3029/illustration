@@ -22,7 +22,7 @@
           <div class="item" v-for="item in illsArry" :key="item._id">
             <div>
               <el-image lazy loading="lazy" decoding="async"
-                :src="`https://static.kidstory.cc/` + item.content"
+                :src="$illustrationPreview(item)" @error="$thumbnailFailed(item)"
                 class="image"
                 fit="cover"
                 @click="toDetail(item._id)"

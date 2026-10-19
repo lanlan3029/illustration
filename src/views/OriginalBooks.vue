@@ -41,7 +41,7 @@
               <div class="book-cover">
                 <el-image
                   v-if="item.cover"
-                  :src="coverUrl(item.cover)"
+                  :src="$illustrationPreview({ content: item.cover, cover_thumbnail: item.cover_thumbnail })" @error="$thumbnailFailed(item)"
                   :alt="item.title"
                   class="book-image"
                   fit="contain"
@@ -306,6 +306,11 @@ export default {
         const book = this.toolArry[idx]
         if (!book) continue
         const firstId = Array.isArray(book.content) ? book.content[0] : null
+        const original = book.content_snapshot?.[0]?.path || firstId
+        if (original && (/^(https?:|data:)/.test(original) || original.includes('/'))) {
+          book.cover = original
+          continue
+        }
         if (!firstId) {
           this.toolArry[idx].cover = ''
           continue
