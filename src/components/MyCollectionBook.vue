@@ -26,7 +26,7 @@
         shadow="hover"
       >
         <div class="card-image" @click="goBookDetails(item._id)">
-          <el-image
+          <el-image lazy loading="lazy" decoding="async"
             :src="getBookCoverUrl(item)"
             fit="cover"
             class="cover-image"

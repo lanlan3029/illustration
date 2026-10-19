@@ -20,7 +20,7 @@
             :key="index" 
             v-show="!failedImages.includes(index)"
             class="item">
-            <el-image 
+            <el-image lazy loading="lazy" decoding="async"
               :src="getImageUrl(item)" 
               class="page-image"
               fit="cover"

@@ -53,10 +53,10 @@
                                     @mouseleave="beginLeaveStylePreview"
                                 >
                                     <img
-                                        :src="styleListImage(style)"
+                                        v-lazy-style-image="styleListImage(style)"
                                         :alt="style.artStyle"
                                         class="style-list-item-img"
-                                        loading="lazy"
+                                        decoding="async"
                                         @error="onStyleImageError(style)"
                                     />
                                 </div>
@@ -80,10 +80,10 @@
                                         @mouseleave="beginLeaveStylePreview"
                                     >
                                         <img
-                                            :src="item.image"
+                                            v-lazy-style-image="item.image"
                                             :alt="item.title"
                                             class="style-list-item-img"
-                                            loading="lazy"
+                                            decoding="async"
                                         />
                                     </div>
                                     <div v-else class="style-list-item-thumb">
@@ -513,6 +513,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
+import lazyStyleImage from '@/directives/lazyStyleImage'
 import { illustrationStyleCategory } from '@/data/illustrationStyleClassification'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElImageViewer } from 'element-plus'
@@ -559,6 +560,7 @@ import {
 } from '@/utils/illustrationStyleTabs'
 
 export default {
+    directives: { lazyStyleImage },
     name: 'AIPicture',
     components: { ElImageViewer },
     setup() {

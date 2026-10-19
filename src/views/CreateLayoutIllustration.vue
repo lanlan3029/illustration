@@ -33,7 +33,7 @@
                                 @dragstart="handleCharacterDragStart(character, $event)"
                                 @dragend="handleCharacterDragEnd">
                                 <div class="character-image">
-                                    <el-image
+                                    <el-image lazy loading="lazy" decoding="async"
                                         :src="getCharacterImageUrl(character)"
                                         fit="cover"
                                         class="character-img">

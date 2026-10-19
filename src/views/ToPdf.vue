@@ -328,7 +328,7 @@
               <div v-if="page.blank || !page.src" class="topdf-page-blank">
                 {{ $t('toPdf.blankPage') }}
               </div>
-              <el-image v-else :src="page.src" fit="contain" class="topdf-page-img" />
+              <el-image lazy loading="lazy" decoding="async" v-else :src="page.src" fit="contain" class="topdf-page-img" />
               <div class="topdf-page-hover">
                 <el-button size="small" type="primary" @click.stop="openReplacePicker(index)">
                   {{ page.blank || !page.src ? $t('toPdf.pickIllustration') : $t('toPdf.replaceIllustration') }}

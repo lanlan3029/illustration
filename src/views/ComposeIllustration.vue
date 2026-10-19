@@ -94,10 +94,10 @@
                                 'drag-over': dragOverIndex === index && dragIndex !== index,
                             }"
                         >
-                            <el-image
-                                :src="illThumbUrl(item)"
-                                style="width:100%; height:100%"
-                                fit="cover"
+                            <img decoding="async"
+                                v-lazy-image="illThumbUrl(item)"
+                                style="width:100%; height:100%; object-fit:cover"
+                                :alt="item.title || ''"
                             />
                             <div class="selected-order">{{ index + 1 }}</div>
                             <div class="selected-remove" @click.stop="removeSelected(index)">
@@ -121,7 +121,7 @@
                         @click="handleAdd(item)"
                         :class="{ selected: isSelected(item) }"
                     >
-                        <el-image :src="illThumbUrl(item)" fit="cover" class="illus-thumb" loading="lazy" />
+                        <img v-lazy-image="illThumbUrl(item)" :alt="item.title || ''" class="illus-thumb" decoding="async" />
                         <span v-if="isSelected(item)" class="check-mark">
                             <i class="el-icon-check"></i>
                         </span>
@@ -790,6 +790,8 @@ export default {
 }
 
 .illus-thumb {
+    object-fit: cover;
+    display: block;
     width: 100%;
     height: 100%;
 }

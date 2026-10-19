@@ -98,7 +98,7 @@
               >
                 <el-icon><Delete /></el-icon>
               </button>
-              <el-image
+              <el-image lazy loading="lazy" decoding="async"
                 :src="getImageUrl(item.image_url)"
                 fit="contain"
                 class="cover-image"
@@ -159,7 +159,7 @@
               >
                 <el-icon><Delete /></el-icon>
               </button>
-              <el-image
+              <el-image lazy loading="lazy" decoding="async"
                 :src="`https://static.kidstory.cc/${item.content}`"
                 fit="cover"
                 class="cover-image"
@@ -238,7 +238,7 @@
             shadow="hover"
           >
             <div class="card-image" @click="goReadBook(item._id)">
-              <el-image
+              <el-image lazy loading="lazy" decoding="async"
                 :src="getBookCoverUrl(item)"
                 fit="cover"
                 class="cover-image"
@@ -1064,7 +1064,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
             await this.loadBookCovers()
             if (requestId !== this.bookRequestId) return
             this.setBooks()
-            this.loadAllBookImages()
+            // Lists only need covers; page URLs are resolved when opening a book.
           } else {
             this.toolArr = []
             this.hasMoreBooks = false
@@ -1116,7 +1116,7 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
         await this.loadBookCovers()
         if (requestId !== this.bookRequestId) return
         this.setBooks()
-        this.loadAllBookImages()
+        // Inner pages are loaded by the reader, not by the book list.
 
         // 同上：不使用返回条数 < perPage 来判断是否结束
       } catch (err) {
@@ -1166,38 +1166,6 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
       // 并行加载所有封面
       await Promise.allSettled(coverPromises);
       this.loadingBookCovers = false;
-    },
-    
-    // 后台加载所有图片URL（不阻塞显示）
-    async loadAllBookImages(){
-      // 获取 token 并添加到请求头
-      const token = localStorage.getItem('token');
-      const headers = {};
-      if (token && token !== 'undefined') {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      for(let i = 0; i < this.toolArr.length; i++){
-        const book = this.toolArr[i];
-        if(book.content && Array.isArray(book.content)){
-          // 从第二张图片开始加载（第一张封面已经加载了）
-          for(let j = 1; j < book.content.length; j++){
-            if(/^[a-f\d]{24}$/i.test(book.content[j] || '')){
-              // 如果是图片ID（字符串），需要获取URL
-              try{
-                const res = await this.$http.get(`/ill/${book.content[j]}`, { headers });
-                if(res.data && res.data.message && res.data.message.content){
-                  book.content[j] = res.data.message.content;
-                  // 更新store中的数据
-                  this.setBooks();
-                }
-              } catch(err){
-                console.error(`加载绘本图片失败 (ID: ${book.content[j]}):`, err);
-              }
-            }
-          }
-        }
-      }
     },
     
     //获取我的绘本的图片（保留原方法，以防需要）

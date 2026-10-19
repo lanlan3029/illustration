@@ -39,10 +39,10 @@
                                     <div class="style-picker-thumb">
                                         <img
                                             v-if="style.image"
-                                            :src="style.image"
+                                            v-lazy-image="style.image"
                                             :alt="style.artStyle"
                                             class="style-picker-img"
-                                            loading="lazy"
+                                            decoding="async"
                                         />
                                         <div v-else class="style-picker-fallback" aria-hidden="true" />
                                     </div>
@@ -248,7 +248,7 @@
                                 class="story-page-card"
                                 shadow="hover">
                                 <div class="card-image">
-                                    <el-image
+                                    <el-image lazy loading="lazy" decoding="async"
                                         v-if="getPageImageUrl(index)"
                                         :src="getPageImageUrl(index)"
                                         fit="cover"

@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import lazyImage from './directives/lazyImage'
 import router from './router'
 import customComponents from '@/custom-component' // 注册自定义组件
 import store from './store'
@@ -46,6 +47,7 @@ function redirectLegacyHashRoutes() {
 redirectLegacyHashRoutes()
 
 const app = createApp(App)
+app.directive('lazy-image', lazyImage)
 
 // View UI Plus 仅用于编辑器，首次直达和站内跳转都在渲染前完成注册。
 router.beforeResolve(async (to) => {

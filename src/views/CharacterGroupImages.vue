@@ -64,7 +64,7 @@
                                     class="content-card"
                                     shadow="hover">
                                     <div class="card-image">
-                                        <el-image 
+                                        <el-image lazy loading="lazy" decoding="async"
                                             :src="getImageUrl(image)" 
                                             fit="cover"
                                             class="cover-image"

@@ -36,7 +36,7 @@
           <div class="item" v-for="(item, index) in searchArry" :key="index">
             <el-card style="width: 20vw" >
               <div>
-                <el-image :src="(`https://static.kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)"/>
+                <el-image lazy loading="lazy" decoding="async" :src="(`https://static.kidstory.cc/`+item.content[0])" class="image" fit="cover" @click="toDetail(item._id)" />
                  <div class="data">
                 <span class="name">{{item.title}}</span>
                 <div class="icon">
@@ -122,7 +122,8 @@
         //获取绘本图片ID
         let tool=this.toolArry[i].content
         //遍历绘本图片ID，替换成图片URL
-        for(var j=0;j<tool.length;j++){
+        for(var j=0;j<Math.min(tool.length, 1);j++){
+          if (!/^[a-f\d]{24}$/i.test(tool[j] || '')) continue
           try{
             let res=await this.$http.get(`/ill/`+tool[j])
             this.toolArry[i].content[j]=res.data.message.content

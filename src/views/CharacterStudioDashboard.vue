@@ -34,7 +34,7 @@
         @click="onCardClick(item)"
       >
         <div class="cs-card-thumb">
-          <img :src="getImageUrl(item.image_url || item.character_image_url)" :alt="item.character_name" />
+          <img v-lazy-image="getImageUrl(item.image_url || item.character_image_url)" decoding="async" :alt="item.character_name" />
         </div>
         <div class="cs-card-meta">
           <span class="cs-card-name">{{ item.character_name || $t('characterStudio.unnamed') }}</span>

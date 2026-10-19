@@ -67,7 +67,7 @@
               @dragstart="onDragStartIll($event, item)"
               @dragend="onDragEndIll"
             >
-              <img :src="illUrl(item)" alt="" />
+              <img v-lazy-image="illUrl(item)" decoding="async" alt="" />
               <span class="pbl-order">{{ idx + 1 }}</span>
             </div>
           </div>
@@ -87,7 +87,7 @@
             :class="{ 'is-selected': isIllSelected(item), 'is-active-pick': activeIllId === item._id }"
             @click="pickIll(item, $event)"
           >
-            <img :src="illUrl(item)" alt="" />
+            <img v-lazy-image="illUrl(item)" decoding="async" alt="" />
             <span v-if="isIllSelected(item)" class="pbl-batch-mark">{{ $t('printBookLayout.batchMark') }}</span>
           </button>
           <p v-if="loadingIll" class="pbl-load-tip">{{ $t('common.loading') }}</p>

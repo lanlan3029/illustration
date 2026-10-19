@@ -46,7 +46,7 @@
               :key="item._id || index"
               @click="goBookDetails(item._id)"
             >
-              <el-image
+              <el-image lazy loading="lazy" decoding="async"
                 :src="getBookCover(item)"
                 style="width: 100%; height: 100%"
                 fit="cover"
@@ -73,7 +73,7 @@
             :key="item._id || index"
             @click="goIllusDetails(item._id)"
           >
-            <el-image
+            <el-image lazy loading="lazy" decoding="async"
               :src="getIllImageUrl(item)"
               style="width: 250px; height: 176px"
               fit="contain"
@@ -99,7 +99,7 @@
             :key="item._id || index"
             @click="goBookDetails(item._id)"
           >
-            <el-image
+            <el-image lazy loading="lazy" decoding="async"
               :src="getBookCover(item)"
               style="width: 250px; height: 176px"
               fit="contain"

@@ -6,7 +6,7 @@
       <div v-for="item in list" :key="item._id || item.id" class="char-item">
         <img
           class="char-image"
-          :src="getImageSrc(item)"
+          v-lazy-image="getImageSrc(item)" decoding="async"
           :alt="item.character_name || 'character'"
           @click="handlePick(item)"
         />

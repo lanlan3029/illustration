@@ -94,7 +94,7 @@
                                         :class="{ active: artStyleKey === s.key }"
                                         @click="selectStyle(s.key)"
                                     >
-                                        <img :src="s.image" :alt="s.artStyle" />
+                                        <img v-lazy-image="s.image" decoding="async" :alt="s.artStyle" />
                                         <span>{{ s.artStyle }}</span>
                                     </button>
                                 </div>
@@ -163,7 +163,7 @@
                                     class="content-card"
                                     shadow="hover">
                                     <div class="card-image">
-                                <el-image 
+                                <el-image lazy loading="lazy" decoding="async"
                             :src="image.url || image" 
                                             fit="cover"
                                             class="cover-image"

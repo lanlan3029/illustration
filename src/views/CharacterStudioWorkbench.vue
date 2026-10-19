@@ -80,7 +80,7 @@
                 :class="{ active: artStyleKey === s.key }"
                 @click="artStyleKey = s.key"
               >
-                <img :src="s.image" :alt="s.artStyle" />
+                <img v-lazy-image="s.image" decoding="async" :alt="s.artStyle" />
                 <span>{{ s.artStyle }}</span>
               </button>
             </div>

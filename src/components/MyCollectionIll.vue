@@ -7,7 +7,7 @@
             :key="index"
           >
             <div class="index2-avatar">
-              <el-image
+              <el-image lazy loading="lazy" decoding="async"
                 :src="(`https://static.kidstory.cc/`+item.content)"
                 style="width: 250px; height: 176px;cursor:pointer"
                 fit="contain"

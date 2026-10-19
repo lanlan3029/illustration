@@ -21,7 +21,7 @@
         <div class="items" v-infinite-scroll="load">
           <div class="item" v-for="item in illsArry" :key="item._id">
             <div>
-              <el-image
+              <el-image lazy loading="lazy" decoding="async"
                 :src="`https://static.kidstory.cc/` + item.content"
                 class="image"
                 fit="cover"
