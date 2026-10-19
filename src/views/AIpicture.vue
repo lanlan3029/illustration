@@ -513,6 +513,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
+import { originalImageExtension } from '@/utils/illustrationDownload'
 import lazyStyleImage from '@/directives/lazyStyleImage'
 import { illustrationStyleCategory } from '@/data/illustrationStyleClassification'
 import { useI18n } from 'vue-i18n'
@@ -1950,11 +1951,13 @@ export default {
                 const link = document.createElement('a')
                 link.href = this.generatedImageUrl
                 const timestamp = new Date().getTime()
-                link.download = `illustration_${timestamp}.jpg`
+                const mime = this.generatedImageUrl.match(/^data:([^;,]+)/)?.[1] || ''
+                link.download = `illustration_${timestamp}.${originalImageExtension(mime, this.generatedImageUrl)}`
                 if (this.generatedImageUrl.startsWith('http://') || this.generatedImageUrl.startsWith('https://')) {
                     try {
                         const response = await fetch(this.generatedImageUrl)
                         const blob = await response.blob()
+                        link.download = `illustration_${timestamp}.${originalImageExtension(blob.type, this.generatedImageUrl)}`
                         const blobUrl = window.URL.createObjectURL(blob)
                         link.href = blobUrl
                         document.body.appendChild(link)

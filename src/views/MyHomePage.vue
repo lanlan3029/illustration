@@ -334,6 +334,7 @@ import MyCollectionIll from '../components/MyCollectionIll.vue'
 import MyCollectionBook from '../components/MyCollectionBook.vue'
 import MyAttention from '../components/MyAttention.vue'
 import MyFans from '../components/MyFans.vue'
+import { fetchIllustrationPng } from '@/utils/illustrationDownload'
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage'
 import { getBookSource, readLocalAiBook } from '@/utils/bookLibrary'
 export default {
@@ -587,14 +588,11 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
 
       this.downloadingIllId = illId;
       try {
-        const ext = this.getIllDownloadExt(imageUrl, item.content);
         const baseName = (item.title || this.$t('myHomePage.unnamedIllustration'))
           .replace(/[\\/:*?"<>|]/g, '_');
-        const filename = `${baseName}.${ext}`;
+        const filename = `${baseName}.png`;
 
-        const response = await fetch(imageUrl);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const blob = await response.blob();
+        const blob = await fetchIllustrationPng(imageUrl);
         const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = blobUrl;
@@ -606,28 +604,10 @@ MyCollectionIll,MyCollectionBook,MyAttention,MyFans,CloseBold,Delete
         ElMessage.success(this.$t('myHomePage.downloadSuccess'));
       } catch (error) {
         console.error('下载插画失败:', error);
-        try {
-          const link = document.createElement('a');
-          link.href = imageUrl;
-          link.target = '_blank';
-          link.rel = 'noopener';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          ElMessage.info(this.$t('myHomePage.downloadFallback'));
-        } catch {
-          ElMessage.error(this.$t('myHomePage.downloadFailed'));
-        }
+        ElMessage.error(this.$t('myHomePage.downloadFailed'));
       } finally {
         this.downloadingIllId = null;
       }
-    },
-    getIllDownloadExt(url, content) {
-      const src = (content || url || '').split('?')[0];
-      const match = src.match(/\.(jpe?g|png|webp|gif)$/i);
-      if (!match) return 'png';
-      const ext = match[1].toLowerCase();
-      return ext === 'jpeg' ? 'jpg' : ext;
     },
     // 处理删除插画（显示确认弹窗）
     handleDeleteIll(item) {
