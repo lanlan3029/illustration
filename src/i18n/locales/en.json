@@ -933,6 +933,8 @@
     "startGenerate": "Start Generating Book",
     "downloadAll": "Download All Images",
     "collectIllustration": "Collect Illustration",
+    "collectedIllustration": "Collected",
+    "collectingIllustration": "Collecting…",
     "page": "Page {page}",
     "emptyState": "Please enter a prompt on the left and generate a picture book",
     "loading": "Loading...",

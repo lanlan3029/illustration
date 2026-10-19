@@ -307,8 +307,10 @@
                                             v-if="getPageImageUrl(index)"
                                             type="primary"
                                             size="small"
+                                            :loading="!!collectingImageUrls[getPageImageUrl(index)]"
+                                            :disabled="isIllustrationCollected(getPageImageUrl(index))"
                                             @click="collectIllustration(getPageImageUrl(index), index)">
-                                            {{ $t('aibooks.collectIllustration') }}
+                                            {{ $t(isIllustrationCollected(getPageImageUrl(index)) ? 'aibooks.collectedIllustration' : collectingImageUrls[getPageImageUrl(index)] ? 'aibooks.collectingIllustration' : 'aibooks.collectIllustration') }}
                                         </el-button>
                                     </div>
                                 </div>
@@ -398,6 +400,7 @@ export default {
     data() {
         return {
             downloading: false,
+            collectingImageUrls: {},
             form: {
                 prompt: '',
                 targetPages: 10,
@@ -1325,13 +1328,19 @@ export default {
             return imageUrl || ''
         },
 
+        isIllustrationCollected(imageUrl) {
+            return !!imageUrl && !!this.bookData?.collectedImageUrls?.includes(imageUrl);
+        },
+
         // 收集插画（只保存纯插画；图下文案仅在「下载全部」时拼接）
         async collectIllustration(imageUrl, index) {
             if (!imageUrl) {
                 ElMessage.warning('图片尚未生成，请稍候');
                 return;
             }
-            
+            if (this.isIllustrationCollected(imageUrl) || this.collectingImageUrls[imageUrl]) return;
+            const bookData = this.bookData;
+            this.collectingImageUrls[imageUrl] = true;
             try {
                 ElMessage.info(`正在保存第 ${index + 1} 张插画...`);
                 
@@ -1361,6 +1370,8 @@ export default {
                 });
                 
                 if (response.data && (response.data.desc === 'success' || response.data.code === 0 || response.data.code === '0')) {
+                    bookData.collectedImageUrls = [...new Set([...(bookData.collectedImageUrls || []), imageUrl])];
+                    this.saveToLocalStorage();
                     ElMessage.success(`第 ${index + 1} 张插画已保存到"我的插画"`);
                 } else {
                     throw new Error(response.data?.message || '保存失败');
@@ -1369,6 +1380,8 @@ export default {
                 console.error('收集插画失败:', error);
                 const errorMessage = error.response?.data?.message || error.message || '保存失败，请重试';
                 ElMessage.error(`收集插画失败: ${errorMessage}`);
+            } finally {
+                delete this.collectingImageUrls[imageUrl];
             }
         },
         

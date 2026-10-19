@@ -948,6 +948,8 @@
     "startGenerate": "开始生成绘本",
     "downloadAll": "下载所有图片",
     "collectIllustration": "收集插画",
+    "collectedIllustration": "已收集",
+    "collectingIllustration": "收集中…",
     "page": "第 {page} 页",
     "emptyState": "请在左侧输入提示词并生成绘本",
     "loading": "加载中...",
