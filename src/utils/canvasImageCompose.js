@@ -98,65 +98,59 @@ export function loadHtmlImage(src, { crossOrigin = false } = {}) {
 }
 
 /**
- * 图片在上、白底文案在下（高度约为图高的 1/3）。
+ * 图片保留原始像素；字号、留白随图宽缩放，文字区按实际行数展开。
  */
 export function composeCanvasWithText(img, text) {
-  const imageHeight = img.height
-  const imageWidth = img.width
-  const textAreaHeight = Math.floor(imageHeight / 3)
+  const imageHeight = img.naturalHeight || img.height
+  const imageWidth = img.naturalWidth || img.width
   const canvas = document.createElement('canvas')
   canvas.width = imageWidth
-  canvas.height = imageHeight + textAreaHeight
   const ctx = canvas.getContext('2d')
 
-  ctx.drawImage(img, 0, 0, imageWidth, imageHeight)
-
-  const textY = imageHeight
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, textY, imageWidth, textAreaHeight)
-
-  const padding = 40
-  const maxTextWidth = imageWidth - padding * 2
-  const fontSize = Math.max(24, Math.min(32, Math.floor(imageWidth / 30)))
+  // 2048px 宽对应 64px 字号；不同分辨率和横竖图保持相同阅读比例。
+  const fontSize = imageWidth / 32
+  const padding = imageWidth / 32
+  const verticalPadding = fontSize * 0.8
   const lineHeight = fontSize * 1.6
-  const content = text == null ? '' : String(text)
-
-  ctx.fillStyle = '#333333'
-  ctx.font = `${fontSize}px "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif`
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'top'
+  const maxTextWidth = imageWidth - padding * 2
+  const font = `${fontSize}px "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif`
+  const content = text == null ? '' : String(text).trim()
+  ctx.font = font
 
   const lines = []
-  let currentLine = ''
-  for (let i = 0; i < content.length; i++) {
-    const testLine = currentLine + content[i]
-    if (ctx.measureText(testLine).width > maxTextWidth && currentLine !== '') {
+  if (content) {
+    for (const paragraph of content.split(/\r\n|\r|\n/)) {
+      let currentLine = ''
+      for (const character of paragraph) {
+        const testLine = currentLine + character
+        if (currentLine && ctx.measureText(testLine).width > maxTextWidth) {
+          lines.push(currentLine)
+          currentLine = character
+        } else {
+          currentLine = testLine
+        }
+      }
       lines.push(currentLine)
-      currentLine = content[i]
-    } else {
-      currentLine = testLine
     }
   }
-  if (currentLine) lines.push(currentLine)
 
-  const maxLines = Math.max(1, Math.floor((textAreaHeight - padding * 2) / lineHeight))
-  const displayLines = lines.slice(0, maxLines)
-  const totalTextHeight = displayLines.length * lineHeight
-  const startY = textY + (textAreaHeight - totalTextHeight) / 2
+  const textAreaHeight = lines.length
+    ? Math.ceil(verticalPadding * 2 + lines.length * lineHeight)
+    : 0
+  // 设置高度会重置 context 状态，因此在最终画布尺寸确定后重新设置文字样式。
+  canvas.height = imageHeight + textAreaHeight
+  ctx.drawImage(img, 0, 0, imageWidth, imageHeight)
+  if (!lines.length) return canvas
 
-  displayLines.forEach((line, index) => {
-    ctx.fillText(line, padding, startY + index * lineHeight)
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, imageHeight, imageWidth, textAreaHeight)
+  ctx.fillStyle = '#333333'
+  ctx.font = font
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'top'
+  lines.forEach((line, index) => {
+    ctx.fillText(line, padding, imageHeight + verticalPadding + index * lineHeight)
   })
-
-  if (lines.length > maxLines && displayLines.length) {
-    const lastLine = displayLines[displayLines.length - 1]
-    const lastLineY = startY + (displayLines.length - 1) * lineHeight
-    const lastLineWidth = ctx.measureText(lastLine).width
-    if (lastLineWidth + ctx.measureText('...').width < maxTextWidth) {
-      ctx.fillText('...', padding + lastLineWidth, lastLineY)
-    }
-  }
-
   return canvas
 }
 
