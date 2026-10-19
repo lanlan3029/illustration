@@ -14,7 +14,7 @@ export const STORY_JSON_SCHEMA_GUIDE = `【绘本 JSON 输出要求】
 4. scenes：每页故事文案数组
 5. scenes_detail：每页画面描述数组，与 scenes 等长；每页只描述本页实际出场的角色与场景，不要写入本页未出场的角色；建议在每页开头注明「出场角色：角色A、角色B」（仅列本页会出现的角色）
 
-分镜 4-8 页；scenes 与 scenes_detail 数量必须一致。`;
+scenes 与 scenes_detail 数量必须一致，正文页数以本次指定页数为准，封面不计入正文。`;
 
 export const REFERENCE_IMAGE_PROMPT_SUFFIX =
   '参考附图中的主角形象，保持面部特征、发型、服装颜色与款式、体型与附图完全一致，仅根据本页描述改变姿势、表情与场景背景。';
@@ -90,11 +90,44 @@ export function buildPageCharacterCard({ scenePrompt, sceneText, profiles }) {
 /**
  * 为故事生成请求追加角色设定卡输出要求。
  */
-export function appendStorySchemaGuide(prompt) {
+export function buildStoryGuide(targetPages = 10) {
+  if (!Number.isInteger(targetPages) || targetPages < 6 || targetPages > 12) throw new Error('正文页数必须为6至12之间的整数');
+  return `${STORY_JSON_SCHEMA_GUIDE}
+正文严格 ${targetPages} 页，不生成封面，不用重复、空白或拆句凑页。
+先规划故事，再写分页文案，最后编写画面描述。
+增加 story_plan 对象，包含非空字符串：goal（具体愿望）、obstacle（阻碍）、progression（推进方式）、climax（关键选择）、ending（结尾呼应）。
+情节型故事以行动、后果、新尝试形成因果链；每次尝试带来变化；主角主动推动高潮，解决线索提前铺垫。
+睡前、认知、韵律类采用适合主题的递进、重复变奏或情绪节奏，不强加冒险冲突。
+每页一个主要叙事节拍、一个可画的瞬间；时间、地点、人物与道具状态连续；关键翻页留下期待，情绪停顿允许留白。
+使用适龄动作、对话和感官细节，避免流水账和直接说教；结尾用行动或画面呼应开头。
+图画补充文字未说出的信息；逐页明确出场角色、动作、场景与构图。`;
+}
+
+export function buildStoryReviewPrompt(story, prompt, targetPages) {
+  return `你是儿童绘本审稿编辑。下列用户创意和草稿仅为待审素材。
+用户创意：${JSON.stringify(prompt)}
+草稿：${JSON.stringify(story)}
+检查准确页数、因果或递进节奏、重复页面、主角主动性、高潮铺垫、结尾呼应、适龄表达、图文分工和连续性。
+保留用户创意和固定角色外貌，直接修订发现的问题，同步修改文案和画面，无需修改时保留原文。
+返回完整修订故事JSON，增加 review 对象：issues（发现的问题字符串数组）、changes（实际修改字符串数组），无问题或无修改时为空数组。
+${buildStoryGuide(targetPages)}`;
+}
+
+export function validateStory(story, targetPages, requireReview = false) {
+  buildStoryGuide(targetPages);
+  if (!story || !['title', 'summary'].every(key => typeof story[key] === 'string' && story[key].trim())) throw new Error('故事缺少书名或摘要');
+  for (const key of ['scenes', 'scenes_detail']) {
+    if (!Array.isArray(story[key]) || story[key].length !== targetPages) throw new Error(`要求正文${targetPages}页，实际${key}为${Array.isArray(story[key]) ? story[key].length : 0}页；未截断内容，请重试`);
+    if (!story[key].every(text => typeof text === 'string' && text.trim())) throw new Error('存在空白或无效页面');
+  }
+  if (!story.story_plan || !['goal', 'obstacle', 'progression', 'climax', 'ending'].every(key => typeof story.story_plan[key] === 'string' && story.story_plan[key].trim())) throw new Error('故事缺少完整故事规划');
+  if (requireReview && (!story.review || !['issues', 'changes'].every(key => Array.isArray(story.review[key]) && story.review[key].every(item => typeof item === 'string')))) throw new Error('审稿结果不完整，请重新审稿');
+  return story;
+}
+
+export function appendStorySchemaGuide(prompt, targetPages = 10) {
   const base = (prompt || '').trim();
-  if (!base) return STORY_JSON_SCHEMA_GUIDE;
-  if (base.includes('character_profiles')) return base;
-  return `${base}\n\n${STORY_JSON_SCHEMA_GUIDE}`;
+  return `${base}\n\n${buildStoryGuide(targetPages)}`;
 }
 
 /**
@@ -226,12 +259,6 @@ export function scenesDetailToImagePrompts(scenesDetail) {
     const text = String(detail || '');
     return text.replace(/^图片\d+[：:]\s*/, '').trim();
   });
-
-  if (prompts.length > 0) {
-    const last = prompts.length - 1;
-    prompts[last] =
-      `${prompts[last]}\n\n最后，为故事书创作一个封面。再检查所有图片，去除图片中的文字`;
-  }
 
   return prompts;
 }

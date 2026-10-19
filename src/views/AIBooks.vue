@@ -11,6 +11,7 @@
                         <el-form-item :label="$t('aibooks.prompt')">
                             <el-input
                                 v-model="form.prompt"
+                                :disabled="generating || generatingImages"
                                 type="textarea"
                                 :autosize="{ minRows: 10, maxRows: 24 }"
                                 resize="vertical"
@@ -19,6 +20,10 @@
                             </el-input>
                         </el-form-item>
 
+                        <el-form-item :label="$i18n.locale === 'en' ? 'Story pages' : '正文页数'">
+                            <el-input-number v-model="form.targetPages" :min="6" :max="12" :precision="0" :disabled="generating || generatingImages" />
+                            <p>{{ $i18n.locale === 'en' ? 'Cover excluded. Creation includes an additional review request.' : '不含封面。创作后会额外请求一次故事审稿。' }}</p>
+                        </el-form-item>
                         <el-form-item :label="$t('aibooks.style')">
                             <div class="style-picker-grid">
                                 <button
@@ -69,6 +74,13 @@
                         </el-form-item>
                     </el-form>
 
+                    <el-alert v-if="storyDraft && !generating" type="warning" :closable="false" :title="$i18n.locale === 'en' ? 'Draft saved; review pending' : '草稿已保留，尚未完成审稿'">
+                        <el-button :disabled="generatingImages" @click="retryStoryReview">{{ $i18n.locale === 'en' ? 'Retry review' : '重新审稿' }}</el-button>
+                    </el-alert>
+                    <el-alert v-if="storyData && storyData.review" type="success" :closable="false" :title="$i18n.locale === 'en' ? 'Story review completed' : '故事审稿完成'">
+                        <p v-for="(change, index) in storyData.review.changes" :key="index">{{ change }}</p>
+                        <p v-if="!storyData.review.changes.length">{{ $i18n.locale === 'en' ? 'No changes suggested.' : '审稿未提出修改。' }}</p>
+                    </el-alert>
                     <!-- 生成进度 -->
                     <div v-if="generating || generatingImages || (bookData && progressStatus)" class="progress-info">
                         <el-progress
@@ -340,7 +352,9 @@ import {
     buildPageCharacterCard,
     scenesDetailToImagePrompts,
     getStyleInfoText,
-    STORY_JSON_SCHEMA_GUIDE,
+    buildStoryGuide,
+    buildStoryReviewPrompt,
+    validateStory,
 } from '@/utils/aibooksPrompts'
 import {
     getPageDisplayUrl,
@@ -386,6 +400,7 @@ export default {
             downloading: false,
             form: {
                 prompt: '',
+                targetPages: 10,
                 artStyle: 'healingWatercolor' // 使用 key 作为默认值
             },
             generating: false,
@@ -394,6 +409,7 @@ export default {
             progressText: '准备开始...',
             bookData: null,
             storyData: null,
+            storyDraft: null,
             imagePrompts: [],
             /** 与 imagePrompts 一一对应，标记该提示词属于故事第几页（0-based） */
             promptSceneIndexes: [],
@@ -539,6 +555,9 @@ export default {
                 return
             }
             
+            try { buildStoryGuide(this.form.targetPages) } catch (error) { ElMessage.warning(error.message); return }
+            this.storyDraft = null
+            this.storyData = null
             this.generating = true
             this.progressPercentage = 0
             this.progressStatus = ''
@@ -555,7 +574,13 @@ export default {
                 this.progressPercentage = 10
                 this.progressText = '正在创作故事...'
                 
-                const storyData = await this.generateStory()
+                const draft = await this.generateStory()
+                this.storyDraft = { story: draft, prompt: this.form.prompt.trim(), targetPages: this.form.targetPages }
+                this.saveToLocalStorage()
+                this.progressPercentage = 60
+                this.progressText = '正在审稿并修订故事...'
+                const storyData = await this.generateStory(this.storyDraft)
+                this.storyDraft = null
                 
                 this.progressPercentage = 100
                 this.progressStatus = 'success'
@@ -582,7 +607,7 @@ export default {
             } catch (error) {
                 console.error('生成绘本失败:', error)
                 this.progressStatus = 'exception'
-                this.progressText = '生成失败，请重试'
+                this.progressText = this.storyDraft ? '审稿失败，草稿已保留，可重新审稿' : '生成失败，请重试'
                 await this.notifyApiError(error, '生成失败，请重试')
             } finally {
                 this.generating = false
@@ -590,7 +615,34 @@ export default {
         },
         
         // 生成故事（调用 doubao-seed-1.6）
-        async generateStory() {
+        async retryStoryReview() {
+            if (!this.storyDraft || this.generating || this.generatingImages) return
+            this.generating = true
+            this.progressStatus = ''
+            this.progressText = '正在重新审稿...'
+            try {
+                const story = await this.generateStory(this.storyDraft)
+                this.storyData = story
+                this.characterProfiles = extractCharacterProfiles(story)
+                this.characterCard = formatCharacterCard(this.characterProfiles)
+                this.imagePrompts = scenesDetailToImagePrompts(story.scenes_detail)
+                this.promptSceneIndexes = this.imagePrompts.map((_, index) => index)
+                this.storyDraft = null
+                this.progressPercentage = 100
+                this.progressStatus = 'success'
+                this.progressText = '故事审稿完成！'
+                this.saveToLocalStorage()
+            } catch (error) {
+                this.progressStatus = 'exception'
+                this.progressText = '审稿失败，草稿已保留，可重新审稿'
+                await this.notifyApiError(error, this.progressText)
+            } finally {
+                this.generating = false
+            }
+        },
+
+        async generateStory(reviewDraft = null) {
+            const targetPages = reviewDraft ? reviewDraft.targetPages : this.form.targetPages
             // 构建风格提示词（可选）
             let stylePrompt = ''
             if (this.form.artStyle) {
@@ -610,11 +662,14 @@ export default {
             
             // 构建请求数据
             const requestData = {
-                prompt: appendStorySchemaGuide(this.form.prompt.trim()),
+                prompt: reviewDraft
+                    ? buildStoryReviewPrompt(reviewDraft.story, reviewDraft.prompt, targetPages)
+                    : appendStorySchemaGuide(this.form.prompt.trim(), targetPages),
                 model: this.doubaoSeedModel,
                 maxCompletionTokens: 65535,
                 reasoningEffort: 'medium',
-                storyGuide: STORY_JSON_SCHEMA_GUIDE,
+                storyGuide: buildStoryGuide(targetPages),
+                targetPages,
             }
             
             // 如果存在风格提示词，添加到请求中
@@ -653,6 +708,7 @@ export default {
             const isSuccess = (responseData.code === 0 || responseData.code === '0') 
                 || responseData.desc === 'success' 
                 || responseData.statuscode === 'success'
+                || (responseData.code == null && responseData.title && responseData.scenes)
             
             if (!isSuccess) {
                 const errorMsg = extractApiErrorMessage(responseData) || `code: ${responseData.code}`
@@ -698,35 +754,7 @@ export default {
                 }
             }
             
-            // 验证数据格式
-            if (!storyJson || typeof storyJson !== 'object') {
-                throw new Error('故事数据格式错误')
-            }
-            
-            if (!storyJson.title || !storyJson.summary || !storyJson.scenes || !storyJson.scenes_detail) {
-                throw new Error('生成的故事数据格式不完整，缺少必要字段')
-            }
-            
-            // 确保 scenes 和 scenes_detail 是数组
-            if (!Array.isArray(storyJson.scenes) || !Array.isArray(storyJson.scenes_detail)) {
-                throw new Error('scenes 和 scenes_detail 必须是数组')
-            }
-            
-            if (storyJson.scenes.length !== storyJson.scenes_detail.length) {
-                throw new Error('文案和画面描述数量不匹配')
-            }
-            
-            if (storyJson.scenes.length === 0) {
-                throw new Error('生成的故事没有分镜内容')
-            }
-            
-            if (storyJson.scenes.length > 10) {
-                console.warn('生成的分镜数量超过10个，将截取前10个')
-                storyJson.scenes = storyJson.scenes.slice(0, 10)
-                storyJson.scenes_detail = storyJson.scenes_detail.slice(0, 10)
-            }
-            
-            return storyJson
+            return validateStory(storyJson, targetPages, Boolean(reviewDraft))
         },
         
         hasPageImage(sceneIndex) {
@@ -1422,6 +1450,7 @@ export default {
                     // 恢复用户输入
                     if (data.form) {
                         this.form = { ...this.form, ...data.form };
+                        if (!Number.isInteger(this.form.targetPages) || this.form.targetPages < 6 || this.form.targetPages > 12) this.form.targetPages = 10;
                     }
 
                     // 恢复故事数据
@@ -1456,6 +1485,8 @@ export default {
                         this.protagonistRefs[1].base64 = data.characterReferencePreview || ''
                     }
 
+                    this.storyDraft = data.storyDraft || null;
+
                     // 恢复生成的绘本数据
                     if (data.bookData) {
                         this.bookData = data.bookData;
@@ -1478,8 +1509,10 @@ export default {
                     ownerId: localStorage.getItem('id'),
                     form: {
                         prompt: this.form.prompt,
+                        targetPages: this.form.targetPages,
                         artStyle: this.form.artStyle
                     },
+                    storyDraft: this.storyDraft,
                     storyData: this.storyData,
                     imagePrompts: this.imagePrompts,
                     promptSceneIndexes: this.promptSceneIndexes,
