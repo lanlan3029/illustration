@@ -271,6 +271,8 @@
   },
   "editorProLeft": {
     "canvas": "Canvas",
+    "designCollage": "Design collages",
+    "editableCollage": "Editable collages",
     "pageTemplates": "Page templates",
     "pageTemplateHint": "Pick a canvas size, then a template. Matching-ratio templates scale uniformly; Photo book templates rebuild for the current canvas with shared type scale, margins, and centered layout. Replace dashed photo boxes; double-click text to edit.",
     "pageTemplateCanvasSize": "Canvas: {width} × {height} ({ratio})",

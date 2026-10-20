@@ -6,6 +6,7 @@ import tools from '@/components/editorPro/editor-components/tools.vue';
 import material from '@/components/editorPro/editor-components/material.vue';
 import layer from '@/components/editorPro/editor-components/layer.vue';
 import pageTemplate from '@/components/editorPro/editor-components/pageTemplate.vue';
+import designTemplates from '@/components/editorPro/editor-components/designTemplatePanel.vue';
 import EditorSheet from '@/components/editorPro/mobile/EditorSheet.vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
@@ -26,6 +27,7 @@ const menuActive = ref('importTmpl');
 const leftBarComponent = {
   importTmpl,
   pageTemplate,
+  designTemplates,
   tools,
   material,
   layer,
@@ -39,9 +41,14 @@ const leftBar = reactive([
     icon: 'md-square-outline',
   },
   {
+    key: 'designTemplates',
+    name: computed(() => t('editorProLeft.designCollage')),
+    icon: 'md-images',
+  },
+  {
     key: 'pageTemplate',
-    name: computed(() => t('editorProLeft.pageTemplates')),
-    icon: 'md-copy',
+    name: computed(() => t('editorProLeft.editableCollage')),
+    icon: 'md-grid',
   },
   {
     key: 'tools',

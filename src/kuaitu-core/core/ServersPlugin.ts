@@ -10,6 +10,7 @@ import { selectFiles, clipboardText, downFile } from './utils/utils';
 import { fabric } from 'fabric';
 import type { IEditor, IPluginTempl } from '@kuaitu-core/core';
 import { SelectEvent, SelectMode } from './eventType';
+import { repairLegacyDesignTemplateBackground } from '../../utils/editorPro/designTemplateCompatibility.cjs';
 
 type IPlugin = Pick<
   ServersPlugin,
@@ -39,7 +40,8 @@ function transformText(objects: any) {
     if (item.objects) {
       transformText(item.objects);
     } else {
-      item.type === 'text' && (item.type = 'textbox');
+      // Fabric.Text revives curve paths itself; Textbox does not.
+      item.type === 'text' && !item.path && (item.type = 'textbox');
     }
   });
 }
@@ -125,7 +127,7 @@ class ServersPlugin implements IPluginTempl {
 
   async loadJSON(jsonFile: string | object, callback?: () => void) {
     // 确保元素存在id
-    const temp = typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile;
+    const temp = repairLegacyDesignTemplateBackground(typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile);
     const textPaths: Record<'id' | 'path', any>[] = [];
     temp.objects.forEach((item: any) => {
       !item.id && (item.id = uuid());
@@ -189,6 +191,8 @@ class ServersPlugin implements IPluginTempl {
       'id',
       'gradientAngle',
       'selectable',
+      'evented',
+      'objectCaching',
       'hasControls',
       'linkData',
       'editable',
@@ -203,6 +207,7 @@ class ServersPlugin implements IPluginTempl {
       'kidstoryCollagePhoto',
       'kidstoryRole',
       'kidstoryPhotoFilled',
+      'kidstoryDesignFrame',
       'kidstorySlotLeft',
       'kidstorySlotTop',
       'kidstorySlotW',
@@ -328,7 +333,7 @@ class ServersPlugin implements IPluginTempl {
     const fontEntry = {};
     for (const font of fontFamilyArry) {
       const item = fontList.find((item) => item.name === font);
-      fontEntry[font] = item.file;
+      if (item?.file) fontEntry[font] = item.file;
     }
 
     console.log('_getSaveSvgOption', fontEntry);

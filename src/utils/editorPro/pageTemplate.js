@@ -1,4 +1,5 @@
 import { fabric } from 'fabric'
+import { configureDesignPhotoSlot, constrainDesignPhotoSlot, fillDesignPhotoSlot } from './designPhotoSlots'
 
 /** 页面模版图层角色 */
 export const KIDSTORY_ROLE = {
@@ -31,6 +32,7 @@ export function isPhotoSlotObject(obj) {
 /** 替换/填入前补全照片槽外框信息（兼容旧模版或元数据缺失） */
 export function preparePhotoSlotForFill(obj) {
   if (!obj || obj.type !== 'image') return
+  if (obj.kidstoryDesignFrame) return
 
   if (!obj.kidstorySlotW || !obj.kidstorySlotH) {
     const w = obj.width * (obj.scaleX || 1)
@@ -138,6 +140,7 @@ export function normalizePhotoSlotPlaceholder(obj) {
 /** 拖动时限制在槽位内，保证始终 cover 住外框 */
 export function clampPhotoSlotPan(obj) {
   if (!obj) return
+  if (obj.kidstoryDesignFrame) { constrainDesignPhotoSlot(obj); return }
   if (obj.kidstoryCollagePhoto?.freeMove) return
   const frame = getPhotoSlotFrame(obj)
   const w = obj.width * (obj.scaleX || 1)
@@ -166,6 +169,7 @@ export function clampPhotoSlotPan(obj) {
 
 function enforceUniformPhotoScale(obj) {
   if (!obj || obj.type !== 'image') return
+  if (obj.kidstoryDesignFrame) return
   const sx = obj.scaleX || 1
   const sy = obj.scaleY || 1
   if (Math.abs(sx - sy) < 0.001) return
@@ -239,6 +243,10 @@ function applyEmptyPhotoSlotFromObject(obj) {
 /** 限制照片槽拖动范围（EditorPro 初始化时挂载） */
 export function installPhotoSlotPanConstraint(canvas) {
   if (!canvas?.on) return () => {}
+  const onAdded = (e) => {
+    if (e.target?.kidstoryDesignFrame) configureDesignPhotoSlot(e.target)
+    else if (e.target?.kidstoryRole === KIDSTORY_ROLE.DECORATION) e.target.set({ selectable: false, evented: false })
+  }
 
   const onMoving = (e) => {
     const obj = e.target
@@ -268,11 +276,13 @@ export function installPhotoSlotPanConstraint(canvas) {
   canvas.on('object:moving', onMoving)
   canvas.on('object:modified', onModified)
   canvas.on('object:scaling', onScaling)
+  canvas.on('object:added', onAdded)
 
   return () => {
     canvas.off('object:moving', onMoving)
     canvas.off('object:modified', onModified)
     canvas.off('object:scaling', onScaling)
+    canvas.off('object:added', onAdded)
   }
 }
 
@@ -283,6 +293,11 @@ export function applyPageTemplateBehavior(canvas) {
   canvas.getObjects().forEach((obj) => {
     if (isWorkspaceObject(obj)) return
     if (obj.kidstoryCollage || obj.kidstoryCollageId) return
+    if (obj.kidstoryDesignFrame) { configureDesignPhotoSlot(obj); return }
+    if (obj.kidstoryRole === KIDSTORY_ROLE.DECORATION) {
+      obj.set({ selectable: false, evented: false })
+      return
+    }
 
     if (isEditableTextObject(obj)) {
       obj.set({
@@ -337,6 +352,7 @@ export function applyPageTemplateBehavior(canvas) {
     canvas.getObjects().forEach((obj) => {
       if (obj.type !== 'image' || !obj.kidstorySlotW) return
       if (obj.kidstoryCollageId) return
+      if (obj.kidstoryDesignFrame) { configureDesignPhotoSlot(obj); return }
       ensurePhotoSlotFrameMeta(obj)
       if (isFilledPhotoSlot(obj)) {
         applyFilledPhotoSlotFromObject(obj)
@@ -386,6 +402,10 @@ export function loadImageElement(src) {
 export async function fillPhotoSlotObject(activeObject, imageSrc, canvas) {
   if (!activeObject || !canvas || activeObject.type !== 'image') {
     throw new Error('invalid photo slot')
+  }
+  if (activeObject.kidstoryDesignFrame) {
+    await fillDesignPhotoSlot(activeObject, imageSrc, canvas)
+    return
   }
 
   if (activeObject.kidstoryCollageId) {

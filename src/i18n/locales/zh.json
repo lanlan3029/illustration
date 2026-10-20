@@ -271,6 +271,8 @@
   },
   "editorProLeft": {
     "canvas": "画布",
+    "designCollage": "设计拼图",
+    "editableCollage": "可编辑拼图",
     "pageTemplates": "页面模版",
     "pageTemplateHint": "先选「画布」尺寸再选模版。同比例模版等比适配；「照片书」任意比例可用，会按当前画布重新排版（统一字号与边距、内容居中）。照片虚线框可替换，文字双击编辑。",
     "pageTemplateCanvasSize": "当前画布：{width} × {height}（{ratio}）",

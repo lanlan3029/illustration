@@ -1,5 +1,7 @@
 <template>
   <div class="page-template-panel">
+    <design-templates v-if="kind === 'design'" />
+    <template v-else>
     <router-link class="collage-entry" to="/photo-collage" target="_blank" rel="noopener">图片拼图 ↗<small>160 种布局 · 多图拼接 · 轮播导出</small></router-link>
     <collage-templates />
 
@@ -29,6 +31,8 @@
         </button>
       </div>
     </div>
+
+    </template>
 
     <div v-if="activePhotoSlot" class="photo-slot-fill">
       <p class="photo-slot-fill-title">{{ $t('editorProLeft.photoSlotSelected') }}</p>
@@ -84,11 +88,14 @@ import {
 } from '@/utils/editorPro/pageTemplate'
 import { activePhotoSlot } from '@/utils/editorPro/photoSlotContext'
 import CollageTemplates from './collageTemplates.vue'
+import DesignTemplates from './designTemplates.vue'
 import {
   fitTemplateToCanvas,
   getCurrentWorkspaceSize,
   formatAspectRatio,
 } from '@/utils/editorPro/fitTemplateToCanvas'
+
+defineProps({ kind: { type: String, default: 'collage' } })
 
 const { t } = useI18n()
 const { canvasEditor } = useSelect()

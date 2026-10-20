@@ -14,7 +14,6 @@ import {
   photoSlot,
 } from './placeholder'
 import { spreadTemplates } from './spreadTemplates'
-import { singlePageTemplates } from './singlePageTemplates'
 import { portraitCollageTemplates } from './portraitCollageTemplates'
 import { photoBookTemplates } from './photoBookTemplates'
 
@@ -210,13 +209,11 @@ const retiredCategories = new Set(['story', 'album', 'collage', 'photoBook'])
 const templates = [
   ...portraitTemplates,
   ...portraitCollageTemplates,
-  ...singlePageTemplates,
   ...spreadTemplates,
   ...photoBookTemplates,
 ].filter(template => !retiredCategories.has(template.category))
 
 export const PAGE_TEMPLATE_CATEGORIES = [
-  { id: 'albumPage', nameKey: 'editorProLeft.pageTemplateCatAlbumPage' },
   { id: 'cover', nameKey: 'editorProLeft.pageTemplateCatCover' },
   { id: 'spread', nameKey: 'editorProLeft.pageTemplateCatSpread' },
 ]

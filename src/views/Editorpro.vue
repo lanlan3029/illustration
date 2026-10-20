@@ -108,7 +108,8 @@ const { panel, isLeftOpen, isRightOpen, openLeft, openRight, close, isOpen } =
 const attrsLabel = computed(() => t('creation.attributes'));
 const dockItems = computed(() => [
   { key: 'importTmpl', name: t('editorProLeft.canvas'), icon: 'md-square-outline' },
-  { key: 'pageTemplate', name: t('editorProLeft.pageTemplates'), icon: 'md-copy' },
+  { key: 'designTemplates', name: t('editorProLeft.designCollage'), icon: 'md-images' },
+  { key: 'pageTemplate', name: t('editorProLeft.editableCollage'), icon: 'md-grid' },
   { key: 'tools', name: t('editorProLeft.draw'), icon: 'md-add-circle' },
   { key: 'material', name: t('editorProLeft.materialLibrary'), icon: 'md-flower' },
   { key: 'layer', name: t('layers'), icon: 'md-reorder' },
