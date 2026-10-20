@@ -1,6 +1,6 @@
 <template>
   <el-config-provider :locale="elementPlusLocale">
-    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar }">
+    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'public-story-theme': isPublicPage }">
       <top-bar/>
       <login-register v-if="isMask" />
       <main class="app-main">
@@ -23,6 +23,7 @@ import TopBar from './components/TopBar.vue'
 import TheFooter from './components/TheFooter.vue'
 import MobileTabBar from './components/MobileTabBar.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import '@/styles/publicStoryTheme.css'
 
 const LoginRegister = defineAsyncComponent(() => import('./components/LoginRegister.vue'))
 
@@ -46,6 +47,11 @@ export default {
     const elementPlusLocale = computed(() => getElementPlusLocale(locale.value))
     
     const isMask = computed(() => store.state.isMask)
+    const isPublicPage = computed(() => [
+      'Home', 'books', 'search-books', 'bookdetails', 'illustration', 'illusdetails',
+      'website-recommendations', 'blog', 'blog-post', 'connection', 'creator-program',
+      'ai-picture-book-intro', 'ai-picture-book-tutorial',
+    ].includes(route.name))
 
     // 图片编辑器自带底栏，隐藏全局 Tab，避免双底栏
     const hideMobileTabBar = computed(() => {
@@ -63,6 +69,7 @@ export default {
     return {
       elementPlusLocale,
       isMask,
+      isPublicPage,
       route,
       isMobile,
       hideMobileTabBar,
