@@ -13,6 +13,7 @@
         type="button"
         class="cw-rail-item"
         :class="{ active: activeDomain === domain.key }"
+        :aria-pressed="activeDomain === domain.key"
         @click="switchDomain(domain)"
       >
         <span class="cw-rail-icon cw-rail-icon--domain">
@@ -55,6 +56,7 @@ import {
   resolveCreationDomain,
   isSubNavActive as matchSubNav,
 } from '@/data/creationStudioNav';
+import '@/styles/creationStudioTheme.css';
 
 const HOME_ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>';

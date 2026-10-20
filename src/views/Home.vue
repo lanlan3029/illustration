@@ -8,11 +8,11 @@
                 </h1>
             </header>
 
-            <!-- 八款分层贴纸入口 -->
+            <!-- 八个功能入口：插画与可访问的文字标签分开渲染 -->
             <div class="feature-cards-group">
                 <section class="feature-cards">
                     <router-link v-for="(card, index) in [...featureCards, ...toolCards]" :key="card.key" :to="card.to" class="feature-card">
-                        <HomeSticker :index="index" />
+                        <img class="feature-art" :src="featureArt[card.key]" alt="" width="640" height="640" decoding="async" :loading="index < 4 ? 'eager' : 'lazy'" />
                         <div class="feature-text">
                             <h3 class="feature-name">{{ cardLabel(card) }}</h3>
                         </div>
@@ -118,13 +118,22 @@
 <script>
 import { loadIllustrationStyles } from '@/utils/illustrationStyles'
 import PublicSeoContent from '@/components/PublicSeoContent.vue'
-import HomeSticker from '@/components/HomeSticker.vue'
 
 export default {
     name: 'Home',
-    components: { PublicSeoContent, HomeSticker },
+    components: { PublicSeoContent },
     data() {
         return {
+            featureArt: {
+                book: require('@/assets/images/home/features-v2/book.webp'),
+                brush: require('@/assets/images/home/features-v2/brush.webp'),
+                user: require('@/assets/images/home/features-v2/user.webp'),
+                mood: require('@/assets/images/home/features-v2/mood.webp'),
+                editor: require('@/assets/images/home/features-v2/editor.webp'),
+                segment: require('@/assets/images/home/features-v2/segment.webp'),
+                lasso: require('@/assets/images/home/features-v2/lasso.webp'),
+                pdf: require('@/assets/images/home/features-v2/pdf.webp'),
+            },
             editorScreenshot: require('@/assets/images/home/showcase-editor.png'),
             featureCards: [
                 { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book', img: require('@/assets/images/cards/books.png') },

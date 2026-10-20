@@ -1,6 +1,6 @@
 <template>
   <el-config-provider :locale="elementPlusLocale">
-    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'public-story-theme': isPublicPage }">
+    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'public-story-theme': isPublicPage || isStudioPage, 'studio-story-theme': isStudioPage }">
       <top-bar/>
       <login-register v-if="isMask" />
       <main class="app-main">
@@ -47,6 +47,7 @@ export default {
     const elementPlusLocale = computed(() => getElementPlusLocale(locale.value))
     
     const isMask = computed(() => store.state.isMask)
+    const isStudioPage = computed(() => route.matched.some(record => record.path === '/creation-studio'))
     const isPublicPage = computed(() => [
       'Home', 'books', 'search-books', 'bookdetails', 'illustration', 'illusdetails',
       'website-recommendations', 'blog', 'blog-post', 'connection', 'creator-program',
@@ -70,6 +71,7 @@ export default {
       elementPlusLocale,
       isMask,
       isPublicPage,
+      isStudioPage,
       route,
       isMobile,
       hideMobileTabBar,
