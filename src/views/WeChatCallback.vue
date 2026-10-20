@@ -203,14 +203,10 @@ export default {
           
           // 使用 router.replace 进行跳转，确保状态已更新
           // 如果目标页面已经加载，强制刷新以确保获取最新状态
-          const targetPath = decodeURIComponent(redirect)
-          if (targetPath === '/' || targetPath === route.path) {
-            // 如果跳转到当前页面或首页，使用 location.replace 强制刷新
-            window.location.replace(`/#${targetPath}`)
-          } else {
-            // 跳转到其他页面，使用 router.replace
-            router.replace(targetPath)
-          }
+          // 本项目使用 history 路由，不能跳转为 /#/...。
+          const targetPath = typeof redirect === 'string' && redirect.startsWith('/') &&
+            !redirect.startsWith('//') && !redirect.startsWith('/wechat/callback') ? redirect : '/'
+          await router.replace(targetPath)
         } else {
           const errorMsg = response.data.message || response.data.errmsg || t('wechatCallback.loginFailed')
           ElMessage.error(errorMsg)

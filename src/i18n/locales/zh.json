@@ -1232,6 +1232,7 @@
     "illustrationName": "插画名称",
     "illustrationCategory": "插画类别",
     "selectCategory": "请选择绘本类别",
+    "categoryAi": "AI绘本",
     "categoryReading": "儿童读物",
     "categoryHabit": "习惯养成",
     "categoryEnglish": "英语启蒙",
@@ -1288,7 +1289,7 @@
   "blog": {
     "kicker": "Blog",
     "pageTitle": "博客",
-    "pageDesc": "AI 插画、绘本创作与 SEO 内容，帮助你更好地使用 KidStory。",
+    "pageDesc": "AI 插画与绘本创作，帮助你更好地使用 KidStory。",
     "loading": "加载中…",
     "empty": "暂无文章，OpenSEO 同步后会出现在这里",
     "loadFailed": "加载失败",

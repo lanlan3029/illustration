@@ -1,8 +1,6 @@
 <template>
   <div class="blog-page">
     <header class="blog-hero">
-      <p class="blog-kicker">{{ $t('blog.kicker') }}</p>
-      <h1>{{ $t('blog.pageTitle') }}</h1>
       <p class="blog-desc">{{ $t('blog.pageDesc') }}</p>
       <router-link to="/guides/ai-picture-book-tutorial">如何用 AI 制作一本绘本：从故事到 PDF →</router-link>
     </header>
@@ -60,7 +58,7 @@ export default {
     async loadList() {
       this.loading = true
       try {
-        const list = await fetchBlogPosts(this.$http)
+        const list = await fetchBlogPosts(this.$http, { limit: 100 })
         this.items = Array.isArray(list) ? list : []
       } catch (e) {
         this.items = []
@@ -105,23 +103,6 @@ export default {
   max-width: 720px;
   margin: 0 auto 40px;
   text-align: center;
-}
-
-.blog-kicker {
-  margin: 0 0 10px;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #8167a9;
-  font-weight: 700;
-}
-
-.blog-hero h1 {
-  margin: 0 0 12px;
-  font-size: clamp(28px, 4vw, 40px);
-  line-height: 1.15;
-  letter-spacing: -0.03em;
-  font-weight: 800;
 }
 
 .blog-desc {

@@ -8,7 +8,7 @@
     <div class="design-template-grid">
       <div v-for="(column, index) in columns" :key="index" class="design-template-column">
         <button v-for="item in column" :key="item.id" type="button" :disabled="loading"
-          :aria-label="`应用设计模板：${item.name}`" @pointerenter="prefetchTemplate(item)" @focus="prefetchTemplate(item)" @click="confirmTemplate(item)">
+          :aria-label="`应用设计模板：${item.name}`" @pointerenter="prefetchTemplate(item)" @pointerleave="cancelPrefetch" @focus="prefetchTemplate(item)" @blur="cancelPrefetch" @click="confirmTemplate(item)">
           <img :src="assetUrl(item.preview, item)" :alt="item.name" :width="item.width" :height="item.height"
             :loading="eagerIds.has(item.id) ? 'eager' : 'lazy'" decoding="async" />
           <span>{{ item.name }}</span><small>{{ item.aspectRatio }} · {{ item.photoCount }} 张</small>
@@ -29,6 +29,7 @@ import { fabric } from 'fabric'
 import useSelect from '@/components/editorPro/hooks/select'
 import templates from '@/data/editorPageTemplates/designTemplates.json'
 import { applyPageTemplateBehavior } from '@/utils/editorPro/pageTemplate'
+import { preloadDesignTemplateAssets } from '@/utils/editorPro/designTemplateAssets'
 import { activePhotoSlot } from '@/utils/editorPro/photoSlotContext'
 import { useEditorMobilePanel } from '@/composables/editorMobilePanel'
 
@@ -101,7 +102,14 @@ function loadTemplate(item) {
   if (layoutCache.size > 8) layoutCache.delete(layoutCache.keys().next().value)
   return request
 }
-function prefetchTemplate(item) { loadTemplate(item).catch(() => {}) }
+let prefetchTimer
+function cancelPrefetch() { clearTimeout(prefetchTimer) }
+function prefetchTemplate(item) {
+  cancelPrefetch()
+  prefetchTimer = setTimeout(() => loadTemplate(item).then(preloadDesignTemplateAssets).catch(() => {}), 120)
+}
+onDeactivated(cancelPrefetch)
+onBeforeUnmount(cancelPrefetch)
 const { close: closeMobilePanel } = useEditorMobilePanel()
 
 async function confirmTemplate(item) {
@@ -122,6 +130,8 @@ async function applyTemplate(item) {
   message.value = '正在加载模板…'
   try {
     const json = JSON.parse(JSON.stringify(await loadTemplate(item)))
+    await preloadDesignTemplateAssets(json)
+    message.value = '正在应用模板…'
     // Font substitution can make a formerly single-line title wrap. Measure the
     // installed system font and fit its longest line within the original box.
     for (const object of json.objects) {
@@ -135,12 +145,12 @@ async function applyTemplate(item) {
         object.fontSize *= object.width / measured.width * .98
       }
     }
-    await new Promise((resolve, reject) => {
-      Promise.resolve(canvasEditor.loadJSON(json, resolve)).catch(reject)
+    await canvasEditor.loadJSON(json, undefined, {
+      prepare: () => {
+        applyPageTemplateBehavior(canvasEditor.canvas, { recheck: false })
+        activePhotoSlot.value = null
+      },
     })
-    applyPageTemplateBehavior(canvasEditor.canvas)
-    activePhotoSlot.value = null
-    canvasEditor.saveState()
     message.value = '已应用模板，选中照片占位符即可填入图片。'
   } catch (error) {
     message.value = error.message || '模板加载失败，请重试。'

@@ -1,6 +1,6 @@
 <template>
   <el-config-provider :locale="elementPlusLocale">
-    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'public-story-theme': isPublicPage || isStudioPage, 'studio-story-theme': isStudioPage }">
+    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'public-story-theme': isPublicPage || isStudioPage || isToolPage, 'studio-story-theme': isStudioPage, 'tool-story-theme': isToolPage }">
       <top-bar/>
       <login-register v-if="isMask" />
       <main class="app-main">
@@ -24,6 +24,7 @@ import TheFooter from './components/TheFooter.vue'
 import MobileTabBar from './components/MobileTabBar.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import '@/styles/publicStoryTheme.css'
+import '@/styles/creativeToolsTheme.css'
 
 const LoginRegister = defineAsyncComponent(() => import('./components/LoginRegister.vue'))
 
@@ -48,6 +49,7 @@ export default {
     
     const isMask = computed(() => store.state.isMask)
     const isStudioPage = computed(() => route.matched.some(record => record.path === '/creation-studio'))
+    const isToolPage = computed(() => ['photo-collage', 'diary-timeline', 'image-segmentation', 'lasso-crop', 'compose-illustration', 'topdf'].includes(route.name))
     const isPublicPage = computed(() => [
       'Home', 'books', 'search-books', 'bookdetails', 'illustration', 'illusdetails',
       'website-recommendations', 'blog', 'blog-post', 'connection', 'creator-program',
@@ -72,6 +74,7 @@ export default {
       isMask,
       isPublicPage,
       isStudioPage,
+      isToolPage,
       route,
       isMobile,
       hideMobileTabBar,

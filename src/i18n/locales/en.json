@@ -1217,6 +1217,7 @@
     "illustrationName": "Illustration Name",
     "illustrationCategory": "Illustration Category",
     "selectCategory": "Please select book category",
+    "categoryAi": "AI Picture Books",
     "categoryReading": "Children's Reading",
     "categoryHabit": "Habit Formation",
     "categoryEnglish": "English Enlightenment",
@@ -1273,7 +1274,7 @@
   "blog": {
     "kicker": "Blog",
     "pageTitle": "Blog",
-    "pageDesc": "AI illustration, picture books, and SEO content to help you get more from KidStory.",
+    "pageDesc": "AI illustration and picture book creation to help you get more from KidStory.",
     "loading": "Loading…",
     "empty": "No posts yet — they appear here after OpenSEO sync",
     "loadFailed": "Failed to load",

@@ -1809,6 +1809,10 @@ export default {
                 } else if (error.message) {
                     errorMessage = error.message
                 }
+                const upstreamError = this.normalizeApiErrorToString(error.response?.data) || error.message || errorMessage
+                if (/APIMart生图超时/i.test(upstreamError)) {
+                    errorMessage = '生成图片失败，没有扣除积分，请稍后重试'
+                }
                 ElMessage.error({ message: errorMessage, offset: 200 })
             } finally {
                 this.generating = false

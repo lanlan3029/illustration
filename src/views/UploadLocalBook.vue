@@ -39,6 +39,7 @@
   </el-form-item>
   <el-form-item :label="$t('upload.category')"> 
     <el-select v-model="form.category" :placeholder="$t('upload.selectCategory')">
+      <el-option :label="$t('upload.categoryAi')" value="ai"></el-option>
       <el-option :label="$t('upload.categoryReading')" value="reading"></el-option>
       <el-option :label="$t('upload.categoryHabit')" value="habit"></el-option>
       <el-option :label="$t('upload.categoryEnglish')" value="english"></el-option>
@@ -438,7 +439,7 @@ export default {
             formData.append('title', this.form.name);
             formData.append('description', this.form.desc || '');
             formData.append('type', this.form.category);
-            formData.append('source', 'upload');
+            formData.append('source', this.form.category === 'ai' ? 'ai' : 'upload');
             // 默认状态为 1（待审核）
             formData.append('status', '1');
             

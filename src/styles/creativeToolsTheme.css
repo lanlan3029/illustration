@@ -1,0 +1,117 @@
+/* Creative tools share app chrome; canvas pixels and exported artwork are untouched. */
+#app.tool-story-theme {
+  --tool-ink: #291c15;
+  --tool-muted: #796b62;
+  --tool-paper: #fffdf8;
+  --tool-panel: #fff9f0;
+  --tool-purple: #7c38f5;
+  --tool-soft: #f4edff;
+  --tool-pink: #ff82d6;
+  --tool-yellow: #ffe45e;
+  --tool-line: 2px solid #291c15;
+  --el-color-primary: #7c38f5;
+  --el-color-primary-light-3: #9b67f7;
+  --el-color-primary-light-5: #bd99fa;
+  --el-color-primary-light-9: #f4edff;
+  --el-color-primary-dark-2: #6424c9;
+  --el-border-radius-base: 10px;
+}
+#app.tool-story-theme :is(.collage-page, .dt-page, .segment-page, .sticker-workshop, .topdf, .cw-main > .container) {
+  --accent: var(--tool-purple);
+  --accent-soft: var(--tool-soft);
+  --ink: var(--tool-ink);
+  --muted: var(--tool-muted);
+  --line: #d8cbc0;
+  --border: #d8cbc0;
+  --paper: var(--tool-panel);
+  color: var(--tool-ink);
+  background: var(--tool-paper);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+#app.tool-story-theme :is(.collage-page, .dt-page, .segment-page, .sticker-workshop) { padding: 36px clamp(18px, 3vw, 44px) 56px; }
+#app.tool-story-theme :is(.dt-page, .segment-page) { max-width: 1360px; width: 100%; margin-inline: auto; }
+#app.tool-story-theme .cw-main > .container { padding: 32px clamp(18px, 3vw, 40px) 48px; }
+#app.tool-story-theme :is(.collage-header, .dt-header, .segment-page-header, .workshop-hero, .page-head) {
+  text-align: left;
+  padding-bottom: 24px;
+  margin-bottom: 28px;
+  border-bottom: var(--tool-line);
+}
+#app.tool-story-theme :is(.collage-header h1, .dt-header h1, .segment-page-header h1, .workshop-hero h1, .page-head h2) { color: var(--tool-ink); font-family: inherit; font-size: clamp(26px, 3vw, 36px); line-height: 1.45; font-weight: 650; letter-spacing: 0; }
+#app.tool-story-theme :is(.collage-header p, .dt-header p, .segment-page-header p, .hero-desc, .page-head p) { color: var(--tool-muted); font-size: 14px; line-height: 1.8; margin: 10px 0 0; }
+#app.tool-story-theme .eyebrow { display: inline-block; padding: 5px 12px; border: var(--tool-line); border-radius: 24px; background: #00cba0; color: var(--tool-ink); letter-spacing: 1.5px; font-size: 10px; }
+#app.tool-story-theme :is(.collage-sidebar, .template-section, .dt-panel, .dt-result, .segment-card, .col-work, .col-gallery, .format-section, .selected-section) { background: white; border: var(--tool-line); border-radius: 18px; box-shadow: 3px 3px 0 #eadfd2; }
+#app.tool-story-theme :is(.section-title h2, .template-heading h2, .dt-plan-head h2, .segment-page .section-title, .collection-title, .format-section-title) { color: var(--tool-ink); }
+#app.tool-story-theme :is(.collage-page button, .collage-page select, .dt-option, .dt-ratio, .tool-pill, .mode-card, .format-card, .topdf-fs-btn, .topdf-back) { font-family: inherit; border-color: #d4c5b9; border-radius: 10px; color: var(--tool-ink); }
+#app.tool-story-theme :is(.el-button, .btn-preview, .btn-generate) { font-family: inherit; border-radius: 10px; }
+#app.tool-story-theme :is(.el-button--default, .el-button--primary.is-plain) { background: white; border-color: #b7a497; color: var(--tool-ink); }
+#app.tool-story-theme :is(.collage-page .primary, .el-button--primary:not(.is-plain), .btn-generate) { background: var(--tool-purple); border: var(--tool-line); color: white; }
+#app.tool-story-theme .header-actions .primary { background: var(--tool-pink); color: var(--tool-ink); }
+#app.tool-story-theme :is(.header-actions button, .dt-actions .el-button, .action-row button) { min-height: 42px; padding-inline: 18px; }
+#app.tool-story-theme :is(.header-actions .primary, .btn-generate):not(:disabled):not(.is-disabled) { box-shadow: 3px 3px 0 var(--tool-ink); }
+#app.tool-story-theme :is(button:disabled, .el-button.is-disabled) { opacity: .55; box-shadow: none; cursor: not-allowed; }
+#app.tool-story-theme :is(.el-input__wrapper, .el-textarea__inner, .el-select__wrapper) { background: white; color: var(--tool-ink); border-radius: 10px; }
+#app.tool-story-theme :is(input[type=range], input[type=checkbox], input[type=radio]) { accent-color: var(--tool-purple); }
+#app.tool-story-theme :is(.segmented, .pill-row) { background: var(--tool-panel); }
+#app.tool-story-theme :is(.segmented button.active, .tool-pill.active, .dt-option.active, .dt-ratio.active, .mode-card.active) { border: var(--tool-line); background: var(--tool-soft); color: #6424c9; box-shadow: 2px 2px 0 #d8c5f7; }
+#app.tool-story-theme .segmented button { border: 2px solid transparent; }
+#app.tool-story-theme .mode-card.active .mode-dot { background: var(--tool-purple); border-color: var(--tool-purple); }
+#app.tool-story-theme .mode-card:not(.active) { background: white; }
+#app.tool-story-theme :is(.dt-diagram-spine, .dt-diagram-stub, .dt-diagram-dash) { stroke: var(--tool-ink); }
+#app.tool-story-theme .dt-diagram-thick { fill: var(--tool-purple); }
+#app.tool-story-theme .collage-sidebar { padding: 22px; }
+#app.tool-story-theme .upload-button { border: 2px dashed #89796e !important; background: var(--tool-panel) !important; color: var(--tool-ink) !important; padding: 16px 10px; }
+#app.tool-story-theme .upload-button small { color: var(--tool-muted); }
+#app.tool-story-theme .range-setting output { color: #6424c9; font-variant-numeric: tabular-nums; }
+#app.tool-story-theme .canvas-stage { border: 1px solid #e2d6c8; border-radius: 18px; background-color: #f4eee4; background-image: radial-gradient(#dfd1bd 1px, transparent 1px); background-size: 20px 20px; }
+#app.tool-story-theme .empty-overlay { background: var(--tool-paper); border: var(--tool-line); border-radius: 18px; padding: 30px; box-shadow: 5px 5px 0 #d7c7ae; max-width: calc(100% - 32px); }
+#app.tool-story-theme .empty-overlay h2 { font-family: inherit; color: var(--tool-ink); }
+#app.tool-story-theme .empty-overlay .primary { background: var(--tool-pink); color: var(--tool-ink); padding: 10px 22px; }
+#app.tool-story-theme .template-card.selected { border: 2px solid var(--tool-purple); background: var(--tool-soft); box-shadow: none; }
+#app.tool-story-theme .template-card span { color: var(--tool-muted); }
+#app.tool-story-theme .template-heading h2 span { background: var(--tool-yellow); color: var(--tool-ink); }
+#app.tool-story-theme .preview-toolbar { color: var(--tool-muted); }
+#app.tool-story-theme .dt-empty { background: var(--tool-panel); border: 1px dashed #b7a497; border-radius: 14px; color: var(--tool-muted); }
+#app.tool-story-theme :is(.dt-node, .resume-banner, .pick-toolbar) { background: var(--tool-panel); border-color: #d4c5b9; }
+#app.tool-story-theme .dt-node-idx { background: var(--tool-yellow); color: var(--tool-ink); border: 1px solid var(--tool-ink); }
+#app.tool-story-theme .upload-zone .el-upload-dragger { background: var(--tool-panel); border: 2px dashed #89796e; border-radius: 14px; }
+#app.tool-story-theme :is(.upload-drop, .collection-empty) { background: var(--tool-panel); border-color: #c3b2a4; }
+#app.tool-story-theme .upload-circle { color: var(--tool-ink); background: var(--tool-yellow); border: var(--tool-line); box-shadow: 3px 3px 0 var(--tool-ink); }
+#app.tool-story-theme :is(.upload-title, .mode-label, .compare-label, .tool-label) { color: var(--tool-ink); }
+#app.tool-story-theme .workshop-body { --upload-height: clamp(320px, 46vh, 500px); }
+#app.tool-story-theme :is(.image-frame, .canvas-panel) { border-color: #d4c5b9; border-radius: 12px; }
+#app.tool-story-theme .format-card { background: white; border: 1px solid #d4c5b9; border-radius: 16px; box-shadow: none; }
+#app.tool-story-theme .format-card:hover { background: var(--tool-panel); border-color: var(--tool-ink); }
+#app.tool-story-theme .format-card.is-active { border: var(--tool-line); background: var(--tool-soft); box-shadow: 3px 3px 0 #d8c5f7; }
+#app.tool-story-theme :is(.format-orientation, .format-quality) { color: #6424c9; background: var(--tool-soft); }
+#app.tool-story-theme .format-preview-stage { background: var(--tool-panel); }
+#app.tool-story-theme .step-bar { background: var(--tool-panel); border: 1px solid #d4c5b9; border-radius: 12px; }
+#app.tool-story-theme .step-bar-marker { background: var(--tool-purple); color: white; }
+#app.tool-story-theme :is(.topdf-preview, .topdf-sidebar) { border: var(--tool-line); border-radius: 16px; box-shadow: 3px 3px 0 #eadfd2; }
+#app.tool-story-theme .topdf-preview { background: #f4eee4; }
+#app.tool-story-theme .topdf-sidebar { background: white; }
+#app.tool-story-theme .topdf-preview-head { border-color: #d4c5b9; }
+#app.tool-story-theme :is(.topdf-empty, .topdf-settings) { background: var(--tool-paper); color: var(--tool-muted); border-color: #d4c5b9; }
+#app.tool-story-theme :is(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--tool-purple); outline-offset: 3px; }
+@media (max-width: 768px) {
+  #app.tool-story-theme :is(.collage-page, .dt-page, .segment-page, .sticker-workshop) { padding: 24px 16px 40px; }
+  #app.tool-story-theme :is(.collage-header, .dt-header, .segment-page-header, .workshop-hero, .page-head) { padding-bottom: 20px; margin-bottom: 22px; }
+  #app.tool-story-theme .collage-header { align-items: flex-start; flex-direction: column; gap: 16px; }
+  #app.tool-story-theme .header-actions { width: 100%; flex-wrap: wrap; gap: 10px; }
+  #app.tool-story-theme .header-actions button { flex: 1 1 140px; font-size: 12px; padding-inline: 10px; }
+  #app.tool-story-theme .collage-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  #app.tool-story-theme .collage-sidebar { padding: 18px; }
+  #app.tool-story-theme .canvas-stage { padding: 12px; min-height: 300px; }
+  #app.tool-story-theme .empty-overlay { padding: 22px 16px; }
+  #app.tool-story-theme .empty-overlay h2 { font-size: 20px; }
+  #app.tool-story-theme .template-section { padding: 16px; }
+  #app.tool-story-theme .template-heading { flex-wrap: wrap; }
+  #app.tool-story-theme :is(.dt-layout, .workshop-body) { grid-template-columns: minmax(0, 1fr); }
+  #app.tool-story-theme :is(.col-work, .col-gallery) { padding: 18px; }
+  #app.tool-story-theme .mode-grid { grid-template-columns: minmax(0, 1fr); }
+  #app.tool-story-theme .workshop-body { --upload-height: 300px; }
+  #app.tool-story-theme .topdf { flex-direction: column; padding: 20px 16px 40px; }
+  #app.tool-story-theme :is(.topdf-sidebar, .topdf-preview) { width: 100%; max-height: none; }
+  #app.tool-story-theme .topdf-preview { min-height: 340px; }
+}

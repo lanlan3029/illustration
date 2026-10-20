@@ -386,6 +386,7 @@ export default {
     // 类型标签映射
     typeLabel() {
       const typeMap = {
+        'ai': this.$t('upload.categoryAi'),
         'reading': this.$t('originalBookDetails.typeReading'),
         'habit': this.$t('originalBookDetails.typeHabit'),
         'english': this.$t('originalBookDetails.typeEnglish'),

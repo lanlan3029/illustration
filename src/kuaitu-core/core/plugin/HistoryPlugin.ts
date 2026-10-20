@@ -61,7 +61,7 @@ class HistoryPlugin implements IPluginTempl {
 
   // 保存状态
   private saveState() {
-    if (this.isProcessing) return;
+    if (this.isProcessing || (this.canvas as any).kidstoryImporting) return;
 
     // 清除当前索引后的记录
     this.stack.splice(this.currentIndex);
@@ -119,13 +119,14 @@ class HistoryPlugin implements IPluginTempl {
   }
 
   hookImportAfter() {
+    if ((this.canvas as any).kidstoryImporting) return Promise.resolve();
     this.clear();
     this.historyUpdate();
     return Promise.resolve();
   }
 
   undo() {
-    if (this.isLoading || this.currentIndex <= 1) return;
+    if (this.isLoading || (this.canvas as any).kidstoryImporting || this.currentIndex <= 1) return;
 
     this.currentIndex--;
     const state = this.stack[this.currentIndex - 1];
@@ -136,7 +137,7 @@ class HistoryPlugin implements IPluginTempl {
   }
 
   redo() {
-    if (this.isLoading || this.currentIndex >= this.stack.length) return;
+    if (this.isLoading || (this.canvas as any).kidstoryImporting || this.currentIndex >= this.stack.length) return;
 
     const state = this.stack[this.currentIndex];
     if (state) {

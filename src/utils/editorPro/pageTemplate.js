@@ -287,7 +287,7 @@ export function installPhotoSlotPanConstraint(canvas) {
 }
 
 /** 载入模版后：照片槽可替换、文字可编辑、其余装饰锁定 */
-export function applyPageTemplateBehavior(canvas) {
+export function applyPageTemplateBehavior(canvas, { recheck = true } = {}) {
   if (!canvas) return
 
   canvas.getObjects().forEach((obj) => {
@@ -362,8 +362,10 @@ export function applyPageTemplateBehavior(canvas) {
     })
     canvas.requestRenderAll()
   }
-  requestAnimationFrame(recheckSlots)
-  setTimeout(recheckSlots, 120)
+  if (recheck) {
+    requestAnimationFrame(recheckSlots)
+    setTimeout(recheckSlots, 120)
+  }
 }
 
 export function pickLocalImageFile() {

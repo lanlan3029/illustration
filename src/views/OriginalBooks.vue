@@ -134,6 +134,7 @@ export default {
     categoryOptions() {
       return [
         { label: this.$t('books.categoryAll'), value: "" },
+        { label: this.$t('upload.categoryAi'), value: "ai" },
         { label: this.$t('upload.categoryReading'), value: "reading" },
         { label: this.$t('upload.categoryHabit'), value: "habit" },
         { label: this.$t('upload.categoryEnglish'), value: "english" },
@@ -168,6 +169,7 @@ export default {
     },
     getCategoryLabel(type) {
       const map = {
+        ai: this.$t('upload.categoryAi'),
         reading: this.$t('upload.categoryReading'),
         habit: this.$t('upload.categoryHabit'),
         english: this.$t('upload.categoryEnglish'),
@@ -214,7 +216,7 @@ export default {
       const { sort_param, sort_num } = this.getSortParams()
       let url = `/book/?sort_param=${sort_param}&sort_num=${sort_num}&page=${page}`
       if (this.button2 && this.button2.trim() !== '') {
-        url += `&type=${this.button2}`
+        url += this.button2 === 'ai' ? '&source=ai' : `&type=${this.button2}`
       }
       if (this.searchKeyword) url += `&keyword=${encodeURIComponent(this.searchKeyword)}`
       return url

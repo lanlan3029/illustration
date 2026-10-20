@@ -11,6 +11,7 @@ import { fabric } from 'fabric';
 import type { IEditor, IPluginTempl } from '@kuaitu-core/core';
 import { SelectEvent, SelectMode } from './eventType';
 import { repairLegacyDesignTemplateBackground } from '../../utils/editorPro/designTemplateCompatibility.cjs';
+import { runCanvasImportBatch } from '../../utils/editorPro/canvasImportBatch.cjs';
 
 type IPlugin = Pick<
   ServersPlugin,
@@ -125,7 +126,7 @@ class ServersPlugin implements IPluginTempl {
     });
   }
 
-  async loadJSON(jsonFile: string | object, callback?: () => void) {
+  async loadJSON(jsonFile: string | object, callback?: () => void, options: { prepare?: () => void } = {}) {
     // 确保元素存在id
     const temp = repairLegacyDesignTemplateBackground(typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile);
     const textPaths: Record<'id' | 'path', any>[] = [];
@@ -142,24 +143,20 @@ class ServersPlugin implements IPluginTempl {
     const tempTransform = await this._transform(temp);
 
     jsonFile = JSON.stringify(tempTransform);
-    // 加载前钩子
-    this.editor.hooksEntity.hookImportBefore.callAsync(jsonFile, () => {
-      this.canvas.loadFromJSON(jsonFile, () => {
-        // 把i-text对应的path加上
-        this.renderITextPath(textPaths);
-        this.canvas.renderAll();
-        // 加载后钩子
-        this.editor.hooksEntity.hookImportAfter.callAsync(jsonFile, () => {
-          // 修复导入带水印的json无法清除问题 #359
-          this.editor?.updateDrawStatus &&
-            typeof this.editor.updateDrawStatus === 'function' &&
-            this.editor.updateDrawStatus(!!temp['overlayImage']);
-          this.canvas.renderAll();
-          callback && callback();
-          this.editor.emit('loadJson');
-        });
-      });
+    await this.editor.hooksEntity.hookImportBefore.promise(jsonFile);
+    await runCanvasImportBatch(this.canvas, async () => {
+      await new Promise<void>((resolve) => this.canvas.loadFromJSON(jsonFile, resolve));
+      this.renderITextPath(textPaths);
+      await this.editor.hooksEntity.hookImportAfter.promise(jsonFile);
+      if (typeof this.editor?.updateDrawStatus === 'function') {
+        this.editor.updateDrawStatus(!!temp['overlayImage']);
+      }
+      options.prepare?.();
     });
+    // Import establishes one baseline. User edits after import remain undoable.
+    this.editor.clearAndSaveState?.();
+    callback?.();
+    this.editor.emit('loadJson');
   }
 
   async _transform(json: any) {

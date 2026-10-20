@@ -146,7 +146,7 @@ const DRAFT_AUTOSAVE_EVENTS = [
 ];
 
 function scheduleDraftSave() {
-  if (!canvas || draftRestoring) return;
+  if (!canvas || draftRestoring || canvas.kidstoryImporting) return;
   if (draftSaveTimer) clearTimeout(draftSaveTimer);
   draftSaveTimer = setTimeout(() => {
     draftSaveTimer = null;
@@ -155,7 +155,7 @@ function scheduleDraftSave() {
 }
 
 async function flushDraftSave({ embedImages = false } = {}) {
-  if (!canvas || !canvasEditor?.getJson || draftRestoring) return;
+  if (!canvas || !canvasEditor?.getJson || draftRestoring || canvas.kidstoryImporting) return;
   try {
     if (!canvasHasUserContent(canvas)) {
       await clearEditorproDraft();
@@ -175,7 +175,7 @@ async function flushDraftSave({ embedImages = false } = {}) {
 }
 
 function flushDraftSaveSync() {
-  if (!canvas || !canvasEditor?.getJson || draftRestoring) return;
+  if (!canvas || !canvasEditor?.getJson || draftRestoring || canvas.kidstoryImporting) return;
   try {
     if (!canvasHasUserContent(canvas)) {
       clearEditorproDraft();
@@ -197,9 +197,19 @@ function onPageHide() {
   void flushDraftSave({ embedImages: true });
 }
 
+function onImportBatchStart() {
+  if (draftSaveTimer) clearTimeout(draftSaveTimer);
+  draftSaveTimer = null;
+}
+function onImportBatchEnd({ success }) {
+  if (success) scheduleDraftSave();
+}
+
 function bindDraftAutosave() {
   if (!canvas) return;
   DRAFT_AUTOSAVE_EVENTS.forEach((ev) => canvas.on(ev, scheduleDraftSave));
+  canvas.on('import:batch:start', onImportBatchStart);
+  canvas.on('import:batch:end', onImportBatchEnd);
   window.addEventListener('beforeunload', onBeforeUnload);
   window.addEventListener('pagehide', onPageHide);
 }
@@ -211,6 +221,8 @@ function unbindDraftAutosave() {
   }
   if (canvas) {
     DRAFT_AUTOSAVE_EVENTS.forEach((ev) => canvas.off(ev, scheduleDraftSave));
+    canvas.off('import:batch:start', onImportBatchStart);
+    canvas.off('import:batch:end', onImportBatchEnd);
   }
   window.removeEventListener('beforeunload', onBeforeUnload);
   window.removeEventListener('pagehide', onPageHide);
