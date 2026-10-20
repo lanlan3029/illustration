@@ -88,6 +88,12 @@
 #app.tool-story-theme .format-preview-stage { background: var(--tool-panel); }
 #app.tool-story-theme .step-bar { background: var(--tool-panel); border: 1px solid #d4c5b9; border-radius: 12px; }
 #app.tool-story-theme .step-bar-marker { background: var(--tool-purple); color: white; }
+#app.tool-story-theme .layout-export .format-section { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+#app.tool-story-theme .layout-export .format-preview-stage { background: transparent; }
+#app.tool-story-theme .layout-export .format-card { border-radius: 10px; }
+#app.tool-story-theme .layout-export .format-card.is-active { border: 1px solid var(--tool-purple); box-shadow: inset 3px 0 0 var(--tool-purple); }
+#app.tool-story-theme .layout-export .step-bar { background: transparent; border: 0; border-radius: 0; padding-block: 12px; }
+#app.tool-story-theme .layout-export .step-bar-item { background: transparent; padding-left: 0; margin-right: 16px; }
 #app.tool-story-theme :is(.topdf-preview, .topdf-sidebar) { border: var(--tool-line); border-radius: 16px; box-shadow: 3px 3px 0 #eadfd2; }
 #app.tool-story-theme .topdf-preview { background: #f4eee4; }
 #app.tool-story-theme .topdf-sidebar { background: white; }
