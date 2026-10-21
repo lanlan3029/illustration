@@ -18,17 +18,21 @@
       </div>
     </div>
     <div class="matte-tools">
+      <div class="tool-heading">{{ $t('stickerLab.refineTitle') }}</div>
       <div class="tool-row">
+        <span class="tool-label">{{ $t('stickerLab.brushMode') }}</span>
         <el-radio-group v-model="brush" size="small" :disabled="!ready || segmenting">
           <el-radio-button label="erase">{{ $t('stickerLab.brushErase') }}</el-radio-button>
           <el-radio-button label="restore">{{ $t('stickerLab.brushRestore') }}</el-radio-button>
         </el-radio-group>
+        <span class="tool-label">{{ $t('stickerLab.brushSizeLabel') }}</span>
         <el-radio-group v-model="brushSize" size="small" class="size-group" :disabled="!ready || segmenting">
           <el-radio-button :label="16">{{ $t('stickerLab.brushSmall') }}</el-radio-button>
           <el-radio-button :label="28">{{ $t('stickerLab.brushMedium') }}</el-radio-button>
           <el-radio-button :label="44">{{ $t('stickerLab.brushLarge') }}</el-radio-button>
         </el-radio-group>
       </div>
+      <p class="brush-help">{{ $t(brush === 'restore' ? 'stickerLab.restoreHelp' : 'stickerLab.eraseHelp') }}</p>
       <p v-if="embedded" class="matte-hint">{{ $t('stickerLab.matteHintEmbedded') }}</p>
       <p v-else class="matte-hint">{{ $t('stickerLab.matteHint') }}</p>
       <div class="tool-actions">
@@ -40,7 +44,7 @@
             {{ $t('stickerLab.preview') }}
           </el-button>
           <el-button type="primary" size="small" :disabled="!ready || segmenting" @click="generate">
-            {{ $t('stickerLab.generateSticker') }}
+            {{ $t('stickerLab.finishRefining') }}
           </el-button>
         </template>
       </div>
@@ -74,7 +78,7 @@ const props = defineProps({
   embedded: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['cropped']);
+const emit = defineEmits(['cropped', 'reset']);
 
 const { t } = useI18n();
 const { proxy } = getCurrentInstance() || {};
@@ -153,15 +157,21 @@ async function runSegment() {
   segmenting.value = true;
   ready.value = false;
   previewUrl.value = '';
+  painting = false;
+  lastPaint = null;
+  emit('reset');
 
   try {
-    sourceImage = await loadImage(props.imageSrc);
+    const loadedSource = await loadImage(props.imageSrc);
+    if (token !== segmentToken) return;
     const result = await rembgFromImageSource(proxy.$http, props.imageSrc, {
       mode: REMBG_MODE,
     });
     if (token !== segmentToken) return;
 
     const rawCanvas = await rembgResultToCanvas(result.imageURL);
+    if (token !== segmentToken) return;
+    sourceImage = loadedSource;
     matteCanvas = cleanAlphaDebris(rawCanvas);
     ready.value = true;
     await nextTick();
@@ -212,7 +222,9 @@ function paintAt(imgX, imgY) {
     ctx.arc(imgX, imgY, r, 0, Math.PI * 2);
     ctx.clip();
     ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(sourceImage, 0, 0);
+    // rembg may resize its output. Restore in the matte's coordinate space.
+    ctx.clearRect(0, 0, matteCanvas.width, matteCanvas.height);
+    ctx.drawImage(sourceImage, 0, 0, matteCanvas.width, matteCanvas.height);
   }
   ctx.restore();
 }
@@ -237,6 +249,8 @@ function onPointerDown(e) {
   if (!ready.value || segmenting.value) return;
   canvasRef.value?.setPointerCapture?.(e.pointerId);
   painting = true;
+  previewUrl.value = '';
+  emit('reset');
   lastPaint = imagePoint(canvasPoint(e));
   paintAt(lastPaint.x, lastPaint.y);
   redrawDisplay();
@@ -254,13 +268,13 @@ function onPointerUp() {
   if (!painting) return;
   painting = false;
   lastPaint = null;
-  if (matteCanvas) matteCanvas = cleanAlphaDebris(matteCanvas);
   redrawDisplay();
 }
 
 function buildStyledSticker() {
   if (!matteCanvas) return null;
-  const styled = finishWithStyle(matteCanvas, props.stickerStyle, props.borderColor);
+  // Styling must not mutate the editable pixels or remove restored details.
+  const styled = finishWithStyle(matteCanvas, props.stickerStyle, props.borderColor, { clean: false });
   return {
     styled,
     dataUrl: canvasToDataUrl(styled),
@@ -288,6 +302,11 @@ function generate() {
     source: 'generate',
   });
 }
+
+watch(() => [props.stickerStyle, props.borderColor], () => {
+  previewUrl.value = '';
+  emit('reset');
+});
 
 defineExpose({ openPreview, generate });
 
@@ -374,10 +393,14 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
+.tool-heading { font-size: 16px; font-weight: 600; color: #303133; }
+.brush-help { margin: 0; padding: 10px; background: #edf5ff; border-radius: 6px; color: #254b76; font-size: 13px; line-height: 1.6; }
+.tool-actions :deep(.el-button) { margin-left: 0; }
+.tool-actions :deep(.el-button--primary) { width: 100%; min-height: 36px; }
 .matte-hint {
   margin: 0;
   font-size: 12px;
-  color: #909399;
+  color: #525866;
   line-height: 1.5;
 }
 

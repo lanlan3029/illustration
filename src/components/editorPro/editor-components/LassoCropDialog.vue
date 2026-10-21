@@ -9,6 +9,10 @@
     @on-cancel="onCancel"
   >
     <div v-if="visible && img" class="lasso-dialog-body">
+      <div class="workflow-guide" role="status">
+        <strong>{{ $t(resultUrl ? 'stickerLab.stepApply' : 'stickerLab.stepRefine') }}</strong>
+        <span>{{ $t(resultUrl ? 'stickerLab.applyHelp' : (cropMode === 'matte' ? 'stickerLab.refineHelp' : 'stickerLab.lassoHelp')) }}</span>
+      </div>
       <div class="editor-toolbar">
         <div class="toolbar-block">
           <span class="toolbar-label">{{ $t('stickerLab.cropMode') }}</span>
@@ -60,6 +64,7 @@
         :sticker-style="stickerStyle"
         :border-color="borderColor"
         @cropped="onCropped"
+        @reset="resultUrl = ''"
       />
     </div>
 
@@ -333,6 +338,8 @@ defineExpose({
 </script>
 
 <style scoped>
+.workflow-guide { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #bddcff; border-radius: 8px; background: #edf5ff; color: #254b76; font-size: 14px; line-height: 1.6; }
+.workflow-guide strong { color: #1d5ca5; }
 .lasso-dialog-body {
   min-height: 0;
 }

@@ -263,8 +263,9 @@ export function applyDashedBorder(sourceCanvas, color = '#111111') {
 /**
  * @param {'sticker'|'outline'|'raw'} style
  */
-export function finishWithStyle(rawCanvas, style, borderColor = '#ffffff') {
-  const cleaned = cleanAlphaDebris(trimTransparent(rawCanvas));
+export function finishWithStyle(rawCanvas, style, borderColor = '#ffffff', { clean = true } = {}) {
+  const trimmed = trimTransparent(rawCanvas);
+  const cleaned = clean ? cleanAlphaDebris(trimmed) : trimmed;
   if (style === 'raw') return cleaned;
   if (style === 'outline') return applyDashedBorder(cleaned, borderColor);
   return applyStickerStyle(cleaned, { borderColor });
