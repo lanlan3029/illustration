@@ -132,30 +132,30 @@
                 <i class="el-icon-time"></i>
                 <span>{{ $t('generationHistory.title') }}</span>
               </router-link></li>
-              <li><a @click.prevent="toProfile(); closeSubmenu();" class="dropdown-item">
+              <li><button type="button" @click="toProfile(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-zhanghu"></i>
                 <span>{{ $t('nav.accountSettings') }}</span>
-              </a></li>
-              <li><a @click.prevent="toMemberRecharge(); closeSubmenu();" class="dropdown-item">
+              </button></li>
+              <li><button type="button" @click="toMemberRecharge(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-dingyue"></i>
                 <span>{{ $t('nav.subscription') }}</span>
-              </a></li>
-              <li><a @click.prevent="logout(); closeSubmenu();" class="dropdown-item">
+              </button></li>
+              <li><button type="button" @click="logout(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-tuichudenglu-"></i>
                 <span>{{ $t('common.logout') }}</span>
-              </a></li>
-              <li><a @click.prevent="contactUs(); closeSubmenu();" class="dropdown-item">
+              </button></li>
+              <li><button type="button" @click="contactUs(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-lianxiwomen1"></i>
                 <span>{{ $t('nav.connection') }}</span>
-              </a></li>
-              <li><a @click.prevent="toAboutUs(); closeSubmenu();" class="dropdown-item dropdown-item--muted">
+              </button></li>
+              <li><button type="button" @click="toAboutUs(); closeSubmenu();" class="dropdown-item dropdown-item--muted">
                 <i class="iconfont icon-other"></i>
                 <span>{{ $t('nav.aboutUs') }}</span>
-              </a></li>
-              <li><a @click.prevent="toFeedback(); closeSubmenu();" class="dropdown-item">
+              </button></li>
+              <li><button type="button" @click="toFeedback(); closeSubmenu();" class="dropdown-item">
                 <i class="iconfont icon-lianxiwomen1"></i>
                 <span>{{ $t('nav.feedback') }}</span>
-              </a></li>
+              </button></li>
             </ul>
           </li>
         </ul>
@@ -350,7 +350,16 @@ export default {
             activeSubmenu.value = null
         }
 
-        const dismissMenus = () => {
+        const dismissMenus = (event) => {
+            if (event?.key === 'Escape') {
+                const root = proxy?.$el
+                const trigger = mobileMenuVisible.value
+                    ? root?.querySelector('.mobile-nav-button')
+                    : searchOpen.value
+                        ? root?.querySelector('.search-toggle')
+                        : root?.querySelector(`[aria-controls="nav-${activeSubmenu.value}"]`)
+                trigger?.focus()
+            }
             searchOpen.value = false
             closeSubmenu()
             closeMobileMenu()
@@ -698,6 +707,7 @@ export default {
 .nav-item.show .dropdown-menu { visibility: visible; opacity: 1; pointer-events: auto; transform: translateY(0); }
 .user-nav .dropdown-menu { left: auto; right: 0; }
 .dropdown-item { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 10px 12px; border-radius: var(--ks-radius-sm); color: var(--ks-ink); font-size: 14px; text-decoration: none; cursor: pointer; }
+button.dropdown-item { width: 100%; border: 0; background: transparent; font-family: inherit; text-align: left; }
 .dropdown-item:hover, .dropdown-item:focus-visible { background: var(--ks-primary-soft); color: var(--ks-primary-hover); }
 .dropdown-item i { font-size: 16px; }
 .dropdown-item--muted { color: var(--ks-muted); }
