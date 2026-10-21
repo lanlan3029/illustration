@@ -159,6 +159,8 @@
     </div>
 
     <el-dialog
+      :z-index="12000"
+      class="image-tool-dialog"
       v-model="showElementForm"
       :title="$t('lassoCrop.saveAsElement')"
       width="440px"
@@ -169,7 +171,7 @@
           <el-input v-model="elementForm.name" maxlength="30" show-word-limit />
         </el-form-item>
         <el-form-item :label="$t('lassoCrop.category')" required>
-          <el-select v-model="elementForm.category" style="width: 100%">
+          <el-select popper-class="story-controls" v-model="elementForm.category" style="width: 100%">
             <el-option
               v-for="item in elementCategories"
               :key="item.value"
@@ -197,6 +199,8 @@
     </el-dialog>
 
     <el-dialog
+      :z-index="12000"
+      class="image-tool-dialog"
       v-model="showCharacterForm"
       :title="$t('lassoCrop.saveToMyCharacter')"
       width="440px"
@@ -207,7 +211,7 @@
           <el-input v-model="characterForm.name" maxlength="30" show-word-limit />
         </el-form-item>
         <el-form-item :label="$t('lassoCrop.category')" required>
-          <el-select v-model="characterForm.category" style="width: 100%">
+          <el-select popper-class="story-controls" v-model="characterForm.category" style="width: 100%">
             <el-option
               v-for="item in characterCategories"
               :key="item.value"

@@ -1,7 +1,7 @@
 <template>
   <div class="matte-brush-canvas">
     <div class="matte-stage" ref="stageRef">
-      <div class="matte-frame checker-bg">
+      <div class="matte-frame image-tool-checker">
         <div v-if="segmenting" class="matte-loading">
           <el-icon class="is-loading"><Loading /></el-icon>
           <span>{{ $t('stickerLab.segmenting') }}</span>
@@ -49,8 +49,8 @@
         </template>
       </div>
     </div>
-    <el-dialog v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" align-center>
-      <div class="preview-frame checker-bg">
+    <el-dialog :z-index="12000" v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" class="image-tool-dialog" align-center>
+      <div class="image-tool-preview image-tool-checker">
         <img v-if="previewUrl" :src="previewUrl" alt="" />
       </div>
     </el-dialog>
@@ -289,6 +289,7 @@ function openPreview() {
 }
 
 function generate() {
+  if (!ready.value || segmenting.value) return;
   const result = buildStyledSticker();
   if (!result) return;
   previewUrl.value = result.dataUrl;
@@ -308,7 +309,7 @@ watch(() => [props.stickerStyle, props.borderColor], () => {
   emit('reset');
 });
 
-defineExpose({ openPreview, generate });
+defineExpose({ openPreview, generate, ready, segmenting });
 
 watch(() => props.imageSrc, () => {
   runSegment();
@@ -330,7 +331,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .matte-brush-canvas {
   display: grid;
-  grid-template-columns: 1fr 220px;
+  grid-template-columns: minmax(0, 1fr) 240px;
   gap: 16px;
   align-items: start;
 }
@@ -341,7 +342,7 @@ onBeforeUnmount(() => {
 
 .matte-frame {
   border-radius: 12px;
-  border: 1px solid #e8e8ec;
+  border: 1px solid var(--ks-border);
   padding: 12px;
   display: flex;
   justify-content: center;
@@ -355,14 +356,14 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: #606266;
+  color: var(--ks-muted);
   font-size: 14px;
   padding: 40px 16px;
 }
 
 .matte-loading .el-icon {
   font-size: 28px;
-  color: #409eff;
+  color: var(--ks-primary);
 }
 
 .matte-canvas {
@@ -374,7 +375,11 @@ onBeforeUnmount(() => {
 .matte-tools {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--ks-divider);
+  border-radius: var(--ks-radius-md);
+  background: var(--ks-panel);
 }
 
 .tool-row {
@@ -386,21 +391,21 @@ onBeforeUnmount(() => {
 .tool-label {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--ks-muted);
 }
 
 .size-group {
   flex-wrap: wrap;
 }
 
-.tool-heading { font-size: 16px; font-weight: 600; color: #303133; }
-.brush-help { margin: 0; padding: 10px; background: #edf5ff; border-radius: 6px; color: #254b76; font-size: 13px; line-height: 1.6; }
+.tool-heading { font-size: 16px; font-weight: 600; color: var(--ks-ink); }
+.brush-help { margin: 0; padding: 10px; background: var(--ks-primary-soft); border-radius: 6px; color: var(--ks-primary-hover); font-size: 13px; line-height: 1.6; }
 .tool-actions :deep(.el-button) { margin-left: 0; }
 .tool-actions :deep(.el-button--primary) { width: 100%; min-height: 36px; }
 .matte-hint {
   margin: 0;
   font-size: 12px;
-  color: #525866;
+  color: var(--ks-muted);
   line-height: 1.5;
 }
 
@@ -410,33 +415,10 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
-.checker-bg {
-  background:
-    linear-gradient(45deg, #ececf0 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(-45deg, #ececf0 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(45deg, transparent 75%, #ececf0 75%) 0 0 / 12px 12px,
-    linear-gradient(-45deg, transparent 75%, #ececf0 75%) 0 0 / 12px 12px,
-    #fafbfc;
-  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
-}
-
-.preview-frame {
-  padding: 16px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  min-height: 200px;
-}
-
-.preview-frame img {
-  max-width: 100%;
-  max-height: 50vh;
-  object-fit: contain;
-}
-
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .matte-brush-canvas {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
+  .matte-tools { grid-row: 1; }
 }
 </style>

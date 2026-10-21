@@ -34,8 +34,8 @@
       </template>
       <el-button v-if="hasPath" size="small" @click="resetDraw">{{ $t('lassoCrop.redraw') }}</el-button>
     </div>
-    <el-dialog v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" align-center>
-      <div class="preview-frame checker-bg">
+    <el-dialog :z-index="12000" v-model="previewOpen" :title="$t('stickerLab.previewTitle')" width="min(520px, 92vw)" class="image-tool-dialog" align-center>
+      <div class="image-tool-preview image-tool-checker">
         <img v-if="previewUrl" :src="previewUrl" alt="" />
       </div>
     </el-dialog>
@@ -455,10 +455,10 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   overflow: auto;
-  max-height: 75vh;
+  max-height: 55dvh;
   padding: 12px;
-  background: #ececec;
-  border-radius: 8px;
+  background: var(--ks-panel);
+  border-radius: var(--ks-radius-sm);
 }
 
 .lasso-image {
@@ -494,31 +494,9 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.lasso-export-mode {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.lasso-export-label {
-  font-size: 12px;
-  color: #606266;
-  font-weight: 600;
-}
-
-.lasso-export-radios {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.lasso-export-radios :deep(.el-radio-button__inner) {
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
 .lasso-hint {
   font-size: 13px;
-  color: #666;
+  color: var(--ks-muted);
   line-height: 1.5;
   margin: 0;
 }
@@ -538,32 +516,8 @@ onBeforeUnmount(() => {
 .preview-label {
   margin: 8px 0 0;
   font-size: 12px;
-  color: #999;
+  color: var(--ks-muted);
   text-align: center;
-}
-
-.checker-bg {
-  background:
-    linear-gradient(45deg, #ececf0 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(-45deg, #ececf0 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(45deg, transparent 75%, #ececf0 75%) 0 0 / 12px 12px,
-    linear-gradient(-45deg, transparent 75%, #ececf0 75%) 0 0 / 12px 12px,
-    #fafbfc;
-  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
-}
-
-.preview-frame {
-  padding: 16px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  min-height: 200px;
-}
-
-.preview-frame img {
-  max-width: 100%;
-  max-height: 50vh;
-  object-fit: contain;
 }
 
 @media (max-width: 768px) {
@@ -571,7 +525,9 @@ onBeforeUnmount(() => {
     flex-direction: column;
   }
 
+  .lasso-stage { width: 100%; }
   .lasso-side {
+    order: -1;
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;

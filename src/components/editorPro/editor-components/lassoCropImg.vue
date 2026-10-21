@@ -57,6 +57,8 @@ function init() {
 }
 
 onMounted(() => {
+  // Mobile inspectors mount after selection; initialize the existing image too.
+  init();
   canvasEditor.on('selectOne', init);
 });
 

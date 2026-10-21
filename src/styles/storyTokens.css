@@ -1,0 +1,34 @@
+/* Shared KidStory palette. Legacy theme names below remain compatible. */
+:root {
+  --ks-ink: #291c15;
+  --ks-muted: #6f6259;
+  --ks-paper: #fffdf8;
+  --ks-panel: #fff9f0;
+  --ks-surface: #ffffff;
+  --ks-primary: #7c38f5;
+  --ks-primary-hover: #6424c9;
+  --ks-primary-soft: #f4edff;
+  --ks-primary-light-3: #9b67f7;
+  --ks-primary-light-5: #bd99fa;
+  --ks-primary-light-7: #d8c5fc;
+  --ks-primary-light-8: #e5d7fd;
+  --ks-pink: #ff82d6;
+  --ks-yellow: #ffe45e;
+  --ks-mint: #00cba0;
+  --ks-blue: #7dd6f7;
+  --ks-border: #c9bcb0;
+  --ks-divider: #e5dbd0;
+  --ks-line: 2px solid var(--ks-ink);
+  --ks-radius-sm: 10px;
+  --ks-radius-md: 14px;
+  --ks-radius-lg: 20px;
+  --ks-shadow-sm: 3px 3px 0 var(--ks-ink);
+  --ks-shadow: 5px 5px 0 var(--ks-ink);
+  --ks-focus: 3px solid var(--ks-primary);
+  --ks-motion: 160ms ease;
+  --ks-header-height: 76px;
+  --ks-font: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+}
+@media (max-width: 768px) {
+  :root { --ks-header-height: 60px; }
+}

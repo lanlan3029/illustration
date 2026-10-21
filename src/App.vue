@@ -1,6 +1,6 @@
 <template>
-  <el-config-provider :locale="elementPlusLocale">
-    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'public-story-theme': isPublicPage || isStudioPage || isToolPage, 'studio-story-theme': isStudioPage, 'tool-story-theme': isToolPage }">
+  <el-config-provider :locale="elementPlusLocale" :z-index="12000">
+    <div id="app" :class="{ 'has-tabbar': isMobile && !hideMobileTabBar, 'compact-editor-shell': route.name === 'editorpro', 'public-story-theme': isPublicPage || isStudioPage || isToolPage, 'studio-story-theme': isStudioPage, 'tool-story-theme': isToolPage, 'story-controls': isStudioPage || isToolPage }">
       <top-bar/>
       <login-register v-if="isMask" />
       <main class="app-main">
@@ -125,9 +125,11 @@ html, body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding-top: 50px; /* 为固定导航栏留出空间（TopBar高度50px） */
+    padding-top: var(--ks-header-height);
     transition: padding-top 0.3s ease-out; /* 与导航栏滚动效果同步 */
 }
+
+#app.compact-editor-shell { --ks-header-height: 50px; }
 
 /* 仅首页吸底显示页脚 */
 .fixed-footer{

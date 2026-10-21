@@ -1,12 +1,12 @@
 <template>
-  <div class="navigation-wrap">
+  <div class="navigation-wrap story-controls" @keydown.esc="dismissMenus">
     <nav class="navbar start-header" :class="{ 'scroll-on': isScrolled }">
       <div class="container-fluid">
         <div class="navbar-header">
           <!-- Logo -->
-          <a class="navbar-brand" @click.prevent="$router.push('/')">
-            <img :src="logoUrl" alt="Logo" />
-          </a>
+          <router-link class="navbar-brand" to="/" :aria-label="$t('nav.home')">
+            <img :src="logoUrl" alt="故事时间" />
+          </router-link>
         </div>
 
         <button
@@ -15,6 +15,7 @@
           class="mobile-nav-button"
           :aria-expanded="mobileMenuVisible"
           :aria-label="$t('nav.menu')"
+          aria-controls="mobile-navigation"
           @click="toggleMobileMenu"
         >
           <span /><span /><span />
@@ -28,10 +29,10 @@
           </li>
 
           <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'creation', 'active': isCreationNavActive }">
-            <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('creation')">
+            <button type="button" class="nav-link dropdown-toggle" :aria-expanded="activeSubmenu === 'creation'" aria-controls="nav-creation" @click="toggleSubmenu('creation')">
               {{ $t('nav.creation') }}
-            </a>
-            <ul class="dropdown-menu">
+            </button>
+            <ul id="nav-creation" class="dropdown-menu">
               <li v-for="item in creationItems" :key="item.to">
                 <router-link :to="item.to" class="dropdown-item" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
               </li>
@@ -39,10 +40,10 @@
           </li>
 
           <li class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'activities', 'active': isActivitiesNavActive }">
-            <a class="nav-link dropdown-toggle" href="#" @click.prevent="toggleSubmenu('activities')">
+            <button type="button" class="nav-link dropdown-toggle" :aria-expanded="activeSubmenu === 'activities'" aria-controls="nav-activities" @click="toggleSubmenu('activities')">
               {{ $t('nav.activities') }}
-            </a>
-            <ul class="dropdown-menu">
+            </button>
+            <ul id="nav-activities" class="dropdown-menu">
               <li v-for="item in activityItems" :key="item.to">
                 <router-link :to="item.to" class="dropdown-item" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
               </li>
@@ -59,19 +60,25 @@
             <router-link :to="item.to" class="nav-link" :class="item.linkClass" @click="closeSubmenu">{{ $t(item.label) }}</router-link>
           </li>
 
-        
+
 
           <!-- 搜索框 -->
-          <li class="nav-item search-item">
+          <li class="nav-item search-item" :class="{ 'search-open': searchOpen }">
+            <button type="button" class="search-toggle" :aria-label="$t('common.search') + ' ' + $t('common.books')" :aria-expanded="searchOpen" aria-controls="header-search" @click="toggleSearch">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+            </button>
             <div class="search-wrapper">
-              <i class="el-icon-search search-icon"></i>
-              <input 
-                type="text" 
-                class="search" 
-                v-model="searchValue" 
-                name="search" 
-                autocomplete="off" 
-                :placeholder="$t('common.search') + ' ' + $t('common.books')" 
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+              <input
+                ref="searchInputRef"
+                id="header-search"
+                type="text"
+                class="search"
+                v-model="searchValue"
+                name="search"
+                :aria-label="$t('common.search') + ' ' + $t('common.books')"
+                autocomplete="off"
+                :placeholder="$t('common.search') + ' ' + $t('common.books')"
                 @keyup.enter="searchFun(searchValue)"
                 @click.stop
               >
@@ -80,10 +87,9 @@
 
           <!-- 语言切换 -->
           <li class="nav-item language-switcher-item">
-            <el-radio-group 
-              v-model="currentLanguage" 
-              size="small" 
-              fill="#8167a9"
+            <el-radio-group
+              v-model="currentLanguage"
+              size="small"
               @change="handleLanguageChange"
               class="language-radio-group"
             >
@@ -94,14 +100,13 @@
 
           <!-- 用户登录/头像 -->
           <li v-if="!isLogin" class="nav-item">
-            <a @click.prevent="showMask" class="nav-link">{{ $t('common.login') }}</a>
+            <button type="button" @click="showMask" class="nav-link">{{ $t('common.login') }}</button>
           </li>
 
-          <li v-else class="nav-item dropdown" :class="{ 'show': activeSubmenu === 'user' }">
-            <a class="nav-link dropdown-toggle user-menu-trigger" href="#" @click.prevent="toggleSubmenu('user')">
-              <div class="user-header-wrapper">
+          <li v-else class="nav-item dropdown user-nav" :class="{ 'show': activeSubmenu === 'user' }">
+            <div class="user-header-wrapper">
                 <!-- 积分和Pro显示框 -->
-                <div class="points-pro-box" @click.stop="goPointsHistory">
+                <button type="button" class="points-pro-box" @click="goPointsHistory">
                   <div class="points-section">
                     <img src="@/assets/logo/count.png" alt="积分" class="points-icon-small" />
                     <span class="points-value">{{ userPoints || 0 }}</span>
@@ -110,16 +115,18 @@
                   <div class="pro-section">
                     <span class="pro-text">Pro</span>
                   </div>
-                </div>
+                </button>
                 <!-- 用户头像 -->
+                <button type="button" class="user-menu-trigger" :aria-label="$t('nav.my')" :aria-expanded="activeSubmenu === 'user'" aria-controls="nav-user" @click="toggleSubmenu('user')">
                 <img
                   :src="(userInfo && userInfo.avatar) ? userInfo.avatar : defaultAvatar"
                   :alt="(userInfo && userInfo.name) || 'User Avatar'"
                   class="user-avatar"
                 />
-              </div>
-            </a>
-            <ul class="dropdown-menu">
+                </button>
+            </div>
+            <ul id="nav-user" class="dropdown-menu">
+              <li><router-link to="/member/points-history" class="dropdown-item" @click="closeSubmenu">{{ $t('pointsHistory.title') }}</router-link></li>
               <li v-if="isAdmin"><router-link to="/admin/books" class="dropdown-item" @click="closeSubmenu()">{{ currentLanguage === 'en' ? 'Admin dashboard' : '管理后台' }}</router-link></li>
               <li><router-link to="/member/generation-history" class="dropdown-item" @click="closeSubmenu()">
                 <i class="el-icon-time"></i>
@@ -153,24 +160,11 @@
           </li>
         </ul>
 
-    
 
-        <!-- 手机端全屏菜单：仅在小屏下渲染，电脑端不显示（数据与桌面共用 navItems） -->
-        <ul v-if="isMobile" class="mobile-menu-list">
-          <li
-            v-for="item in mobileItems"
-            :key="item.key"
-            :class="{ active: isNavActive(item) }"
-          >
-            <router-link :to="item.to" @click="closeMobileMenu">{{ $t(item.label) }}</router-link>
-          </li>
-          <li>
-            <a href="#" @click.prevent="handleMobileMy">{{ $t('nav.my') || '我的' }}</a>
-          </li>
-        </ul>
+
       </div>
     </nav>
-    <div v-if="isMobile && mobileMenuVisible" class="mobile-nav-sheet">
+    <div v-if="isMobile && mobileMenuVisible" id="mobile-navigation" class="mobile-nav-sheet">
       <section>
         <p class="mobile-nav-sheet__label">{{ $t('nav.activities') }}</p>
         <router-link
@@ -201,7 +195,6 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, getCurrentI
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 
@@ -213,11 +206,17 @@ export default {
         const route = useRoute()
         const { proxy } = getCurrentInstance()
         const { locale } = useI18n()
-        
+
         const logoUrl = require('../assets/logo/logo.png')
         const defaultAvatar = require('../assets/images/magic 2.svg')
         const userid = ref(localStorage.getItem("id"))
         const searchValue = ref('')
+        const searchOpen = ref(false)
+        const searchInputRef = ref(null)
+        const toggleSearch = () => {
+            searchOpen.value = !searchOpen.value
+            if (searchOpen.value) nextTick(() => searchInputRef.value?.focus())
+        }
         const isAdmin = computed(() => { void store.state.isLogin; void route.path; return isCurrentUserAdmin() })
         const userPoints = ref(0) // 用户积分
         const showMemberDialog = ref(false) // 是否显示会员信息对话框
@@ -229,7 +228,6 @@ export default {
         const { isMobile } = useBreakpoint()
 
         const $http = proxy?.$http || axios
-        const $message = proxy?.$message || ElMessage
 
         /**
          * 顶部导航的唯一数据源：桌面端简单项与手机端菜单共用，改一处两端同步。
@@ -266,7 +264,6 @@ export default {
         // 桌面端：首页单独渲染、创作下拉居中，其余简单项在此列表
         const desktopRestItems = navItems.filter((i) => i.key !== 'home')
         // 手机端：仅展示标记 mobile 的项
-        const mobileItems = navItems.filter((i) => i.mobile)
 
         /** 创作入口下任一子路由（含 AI 插画 / AI 绘本）时高亮「创作」 */
         const isCreationNavActive = computed(() => {
@@ -302,15 +299,15 @@ export default {
             if (item.key === 'blog') return isBlogRoute.value
             return route.path === item.to
         }
-        
+
         // 当前语言（使用 ref 以便双向绑定）
         const currentLanguage = ref(locale.value)
-        
+
         // 监听 locale 变化，同步到 currentLanguage
         watch(() => locale.value, (newVal) => {
             currentLanguage.value = newVal
         })
-        
+
         // 处理语言切换
         const handleLanguageChange = (value) => {
             locale.value = value
@@ -320,26 +317,26 @@ export default {
                 document.documentElement.lang = value
             }
         }
-        
+
         // 切换语言（保留以兼容其他可能的调用）
         const toggleLanguage = () => {
             const newLocale = locale.value === 'zh' ? 'en' : 'zh'
             handleLanguageChange(newLocale)
         }
-        
+
         // 从 store 获取状态
         const userInfo = computed(() => store.state.userInfo)
         const isLogin = computed(() => store.state.isLogin)
         const fansArr = computed(() => store.state.fansArr)
         const attentionArr = computed(() => store.state.attentionArr)
         const searchArry = computed(() => store.state.searchArry)
-        
+
         const handleScroll = () => {
             // 检查滚动位置，如果小于等于 0，确保 isScrolled 为 false
             const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
             isScrolled.value = scrollY > 50
         }
-        
+
         const toggleSubmenu = (menuName) => {
             // 如果点击的是当前已打开的菜单，则关闭；否则关闭其他菜单并打开当前菜单
             if (activeSubmenu.value === menuName) {
@@ -348,18 +345,24 @@ export default {
                 activeSubmenu.value = menuName
             }
         }
-        
+
         const closeSubmenu = () => {
             activeSubmenu.value = null
         }
-        
+
+        const dismissMenus = () => {
+            searchOpen.value = false
+            closeSubmenu()
+            closeMobileMenu()
+        }
+
         const handleClickOutside = (event) => {
             const el = proxy?.$el
             if (el && !el.contains(event.target)) {
-                closeSubmenu()
+                dismissMenus()
             }
         }
-        
+
         const showMask = () => {
             store.commit("showMask")
         }
@@ -391,36 +394,27 @@ export default {
         const closeMobileMenu = () => {
             mobileMenuVisible.value = false
         }
-        
-        const handleMobileMy = () => {
-            closeMobileMenu()
-            if (isLogin.value) {
-                router.push('/user/profile')
-            } else {
-                store.commit('showMask')
-            }
-        }
-        
+
         const goHomeFromMobile = () => {
             closeMobileMenu()
             router.push('/')
         }
-        
+
         const handleMobileLogin = () => {
             closeMobileMenu()
             store.commit('showMask')
         }
-        
+
         const toMemberRechargeFromMobile = () => {
             closeMobileMenu()
             router.push('/member/recharge')
         }
-        
+
         const logoutFromMobile = () => {
             closeMobileMenu()
             logout()
         }
-      
+
         const goToRecharge = () => {
             // 跳转到充值页面
             showMemberDialog.value = false
@@ -435,7 +429,7 @@ export default {
                 store.commit('showMask')
             }
         }
-        
+
         const logout = () => {
             localStorage.removeItem("id")
             localStorage.removeItem("token")
@@ -443,9 +437,10 @@ export default {
             store.commit("setUserInfo", null)
             router.push('/')
         }
-        
+
         //搜索绘本
         const searchFun = async (Value) => {
+            searchOpen.value = false
             if (Value) {
                 store.commit("setSearchInput", searchValue.value)
                 router.push({
@@ -546,10 +541,10 @@ export default {
                 // 所有请求都使用 Promise.allSettled，即使有失败也不会抛出错误
                 console.log('初始化请求完成（部分可能失败）')
             }
-            
+
             // 点击外部关闭子菜单
             document.addEventListener('click', handleClickOutside)
-            
+
             // 监听滚动事件
             window.addEventListener('scroll', handleScroll)
             // 延迟初始化检查，确保页面已完全加载
@@ -572,17 +567,20 @@ export default {
                 }
             })
         })
-        
+
         onBeforeUnmount(() => {
             document.removeEventListener('click', handleClickOutside)
             window.removeEventListener('scroll', handleScroll)
         })
-        
+
         return {
             logoUrl,
             defaultAvatar,
             userid,
             searchValue,
+            searchOpen,
+            searchInputRef,
+            toggleSearch,
             userPoints,
             isAdmin,
             isMobile,
@@ -593,9 +591,7 @@ export default {
             isActivitiesNavActive,
             homeNavItem,
             desktopRestItems,
-            mobileItems,
             isNavActive,
-            handleMobileMy,
             toggleMobileMenu,
             closeMobileMenu,
             goHomeFromMobile,
@@ -619,6 +615,7 @@ export default {
             handleScroll,
             toggleSubmenu,
             closeSubmenu,
+            dismissMenus,
             handleClickOutside,
             showMask,
             toProfile,
@@ -638,624 +635,120 @@ export default {
 </script>
 
 <style scoped>
-/* 导航栏包装器 - 固定定位 */
-.navigation-wrap {
-	position: fixed;
-	width: 100%;
-	top: 0;
-	left: 0;
-	z-index: 10000;
-	-webkit-transition: all 0.3s ease-out;
-	transition: all 0.3s ease-out;
-}
-
-/* 导航栏主体 */
+.navigation-wrap { position: fixed; inset: 0 0 auto; z-index: 1000; }
 .start-header {
-	opacity: 1;
-	transform: translateY(0);
-	height: 50px;
-	display: flex;
-	align-items: center;
-	box-shadow: 0 10px 30px 0 rgba(138, 155, 165, 0.15);
-	-webkit-transition: all 0.3s ease-out;
-	transition: all 0.3s ease-out;
-	background-color: #fff;
+  height: var(--ks-header-height);
+  display: flex;
+  align-items: center;
+  background: var(--ks-paper);
+  border-bottom: var(--ks-line);
 }
-
-.start-header.scroll-on {
-	height: 50px;
-	box-shadow: 0 5px 10px 0 rgba(138, 155, 165, 0.15);
-	-webkit-transition: all 0.3s ease-out;
-	transition: all 0.3s ease-out;
-}
-
-.start-header.scroll-on .navbar-brand img {
-	height: 24px;
-	-webkit-transition: all 0.3s ease-out;
-	transition: all 0.3s ease-out;
-}
-
-.navbar {
-	padding: 0;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
-
 .container-fluid {
-	width: 100%;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 0 30px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-inline: clamp(16px, 3vw, 48px);
 }
-
-.navbar-header {
-	display: flex;
-	align-items: center;
-}
-
-.mobile-nav-button {
-	display: none;
-	width: 36px;
-	height: 36px;
-	margin-left: auto;
-	padding: 8px;
-	border: 0;
-	background: transparent;
-	flex-direction: column;
-	justify-content: center;
-	gap: 5px;
-	cursor: pointer;
-}
-
-.mobile-nav-button span {
-	display: block;
-	height: 2px;
-	border-radius: 2px;
-	background: #303133;
-}
-
-.mobile-nav-sheet {
-	position: absolute;
-	top: 50px;
-	left: 0;
-	right: 0;
-	max-height: calc(100dvh - 50px - 58px);
-	overflow-y: auto;
-	padding: 8px 16px 20px;
-	background: #fff;
-	border-bottom: 1px solid #ececf0;
-	box-shadow: 0 16px 32px -20px rgba(49, 35, 82, 0.35);
-}
-
-.mobile-nav-sheet__label {
-	margin: 14px 4px 6px;
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	color: #8a8aa3;
-}
-
-.mobile-nav-sheet__link {
-	display: block;
-	padding: 12px 8px;
-	border-radius: 8px;
-	color: #303133;
-	text-decoration: none;
-	font-size: 15px;
-}
-
-.mobile-nav-sheet__link.router-link-active {
-	color: #6c5ce7;
-	background: #f4f1fb;
-}
-
-.navbar-brand {
-	cursor: pointer;
-	padding: 0;
-	margin-right: 30px;
-}
-
-.navbar-brand img {
-	height: 28px;
-	width: auto;
-	display: block;
-	-webkit-transition: all 0.3s ease-out;
-	transition: all 0.3s ease-out;
-}
-
-.navbar-nav {
-	display: flex;
-	align-items: center;
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	gap: 30px;
-}
-
-/* 桌面端导航默认显示，移动端隐藏 */
-.desktop-nav {
-	display: flex;
-}
-
-/* 汉堡按钮（移动端显示） */
-.hamburger-button {
-	display: none;
-	position: absolute;
-	right: 16px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 32px;
-	height: 32px;
-	border: none;
-	background: transparent;
-	padding: 0;
-	cursor: pointer;
-	align-items: center;
-	justify-content: center;
-}
-
-.hamburger-line {
-	width: 20px;
-	height: 2px;
-	background-color: #212121;
-	border-radius: 2px;
-	margin: 2px 0;
-	display: block;
-}
-
-
-.mobile-menu-list {
-	list-style: none;
-	padding: 12px 16px;
-	margin: 0;
-	flex: 1;
-	overflow-y: auto;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-}
-
-.mobile-menu-list li {
-	margin-bottom: 0;
-	flex: 1;
-}
-
-.mobile-menu-list a {
-	display: block;
-	padding: 10px 8px;
-	border-radius: 6px;
-	color: #303133;
-	text-decoration: none;
-	font-size: 15px;
-	text-align: center;
-}
-
-.mobile-menu-list li.active a,
-.mobile-menu-list a.router-link-exact-active {
-	background: #f0f4ff;
-	color: #8167a9;
-}
-
-/* 桌面端隐藏手机菜单列表，避免两个系统菜单同时显示（断点统一 768/769） */
-@media (min-width: 769px) {
-	.mobile-menu-list {
-		display: none;
-	}
-}
-
-.mobile-menu-footer {
-	padding: 12px 16px 16px;
-	border-top: 1px solid #eeeeee;
-}
-
-.mobile-language-switcher {
-	margin-bottom: 12px;
-}
-
-.mobile-auth-section {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.mobile-user-info {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
-
-.mobile-user-avatar {
-	width: 36px;
-	height: 36px;
-	border-radius: 50%;
-	object-fit: cover;
-}
-
-.mobile-user-meta .name {
-	font-size: 14px;
-	color: #303133;
-}
-
-.mobile-user-meta .points {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	font-size: 13px;
-	color: #606266;
-}
-
-.mobile-user-actions {
-	display: flex;
-	gap: 8px;
-}
-
-.mobile-menu-fade-enter-active,
-.mobile-menu-fade-leave-active {
-	transition: opacity 0.2s ease;
-}
-
-.mobile-menu-fade-enter-from,
-.mobile-menu-fade-leave-to {
-	opacity: 0;
-}
-
-.nav-item {
-	position: relative;
-	transition: all 200ms linear;
-}
-
+.navbar-header { flex-shrink: 0; }
+.navbar-brand { display: inline-flex; align-items: center; min-height: 44px; }
+.navbar-brand img { display: block; width: auto; height: 28px; }
+.navbar-nav { display: flex; align-items: center; gap: clamp(4px, .8vw, 16px); margin: 0; padding: 0; min-width: 0; list-style: none; }
+.nav-item { position: relative; flex-shrink: 0; }
 .nav-link {
-	color: #212121 !important;
-	font-weight: 500;
-	transition: all 200ms linear;
-	position: relative;
-	padding: 5px 15px !important;
-	cursor: pointer;
-	display: inline-block;
-	text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ks-ink);
+  font: 600 14px/1.5 var(--ks-font);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--ks-motion), box-shadow var(--ks-motion);
 }
-
-.nav-item:hover .nav-link {
-	color: #8167a9 !important;
-}
-
-.nav-item.active .nav-link {
-	color: #777 !important;
-}
-
-.desktop-nav:has(.book-library-nav.active) { gap: clamp(4px, 1.2vw, 20px); }
-.desktop-nav:has(.book-library-nav.active) .nav-link { white-space: nowrap; padding-inline: 8px !important; }
-.desktop-nav:has(.book-library-nav.active) .nav-item { flex-shrink: 0; }
-.desktop-nav:has(.book-library-nav.active) .search-item { flex-shrink: 1; min-width: 100px; }
-
-.nav-item.book-library-nav.active .nav-link {
-  color: #8965b1 !important;
-  font-weight: 700;
-  box-shadow: inset 0 -3px 0 #8965b1;
-}
-
-/* Diary uses the same inactive treatment as other navigation links. */
-.nav-item.active .nav-link-mood-diary { color:#8167a9 !important; }
-
-.nav-item:after {
-	display: none;
-}
-
-/* 下拉菜单 */
+.nav-link:hover { color: var(--ks-primary); }
+.nav-item.active > .nav-link { box-shadow: inset 0 -3px 0 var(--ks-pink); }
 .nav-item .dropdown-menu {
-	transform: translate3d(0, 10px, 0);
-	visibility: hidden;
-	opacity: 0;
-	max-height: 0;
-	display: block;
-	padding: 0;
-	margin: 0;
-	transition: all 200ms linear;
-	position: absolute;
-	top: 100%;
-	left: 0;
-	min-width: 240px;
-	z-index: 1000;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-height: min(600px, calc(100dvh - var(--ks-header-height) - 32px));
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  border: var(--ks-line);
+  border-radius: var(--ks-radius-md);
+  background: var(--ks-paper);
+  box-shadow: var(--ks-shadow-sm);
+  list-style: none;
+  text-align: left;
+  transition: opacity var(--ks-motion), transform var(--ks-motion), visibility var(--ks-motion);
 }
-
-.nav-item.show .dropdown-menu {
-	opacity: 1;
-	visibility: visible;
-	max-height: 999px;
-	transform: translate3d(0, 0px, 0);
+.nav-item.show .dropdown-menu { visibility: visible; opacity: 1; pointer-events: auto; transform: translateY(0); }
+.user-nav .dropdown-menu { left: auto; right: 0; }
+.dropdown-item { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 10px 12px; border-radius: var(--ks-radius-sm); color: var(--ks-ink); font-size: 14px; text-decoration: none; cursor: pointer; }
+.dropdown-item:hover, .dropdown-item:focus-visible { background: var(--ks-primary-soft); color: var(--ks-primary-hover); }
+.dropdown-item i { font-size: 16px; }
+.dropdown-item--muted { color: var(--ks-muted); }
+.search-toggle { display: none; }
+.search-item { flex: 1 1 180px; min-width: 100px; max-width: 220px; margin-inline: 4px; }
+.search-wrapper { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); }
+.search-wrapper:focus-within { outline: var(--ks-focus); outline-offset: 3px; }
+.search-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--ks-muted); }
+.search { width: 100%; min-width: 0; padding: 0; border: 0; outline: none; box-shadow: none; background: transparent; color: var(--ks-ink); font-size: 13px; }
+.search::placeholder { color: var(--ks-muted); }
+.language-radio-group { flex-wrap: nowrap; }
+.language-radio-group :deep(.el-radio-button__inner) { padding: 9px 10px; font-size: 13px; }
+.user-header-wrapper { display: flex; align-items: center; gap: 12px; }
+.points-pro-box { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); cursor: pointer; }
+.points-pro-box:hover { background: var(--ks-primary-soft); }
+.points-section, .pro-section { display: flex; align-items: center; gap: 4px; }
+.points-icon-small { width: 16px; height: 16px; }
+.points-value { font-size: 14px; font-variant-numeric: tabular-nums; }
+.divider { width: 1px; height: 16px; background: var(--ks-divider); }
+.pro-text { color: var(--ks-primary-hover); font-size: 12px; font-weight: 600; }
+.user-menu-trigger { display: flex; align-items: center; padding: 0; border: 0; background: transparent; border-radius: 50%; cursor: pointer; }
+.user-avatar { display: block; width: 40px; height: 40px; border: var(--ks-line); border-radius: 50%; object-fit: cover; }
+.mobile-nav-button { display: none; width: 44px; height: 44px; margin-left: auto; padding: 11px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); flex-direction: column; justify-content: center; gap: 5px; cursor: pointer; }
+.mobile-nav-button span { height: 2px; border-radius: 2px; background: currentColor; }
+.mobile-nav-sheet { position: absolute; top: var(--ks-header-height); inset-inline: 12px; max-height: calc(100dvh - var(--ks-header-height) - var(--kid-tabbar-h) - 24px); overflow-y: auto; overscroll-behavior: contain; padding: 12px; border: var(--ks-line); border-radius: 0 0 var(--ks-radius-md) var(--ks-radius-md); background: var(--ks-paper); box-shadow: var(--ks-shadow-sm); text-align: left; }
+.mobile-nav-sheet__label { margin: 12px 8px 8px; color: var(--ks-muted); font-size: 12px; font-weight: 600; }
+.mobile-nav-sheet__link { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: var(--ks-radius-sm); color: var(--ks-ink); font-size: 14px; text-decoration: none; }
+.mobile-nav-sheet__link:hover { background: var(--ks-primary-soft); }
+.mobile-nav-sheet__link.router-link-active { background: var(--ks-yellow); font-weight: 600; }
+@media (min-width: 769px) and (max-width: 1200px) {
+  .container-fluid { gap: 12px; padding-inline: 16px; }
+  .navbar-nav { gap: 2px; }
+  .nav-link { padding-inline: 5px; font-size: 13px; }
+  .navbar-brand img { height: 24px; }
+  .user-header-wrapper { gap: 8px; }
+  .search-item { max-width: 160px; min-width: 80px; }
 }
-
-.dropdown-menu {
-	padding: 10px !important;
-	margin: 0;
-	font-size: 13px;
-	letter-spacing: 1px;
-	color: #212121;
-	background-color: #fcfaff;
-	border: none;
-	border-radius: 3px;
-	box-shadow: 0 5px 10px 0 rgba(138, 155, 165, 0.15);
-	transition: all 200ms linear;
-	list-style: none;
+@media (min-width: 769px) and (max-width: 1024px) {
+  .search-item { flex: 0 0 36px; min-width: 36px; margin: 0; }
+  .search-toggle { display: grid; place-items: center; width: 36px; height: 40px; padding: 8px; border: 0; border-radius: var(--ks-radius-sm); color: var(--ks-ink); background: transparent; cursor: pointer; }
+  .search-toggle svg { width: 20px; height: 20px; }
+  .search-item .search-wrapper { position: absolute; top: calc(100% + 12px); right: 0; display: none; width: min(320px, calc(100vw - 32px)); height: 44px; background: var(--ks-surface); box-shadow: var(--ks-shadow-sm); }
+  .search-item.search-open .search-wrapper { display: flex; }
+  .points-pro-box { display: none; }
+  .container-fluid { gap: 8px; }
+  .nav-link { padding-inline: 4px; font-size: 12px; }
+  .language-radio-group :deep(.el-radio-button__inner) { padding-inline: 6px; }
 }
-
-.dropdown-toggle::after {
-	display: none;
-}
-
-.dropdown-item {
-	padding: 8px 16px;
-	color: #212121;
-	border-radius: 2px;
-	transition: all 200ms linear;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	text-decoration: none;
-	cursor: pointer;
-}
-
-.dropdown-item:hover,
-.dropdown-item:focus {
-	color: #8167a9;
-	
-}
-
-.dropdown-item i {
-	font-size: 16px;
-}
-
-.dropdown-item--muted span {
-	font-size: 13px;
-	color: #909399;
-}
-
-.dropdown-item--muted:hover span,
-.dropdown-item--muted:focus span {
-	color: #8167a9;
-}
-
-/* 语言切换器样式 */
-.language-switcher-item {
-	display: flex;
-	align-items: center;
-	margin-left: 10px;
-	margin-right: 10px;
-}
-
-.language-radio-group {
-	display: flex;
-}
-
-.language-radio-group :deep(.el-radio-button__inner) {
-	padding: 6px 12px;
-	font-size: 13px;
-	font-weight: 500;
-	border-radius: 4px;
-	transition: all 0.3s ease;
-}
-
-.language-radio-group :deep(.el-radio-button:first-child .el-radio-button__inner) {
-	border-top-left-radius: 4px;
-	border-bottom-left-radius: 4px;
-}
-
-.language-radio-group :deep(.el-radio-button:last-child .el-radio-button__inner) {
-	border-top-right-radius: 4px;
-	border-bottom-right-radius: 4px;
-}
-
-.language-radio-group :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-	background-color: #409eff;
-	border-color: #409eff;
-	color: #fff;
-	box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
-}
-
-.language-radio-group :deep(.el-radio-button__inner:hover) {
-	color: #409eff;
-}
-
-/* 搜索框样式 */
-.search-item {
-	margin-left: auto;
-	margin-right: 15px;
-}
-
-.search-wrapper {
-	display: flex;
-	align-items: center;
-	position: relative;
-	background-color: #f5f5f5;
-	border-radius: 4px;
-	padding: 8px 12px;
-	width: 250px;
-	border: 1px solid #e0e0e0;
-}
-
-.search-icon {
-	color: #212121;
-	margin-right: 8px;
-	font-size: 16px;
-}
-
-.search {
-	background: transparent !important;
-	border: none !important;
-	outline: none !important;
-	box-shadow: none !important;
-	color: #212121;
-	font-size: 14px;
-	width: 100%;
-	padding: 0;
-	margin: 0;
-}
-
-.search:focus {
-	border: none !important;
-	outline: none !important;
-	box-shadow: none !important;
-}
-
-.search::placeholder {
-	color: #999;
-}
-
-
-
-/* 用户菜单样式 */
-.user-menu-trigger {
-	padding: 5px 10px !important;
-}
-
-.user-header-wrapper {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-/* 积分和Pro显示框 */
-.points-pro-box {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 6px 12px;
-	background-color: #f5f5f5;
-	border-radius: 4px;
-	cursor: pointer;
-	transition: background-color 0.3s;
-	border: 1px solid #e0e0e0;
-}
-
-.points-pro-box:hover {
-	background-color: #eeeeee;
-}
-
-.points-section {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-
-.points-icon-small {
-	width: 16px;
-	height: 16px;
-}
-
-.points-value {
-	color: #212121;
-	font-size: 14px;
-	font-weight: 500;
-}
-
-.divider {
-	width: 1px;
-	height: 16px;
-	background-color: #e0e0e0;
-}
-
-.pro-section {
-	display: flex;
-	align-items: center;
-}
-
-.pro-text {
-	color: #8167a9;
-	font-size: 12px;
-	font-weight: 600;
-}
-
-.user-avatar {
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	object-fit: cover;
-	cursor: pointer;
-}
-
-/* 响应式设计（手机断点统一 768px，与 breakpoints.css / useBreakpoint 一致） */
 @media (max-width: 768px) {
-	/* 小屏幕下隐藏桌面菜单，显示汉堡按钮 */
-	.desktop-nav {
-		display: none;
-	}
-
-	/* 导航改由底部 Tab 承担，顶部仅保留 Logo，隐藏顶部横向菜单 */
-	.mobile-menu-list {
-		display: none;
-	}
-
-	.hamburger-button,
-	.mobile-nav-button {
-		display: inline-flex;
-	}
-
-	.nav-item:after {
-		display: none;
-	}
-
-	.nav-item::before {
-		position: absolute;
-		display: block;
-		top: 15px;
-		left: 0;
-		width: 11px;
-		height: 1px;
-		content: "";
-		border: none;
-		background-color: #fff;
-	}
-
-	.dropdown-toggle::after {
-		position: absolute;
-		display: block;
-		top: 10px;
-		left: -23px;
-		width: 1px;
-		height: 11px;
-		content: "";
-		border: none;
-		background-color: #fff;
-		transition: all 200ms linear;
-	}
-
-	.dropdown-toggle[aria-expanded="true"]::after {
-		transform: rotate(90deg);
-		opacity: 0;
-	}
-
-	.dropdown-menu {
-		padding: 0 !important;
-		background-color: transparent;
-		box-shadow: none;
-		transition: all 200ms linear;
-	}
-
-	.nav-item.show .dropdown-menu {
-		margin-top: 10px !important;
-		margin-bottom: 20px !important;
-	}
-
-	.search-wrapper {
-		width: 150px;
-	}
-}
-@media(min-width:769px) {
-    .navbar-nav.desktop-nav { gap:clamp(2px, 1vw, 16px); flex-wrap:nowrap; min-width:0; }
-    .desktop-nav > .nav-item { flex-shrink:0; }
-    .desktop-nav .nav-link { white-space:nowrap; padding-inline:8px !important; }
-    .desktop-nav .search-item { flex:1 1 180px; min-width:90px; max-width:220px; }
-    .desktop-nav .search-wrapper { width:100%; }
-    .desktop-nav .search { width:100%; min-width:0; }
-    .desktop-nav .language-radio-group { display:flex; flex-wrap:nowrap; white-space:nowrap; }
-    .nav-item.active > .nav-link { color:#8167a9 !important; box-shadow:inset 0 -2px 0 #8167a9; }
-    .navbar-brand { margin-right:16px; }
-}
-@media(min-width:769px) and (max-width:1100px) {
-    .desktop-nav .nav-link { padding-inline:5px !important; font-size:13px; }
-    .navbar-brand img { height:24px; }
+  .desktop-nav { display: none; }
+  .mobile-nav-button { display: inline-flex; }
+  .container-fluid { gap: 12px; padding-inline: 16px; }
 }
 </style>

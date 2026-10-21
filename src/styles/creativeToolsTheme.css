@@ -1,20 +1,14 @@
 /* Creative tools share app chrome; canvas pixels and exported artwork are untouched. */
 #app.tool-story-theme {
-  --tool-ink: #291c15;
-  --tool-muted: #796b62;
-  --tool-paper: #fffdf8;
-  --tool-panel: #fff9f0;
-  --tool-purple: #7c38f5;
-  --tool-soft: #f4edff;
-  --tool-pink: #ff82d6;
-  --tool-yellow: #ffe45e;
-  --tool-line: 2px solid #291c15;
-  --el-color-primary: #7c38f5;
-  --el-color-primary-light-3: #9b67f7;
-  --el-color-primary-light-5: #bd99fa;
-  --el-color-primary-light-9: #f4edff;
-  --el-color-primary-dark-2: #6424c9;
-  --el-border-radius-base: 10px;
+  --tool-ink: var(--ks-ink);
+  --tool-muted: var(--ks-muted);
+  --tool-paper: var(--ks-paper);
+  --tool-panel: var(--ks-panel);
+  --tool-purple: var(--ks-primary);
+  --tool-soft: var(--ks-primary-soft);
+  --tool-pink: var(--ks-pink);
+  --tool-yellow: var(--ks-yellow);
+  --tool-line: var(--ks-line);
 }
 #app.tool-story-theme :is(.collage-page, .dt-page, .segment-page, .sticker-workshop, .topdf, .cw-main > .container) {
   --accent: var(--tool-purple);
@@ -44,14 +38,13 @@
 #app.tool-story-theme :is(.collage-sidebar, .template-section, .dt-panel, .dt-result, .segment-card, .col-work, .col-gallery, .format-section, .selected-section) { background: white; border: var(--tool-line); border-radius: 18px; box-shadow: 3px 3px 0 #eadfd2; }
 #app.tool-story-theme :is(.section-title h2, .template-heading h2, .dt-plan-head h2, .segment-page .section-title, .collection-title, .format-section-title) { color: var(--tool-ink); }
 #app.tool-story-theme :is(.collage-page button, .collage-page select, .dt-option, .dt-ratio, .tool-pill, .mode-card, .format-card, .topdf-fs-btn, .topdf-back) { font-family: inherit; border-color: #d4c5b9; border-radius: 10px; color: var(--tool-ink); }
-#app.tool-story-theme :is(.el-button, .btn-preview, .btn-generate) { font-family: inherit; border-radius: 10px; }
+#app.tool-story-theme :is(.btn-preview, .btn-generate) { font-family: inherit; border-radius: 10px; }
 #app.tool-story-theme :is(.el-button--default, .el-button--primary.is-plain) { background: white; border-color: #b7a497; color: var(--tool-ink); }
 #app.tool-story-theme :is(.collage-page .primary, .el-button--primary:not(.is-plain), .btn-generate) { background: var(--tool-purple); border: var(--tool-line); color: white; }
 #app.tool-story-theme .header-actions .primary { background: var(--tool-pink); color: var(--tool-ink); }
 #app.tool-story-theme :is(.header-actions button, .dt-actions .el-button, .action-row button) { min-height: 42px; padding-inline: 18px; }
 #app.tool-story-theme :is(.header-actions .primary, .btn-generate):not(:disabled):not(.is-disabled) { box-shadow: 3px 3px 0 var(--tool-ink); }
 #app.tool-story-theme :is(button:disabled, .el-button.is-disabled) { opacity: .55; box-shadow: none; cursor: not-allowed; }
-#app.tool-story-theme :is(.el-input__wrapper, .el-textarea__inner, .el-select__wrapper) { background: white; color: var(--tool-ink); border-radius: 10px; }
 #app.tool-story-theme :is(input[type=range], input[type=checkbox], input[type=radio]) { accent-color: var(--tool-purple); }
 #app.tool-story-theme :is(.segmented, .pill-row) { background: var(--tool-panel); }
 #app.tool-story-theme :is(.segmented button.active, .tool-pill.active, .dt-option.active, .dt-ratio.active, .mode-card.active) { border: var(--tool-line); background: var(--tool-soft); color: #6424c9; box-shadow: 2px 2px 0 #d8c5f7; }
@@ -99,7 +92,6 @@
 #app.tool-story-theme .topdf-sidebar { background: white; }
 #app.tool-story-theme .topdf-preview-head { border-color: #d4c5b9; }
 #app.tool-story-theme :is(.topdf-empty, .topdf-settings) { background: var(--tool-paper); color: var(--tool-muted); border-color: #d4c5b9; }
-#app.tool-story-theme :is(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--tool-purple); outline-offset: 3px; }
 @media (max-width: 768px) {
   #app.tool-story-theme :is(.collage-page, .dt-page, .segment-page, .sticker-workshop) { padding: 24px 16px 40px; }
   #app.tool-story-theme :is(.collage-header, .dt-header, .segment-page-header, .workshop-hero, .page-head) { padding-bottom: 20px; margin-bottom: 22px; }

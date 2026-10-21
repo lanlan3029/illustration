@@ -1,10 +1,11 @@
 <template>
   <Modal
+    :z-index="11000"
     v-model="visible"
     :title="$t('lassoCrop.title')"
     width="90%"
     :footer-hide="true"
-    class-name="lasso-crop-modal"
+    class-name="lasso-crop-modal image-tool-modal"
     @on-visible-change="onVisibleChange"
     @on-cancel="onCancel"
   >
@@ -68,7 +69,10 @@
       />
     </div>
 
-    <div class="lasso-actions">
+    <div class="lasso-actions" :class="{ 'is-pending': !resultUrl }">
+      <Button v-if="cropMode === 'matte' && !resultUrl" class="mobile-generate" type="primary" :disabled="!matteRef?.ready || matteRef?.segmenting" @click="matteRef?.generate()">
+        {{ $t('stickerLab.finishRefining') }}
+      </Button>
       <Button type="primary" :disabled="!resultUrl" @click="handleReplace">
         {{ $t('lassoCrop.replaceLayer') }}
       </Button>
@@ -85,9 +89,11 @@
     </div>
 
     <el-dialog
+      :z-index="12000"
       v-model="showElementForm"
       :title="$t('lassoCrop.saveAsElement')"
       width="440px"
+      class="image-tool-dialog"
       append-to-body
       destroy-on-close
     >
@@ -96,7 +102,7 @@
           <el-input v-model="elementForm.name" maxlength="30" show-word-limit />
         </el-form-item>
         <el-form-item :label="$t('lassoCrop.category')" required>
-          <el-select v-model="elementForm.category" style="width: 100%">
+          <el-select popper-class="story-controls" v-model="elementForm.category" style="width: 100%">
             <el-option
               v-for="item in elementCategories"
               :key="item.value"
@@ -124,9 +130,11 @@
     </el-dialog>
 
     <el-dialog
+      :z-index="12000"
       v-model="showCharacterForm"
       :title="$t('lassoCrop.saveToMyCharacter')"
       width="440px"
+      class="image-tool-dialog"
       append-to-body
       destroy-on-close
     >
@@ -135,7 +143,7 @@
           <el-input v-model="characterForm.name" maxlength="30" show-word-limit />
         </el-form-item>
         <el-form-item :label="$t('lassoCrop.category')" required>
-          <el-select v-model="characterForm.category" style="width: 100%">
+          <el-select popper-class="story-controls" v-model="characterForm.category" style="width: 100%">
             <el-option
               v-for="item in characterCategories"
               :key="item.value"
@@ -338,8 +346,8 @@ defineExpose({
 </script>
 
 <style scoped>
-.workflow-guide { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #bddcff; border-radius: 8px; background: #edf5ff; color: #254b76; font-size: 14px; line-height: 1.6; }
-.workflow-guide strong { color: #1d5ca5; }
+.workflow-guide { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid var(--ks-primary-light-5); border-radius: 8px; background: var(--ks-primary-soft); color: var(--ks-primary-hover); font-size: 14px; line-height: 1.6; }
+.workflow-guide strong { color: var(--ks-primary-hover); }
 .lasso-dialog-body {
   min-height: 0;
 }
@@ -350,7 +358,7 @@ defineExpose({
   gap: 14px 20px;
   margin-bottom: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--ks-divider);
 }
 
 .toolbar-block {
@@ -362,7 +370,7 @@ defineExpose({
 .toolbar-label {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--ks-muted);
 }
 
 .color-row {
@@ -372,8 +380,8 @@ defineExpose({
 }
 
 .color-chip {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
@@ -382,31 +390,35 @@ defineExpose({
 }
 
 .color-chip.active {
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.25);
+  border-color: var(--ks-primary);
+  outline: 2px solid var(--ks-primary-light-5);
+  outline-offset: 2px;
 }
+
+.mobile-generate { display: none; }
 
 .lasso-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
+  padding: 16px 0;
+  border-top: 1px solid var(--ks-divider);
+  background: var(--ks-paper);
 }
 
 @media (max-width: 768px) {
   .editor-toolbar {
-    flex-direction: column;
-    gap: 12px;
+    gap: 16px;
   }
-}
-</style>
-
-<style>
-.lasso-crop-modal .ivu-modal-body {
-  padding-top: 12px;
-  padding-bottom: 12px;
+  .lasso-actions { justify-content: flex-start; }
+  .lasso-actions.is-pending > .ivu-btn:disabled:not(.mobile-generate) { display: none; }
+  .lasso-actions .mobile-generate { display: inline-block; flex: 2 1 180px; }
+  .lasso-actions.is-pending > .ivu-btn:last-child { flex: 1 1 80px; }
+  .lasso-actions > .ivu-btn { flex: 1 1 140px; }
 }
 </style>

@@ -175,7 +175,7 @@
     "stepRefine": "Step 1 · Crop & refine",
     "stepApply": "Step 2 · Apply or save",
     "applyHelp": "Result ready. Replace the current layer below, or download or save it. Generate again after further edits.",
-    "refineHelp": "After background removal, erase or restore areas. Preview, then click the blue Finish & generate result button.",
+    "refineHelp": "After background removal, erase or restore areas. Preview, then click Finish & generate result.",
     "lassoHelp": "Hold and draw around the area to keep. Close the loop or click Complete crop, then apply to the layer.",
     "matteHint": "Refine the automatic cutout with the brush, preview, then click Finish & generate result.",
     "matteHintEmbedded": "Background removed automatically. Brush to refine edges.",

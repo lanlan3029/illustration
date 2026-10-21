@@ -1,0 +1,156 @@
+/* Opt-in controls; explicit dialog classes also cover teleported content. */
+:where(.story-controls, .image-tool-modal, .image-tool-dialog) {
+  --el-color-primary: var(--ks-primary);
+  --el-color-primary-dark-2: var(--ks-primary-hover);
+  --el-color-primary-light-3: var(--ks-primary-light-3);
+  --el-color-primary-light-5: var(--ks-primary-light-5);
+  --el-color-primary-light-7: var(--ks-primary-light-7);
+  --el-color-primary-light-8: var(--ks-primary-light-8);
+  --el-color-primary-light-9: var(--ks-primary-soft);
+  --el-border-color: var(--ks-border);
+  --el-border-radius-base: var(--ks-radius-sm);
+  --el-text-color-primary: var(--ks-ink);
+  --el-text-color-regular: var(--ks-ink);
+  --el-text-color-secondary: var(--ks-muted);
+  --el-bg-color: var(--ks-surface);
+  --el-fill-color-blank: var(--ks-surface);
+  font-family: var(--ks-font);
+  color: var(--ks-ink);
+}
+:where(.story-controls, .image-tool-modal, .image-tool-dialog) :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: var(--ks-focus);
+  outline-offset: 3px;
+}
+:where(.story-controls, .image-tool-modal, .image-tool-dialog) .el-button {
+  font-family: inherit;
+  border-radius: var(--ks-radius-sm);
+}
+:where(.story-controls, .image-tool-modal, .image-tool-dialog) :is(.el-input__wrapper, .el-textarea__inner, .el-select__wrapper) {
+  background: var(--ks-surface);
+  border-radius: var(--ks-radius-sm);
+}
+:is(.image-tool-modal, .image-tool-dialog) :is(.el-button, .ivu-btn) {
+  min-height: 36px;
+  height: auto;
+  padding: 8px 14px;
+  margin-left: 0;
+  font: 500 14px/1.4 var(--ks-font);
+  border: 1px solid var(--ks-border);
+  border-radius: var(--ks-radius-sm);
+  background: var(--ks-surface);
+  color: var(--ks-ink);
+  white-space: normal;
+  transition: background-color var(--ks-motion), border-color var(--ks-motion);
+}
+:is(.image-tool-modal, .image-tool-dialog) :is(.el-button--primary, .ivu-btn-primary):not(:disabled):not(.is-disabled) {
+  background: var(--ks-primary);
+  border: var(--ks-line);
+  color: white;
+  box-shadow: 2px 2px 0 var(--ks-ink);
+}
+:is(.image-tool-modal, .image-tool-dialog) :is(.el-button, .ivu-btn):not(:disabled):not(.is-disabled):hover {
+  background: var(--ks-primary-soft);
+  border-color: var(--ks-primary);
+  color: var(--ks-primary-hover);
+}
+:is(.image-tool-modal, .image-tool-dialog) :is(.el-button--primary, .ivu-btn-primary):not(:disabled):not(.is-disabled):hover {
+  background: var(--ks-primary-hover);
+  color: white;
+}
+:is(.image-tool-modal, .image-tool-dialog) :is(button:disabled, .is-disabled) {
+  opacity: .6;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+:is(.image-tool-modal, .image-tool-dialog) .el-radio-group .el-radio-button__inner {
+  padding: 9px 12px;
+  font-size: 13px;
+}
+:is(.image-tool-modal, .image-tool-dialog) .el-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--ks-divider);
+  padding-top: 16px;
+}
+.image-tool-modal .ivu-modal {
+  top: 24px;
+  max-width: 1280px;
+  padding-bottom: 0;
+}
+.image-tool-modal .ivu-modal-content,
+.el-dialog.image-tool-dialog {
+  border: var(--ks-line);
+  border-radius: var(--ks-radius-lg);
+  background: var(--ks-paper);
+  box-shadow: var(--ks-shadow);
+  max-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.image-tool-modal .ivu-modal-header {
+  padding: 18px 24px;
+  border-bottom: var(--ks-line);
+}
+.image-tool-modal .ivu-modal-header-inner,
+.image-tool-dialog .el-dialog__title {
+  color: var(--ks-ink);
+  font-size: 18px;
+  font-weight: 600;
+}
+.image-tool-modal .ivu-modal-body {
+  min-height: 0;
+  padding: 20px 24px 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.image-tool-modal .ivu-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ks-divider);
+}
+.image-tool-modal .ivu-modal-close {
+  top: 6px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--ks-muted);
+}
+.image-tool-dialog .el-dialog__header {
+  padding-bottom: 16px;
+  margin-right: 32px;
+  border-bottom: 1px solid var(--ks-divider);
+}
+.image-tool-dialog .el-dialog__body {
+  min-height: 0;
+  padding-top: 16px;
+  overflow: auto;
+  color: var(--ks-ink);
+}
+@media (max-width: 768px) {
+  .image-tool-modal .ivu-modal { top: 12px; width: calc(100% - 24px) !important; margin-inline: auto; }
+  .image-tool-modal .ivu-modal-content,
+  .el-dialog.image-tool-dialog { max-height: calc(100dvh - 24px); border-radius: var(--ks-radius-md); }
+  .el-dialog.image-tool-dialog { max-width: calc(100vw - 24px); }
+  .image-tool-modal .ivu-modal-header { padding: 16px; }
+  .image-tool-modal .matte-tools .el-button--primary { display: none; }
+  .image-tool-modal .ivu-modal-body { padding: 16px 16px 0; }
+  .image-tool-modal .ivu-modal-footer { padding: 16px; }
+  :is(.image-tool-modal, .image-tool-dialog) :is(.el-button, .ivu-btn) { min-height: 44px; }
+  :is(.image-tool-modal, .image-tool-dialog) .el-radio-group .el-radio-button__inner { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.story-controls, .image-tool-modal, .image-tool-dialog) { --ks-motion: 0ms; }
+}
+
+/* Shared transparency and preview surfaces, never applied to export pixels. */
+.image-tool-checker { background: repeating-conic-gradient(#e8e8e8 0% 25%, #fafafa 0% 50%) 50% / 16px 16px; }
+.image-tool-preview { display: flex; align-items: center; justify-content: center; min-height: 200px; padding: 16px; border: 1px solid var(--ks-divider); border-radius: var(--ks-radius-sm); }
+.image-tool-preview img { max-width: 100%; max-height: 50dvh; object-fit: contain; }

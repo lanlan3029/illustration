@@ -31,11 +31,13 @@
         v-for="item in characters"
         :key="item.id || item._id"
         class="cs-card cs-card--character"
+        role="group"
+        :aria-label="item.character_name || $t('characterStudio.unnamed')"
         @click="onCardClick(item)"
       >
-        <div class="cs-card-thumb">
+        <button type="button" class="cs-card-thumb" :aria-label="(pickMode ? $t('characterStudio.tapToSelect') : $t('myHomePage.edit')) + ' · ' + (item.character_name || $t('characterStudio.unnamed'))" @click.stop="onCardClick(item)">
           <img v-lazy-image="getImageUrl(item.image_url || item.character_image_url)" decoding="async" :alt="item.character_name" />
-        </div>
+        </button>
         <div class="cs-card-meta">
           <span class="cs-card-name">{{ item.character_name || $t('characterStudio.unnamed') }}</span>
           <div v-if="!pickMode" class="cs-card-actions" @click.stop>
@@ -169,137 +171,34 @@ export default {
 </script>
 
 <style scoped>
-.cs-dashboard {
-  padding: 24px 20px 48px;
-}
-
-.cs-dash-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 28px;
-}
-
-.cs-dash-header h1 {
-  margin: 0 0 8px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f1f1f;
-}
-
-.cs-dash-header p {
-  margin: 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.cs-dash-loading,
-.cs-dash-empty {
-  text-align: center;
-  padding: 80px 0;
-  color: #999;
-}
-
-.cs-dash-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.cs-card {
-  border: 1px solid #ececf0;
-  border-radius: 16px;
-  background: #fff;
-  overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s;
-}
-
-.cs-card:hover {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  transform: translateY(-2px);
-}
-
-.cs-card--new {
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  border-style: dashed;
-  border-color: #d6d9df;
-  background: #fafbfc;
-  color: #606266;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.cs-card-new-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #f5f0fa 0%, #ebe5f5 100%);
-  color: #8167a9;
-  font-size: 32px;
-  line-height: 56px;
-  text-align: center;
-}
-
-.cs-card-thumb {
-  aspect-ratio: 1;
-  background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 50% / 16px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-.cs-card-thumb img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.cs-card-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 12px 14px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.cs-card-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cs-card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.cs-card-actions :deep(.el-button) {
-  width: 100%;
-  margin: 0;
-  padding: 6px 4px;
-  font-size: 12px;
-}
-
-.cs-card-actions :deep(.cs-action-btn--full) {
-  grid-column: 1 / -1;
-}
-
-.cs-pick-hint {
-  font-size: 12px;
-  color: #8167a9;
-  font-weight: 600;
+.cs-dashboard { padding: 40px clamp(24px, 4vw, 56px) 64px; }
+.cs-dash-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; padding-bottom: 28px; border-bottom: var(--ks-line); }
+.cs-dash-header h1 { margin: 0 0 8px; color: var(--ks-ink); font-size: clamp(28px, 3vw, 40px); font-weight: 600; line-height: 1.4; }
+.cs-dash-header p { max-width: 620px; margin: 0; color: var(--ks-muted); font-size: 14px; line-height: 1.8; }
+.cs-dash-header > .el-button { flex-shrink: 0; min-height: 44px; padding: 10px 20px; border: var(--ks-line); border-radius: var(--ks-radius-md); background: var(--ks-pink); color: var(--ks-ink); box-shadow: var(--ks-shadow-sm); font-size: 14px; font-weight: 600; }
+.cs-dash-loading, .cs-dash-empty { padding: 64px 24px; color: var(--ks-muted); text-align: center; }
+.cs-dash-empty { border: 2px dashed var(--ks-border); border-radius: var(--ks-radius-lg); background: var(--ks-panel); }
+.cs-dash-empty .el-button { margin-top: 16px; min-height: 44px; }
+.cs-dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr)); gap: 24px; }
+.cs-card { overflow: hidden; border: var(--ks-line); border-radius: var(--ks-radius-lg); background: var(--ks-surface); box-shadow: 4px 4px 0 var(--ks-blue); cursor: pointer; transition: box-shadow var(--ks-motion), transform var(--ks-motion); }
+.cs-card:nth-child(odd) { box-shadow: 4px 4px 0 var(--ks-yellow); }
+.cs-card:hover { transform: translateY(-2px); box-shadow: var(--ks-shadow); }
+.cs-card.cs-card--new { min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; border-style: dashed; background: var(--ks-paper); color: var(--ks-ink); box-shadow: none; font-size: 22px; font-weight: 500; }
+.cs-card-new-icon { display: grid; place-items: center; width: 56px; height: 56px; border: var(--ks-line); border-radius: 50%; background: var(--ks-yellow); box-shadow: var(--ks-shadow-sm); color: var(--ks-ink); font: 32px/1 var(--ks-font); }
+.cs-card-thumb { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3/2; padding: 20px; border: 0; border-radius: 0; background: var(--ks-panel); cursor: pointer; }
+.cs-card-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.cs-card-meta { display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-top: var(--ks-line); }
+.cs-card-name { overflow: hidden; color: var(--ks-ink); font-size: 20px; line-height: 1.5; font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.cs-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cs-card-actions :deep(.el-button) { width: 100%; min-height: 36px; height: auto; margin: 0; padding: 8px 4px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); font-size: 13px; line-height: 1.5; white-space: normal; }
+.cs-card-actions :deep(.el-button:hover) { background: var(--ks-primary-soft); border-color: var(--ks-primary); color: var(--ks-primary-hover); }
+.cs-card-actions :deep(.cs-action-btn--full) { grid-column: 1 / -1; background: var(--ks-ink); color: white; }
+.cs-pick-hint { color: var(--ks-primary-hover); font-size: 13px; font-weight: 600; }
+@media (max-width: 1024px) { .cs-dash-header { flex-wrap: wrap; } }
+@media (max-width: 768px) {
+  .cs-dashboard { padding: 24px 16px 40px; }
+  .cs-dash-header { align-items: flex-start; flex-direction: column; gap: 16px; padding-bottom: 24px; }
+  .cs-card.cs-card--new { min-height: 180px; }
+  .cs-card-actions :deep(.el-button) { min-height: 44px; }
 }
 </style>

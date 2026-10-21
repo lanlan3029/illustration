@@ -8,7 +8,9 @@ import store from './store'
 // 基础重置样式应最先加载，避免覆盖第三方组件样式
 import '@/styles/reset.css'
 // 响应式断点 token 与公共工具类（需在业务样式之前引入）
+import '@/styles/storyTokens.css'
 import '@/styles/breakpoints.css'
+import '@/styles/storyControls.css'
 // 模板组件及指令由构建插件按需导入。
 import { ElMessage } from 'element-plus'
 // JS 调用的服务不会经过模板组件解析，单独保留其样式。

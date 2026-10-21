@@ -16,16 +16,16 @@
   --bp-xl: 1280px;  /* 桌面 */
 
   /* ===== 移动端视觉 token（紫色主题，对齐设计稿） ===== */
-  --kid-primary: #6c5ce7;          /* 主色：紫 */
-  --kid-primary-strong: #5b5bd6;   /* 深一档主色 */
-  --kid-primary-soft: #efeaff;     /* 浅紫底 */
+  --kid-primary: var(--ks-primary);          /* 主色：紫 */
+  --kid-primary-strong: var(--ks-primary-hover);   /* 深一档主色 */
+  --kid-primary-soft: var(--ks-primary-soft);     /* 浅紫底 */
   --kid-grad-primary: linear-gradient(135deg, #7b6cf0 0%, #9a7bf5 100%);
   --kid-grad-hero: linear-gradient(135deg, #6a5af9 0%, #a18cf0 60%, #b79cf2 100%);
 
-  --kid-text: #2b2b40;             /* 主文字 */
-  --kid-text-sub: #8a8aa3;         /* 次要文字 */
-  --kid-bg: #f5f6fb;               /* 页面底色 */
-  --kid-card: #ffffff;             /* 卡片白 */
+  --kid-text: var(--ks-ink);             /* 主文字 */
+  --kid-text-sub: var(--ks-muted);         /* 次要文字 */
+  --kid-bg: var(--ks-paper);               /* 页面底色 */
+  --kid-card: var(--ks-surface);             /* 卡片白 */
 
   --kid-radius-sm: 12px;
   --kid-radius: 16px;
