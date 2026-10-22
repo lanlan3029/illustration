@@ -12,7 +12,7 @@ import '@/styles/storyTokens.css'
 import '@/styles/breakpoints.css'
 
 // 模板组件及指令由构建插件按需导入。
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 // JS 调用的服务不会经过模板组件解析，单独保留其样式。
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/message-box/style/css'
@@ -125,6 +125,8 @@ axios.interceptors.response.use(
 app.config.globalProperties.$http = axios
 // 将 Element Plus 的 message 挂载到全局属性（为了兼容性）
 app.config.globalProperties.$message = ElMessage
+// 按需加载不会安装 MessageBox 服务，保留现有页面的确认弹窗调用。
+app.config.globalProperties.$confirm = ElMessageBox.confirm
 
 app.mount('#app')
 
