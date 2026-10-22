@@ -671,6 +671,7 @@ export default {
         styleCategoryTabItems() {
             const keys = {
                 curated: 'styleTabCurated',
+                all: 'styleTabAll',
                 sketch: 'styleTabSketch', paint: 'styleTabPaint', toon: 'styleTabToon',
                 collage: 'styleTabCollage', chinese: 'styleTabChinese', other: 'styleTabOther', skill: 'styleTabSkill',
             }
