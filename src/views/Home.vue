@@ -12,9 +12,9 @@
             <div class="feature-cards-group">
                 <section class="feature-cards">
                     <router-link v-for="(card, index) in [...featureCards, ...toolCards]" :key="card.key" :to="card.to" class="feature-card">
-                        <img class="feature-art" :src="featureArt[card.key]" alt="" width="640" height="640" decoding="async" :loading="index < 4 ? 'eager' : 'lazy'" />
+                        <img class="feature-art" :src="featureArt[card.key]" alt="" width="384" height="384" decoding="async" :loading="index < 4 ? 'eager' : 'lazy'" />
                         <div class="feature-text">
-                            <h3 class="feature-name">{{ cardLabel(card) }}</h3>
+                            <h2 class="feature-name">{{ cardLabel(card) }}</h2>
                         </div>
                     </router-link>
                 </section>
@@ -87,7 +87,9 @@
                         <div class="showcase-screenshot-wrap">
                             <img
                                 class="showcase-screenshot"
-                                :src="editorScreenshot"
+                                v-lazy-image="editorScreenshot"
+                                width="1000" height="507"
+                                decoding="async"
                                 alt=""
                                 loading="lazy"
                             />
@@ -98,14 +100,14 @@
             </section>
 
             <!-- All illustration styles, presented as a paper photo album. -->
-            <section class="styles-section">
+            <section ref="stylesSection" class="styles-section">
                 <div class="styles-head">
                     <h2 class="styles-title">{{ $t('home.stylesTitle') }}</h2>
                     <p class="styles-subtitle">{{ $t('home.stylesSubtitle') }}</p>
                 </div>
                 <div class="style-gallery">
                     <button v-for="style in styleImages" :key="style.id" type="button" class="style-photo" @click="go({ name: 'AIPicture', query: { styleId: String(style.id) } })">
-                        <span class="style-photo-image"><img :src="style.image" :alt="styleLabel(style)" loading="lazy" decoding="async" /></span>
+                        <span class="style-photo-image"><img v-lazy-image="style.image" width="300" height="400" :alt="styleLabel(style)" loading="lazy" decoding="async" /></span>
                         <span class="style-photo-caption">{{ styleLabel(style) }}</span>
                     </button>
                 </div>
@@ -116,7 +118,6 @@
 </template>
 
 <script>
-import { loadIllustrationStyles } from '@/utils/illustrationStyles'
 import PublicSeoContent from '@/components/PublicSeoContent.vue'
 
 export default {
@@ -134,12 +135,12 @@ export default {
                 lasso: require('@/assets/images/home/features-v2/lasso.webp'),
                 pdf: require('@/assets/images/home/features-v2/pdf.webp'),
             },
-            editorScreenshot: require('@/assets/images/home/showcase-editor.png'),
+            editorScreenshot: require('@/assets/images/home/showcase-editor.webp'),
             featureCards: [
-                { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book', img: require('@/assets/images/cards/books.png') },
-                { key: 'brush', titleKey: 'nav.aiIllustration', descKey: 'home.aiIllustrationDesc', to: '/ai-picture', cls: 'ic-brush', img: require('@/assets/images/cards/image (1).png') },
-                { key: 'user', titleKey: 'nav.characterStudio', descKey: 'home.createCharacterDesc', to: '/creation-studio', cls: 'ic-user', img: require('@/assets/images/cards/reddit.png') },
-                { key: 'mood', titleKey: 'nav.moodDiary', descKey: 'home.moodDiaryDesc', to: '/mood-diary', cls: 'ic-mood', img: require('@/assets/images/cards/daily-health-app.png') }
+                { key: 'book', titleKey: 'nav.aiBooks', descKey: 'home.aiBooksDesc', to: '/AIbooks', cls: 'ic-book' },
+                { key: 'brush', titleKey: 'nav.aiIllustration', descKey: 'home.aiIllustrationDesc', to: '/ai-picture', cls: 'ic-brush' },
+                { key: 'user', titleKey: 'nav.characterStudio', descKey: 'home.createCharacterDesc', to: '/creation-studio', cls: 'ic-user' },
+                { key: 'mood', titleKey: 'nav.moodDiary', descKey: 'home.moodDiaryDesc', to: '/mood-diary', cls: 'ic-mood' }
             ],
             toolCards: [
                 { key: 'editor', titleKey: 'nav.createIllustration', descKey: 'home.createIllustrationDesc', to: '/editorpro', cls: 'ic-editor' },
@@ -150,13 +151,27 @@ export default {
             styleImages: [],
         };
     },
-    async mounted() {
-        const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh';
-        const styles = await loadIllustrationStyles({ locale, t: this.$t.bind(this) });
-        this.styleImages = styles.map((s) => ({ key: s.key, id: s.id, image: s.image, artStyle: s.artStyle }));
-
+    mounted() {
+        // Load the gallery data and generation presets only as it approaches the viewport.
+        this.galleryObserver = new IntersectionObserver((entries) => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                this.galleryObserver.disconnect();
+                this.loadStyleGallery().catch(() => { /* Gallery is optional; keep navigation usable. */ });
+            }
+        }, { rootMargin: '200px' });
+        this.galleryObserver.observe(this.$refs.stylesSection);
+    },
+    beforeUnmount() {
+        this.galleryObserver?.disconnect();
     },
     methods: {
+        async loadStyleGallery() {
+            const { loadIllustrationStyles } = await import('@/utils/illustrationStyles');
+            const locale = this.$i18n?.locale === 'en' ? 'en' : 'zh';
+            const styles = await loadIllustrationStyles({ locale, t: this.$t.bind(this) });
+            if (!this.$el?.isConnected) return;
+            this.styleImages = styles.map(s => ({ key: s.key, id: s.id, image: s.image, artStyle: s.artStyle }));
+        },
         cardLabel(card) {
             const labels = { segment: ['一键抠图', 'Remove Background'], pdf: ['图片转 PDF', 'Images to PDF'] };
             return labels[card.key]?.[this.$i18n.locale === 'en' ? 1 : 0] || this.$t(card.titleKey);

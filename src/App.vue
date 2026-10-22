@@ -24,7 +24,7 @@ import TheFooter from './components/TheFooter.vue'
 import MobileTabBar from './components/MobileTabBar.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import '@/styles/publicStoryTheme.css'
-import '@/styles/creativeToolsTheme.css'
+
 
 const LoginRegister = defineAsyncComponent(() => import('./components/LoginRegister.vue'))
 

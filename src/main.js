@@ -10,7 +10,7 @@ import '@/styles/reset.css'
 // 响应式断点 token 与公共工具类（需在业务样式之前引入）
 import '@/styles/storyTokens.css'
 import '@/styles/breakpoints.css'
-import '@/styles/storyControls.css'
+
 // 模板组件及指令由构建插件按需导入。
 import { ElMessage } from 'element-plus'
 // JS 调用的服务不会经过模板组件解析，单独保留其样式。
@@ -56,6 +56,11 @@ app.config.globalProperties.$thumbnailFailed = markIllustrationThumbnailFailed
 
 // View UI Plus 仅用于编辑器，首次直达和站内跳转都在渲染前完成注册。
 router.beforeResolve(async (to) => {
+  const usesToolTheme = to.matched.some(record => record.path === '/creation-studio') ||
+    ['photo-collage', 'diary-timeline', 'image-segmentation', 'lasso-crop', 'compose-illustration', 'topdf'].includes(to.name)
+  if (usesToolTheme) {
+    await Promise.all([import('@/styles/storyControls.css'), import('@/styles/creativeToolsTheme.css')])
+  }
   if (to.name === 'editorpro') {
     const { installEditorUi } = await import('./utils/editorPro/installEditorUi')
     installEditorUi(app)

@@ -20,12 +20,13 @@ kidstory.cc {
 }
 
 www.kidstory.cc {
+	encode zstd gzip
 	root * /home/ubuntu/www/illustration/dist
 	@private path /creation-studio /creation-studio/* /user /user/* /member/* /wechat/callback /forgot-password
 	header @private X-Robots-Tag "noindex, follow"
 
 	# 静态资源：直接 file_server，禁止 fallback 到 index.html
-	@static path /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
+	@static path /img/* /fonts/* /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
 	handle @static {
 		file_server
 	}
@@ -36,6 +37,9 @@ www.kidstory.cc {
 		file_server
 	}
 
+	@hashedAssets path_regexp hashedAssets ^/(js|css|img|fonts)/.*\.[a-f0-9]{8}\.[^/]+$
+	header @hashedAssets Cache-Control "public, max-age=31536000, immutable"
+
 	# 缓存：index.html / sitemap / robots 不长期缓存，便于 Google 重新抓取
 	header /index.html Cache-Control "no-cache, no-store, must-revalidate"
 	header /app.html Cache-Control "no-cache, no-store, must-revalidate"
@@ -43,8 +47,8 @@ www.kidstory.cc {
 	header /guides/ai-picture-book-tutorial* Cache-Control "no-cache, must-revalidate"
 	header /sitemap.xml Cache-Control "no-cache, must-revalidate"
 	header /robots.txt Cache-Control "no-cache, must-revalidate"
-	header /js/* Cache-Control "public, max-age=604800, immutable"
-	header /css/* Cache-Control "public, max-age=604800, immutable"
+
+
 }
 
 # ── 若 api.kidstory.cc 也在同一台 Caddy，可参考（按实际后端端口修改）──
