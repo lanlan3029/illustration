@@ -908,12 +908,11 @@ export default {
 .hero-subtitle, .feature-desc { line-height: 1.8; }
 @media (max-width:768px) { .feature-name { font-size:18px; } }
 .hero-subtitle, .feature-desc, .showcase-desc, .styles-subtitle {
-    font-family: 'Home Rounded', 'Microsoft YaHei', sans-serif;
+    font-family: inherit;
     color: #685b67;
     font-size:14px;
     line-height:1.7;
 }
-@font-face { font-family:'Home Rounded'; src:url('../assets/editorpro/fonts/cn/寒蝉圆体.ttf') format('truetype'); font-weight:400; font-display:swap; }
 .home-hero { padding:4px 0 10px; }
 .hero-subtitle { margin-bottom:6px; }
 .feature-cards-group { --feature-card-gap:12px; margin-bottom:28px; }
