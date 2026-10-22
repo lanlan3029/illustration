@@ -26,14 +26,14 @@
 }
 #app.public-story-theme .home-inner { max-width: 1240px; }
 #app.public-story-theme .home-hero { padding: 10px 0 28px; }
-#app.public-story-theme .hero-title { color: var(--story-ink); font-size: clamp(28px, 3.2vw, 48px); line-height: 1.5; }
+#app.public-story-theme .hero-title { color: var(--story-ink); font-size: clamp(30px, 3.4vw, 52px); line-height: 1.5; }
 #app.public-story-theme .feature-cards { gap: 22px; }
 #app.public-story-theme .home-container .feature-card {
   translate: none;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 16px;
+  gap: 4px;
   min-height: 0;
   padding: 16px 16px 20px;
   background: white;
@@ -46,7 +46,7 @@
 #app.public-story-theme .home-container .feature-card:hover { transform: translateY(-3px); border-color: #b69dcf; }
 #app.public-story-theme .feature-art { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; background: white; }
 #app.public-story-theme .feature-text { padding: 0; }
-#app.public-story-theme .feature-name { margin: 0; color: var(--story-ink); font-size: 19px; line-height: 1.5; }
+#app.public-story-theme .feature-name { margin: 0; color: var(--story-ink); font-size: clamp(22px, 1.8vw, 26px); font-weight: 600; line-height: 1.4; }
 #app.public-story-theme .showcase { margin-block: 64px; }
 #app.public-story-theme .showcase-inner { background: var(--story-panel); border: var(--story-line); border-radius: 24px; box-shadow: var(--story-shadow); padding: 40px; }
 #app.public-story-theme .showcase-title,
@@ -107,8 +107,8 @@
   #app.public-story-theme .home-container { padding: 24px 18px 40px; }
   #app.public-story-theme .home-hero { padding: 6px 0 24px; }
   #app.public-story-theme .feature-cards { gap: 16px; }
-  #app.public-story-theme .home-container .feature-card { padding: 12px 10px 16px; gap: 10px; border-radius: 12px; }
-  #app.public-story-theme .feature-name { font-size: 16px; }
+  #app.public-story-theme .home-container .feature-card { padding: 12px 10px 16px; gap: 2px; border-radius: 12px; }
+  #app.public-story-theme .feature-name { font-size: 20px; }
   #app.public-story-theme .showcase { margin-block: 36px; }
   #app.public-story-theme .showcase-inner { padding: 24px 18px; }
 }

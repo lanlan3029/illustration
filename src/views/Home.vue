@@ -879,24 +879,16 @@ export default {
 .feature-card:nth-child(8n+7) { --entry-offset:16px; }
 .feature-card:nth-child(8n+8) { --entry-offset:3px; }
 .feature-card:hover :deep(.home-sticker) { transform:rotate(0deg) translateY(-3px); }
-/* A rounded handwritten face complements the cut-paper illustrations. */
-@font-face {
-    font-family: 'Home Handwriting';
-    src: url('../assets/editorpro/fonts/cn/苦累蛙圓體-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
+/* Clean system sans keeps Chinese and Latin labels visually consistent. */
 .home-container {
-    font-family: 'Home Handwriting', 'KaiTi', cursive;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 .home-container button { font-family: inherit; }
 .hero-title, .feature-name, .showcase-kicker, .showcase-title, .showcase-cta, .styles-title {
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: .01em;
 }
-.hero-title { line-height: 1.4; letter-spacing:0; -webkit-text-stroke:.35px currentColor; }
-.feature-name, .showcase-title, .styles-title { -webkit-text-stroke:.2px currentColor; }
+.hero-title { line-height: 1.4; letter-spacing:0; }
 .feature-name { font-size: 21px; line-height: 1.5; }
 .hero-subtitle, .feature-desc { line-height: 1.8; }
 @media (max-width:768px) { .feature-name { font-size:18px; } }
@@ -927,7 +919,7 @@ export default {
 .style-photo:nth-child(even) { translate:0 5px; }
 .style-photo-image { display:block; width:100%; aspect-ratio:3/4; overflow:hidden; background:#eee4d5; }
 .style-photo-image img { display:block; width:100%; height:100%; object-fit:cover; }
-.style-photo-caption { display:block; width:100%; padding:12px 2px 0; font-family:'Home Handwriting','KaiTi',cursive; font-size:17px; line-height:1.5; overflow-wrap:anywhere; }
+.style-photo-caption { display:block; width:100%; padding:12px 2px 0; font-family:inherit; font-size:17px; line-height:1.5; overflow-wrap:anywhere; }
 .style-photo:hover, .style-photo:focus-visible { transform:translateY(-5px) rotate(0deg); box-shadow:0 10px 18px -10px #795b42; }
 .style-photo:focus-visible { outline:2px solid #8167a9; outline-offset:4px; }
 @media(max-width:1200px) { .style-gallery { grid-template-columns:repeat(4,minmax(0,1fr)); } }
