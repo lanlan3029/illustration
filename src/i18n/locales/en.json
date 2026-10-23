@@ -96,7 +96,7 @@
   },
   "select_json": "Select JSON File",
   "repleaceImg": "Replace Image",
-  "cropperImg": "Crop Image",
+  "cropperImg": "Rectangle Crop",
   "myIllustrationPicker": {
     "pickFromWorks": "Pick from My Creations",
     "dialogTitle": "Choose an illustration from My Creations",
@@ -107,7 +107,7 @@
     "invalidItem": "This illustration can’t be used, try another"
   },
   "lassoCrop": {
-    "title": "Free-form Crop",
+    "title": "Stickers / Cutout",
     "pageTitle": "Free-form Sticker Crop",
     "pageDesc": "Upload an image, lasso or remove background, add a border, generate a sticker.",
     "hintStart": "Drag to outline the area. Return to the start to close, or tap Complete Crop.",
@@ -249,8 +249,8 @@
     "saveFailed": "Save failed",
     "fillNameAndCategory": "Please enter a name and select a category"
   },
-  "createClip": "Add Clip",
-  "removeClip": "Remove Clip",
+  "createClip": "Shape Crop",
+  "removeClip": "Remove Shape Crop",
   "polygonClip": "Polygon",
   "rectClip": "Rectangle",
   "circleClip": "Circle",

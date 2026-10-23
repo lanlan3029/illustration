@@ -24,7 +24,12 @@
           </el-radio-group>
         </div>
 
-        <div class="box">
+        <div
+          class="box"
+          v-infinite-scroll="loadMore"
+          :infinite-scroll-disabled="loading || loadControl || scrollDisabled || loadError || !initialLoaded"
+          :infinite-scroll-distance="120"
+        >
           <div v-if="loading" class="loading">
             <book-loading :text="$t('books.loading')" />
           </div>
@@ -91,9 +96,9 @@
             </article>
           </div>
           <div v-if="!loading && !books.length" class="empty-state" role="status">{{ loadError ? $t('books.errorOccurred') : copy.empty }}<button v-if="loadError" type="button" @click="reloadBooks">{{ copy.retry }}</button></div>
-          <div v-if="!loading && books.length" class="load-more">
-            <button v-if="!scrollDisabled" type="button" :disabled="loadControl" @click="loadMore">{{ loadControl ? $t('books.loading') : copy.more }}</button>
-            <p v-else>{{ copy.end }}</p>
+          <div v-if="!loading && books.length" class="load-more" role="status" aria-live="polite">
+            <button v-if="loadError" type="button" @click="loadMore">{{ copy.retry }}</button>
+            <p v-else>{{ scrollDisabled ? copy.end : loadControl ? $t('books.loading') : copy.more }}</p>
           </div>
         </div>
       </div>
@@ -118,10 +123,10 @@ export default {
       const en = this.$i18n.locale === 'en'
       return en ? {
         title: 'Picture Book Library', search: 'Search picture books by title or topic', searchAction: 'Search',
-        all: 'All', more: 'Load more', end: 'You have reached the end', empty: 'No books found. Try another search or category.', retry: 'Retry',
+        all: 'All', more: 'Scroll down to load more', end: 'You have reached the end', empty: 'No books found. Try another search or category.', retry: 'Retry',
       } : {
         title: '绘本馆', search: '搜索绘本名称、主题', searchAction: '搜索',
-        all: '全部', more: '加载更多', end: '已经看完全部绘本了', empty: '暂无相关绘本，试试其他关键词或分类吧', retry: '重试',
+        all: '全部', more: '向下滚动，自动加载更多', end: '已经看完全部绘本了', empty: '暂无相关绘本，试试其他关键词或分类吧', retry: '重试',
       }
     },
     sortList() {
@@ -253,7 +258,8 @@ export default {
     },
 
     async loadMore() {
-      if (this.loadControl || this.scrollDisabled || !this.initialLoaded) return
+      if (this.loading || this.loadControl || this.scrollDisabled || !this.initialLoaded) return
+      this.loadError = false
       this.loadControl = true
       try {
         const nextPage = this.num + 1
@@ -294,6 +300,7 @@ export default {
         this.$store.commit('addBooks', newBooks)
         this.num = nextPage
       } catch (err) {
+        this.loadError = true
         ElMessage.error(this.$t('books.errorOccurred'))
       } finally {
         this.loadControl = false

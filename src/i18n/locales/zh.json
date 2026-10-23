@@ -96,7 +96,7 @@
   },
   "select_json": "选择JSON文件",
   "repleaceImg": "替换图片",
-  "cropperImg": "裁剪图片",
+  "cropperImg": "矩形裁剪",
   "myIllustrationPicker": {
     "pickFromWorks": "从我的创作选择",
     "dialogTitle": "选择我的创作中的插画",
@@ -107,7 +107,7 @@
     "invalidItem": "该插画无法使用，请换一张"
   },
   "lassoCrop": {
-    "title": "自由裁剪",
+    "title": "贴纸/抠图",
     "pageTitle": "自由裁剪贴纸",
     "pageDesc": "上传图片，套索或删背景，加描边，生成贴纸。",
     "hintStart": "按住拖动圈选区域；回到起点可闭合，或点「完成裁剪」。",
@@ -249,8 +249,8 @@
     "saveFailed": "保存失败",
     "fillNameAndCategory": "请填写名称并选择类别"
   },
-  "createClip": "添加裁切",
-  "removeClip": "移除裁切",
+  "createClip": "形状裁切",
+  "removeClip": "移除形状裁切",
   "polygonClip": "多边形",
   "rectClip": "矩形",
   "circleClip": "圆",
