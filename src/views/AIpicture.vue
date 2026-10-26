@@ -8,11 +8,20 @@
                         <div class="inspiration-head">
                             <h2 class="inspiration-title">{{ $t('aiPicture.browseInspiration') || '浏览灵感' }}</h2>
                             <div class="inspiration-actions">
+                                <button type="button" class="link-btn" :aria-expanded="styleSearchOpen" aria-controls="style-search" @click="toggleStyleSearch">
+                                    {{ $t('aiPicture.searchStyles') }}
+                                </button>
                                 <button type="button" class="link-btn" @click="shuffleStyles">
                                     {{ $t('aiPicture.refresh') || '更新内容' }}
                                 </button>
                             </div>
                         </div>
+
+                        <form v-if="styleSearchOpen" id="style-search" class="style-search" role="search" @submit.prevent>
+                            <input ref="styleSearchInput" v-model="styleSearchQuery" type="search" :aria-label="$t('aiPicture.searchStylesPlaceholder')" :placeholder="$t('aiPicture.searchStylesPlaceholder')" @keydown.esc="toggleStyleSearch" />
+                            <button v-if="styleSearchQuery" type="button" class="link-btn" @click="styleSearchQuery = ''">{{ $t('aiPicture.clearStyleSearch') }}</button>
+                        </form>
+                        <p v-if="isSearchingStyles" class="style-search-status" role="status">{{ $t('aiPicture.styleSearchCount', { count: visibleStyles.length + visibleOaiItems.length }) }}</p>
 
                         <div
                             class="style-tab-row"
@@ -35,8 +44,8 @@
                         </div>
 
                         <div class="style-list" ref="styleListRef">
-                            <p v-if="!stylesLoading && !displayedStyles.length && !(activeStyleCategory === 'skill' && displayedOaiItems.length)" class="style-empty-state">
-                                {{ $t('aiPicture.styleCategoryEmpty') }}
+                            <p v-if="!stylesLoading && !displayedStyles.length && !((activeStyleCategory === 'skill' || isSearchingStyles) && displayedOaiItems.length)" class="style-empty-state">
+                                {{ $t(isSearchingStyles ? 'aiPicture.styleSearchEmpty' : 'aiPicture.styleCategoryEmpty') }}
                             </p>
                             <button
                                 v-for="style in displayedStyles"
@@ -63,7 +72,7 @@
                                 <span class="style-list-item-text">{{ style.artStyle }}</span>
                             </button>
 
-                            <template v-if="activeStyleCategory === 'skill'">
+                            <template v-if="activeStyleCategory === 'skill' || isSearchingStyles">
                                 <button
                                     v-for="item in displayedOaiItems"
                                     :key="'oai-' + item.id"
@@ -584,6 +593,8 @@ export default {
             selectedStyleId: null,
             appliedRouteStyleId: null,
             activeStyleCategory: 'curated',
+            styleSearchOpen: false,
+            styleSearchQuery: '',
             oaiItems: oaiImageData.items,
             selectedOaiTemplateId: null,
             displayOrderOai: [],
@@ -656,12 +667,15 @@ export default {
             return this.oaiItems.find((x) => x.id === this.selectedOaiTemplateId) || null
         },
         visibleOaiItems() {
-            return this.oaiItems
+            return this.oaiItems.filter(item => this.matchesStyleSearch(item.title, item.prompt, item.description))
+        },
+        isSearchingStyles() {
+            return Boolean(this.styleSearchQuery.trim())
         },
         displayedOaiItems() {
             const vis = this.visibleOaiItems
             const set = new Set(vis.map((x) => x.id))
-            if (!this.displayOrderOai || !this.displayOrderOai.length) {
+            if (this.isSearchingStyles || !this.displayOrderOai || !this.displayOrderOai.length) {
                 return vis
             }
             return this.displayOrderOai
@@ -693,6 +707,9 @@ export default {
             return this.$t('aiPicture.heroPlaceholder') || '描述或编辑图片'
         },
         visibleStyles() {
+            if (this.isSearchingStyles) {
+                return this.styles.filter(style => this.matchesStyleSearch(style.artStyle, style.title, style.prompt, style.basePrompt, style.elementDetails, style.inputTemplate))
+            }
             return stylesForIllustrationTab(this.activeStyleCategory, this.styles)
         },
         handrawStyleReferenceActive() {
@@ -778,7 +795,7 @@ export default {
         displayedStyles() {
             const vis = this.visibleStyles
             const inTab = new Set(vis.map(s => s.id))
-            if (!this.displayOrder || !this.displayOrder.length) {
+            if (this.isSearchingStyles || !this.displayOrder || !this.displayOrder.length) {
                 if (this.activeStyleCategory !== 'curated') {
                     return sortStylesFeaturedFirst(vis)
                 }
@@ -845,6 +862,12 @@ export default {
         }
     },
     watch: {
+        styleSearchQuery() {
+            this.$nextTick(() => {
+                const list = this.$refs.styleListRef
+                if (list) list.scrollTop = 0
+            })
+        },
         '$route.query.styleId': {
             handler() {
                 this.appliedRouteStyleId = null
@@ -900,6 +923,15 @@ export default {
         this.stylePreview.show = false
     },
     methods: {
+        matchesStyleSearch(...values) {
+            const query = this.styleSearchQuery.trim().toLocaleLowerCase()
+            return !query || values.some(value => String(value || '').toLocaleLowerCase().includes(query))
+        },
+        toggleStyleSearch() {
+            this.styleSearchOpen = !this.styleSearchOpen
+            if (!this.styleSearchOpen) this.styleSearchQuery = ''
+            else this.$nextTick(() => this.$refs.styleSearchInput?.focus())
+        },
         applyRouteStyle() {
             const styleId = this.$route.query.styleId
             if (typeof styleId !== 'string' || !styleId || this.appliedRouteStyleId === styleId) return
@@ -2756,6 +2788,36 @@ export default {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.style-search {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.style-search input {
+    min-width: 0;
+    flex: 1;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #d8dce3;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    color: #1f1f1f;
+    font: inherit;
+}
+
+.style-search input:focus-visible {
+    outline: 2px solid #8262b1;
+    outline-offset: 2px;
+}
+
+.style-search-status {
+    margin: 0;
+    font-size: 13px;
+    color: #5f6368;
 }
 
 .link-btn {

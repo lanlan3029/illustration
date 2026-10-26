@@ -126,6 +126,70 @@
       "description": "置身 8-bit 游戏场景",
       "prompt": "以已上传图片中的主体为灵感，创作一张来自叙事驱动的 2D 横版卷轴像素艺术游戏的单帧画面。将图片的主题、色彩或主体转化到游戏世界中。场景应以非暴力、振奋或幽默的方式呈现一个高潮式的胜利时刻。风格应为细节丰富的复古像素画（16 位），具有清晰的剪影和统一的配色。图像应为竖版，并展示完整游戏画面。顶部加入经典 HUD，并配上一个受图片启发、风趣原创的游戏标题。该帧应让人感觉游戏正在进行中，包含角色、环境，以及明确的动作或目标感。所有元素都必须包含在游戏画面内。",
       "image": "https://persistent.oaistatic.com/images-app/8-bit-sheet.webp"
+    },
+    {
+      "id": "morphic-halloween-06",
+      "title": "月亮上的猫：南瓜雕刻模板",
+      "description": "保留“每个图形都有连接桥”。这是雕刻的通行做法，能防止中间的镂空块掉下来。猫可以换成女巫、蜘蛛或首字母。",
+      "prompt": "可打印的南瓜雕刻模板，白纸上是纯黑的平涂图形：一只猫在弯月上弓起背，上方有三只蝙蝠。所有图形都留有连接桥，能一刀连成一整片。轮廓粗而简单，没有明暗，没有灰色，外缘有一圈虚线作为切割参考线，1:1 方形。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-06-1x1.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-33",
+      "title": "儿童万圣节生日邀请函",
+      "description": "保留圆润可爱的字形。字体风格在没人读之前，就先定下了宾客的年龄。名字、岁数和日期可以换。",
+      "prompt": "儿童万圣节生日邀请卡，扁平插画：一只微笑的床单小鬼举着橙色气球。文字用圆润活泼的字体写成 “Mila's Boo Bash”，接着是 “Turning 6!” 和 “Oct 26, 2 PM”。白底，薄荷绿加橙色的配色，4:3 横幅。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-33-4x3.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-42",
+      "title": "粉彩小鬼图案壁纸",
+      "description": "保留“无缝重复图案”。它让图案均匀分布，没有东西正好压在时钟下面。图案元素和底色可以换。",
+      "prompt": "无缝重复图案手机壁纸：灰调薰衣草色底上，散布着微笑的小鬼、糖玉米和小星星。扁平矢量插画，柔和的粉彩色调，间距均匀，9:16 竖屏。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-42-9x16.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-44",
+      "title": "万圣夜的层叠纸雕村庄",
+      "description": "保留“层叠纸雕”。它用一层层平面叠出纵深，层间有柔和的投影。村庄可以换成森林或农场。",
+      "prompt": "用作桌面壁纸的层叠纸雕插画：万圣夜起伏山丘上的一座小村庄，窗户亮着橙色的灯，天上有一轮巨大的橙色月亮和几只小蝙蝠，远处山顶有一座小小的鬼屋。深海军蓝配橙色，纸层之间有柔和的投影，16:9 宽幅。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-44-16x9.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-46",
+      "title": "萌系万圣节贴纸页",
+      "description": "保留“粗白色模切边”。有了这圈边，每个角色才像一张贴纸。六个角色可以换。",
+      "prompt": "六个万圣节角色的萌系贴纸页：一只微笑的南瓜、一只犯困的小鬼、一只戴女巫帽的黑猫、一只圆滚滚的蝙蝠、一颗糖玉米，还有一块木乃伊杯子蛋糕。每个都有粗粗的白色模切边，平涂色块加柔和的粉彩渐变，浅灰色背景，1:1 方形。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-46-1x1.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-47",
+      "title": "南瓜地涂色页",
+      "description": "保留“不要灰色填充”。这一句确实有用，否则模型会给线稿加上明暗。场景可以换成服装巡游或鬼树。",
+      "prompt": "儿童涂色页线稿：一片南瓜地，有一个微笑的稻草人、三只南瓜灯、一只黑猫，天上飞着蝙蝠。轮廓干净、粗黑，底色纯白，留出大块简单的区域供涂色，没有明暗，也没有灰色填充，3:4 竖幅。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-47-3x4.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-48",
+      "title": "睡在女巫帽里的水彩猫",
+      "description": "保留“湿边”和“透出纸张”。这两个提示，让它读起来像颜料而不是滤镜。猫可以换成猫头鹰或蝙蝠。",
+      "prompt": "疏松的水彩插画：一只黑猫蜷着睡在旧书堆上的尖顶女巫帽里。边缘有柔和的湿晕和水渍，透出暖色的纸张纹理，色调是柔和的橙色与梅紫色，4:3 横幅。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-48-4x3.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
+    },
+    {
+      "id": "morphic-halloween-50",
+      "title": "扁平万圣节图标集",
+      "description": "保留“统一线宽”。它让九张分开的画看起来是一套。图标和两种颜色可以换。",
+      "prompt": "3×3排列的九枚扁平万圣节图标：南瓜、小鬼、蝙蝠、糖果、大锅、月亮、蜘蛛、扫帚和一颗友善的骷髅头。线宽统一，圆角，只用橙色和炭灰色两种颜色，白色背景，4:3 横幅。",
+      "image": "https://external-cdn.morphic.com/website-production/assets/seo/images/prompt-library/10-10/halloween-prompts/halloween-prompts-50-4x3.webp",
+      "source": "https://morphic.com/zh/resources/prompts/halloween-prompts?tag=Illustration"
     }
   ]
 }
