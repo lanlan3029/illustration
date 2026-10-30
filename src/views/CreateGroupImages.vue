@@ -525,7 +525,7 @@ export default {
                 const useCharacterId = Boolean(characterId && !this.referenceFile);
 
                 let referenceImageBase64 = null;
-                if (!useCharacterId && this.referenceImageUrl) {
+                if (this.referenceImageUrl) {
                     if (this.referenceImageUrl.startsWith('data:')) {
                         const response = await fetch(this.referenceImageUrl);
                         const blob = await response.blob();
@@ -550,9 +550,8 @@ export default {
                 };
                 if (useCharacterId) {
                     requestData.character_id = characterId;
-                } else {
-                    requestData.reference_image = referenceImageBase64;
                 }
+                requestData.reference_image = referenceImageBase64;
                 
                 // 不再使用参考图的原始尺寸，始终使用固定的 1280x960
                 
@@ -679,6 +678,8 @@ export default {
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(img, 0, 0, width, height);
                         
                         // 转换为blob，并检查大小
@@ -867,6 +868,10 @@ export default {
                         }
                         
                         const ctx = canvas.getContext('2d');
+                        if (compress) {
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
                         // 如果需要压缩，使用JPEG格式和质量

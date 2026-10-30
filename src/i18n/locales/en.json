@@ -1523,7 +1523,7 @@
     "collectFailed": "Failed to collect illustration: {message}",
     "saveFailed": "Save failed",
     "saveFailedRetry": "Save failed, please try again",
-    "promptPrefix": "Master-level work, (if there is a character, the character should not be deformed) Use a solid color background, not black. The main subject is modified as follows: "
+    "promptPrefix": "Keep the subject complete and naturally proportioned, with a uniform, bright white background. Modify the subject as follows: "
   },
   "createLayoutIllustration": {
     "myCharacters": "My Characters",
