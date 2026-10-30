@@ -226,7 +226,7 @@ export default {
 .cs-card-meta { display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-top: var(--ks-line); }
 .cs-card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .cs-card-name { overflow: hidden; color: var(--ks-ink); font-size: 20px; line-height: 1.5; font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
-.cs-card-delete { flex-shrink: 0; min-height: 36px; padding: 4px 6px; }
+.cs-card-delete { flex-shrink: 0; min-width: 44px; min-height: 44px; padding: 4px 6px; }
 .cs-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .cs-card-actions :deep(.el-button) { width: 100%; min-height: 36px; height: auto; margin: 0; padding: 8px 4px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); font-size: 13px; line-height: 1.5; white-space: normal; }
 .cs-card-actions :deep(.el-button:hover) { background: var(--ks-primary-soft); border-color: var(--ks-primary); color: var(--ks-primary-hover); }
