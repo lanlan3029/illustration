@@ -35,23 +35,25 @@
         :aria-label="item.character_name || $t('characterStudio.unnamed')"
         @click="onCardClick(item)"
       >
-        <button type="button" class="cs-card-thumb" :aria-label="(pickMode ? $t('characterStudio.tapToSelect') : $t('myHomePage.edit')) + ' · ' + (item.character_name || $t('characterStudio.unnamed'))" @click.stop="onCardClick(item)">
+        <button type="button" class="cs-card-thumb" :aria-label="(pickMode ? $t('characterStudio.tapToSelect') : $t('characterStudio.characterViews')) + ' · ' + (item.character_name || $t('characterStudio.unnamed'))" @click.stop="onCardClick(item)">
           <img v-lazy-image="getImageUrl(item.image_url || item.character_image_url)" decoding="async" :alt="item.character_name" />
         </button>
         <div class="cs-card-meta">
-          <span class="cs-card-name">{{ item.character_name || $t('characterStudio.unnamed') }}</span>
+          <div class="cs-card-title-row">
+            <span class="cs-card-name">{{ item.character_name || $t('characterStudio.unnamed') }}</span>
+            <el-button v-if="!pickMode" link type="danger" class="cs-card-delete" :aria-label="$t('myHomePage.delete') + ' · ' + (item.character_name || $t('characterStudio.unnamed'))" :loading="deletingId === (item.id || item._id)" :disabled="Boolean(deletingId)" @click.stop="deleteCharacter(item)">
+              {{ $t('myHomePage.delete') }}
+            </el-button>
+          </div>
           <div v-if="!pickMode" class="cs-card-actions" @click.stop>
-            <el-button size="small" type="primary" class="cs-action-btn" @click="openWorkbench(item)">
-              {{ $t('myHomePage.edit') }}
-            </el-button>
-            <el-button size="small" class="cs-action-btn" @click="openEditorPro(item)">
-              {{ $t('characterStudio.editInEditor') }}
-            </el-button>
             <el-button size="small" class="cs-action-btn cs-action-btn--full" @click="goGroupImages(item)">
               {{ $t('characterStudio.createGroup') }}
             </el-button>
-            <el-button size="small" class="cs-action-btn cs-action-btn--delete" :loading="deletingId === (item.id || item._id)" :disabled="Boolean(deletingId)" @click="deleteCharacter(item)">
-              {{ $t('myHomePage.delete') }}
+            <el-button size="small" type="primary" class="cs-action-btn" @click="openWorkbench(item)">
+              {{ $t('characterStudio.characterViews') }}
+            </el-button>
+            <el-button size="small" class="cs-action-btn" @click="openEditorPro(item)">
+              {{ $t('characterStudio.editImage') }}
             </el-button>
           </div>
           <span v-else class="cs-pick-hint">{{ $t('characterStudio.tapToSelect') }}</span>
@@ -222,12 +224,13 @@ export default {
 .cs-card-thumb { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3/2; padding: 20px; border: 0; border-radius: 0; background: var(--ks-panel); cursor: pointer; }
 .cs-card-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .cs-card-meta { display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; border-top: var(--ks-line); }
+.cs-card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .cs-card-name { overflow: hidden; color: var(--ks-ink); font-size: 20px; line-height: 1.5; font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.cs-card-delete { flex-shrink: 0; min-height: 36px; padding: 4px 6px; }
 .cs-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .cs-card-actions :deep(.el-button) { width: 100%; min-height: 36px; height: auto; margin: 0; padding: 8px 4px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); font-size: 13px; line-height: 1.5; white-space: normal; }
 .cs-card-actions :deep(.el-button:hover) { background: var(--ks-primary-soft); border-color: var(--ks-primary); color: var(--ks-primary-hover); }
 .cs-card-actions :deep(.cs-action-btn--full) { grid-column: 1 / -1; background: var(--ks-ink); color: white; }
-.cs-card-actions :deep(.cs-action-btn--delete) { grid-column: 1 / -1; color: #b42318; }
 .cs-pick-hint { color: var(--ks-primary-hover); font-size: 13px; font-weight: 600; }
 @media (max-width: 1024px) { .cs-dash-header { flex-wrap: wrap; } }
 @media (max-width: 768px) {

@@ -1674,6 +1674,8 @@
     "viewPromptPlaceholder": "Edit the prompt for this angle",
     "generateSide": "Generate Side View",
     "generateBack": "Generate Back View",
+    "characterViews": "Character views",
+    "editImage": "Edit image",
     "editInEditor": "Open in Editor",
     "createGroup": "Create Group Images",
     "pickCharacterTitle": "Select a Character",

@@ -1689,6 +1689,8 @@
     "viewPromptPlaceholder": "可修改提示词，描述该视角的姿势与细节",
     "generateSide": "生成侧面图",
     "generateBack": "生成背面图",
+    "characterViews": "角色视图",
+    "editImage": "编辑图片",
     "editInEditor": "进编辑器",
     "createGroup": "创作组图",
     "pickCharacterTitle": "选择角色",
