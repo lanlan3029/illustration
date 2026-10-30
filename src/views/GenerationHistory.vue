@@ -58,6 +58,7 @@ const SOURCE_I18N_KEYS = {
   create_character: 'generationHistory.sourceCreateCharacter',
   ai_picture: 'generationHistory.sourceAiPicture',
   character_studio: 'generationHistory.sourceCharacterStudio',
+  group_images: 'generationHistory.sourceGroupImages',
   mood_diary: 'generationHistory.sourceMoodDiary',
   diary_timeline: 'generationHistory.sourceDiaryTimeline',
   diary_timeline_expand_generate: 'generationHistory.sourceDiaryTimeline',

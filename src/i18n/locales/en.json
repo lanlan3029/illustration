@@ -2898,6 +2898,7 @@
   },
   "generationHistory": {
     "title": "Generation history",
+    "sourceGroupImages": "Group images",
     "subtitle": "Uncollected images are kept for 30 days — save them to My Works in time",
     "viewPoints": "Points history",
     "empty": "No generations yet",

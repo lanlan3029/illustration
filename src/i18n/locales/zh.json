@@ -2913,6 +2913,7 @@
   },
   "generationHistory": {
     "title": "生成历史",
+    "sourceGroupImages": "创作组图",
     "subtitle": "未收集的图片保留 30 天，请及时收集到「我的创作」",
     "viewPoints": "积分明细",
     "empty": "暂无生成记录",
