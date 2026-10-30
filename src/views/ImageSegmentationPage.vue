@@ -132,6 +132,9 @@
           >
             {{ $t('imageSegmentation.saveToMyElement') }}
           </el-button>
+          <el-button type="primary" plain :disabled="!resultUrl || segmenting" @click="showCharacterForm = true">
+            {{ $t('imageSegmentation.saveToMyCharacter') }}
+          </el-button>
         </div>
       </template>
     </el-card>
@@ -173,6 +176,17 @@
         </el-button>
       </template>
     </el-dialog>
+    <el-dialog v-model="showCharacterForm" :title="$t('imageSegmentation.saveToMyCharacter')" width="440px" destroy-on-close :close-on-click-modal="!savingCharacter" :show-close="!savingCharacter">
+      <el-form label-position="top" @submit.prevent="handleSaveCharacter">
+        <el-form-item :label="$t('imageSegmentation.characterName')" required>
+          <el-input v-model="characterName" maxlength="30" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button :disabled="savingCharacter" @click="showCharacterForm = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="savingCharacter" @click="handleSaveCharacter">{{ $t('common.confirm') }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -190,6 +204,7 @@ import {
 } from '@/utils/imageSegmentation';
 import { suggestRembgMode } from '@/utils/imageSegmentationHint';
 import { uploadPictureElement, ELEMENT_CATEGORIES } from '@/utils/saveCroppedAsset';
+import { saveCharacterView } from '@/utils/characterStudioApi';
 import MyIllustrationPicker from '@/components/MyIllustrationPicker.vue';
 
 export default {
@@ -205,6 +220,9 @@ export default {
       segmenting: false,
       showElementForm: false,
       saving: false,
+      showCharacterForm: false,
+      savingCharacter: false,
+      characterName: '',
       modeOptions: DEFAULT_REMBG_MODES.slice(),
       selectedMode: readStoredRembgMode(),
       modeHint: null,
@@ -402,6 +420,34 @@ export default {
         ElMessage.error(e.message || this.$t('imageSegmentation.saveFailed'));
       } finally {
         this.saving = false;
+      }
+    },
+    async handleSaveCharacter() {
+      if (!this.resultUrl || this.savingCharacter) return;
+      const name = this.characterName.trim();
+      if (!name) {
+        ElMessage.warning(this.$t('imageSegmentation.fillCharacterName'));
+        return;
+      }
+      this.savingCharacter = true;
+      try {
+        const saved = await saveCharacterView(this.$http, {
+          apiBaseUrl: process.env.VUE_APP_API_BASE_URL || '',
+          imageUrl: this.resultUrl,
+          characterName: name,
+          viewType: 'front',
+        });
+        if (!saved) {
+          ElMessage.warning(this.$t('characterStudio.pleaseLogin'));
+          return;
+        }
+        this.showCharacterForm = false;
+        this.characterName = '';
+        ElMessage.success(this.$t('imageSegmentation.characterSaved'));
+      } catch (e) {
+        ElMessage.error(e.message || this.$t('imageSegmentation.saveFailed'));
+      } finally {
+        this.savingCharacter = false;
       }
     },
   },
