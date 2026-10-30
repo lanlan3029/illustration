@@ -76,8 +76,13 @@
 
                         <!-- 风格选择 -->
                         <div class="style-section">
-                            <label class="cgi-label">{{ $t('characterStudio.style') }}</label>
-                            <el-popover placement="bottom" :width="280" trigger="click">
+                            <label class="cgi-label">{{ $t('createGroupImages.groupStyle') }}</label>
+                            <el-radio-group v-model="styleMode" class="cgi-style-modes" :aria-label="$t('createGroupImages.groupStyle')">
+                                <el-radio label="original">{{ $t('createGroupImages.keepOriginalStyle') }}</el-radio>
+                                <el-radio label="selected">{{ $t('createGroupImages.chooseNewStyle') }}</el-radio>
+                            </el-radio-group>
+                            <p class="cgi-style-hint">{{ $t(styleMode === 'original' ? 'createGroupImages.originalStyleHint' : 'createGroupImages.newStyleHint') }}</p>
+                            <el-popover v-if="styleMode === 'selected'" placement="bottom" :width="280" trigger="click">
                                 <template #reference>
                                     <button type="button" class="cgi-style-trigger">
                                         <img v-if="selectedStyleImage" :src="selectedStyleImage" alt="" class="cgi-style-thumb" />
@@ -227,6 +232,7 @@ export default {
             prompts: Array(10).fill(''),
 
             // 风格
+            styleMode: 'original',
             artStyleKey: localStorage.getItem(STYLE_STORAGE_KEY) || 'healingWatercolor',
             illustrationStyles: [],
             
@@ -494,6 +500,10 @@ export default {
             if (!this.canSubmit) {
                 return;
             }
+            if (this.styleMode === 'selected' && !this.styleInfoText) {
+                ElMessage.warning(this.$t('createGroupImages.selectStyleFirst'));
+                return;
+            }
             this.processing = true;
             this.resultImages = [];
             
@@ -502,9 +512,9 @@ export default {
                 const prefix = this.$t('createGroupImages.promptPrefix');
                 const separator = this.$i18n.locale.value === 'zh' ? '，' : ', ';
                 const styleInfo = this.styleInfoText;
-                const stylePart = styleInfo
-                    ? `${separator}STYLE: ${styleInfo}`
-                    : '';
+                const stylePart = this.styleMode === 'original'
+                    ? `${separator}Preserve the reference image's existing visual style, palette, and texture.`
+                    : (styleInfo ? `${separator}STYLE: ${styleInfo}` : '');
                 const validPrompts = this.prompts
                     .filter(p => p && p.trim())
                     .map(p => `${prefix}${separator}${p.trim()}${stylePart}`);
@@ -1215,6 +1225,9 @@ export default {
 .style-section {
     margin-bottom: 24px;
 }
+.cgi-style-modes { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.cgi-style-modes :deep(.el-radio) { margin-right: 0; min-height: 40px; }
+.cgi-style-hint { margin: 2px 0 10px; color: #77717d; font-size: 12px; line-height: 1.5; }
 
 .cgi-label {
     display: block;

@@ -1491,6 +1491,12 @@
   },
   "createGroupImages": {
     "title": "Create Group Images",
+    "groupStyle": "Group image style",
+    "keepOriginalStyle": "Keep original style (recommended)",
+    "chooseNewStyle": "Choose a new style",
+    "originalStyleHint": "AI will use the original image's style, colors, and texture as a reference. Results may vary.",
+    "newStyleHint": "Choose a style for the generated images.",
+    "selectStyleFirst": "Choose a style first, or keep the original style.",
     "resultTitle": "Generation Results",
     "dragUpload": "Drag file here or click to upload",
     "uploadTip": "Supports JPG, PNG formats, recommended size not exceeding 5MB",

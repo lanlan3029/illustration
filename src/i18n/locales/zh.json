@@ -1506,6 +1506,12 @@
   },
   "createGroupImages": {
     "title": "创作组图",
+    "groupStyle": "组图风格",
+    "keepOriginalStyle": "保持原图风格（推荐）",
+    "chooseNewStyle": "选择新风格",
+    "originalStyleHint": "AI 会参考原图的画风、配色和材质，生成结果可能略有差异。",
+    "newStyleHint": "选择一种画风应用到生成的组图。",
+    "selectStyleFirst": "请先选择画风，或保持原图风格。",
     "resultTitle": "生成结果",
     "dragUpload": "将文件拖到此处，或点击上传",
     "uploadTip": "支持 JPG、PNG 格式，建议大小不超过 5MB",
