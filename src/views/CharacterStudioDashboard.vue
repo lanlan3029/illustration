@@ -50,6 +50,9 @@
             <el-button size="small" class="cs-action-btn cs-action-btn--full" @click="goGroupImages(item)">
               {{ $t('characterStudio.createGroup') }}
             </el-button>
+            <el-button size="small" class="cs-action-btn cs-action-btn--delete" :loading="deletingId === (item.id || item._id)" :disabled="Boolean(deletingId)" @click="deleteCharacter(item)">
+              {{ $t('myHomePage.delete') }}
+            </el-button>
           </div>
           <span v-else class="cs-pick-hint">{{ $t('characterStudio.tapToSelect') }}</span>
         </div>
@@ -60,6 +63,7 @@
 
 <script>
 import { Plus } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { getImageUrl } from '@/utils/characterStudioPrompt';
 import { setCreateGroupImagesReference } from '@/utils/createGroupImagesHandoff';
 import { setEditorproPendingImage } from '@/utils/editorproPendingImage';
@@ -72,6 +76,7 @@ export default {
     return {
       loading: false,
       characters: [],
+      deletingId: null,
     };
   },
   computed: {
@@ -142,6 +147,35 @@ export default {
     cancelPick() {
       this.$router.push(this.pickReturnPath);
     },
+    async deleteCharacter(item) {
+      const id = item.id || item._id;
+      if (!id || this.deletingId) return;
+      try {
+        await ElMessageBox.confirm(
+          this.$t('myHomePage.confirmDeleteCharacter', { name: item.character_name || this.$t('myHomePage.unnamedCharacter') }),
+          this.$t('myHomePage.confirmDelete'),
+          { confirmButtonText: this.$t('myHomePage.confirmDeleteButton'), cancelButtonText: this.$t('myHomePage.cancel'), type: 'warning' }
+        );
+      } catch {
+        return;
+      }
+      this.deletingId = id;
+      try {
+        const base = process.env.VUE_APP_API_BASE_URL || '';
+        const response = await this.$http.delete(`${base}/character/${encodeURIComponent(id)}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (response.data?.desc !== 'success' && response.data?.code !== 0 && response.data?.code !== '0') {
+          throw new Error(response.data?.message || this.$t('myHomePage.deleteFailed'));
+        }
+        this.characters = this.characters.filter((character) => (character.id || character._id) !== id);
+        ElMessage.success(this.$t('myHomePage.deleteSuccess'));
+      } catch (error) {
+        ElMessage.error(error.response?.data?.message || error.message || this.$t('myHomePage.deleteFailedRetry'));
+      } finally {
+        this.deletingId = null;
+      }
+    },
     async fetchCharacters() {
       const userId = localStorage.getItem('id');
       const token = localStorage.getItem('token');
@@ -193,6 +227,7 @@ export default {
 .cs-card-actions :deep(.el-button) { width: 100%; min-height: 36px; height: auto; margin: 0; padding: 8px 4px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); font-size: 13px; line-height: 1.5; white-space: normal; }
 .cs-card-actions :deep(.el-button:hover) { background: var(--ks-primary-soft); border-color: var(--ks-primary); color: var(--ks-primary-hover); }
 .cs-card-actions :deep(.cs-action-btn--full) { grid-column: 1 / -1; background: var(--ks-ink); color: white; }
+.cs-card-actions :deep(.cs-action-btn--delete) { grid-column: 1 / -1; color: #b42318; }
 .cs-pick-hint { color: var(--ks-primary-hover); font-size: 13px; font-weight: 600; }
 @media (max-width: 1024px) { .cs-dash-header { flex-wrap: wrap; } }
 @media (max-width: 768px) {
