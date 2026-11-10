@@ -35,12 +35,18 @@
         <p class="about-footnote">{{ $t('aboutUs.footnote') }}</p>
       </div>
       <aside class="community" aria-labelledby="community-title">
-        <img class="community-illustration" src="@/assets/images/about-storybook.png" alt="" aria-hidden="true">
+        <svg class="community-doodle" viewBox="0 0 90 70" fill="none" aria-hidden="true">
+          <path d="M19 52c9-18 26-22 43-20M49 32c-4-8-3-14 3-19 6 6 7 12 2 19M38 39c-8 0-13-3-15-9 8-3 14-1 18 6M60 32c2-7 7-11 14-10 0 7-4 12-12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 18v8m-4-4h8M76 48v6m-3-3h6" stroke="#d8ae57" stroke-width="2" stroke-linecap="round"/>
+        </svg>
         <h2 id="community-title">{{ isEnglish ? 'Find us' : '找到我们' }}</h2>
         <p class="community-intro">{{ isEnglish ? 'Stay connected with KidStory for updates and creative inspiration.' : '关注 KidStory，发现更多创作灵感与最新动态。' }}</p>
         <div class="community-grid">
           <div v-for="channel in channels" :key="channel.zh" class="community-channel">
-            <div class="qr-placeholder"><span>{{ isEnglish ? 'Coming soon' : '待添加' }}</span></div>
+            <div class="qr-placeholder">
+              <span class="qr-corners" aria-hidden="true"></span>
+              <span>{{ isEnglish ? 'Coming soon' : '待添加' }}</span>
+            </div>
             <h3>{{ isEnglish ? channel.en : channel.zh }}</h3>
           </div>
         </div>
@@ -87,154 +93,36 @@ export default {
 </script>
 
 <style scoped>
-.about-page {
-  min-height: calc(100vh - 120px);
-  padding: 24px 16px 48px;
-  background: #fffcf8;
-  box-sizing: border-box;
-}
-
-.about-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.about-back {
-  display: inline-flex;
-  align-items: center;
-  margin: 0 0 12px 4px;
-  padding: 0;
-  border: none;
-  background: none;
-  font-size: 13px;
-  color: #909399;
-  cursor: pointer;
-}
-
-.about-back:hover {
-  color: #8167a9;
-}
-
-.about-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: 32px;
-  align-items: start;
-}
-
-.about-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px 20px 28px;
-  border: 1px solid #eee6e1;
-  box-shadow: 0 8px 30px rgba(76, 45, 38, 0.04);
-  text-align: left;
-}
-
-.about-head h1 {
-  margin: 0 0 10px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.about-lead {
-  margin: 0 0 20px;
-  font-size: 12px;
-  line-height: 1.65;
-  color: #909399;
-}
-
-.about-section-title {
-  margin: 0 0 10px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: #b1b3b8;
-  text-transform: none;
-}
-
-.credit-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.credit-item {
-  padding: 14px 0;
-  border-top: 1px solid #f0f2f5;
-}
-
-.credit-item:first-child {
-  border-top: none;
-  padding-top: 4px;
-}
-
-.credit-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 8px;
-}
-
-.credit-link {
-  font-size: 12px;
-  color: #606266;
-  text-decoration: none;
-  word-break: break-all;
-}
-
-.credit-link:hover {
-  color: #8167a9;
-  text-decoration: underline;
-}
-
-.credit-license {
-  font-size: 10px;
-  color: #c0c4cc;
-  padding: 1px 6px;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-}
-
-.credit-desc {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #909399;
-}
-
-.about-footnote {
-  margin: 20px 0 0;
-  padding-top: 16px;
-  border-top: 1px dashed #ebeef5;
-  font-size: 11px;
-  line-height: 1.65;
-  color: #c0c4cc;
-}
-.community {
-  position: relative;
-  overflow: hidden;
-  padding: 34px;
-  border-radius: 24px;
-  background: #f4f1e7;
-  text-align: left;
-}
-.community-illustration { position: absolute; top: -18px; right: 0; width: 180px; height: 150px; object-fit: contain; pointer-events: none; }
-.community h2 { position: relative; margin: 0; color: #302028; font-size: 28px; font-weight: 750; }
-.community-intro { position: relative; max-width: 70%; margin: 12px 0 28px; color: #716477; font-size: 14px; line-height: 1.7; }
-.community-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.about-page { min-height: calc(100vh - 120px); box-sizing: border-box; padding: 42px 24px 80px; background: #fdfaf7; color: #382c30; }
+.about-inner { max-width: 1180px; margin: 0 auto; text-align: left; }
+.about-back { display: inline-flex; align-items: center; min-height: 36px; margin: 0 0 28px; padding: 0; border: 0; background: transparent; color: #756488; font-size: 14px; cursor: pointer; }
+.about-back:hover { color: #513c68; }
+.about-back:focus-visible, .credit-link:focus-visible { outline: 2px solid #8566a5; outline-offset: 4px; }
+.about-layout { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(36px, 6vw, 88px); align-items: start; }
+.about-card { padding: 16px 0 0; min-width: 0; }
+.about-head h1 { margin: 0 0 18px; color: #37272b; font-size: clamp(30px, 3vw, 42px); line-height: 1.2; letter-spacing: -.03em; }
+.about-lead { max-width: 440px; margin: 0; color: #746a6d; font-size: 15px; line-height: 1.8; }
+.about-section { margin-top: 45px; }
+.about-section-title { display: flex; align-items: center; gap: 14px; margin: 0 0 10px; color: #5b4b60; font-size: 14px; font-weight: 700; }
+.about-section-title::after { content: ''; height: 1px; flex: 1; background: #e6dce9; }
+.credit-list { list-style: none; margin: 0; padding: 0; }
+.credit-item { padding: 20px 0; border-bottom: 1px solid #eee6e8; }
+.credit-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.credit-link { color: #483652; font-size: 15px; font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.credit-link::after { content: ' ↗'; color: #a38ab3; }
+.credit-link:hover { color: #79569b; text-decoration: underline; }
+.credit-license { padding: 2px 7px; border-radius: 4px; background: #f1ebf4; color: #796681; font-size: 11px; }
+.credit-desc { margin: 9px 0 0; color: #7a7073; font-size: 13px; line-height: 1.7; }
+.about-footnote { margin: 24px 0 0; color: #91868b; font-size: 12px; line-height: 1.7; }
+.community { position: relative; overflow: hidden; min-width: 0; padding: 38px; border-radius: 28px; background: #f1eaf4; }
+.community-doodle { position: absolute; top: 25px; right: 32px; width: 85px; height: 66px; color: #9482a1; }
+.community h2 { margin: 0 110px 12px 0; color: #382a32; font-size: 28px; line-height: 1.3; }
+.community-intro { max-width: 390px; margin: 0 85px 30px 0; color: #75687a; font-size: 14px; line-height: 1.75; }
+.community-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 24px; border-radius: 20px; background: rgba(255, 255, 255, .62); }
 .community-channel { min-width: 0; text-align: center; }
-.qr-placeholder { display: grid; place-items: center; width: 100%; aspect-ratio: 1; box-sizing: border-box; border: 1px dashed #c8b4d9; border-radius: 14px; background: rgba(255, 255, 255, .65); color: #806b91; font-size: 13px; }
-.community-channel h3 { margin: 14px 0 0; color: #3f3041; font-size: 14px; font-weight: 700; }
-@media (max-width: 800px) {
-  .about-layout { grid-template-columns: 1fr; gap: 20px; }
-  .community { padding: 24px; }
-}
-@media (max-width: 420px) {
-  .community-grid { gap: 8px; }
-  .community { padding: 20px; }
-  .community-illustration { width: 125px; height: 110px; }
-  .community-channel h3 { font-size: 12px; }
-}
+.qr-placeholder { display: flex; position: relative; flex-direction: column; justify-content: center; align-items: center; gap: 12px; box-sizing: border-box; width: 100%; aspect-ratio: 1; border: 1px dashed #cdbdd6; border-radius: 10px; background: #fbf9fb; color: #8c7997; font-size: 12px; }
+.qr-corners { display: block; width: 24px; height: 24px; opacity: .7; background: linear-gradient(#a18daf, #a18daf) left top / 7px 2px no-repeat, linear-gradient(#a18daf, #a18daf) left top / 2px 7px no-repeat, linear-gradient(#a18daf, #a18daf) right top / 7px 2px no-repeat, linear-gradient(#a18daf, #a18daf) right top / 2px 7px no-repeat, linear-gradient(#a18daf, #a18daf) left bottom / 7px 2px no-repeat, linear-gradient(#a18daf, #a18daf) left bottom / 2px 7px no-repeat, linear-gradient(#a18daf, #a18daf) right bottom / 7px 2px no-repeat, linear-gradient(#a18daf, #a18daf) right bottom / 2px 7px no-repeat; }
+.community-channel h3 { margin: 15px 0 0; color: #59485e; font-size: 13px; line-height: 1.4; font-weight: 700; overflow-wrap: anywhere; }
+@media (max-width: 800px) { .about-page { padding: 24px 20px 56px; } .about-back { margin-bottom: 16px; } .about-layout { grid-template-columns: 1fr; gap: 32px; } .about-card { padding-top: 0; } .about-section { margin-top: 28px; } }
+@media (max-width: 480px) { .community { padding: 26px 20px; border-radius: 20px; } .community-doodle { top: 19px; right: 18px; width: 64px; } .community h2 { margin-right: 70px; font-size: 24px; } .community-intro { margin-right: 55px; } .community-grid { gap: 8px; padding: 14px; } .qr-placeholder { gap: 6px; font-size: 11px; } .community-channel h3 { font-size: 12px; } }
 </style>
