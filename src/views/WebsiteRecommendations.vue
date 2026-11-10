@@ -82,7 +82,8 @@ export default {
   --muted: #6b7280;
   --line: #eceff3;
   --bg: #fff;
-  max-width: 1180px;
+  width: 80%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 36px 20px 72px;
   text-align: left;
@@ -238,6 +239,10 @@ export default {
 }
 
 @media (max-width: 720px) {
+  .weblist-page {
+    width: 100%;
+  }
+
   .weblist-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px 12px;

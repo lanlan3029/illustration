@@ -92,6 +92,7 @@
               size="small"
               @change="handleLanguageChange"
               class="language-radio-group"
+              aria-label="Language / 语言"
             >
               <el-radio-button label="zh" value="zh">中文</el-radio-button>
               <el-radio-button label="en" value="en">EN</el-radio-button>
@@ -718,8 +719,13 @@ button.dropdown-item { width: 100%; border: 0; background: transparent; font-fam
 .search-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--ks-muted); }
 .search { width: 100%; min-width: 0; padding: 0; border: 0; outline: none; box-shadow: none; background: transparent; color: var(--ks-ink); font-size: 13px; }
 .search::placeholder { color: var(--ks-muted); }
-.language-radio-group { flex-wrap: nowrap; }
-.language-radio-group :deep(.el-radio-button__inner) { padding: 9px 10px; font-size: 13px; }
+.language-radio-group { flex-wrap: nowrap; padding: 3px; border: 1px solid #e6dced; border-radius: 999px; background: #f8f4fa; }
+.language-radio-group :deep(.el-radio-button__inner) { min-width: 42px; padding: 7px 10px; border: 0; border-radius: 999px !important; background: transparent; box-shadow: none !important; color: #766a7d; font-size: 13px; font-weight: 600; line-height: 18px; transition: color .2s ease, background-color .2s ease, box-shadow .2s ease; }
+.language-radio-group :deep(.el-radio-button:first-child .el-radio-button__inner) { border-left: 0; }
+.language-radio-group :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) { background: #6d3da2; color: #fff; box-shadow: 0 2px 5px rgba(78, 43, 107, .2) !important; }
+.language-radio-group :deep(.el-radio-button__original-radio:focus-visible + .el-radio-button__inner) { outline: 2px solid #6d3da2; outline-offset: 2px; }
+.language-radio-group :deep(.el-radio-button:not(.is-active) .el-radio-button__inner:hover) { color: #6d3da2; background: #eee5f4; }
+@media (prefers-reduced-motion: reduce) { .language-radio-group :deep(.el-radio-button__inner) { transition: none; } }
 .user-header-wrapper { display: flex; align-items: center; gap: 12px; }
 .points-pro-box { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px; border: var(--ks-line); border-radius: var(--ks-radius-sm); background: var(--ks-surface); color: var(--ks-ink); cursor: pointer; }
 .points-pro-box:hover { background: var(--ks-primary-soft); }

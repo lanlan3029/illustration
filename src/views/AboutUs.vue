@@ -5,6 +5,7 @@
         ‹ {{ $t('aboutUs.back') }}
       </button>
 
+      <div class="about-layout">
       <div class="about-card">
         <header class="about-head">
           <h1>{{ $t('aboutUs.title') }}</h1>
@@ -33,6 +34,18 @@
 
         <p class="about-footnote">{{ $t('aboutUs.footnote') }}</p>
       </div>
+      <aside class="community" aria-labelledby="community-title">
+        <img class="community-illustration" src="@/assets/images/about-storybook.png" alt="" aria-hidden="true">
+        <h2 id="community-title">{{ isEnglish ? 'Find us' : '找到我们' }}</h2>
+        <p class="community-intro">{{ isEnglish ? 'Stay connected with KidStory for updates and creative inspiration.' : '关注 KidStory，发现更多创作灵感与最新动态。' }}</p>
+        <div class="community-grid">
+          <div v-for="channel in channels" :key="channel.zh" class="community-channel">
+            <div class="qr-placeholder"><span>{{ isEnglish ? 'Coming soon' : '待添加' }}</span></div>
+            <h3>{{ isEnglish ? channel.en : channel.zh }}</h3>
+          </div>
+        </div>
+      </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -43,6 +56,16 @@ import { OPEN_SOURCE_CREDITS } from '@/data/openSourceCredits'
 export default {
   name: 'AboutUsPage',
   computed: {
+    isEnglish() {
+      return this.$i18n?.locale === 'en'
+    },
+    channels() {
+      return [
+        { zh: '公众号', en: 'WeChat' },
+        { zh: '小红书', en: 'Xiaohongshu' },
+        { zh: '小程序', en: 'Mini Program' },
+      ]
+    },
     credits() {
       return OPEN_SOURCE_CREDITS
     },
@@ -67,12 +90,12 @@ export default {
 .about-page {
   min-height: calc(100vh - 120px);
   padding: 24px 16px 48px;
-  background: #f5f6fa;
+  background: #fffcf8;
   box-sizing: border-box;
 }
 
 .about-inner {
-  max-width: 560px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -92,11 +115,19 @@ export default {
   color: #8167a9;
 }
 
+.about-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 32px;
+  align-items: start;
+}
+
 .about-card {
   background: #fff;
   border-radius: 12px;
   padding: 24px 20px 28px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #eee6e1;
+  box-shadow: 0 8px 30px rgba(76, 45, 38, 0.04);
   text-align: left;
 }
 
@@ -180,5 +211,30 @@ export default {
   font-size: 11px;
   line-height: 1.65;
   color: #c0c4cc;
+}
+.community {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border-radius: 24px;
+  background: #f4f1e7;
+  text-align: left;
+}
+.community-illustration { position: absolute; top: -18px; right: 0; width: 180px; height: 150px; object-fit: contain; pointer-events: none; }
+.community h2 { position: relative; margin: 0; color: #302028; font-size: 28px; font-weight: 750; }
+.community-intro { position: relative; max-width: 70%; margin: 12px 0 28px; color: #716477; font-size: 14px; line-height: 1.7; }
+.community-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.community-channel { min-width: 0; text-align: center; }
+.qr-placeholder { display: grid; place-items: center; width: 100%; aspect-ratio: 1; box-sizing: border-box; border: 1px dashed #c8b4d9; border-radius: 14px; background: rgba(255, 255, 255, .65); color: #806b91; font-size: 13px; }
+.community-channel h3 { margin: 14px 0 0; color: #3f3041; font-size: 14px; font-weight: 700; }
+@media (max-width: 800px) {
+  .about-layout { grid-template-columns: 1fr; gap: 20px; }
+  .community { padding: 24px; }
+}
+@media (max-width: 420px) {
+  .community-grid { gap: 8px; }
+  .community { padding: 20px; }
+  .community-illustration { width: 125px; height: 110px; }
+  .community-channel h3 { font-size: 12px; }
 }
 </style>
