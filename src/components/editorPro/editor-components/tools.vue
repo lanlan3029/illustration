@@ -66,7 +66,7 @@
 </template>
 
 <script setup name="Tools">
-import { inject, reactive, onDeactivated } from 'vue';
+import { inject, reactive, onDeactivated, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getPolygonVertices } from '@/components/editorPro/utils/math.js';
 import useSelect from '@/components/editorPro/hooks/select.js';
@@ -142,6 +142,15 @@ const cancelDraw = () => {
   endConflictTools();
   ensureObjectSelEvStatus(true, true);
 };
+
+const finishLineDrawing = () => {
+  state.isDrawingLineMode = false;
+  state.lineType = '';
+  ensureObjectSelEvStatus(true, true);
+};
+
+onMounted(() => canvasEditor?.canvas?.on('drawing:line:finished', finishLineDrawing));
+onBeforeUnmount(() => canvasEditor?.canvas?.off('drawing:line:finished', finishLineDrawing));
 
 const addText = (event) => {
   cancelDraw();

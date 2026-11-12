@@ -17,6 +17,9 @@
         </template>
       </Tooltip>
     </div>
+    <Button v-if="['rect', 'circle', 'triangle', 'polygon'].includes(selectType)" size="small" @click="removeFill">
+      无填充（显示边框）
+    </Button>
     <!-- <Divider plain></Divider> -->
   </div>
 </template>
@@ -62,6 +65,18 @@ const pictureBookSwatches = [
 const baseAttr = reactive({
   fill: '#ffffffff',
 });
+
+const removeFill = () => {
+  const object = canvasEditor.canvas.getActiveObject();
+  if (!object) return;
+  object.set('fill', 'transparent');
+  if (!object.stroke || !object.strokeWidth) {
+    object.set({ stroke: '#000000', strokeWidth: 2, strokeUniform: true });
+  }
+  baseAttr.fill = 'transparent';
+  canvasEditor.canvas.fire('object:modified', { target: object });
+  canvasEditor.canvas.requestRenderAll();
+};
 
 // 属性获取
 const getObjectAttr = (e) => {

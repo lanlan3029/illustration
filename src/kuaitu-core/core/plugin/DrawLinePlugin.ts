@@ -43,10 +43,6 @@ class DrawLinePlugin implements IPluginTempl {
     canvas.on('mouse:down', (o) => {
       if (!this.isDrawingLineMode) return;
       canvas.discardActiveObject();
-      canvas.getObjects().forEach((obj) => {
-        obj.selectable = false;
-        obj.hasControls = false;
-      });
       canvas.requestRenderAll();
       this.isDrawingLine = true;
       this.pointer = canvas.getPointer(o.e);
@@ -128,6 +124,8 @@ class DrawLinePlugin implements IPluginTempl {
       this.lineToDraw.evented = true;
       this.lineToDraw.hasControls = true;
       this.isDrawingLine = false;
+      this.isDrawingLineMode = false;
+      canvas.fire('drawing:line:finished' as any);
       canvas.discardActiveObject();
       canvas.renderAll();
       this.editor.saveState();
