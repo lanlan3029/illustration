@@ -110,7 +110,7 @@ export default {
 <script setup>
 // import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue';
 import { registerMoveableElement } from './utils/moveable.js';
-import { hexA2HSLA, HSLA2HexA, hex2RGB, RGB2HSL, hexA2RGBA, RGBA2HexA } from './utils/color.js';
+import { hexA2HSLA, HSLA2HexA, hex2RGB, hexA2RGBA, RGBA2HexA } from './utils/color.js';
 import { toGradientString, parseBackgroundValue, toolTip } from './utils/helper.js';
 import Tabs from './comps/Tabs.vue';
 import xiguan from './comps/svg.vue';
@@ -189,6 +189,7 @@ let mousedownGradientPointer = null;
 // 是否可以改变 palette sliderHux sliderAlpha 的 pointer 位置
 let canChangeHSLAPointerPos = true;
 let canChangeHSLAPointerPosTimer = null;
+let syncingColor = false;
 
 const predefine = ref([]); // 历史记录
 
@@ -216,10 +217,6 @@ const sliderAlphaBackgroundStyle = computed(() => {
 
 watch(activeGradient, (value) => {
   setColor(value.color);
-});
-
-watch(hex, (value) => {
-  onChangeHex(value);
 });
 
 watch(
@@ -264,8 +261,9 @@ const addHistory = debounce(async (value) => {
   predefine.value = head.concat(history);
 }, 300);
 
-const unwatchHSLA = watch(hsla, onChangeHSLA, { deep: true });
+const unwatchHSLA = watch(hsla, onChangeHSLA, { deep: true, flush: 'sync' });
 function onChangeHSLA(newHsla) {
+  if (syncingColor) return;
   const hexA = HSLA2HexA(...Object.values(newHsla));
 
   let value;
@@ -475,12 +473,16 @@ function setColor(color) {
   // watch props.value 再调用当前方法时无需再更新 hsla
   if (canChangeHSLAPointerPos) {
     const _hsla = hexA2HSLA(color);
-    hsla.h = _hsla[0];
-    hsla.s = _hsla[1];
-    hsla.l = _hsla[2];
-    hsla.a = _hsla[3];
-
-    updateColorData(color);
+    syncingColor = true;
+    try {
+      hsla.h = _hsla[0];
+      hsla.s = _hsla[1];
+      hsla.l = _hsla[2];
+      hsla.a = _hsla[3];
+      updateColorData(color);
+    } finally {
+      syncingColor = false;
+    }
     try {
       let x = hsla.s;
       const y = Math.round(100 - hsla.l);
@@ -511,28 +513,6 @@ function onKeyupGradientPointer(event) {
   const index = gradients.value.indexOf(activeGradient.value);
   gradients.value.splice(index, 1);
   activeGradient.value = gradients.value[0];
-}
-
-function onChangeHex(value) {
-  if (/^#(?:[0-9a-f]{3}){1,2}$/i.test(value)) {
-    const rgb = hex2RGB(value);
-    const [h, s, l] = RGB2HSL(...rgb);
-    hsla.h = h;
-    hsla.s = s;
-    hsla.l = l;
-
-    try {
-      elPalettePointer.value.style.left = `${hsla.s}%`;
-      elPalettePointer.value.style.top = `${100 - hsla.l}%`;
-      elSliderHuxPointer.value.style.left = `${(hsla.h / 360) * 100}%`;
-
-      hex.value = value;
-    } catch (error) {
-      console.log(error);
-    }
-  } else {
-    // hex.value = backendHex
-  }
 }
 
 // function onChangeAlpha(value) {

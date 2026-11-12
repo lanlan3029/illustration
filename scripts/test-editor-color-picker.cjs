@@ -1,0 +1,28 @@
+const fs = require('fs'), vm = require('vm'), ts = require('typescript');
+const { parse, compileScript } = require('@vue/compiler-sfc');
+const Vue = require('vue');
+const VueForSetup = { ...Vue, onMounted() {}, onBeforeUnmount() {} };
+const path = 'src/components/editorPro/editor-components/color-picker/index.vue';
+const source = compileScript(parse(fs.readFileSync(path, 'utf8')).descriptor, { id: 'picker-test' }).content;
+const code = ts.transpileModule(source, {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,esModuleInterop:true}}).outputText;
+const colors = {hexA2HSLA: () => [210, 50, 40, 1], HSLA2HexA: () => '#4488ccff', hex2RGB: () => [68,136,204], hexA2RGBA: () => [68,136,204,255], RGBA2HexA: () => '#4488ccff'};
+const helper = {parseBackgroundValue: v => v.startsWith('linear-gradient') ? '渐变' : '纯色', toGradientString: () => 'linear-gradient(90deg, #ff0000 0%, #0000ff 100%)', toolTip() {}};
+const out = {};
+vm.runInNewContext(code, {exports:out,window:{},console,setTimeout,clearTimeout,require:id => id==='vue' ? VueForSetup : id==='lodash-es' ? {debounce:fn=>fn} : id.includes('utils/color') ? colors : id.includes('utils/helper') ? helper : id.includes('utils/moveable') ? {registerMoveableElement:()=>({destroy(){}})} : {__esModule:true,default:{}}});
+const emissions = [], scope = Vue.effectScope();
+const selectedShape = { fill: 'transparent' };
+const props = Vue.reactive({value:'#4488ccff',modes:['色卡','渐变','纯色'],defaultColor:'#ffffffff',defaultGradient:'linear-gradient(90deg, #ff0000 0%, #0000ff 100%)',defaultImage:'',swatches:[]});
+let ui;
+scope.run(() => { ui = out.default.setup(props, {emit:(...args)=>{ emissions.push(args); if (args[0] === 'change') selectedShape.fill = args[1].color; },expose(){}}); });
+for (const key of ['elPalettePointer','elSliderHuxPointer','elSliderAlphaPointer']) ui[key].value = {style:{}};
+(async () => {
+ ui.setColor('#4488ccff'); await Vue.nextTick();
+ if (emissions.some(e => e[0] === 'change')) throw Error('synchronizing a color emitted change');
+ props.value = '#123456ff'; await Vue.nextTick(); await Vue.nextTick();
+ if (emissions.some(e => e[0] === 'change') || selectedShape.fill !== 'transparent') throw Error('reselection changed transparent fill');
+ ui.onSwatchPick('#abcdef'); await Vue.nextTick();
+ if (!emissions.some(e => e[0] === 'change' && e[1].color === '#abcdefff')) throw Error('swatch choice did not emit change');
+ emissions.length=0; ui.hsla.s = 35;
+ if (!emissions.some(e=>e[0] === 'change')) throw Error('palette interaction did not emit change');
+ scope.stop(); console.log('PASS: programmatic initialization and selection emit no paint change; swatch and palette interactions still emit');
+})().catch(e=>{console.error(e);process.exitCode=1});
