@@ -577,7 +577,7 @@ async function onClickStraw(val) {
 const onInputBlur = (e) => {
   const fixColor = patchHexColor(e.target.value);
   emit('blur', fixColor);
-  emit('update:value', fixColor);
+  updateValue(fixColor);
 };
 
 function patchHexColor(str) {

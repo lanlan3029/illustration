@@ -28,6 +28,7 @@ class DrawLinePlugin implements IPluginTempl {
   pointer: any;
   pointerPoints: any;
   isDrawingLine: boolean;
+  onLineFinished?: () => void;
   constructor(public canvas: fabric.Canvas, public editor: IEditor) {
     this.isDrawingLine = false;
     this.isDrawingLineMode = false;
@@ -40,6 +41,14 @@ class DrawLinePlugin implements IPluginTempl {
 
   init() {
     const { canvas } = this;
+    // Thin lines need a usable screen-space hit area, including after import.
+    canvas.on('object:added', (event) => {
+      const object = event.target;
+      if (object && ['line', 'arrow', 'thinTailArrow'].includes(object.type || '')) {
+        object.set('padding', Math.max(object.padding || 0, 8));
+        object.setCoords();
+      }
+    });
     canvas.on('mouse:down', (o) => {
       if (!this.isDrawingLineMode) return;
       canvas.discardActiveObject();
@@ -125,7 +134,8 @@ class DrawLinePlugin implements IPluginTempl {
       this.lineToDraw.hasControls = true;
       this.isDrawingLine = false;
       this.isDrawingLineMode = false;
-      canvas.fire('drawing:line:finished' as any);
+      this.onLineFinished?.();
+      this.onLineFinished = undefined;
       canvas.discardActiveObject();
       canvas.renderAll();
       this.editor.saveState();
@@ -136,8 +146,9 @@ class DrawLinePlugin implements IPluginTempl {
     this.lineType = params;
   }
 
-  setMode(params: any) {
+  setMode(params: any, onLineFinished?: () => void) {
     this.isDrawingLineMode = params;
+    this.onLineFinished = params ? onLineFinished : undefined;
     if (!this.isDrawingLineMode) {
       this.endRest();
     }

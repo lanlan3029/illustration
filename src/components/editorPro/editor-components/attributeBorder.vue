@@ -4,11 +4,21 @@
     <Divider plain orientation="left"><h4>边框</h4></Divider>
     <Form :label-width="40" class="attr-form form-wrap">
       <FormItem :label="$t('color')">
-        <ColorPicker
-          v-model="baseAttr.stroke"
-          @on-change="(value) => changeCommon('stroke', value)"
-          alpha
-        />
+        <Tooltip placement="top" theme="light" class="border-color-tooltip">
+          <button type="button" class="border-color-button" aria-label="选择边框颜色">
+            <span class="border-color-swatch" :style="{ background: baseAttr.stroke }"></span>
+            <span>选择颜色</span>
+          </button>
+          <template #content>
+            <color-picker
+              v-model:value="baseAttr.stroke"
+              :modes="['色卡', '渐变', '纯色']"
+              :swatches="pictureBookSwatches"
+              @change="changeStrokePaint"
+              @native-pick="pickNativeStroke"
+            />
+          </template>
+        </Tooltip>
       </FormItem>
       <FormItem :label="$t('attributes.width')">
         <InputNumber
@@ -35,10 +45,13 @@
 <script setup name="AttrBute">
 import useSelect from '@/components/editorPro/hooks/select.js'
 import InputNumber from '@/components/editorPro/editor-components/inputNumber/inputNumber.vue'
+import colorPicker from './color-picker'
+import { pictureBookSwatches, paintToCss, gradientFromPicker } from './color-picker/paint'
+import { debounce } from 'lodash-es'
 import { getCurrentInstance, onMounted, onBeforeUnmount, reactive } from 'vue'
 
 const update = getCurrentInstance()
-const { isOne, isGroup, canvasEditor } = useSelect()
+const { fabric, isOne, isGroup, canvasEditor } = useSelect()
 
 const groupType = ['group']
 
@@ -91,7 +104,7 @@ const getObjectAttr = (e) => {
   const activeObject = canvasEditor.canvas.getActiveObject()
   if (e && e.target && e.target !== activeObject) return
   if (activeObject && !groupType.includes(activeObject.type)) {
-    baseAttr.stroke = activeObject.get('stroke')
+    baseAttr.stroke = paintToCss(activeObject.get('stroke'), activeObject)
     baseAttr.strokeWidth = activeObject.get('strokeWidth')
     const strokeDashArray = JSON.stringify(activeObject.get('strokeDashArray') || [])
     const target = strokeDashList.find(
@@ -104,6 +117,32 @@ const getObjectAttr = (e) => {
 }
 
 const ARROW_TYPES = ['arrow', 'thinTailArrow']
+
+const savePaint = debounce((object) => {
+  canvasEditor.canvas.fire('object:modified', { target: object })
+}, 300)
+
+const changeStrokePaint = (value) => {
+  const object = canvasEditor.canvas.getActiveObject()
+  if (!object) return
+  const paint = value.mode === '渐变'
+    ? gradientFromPicker(fabric, value, object)
+    : String(value.color).replace('NaN', '')
+  object.set({ stroke: paint, strokeUniform: true })
+  if (!object.strokeWidth) {
+    object.set('strokeWidth', 2)
+    baseAttr.strokeWidth = 2
+  }
+  if (ARROW_TYPES.includes(object.type)) object.set('fill', paint)
+  canvasEditor.canvas.requestRenderAll()
+  savePaint(object)
+}
+
+const pickNativeStroke = (color) => {
+  if (!baseAttr.stroke.startsWith('linear-gradient')) {
+    changeStrokePaint({ mode: '纯色', color })
+  }
+}
 
 const changeCommon = (key, value) => {
   const activeObject = canvasEditor.canvas.getActiveObjects()[0]
@@ -138,6 +177,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  savePaint.flush()
   canvasEditor.off('selectCancel', selectCancel)
   canvasEditor.off('selectOne', getObjectAttr)
   canvasEditor.canvas.off('object:modified', getObjectAttr)
@@ -155,4 +195,13 @@ onBeforeUnmount(() => {
 :deep(.ivu-select) {
   width: 100%;
 }
+.border-color-tooltip, :deep(.border-color-tooltip .ivu-tooltip-rel) { display: block; width: 100%; }
+.border-color-button {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px;
+  padding: 3px 8px; border: 1px solid #dce1e8; border-radius: 5px;
+  background: #fff; color: #384252; cursor: pointer; text-align: left;
+}
+.border-color-button:hover { border-color: #8bbbf1; }
+.border-color-button:focus-visible { outline: 2px solid #2d8cf0; outline-offset: 2px; }
+.border-color-swatch { width: 22px; height: 22px; flex: none; border: 1px solid #dce1e8; border-radius: 3px; }
 </style>

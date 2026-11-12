@@ -35,8 +35,8 @@ fabric.Arrow = fabric.util.createClass(fabric.Line, {
     ctx.lineTo(-10, -5);
     ctx.closePath();
     ctx.lineWidth = this.lineWidth;
-    ctx.strokeStyle = this.stroke;
-    ctx.fillStyle = this.fill;
+    ctx.strokeStyle = this.stroke && this.stroke.toLive ? this.stroke.toLive(ctx) : this.stroke;
+    ctx.fillStyle = this.fill && this.fill.toLive ? this.fill.toLive(ctx) : this.fill;
     ctx.stroke();
     ctx.fill();
     ctx.restore();

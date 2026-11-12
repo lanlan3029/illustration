@@ -17,9 +17,18 @@
         </template>
       </Tooltip>
     </div>
-    <Button v-if="['rect', 'circle', 'triangle', 'polygon'].includes(selectType)" size="small" @click="removeFill">
-      无填充（显示边框）
-    </Button>
+    <button
+      v-if="['rect', 'circle', 'triangle', 'polygon'].includes(selectType)"
+      type="button"
+      class="no-fill-button"
+      :class="{ 'is-active': baseAttr.noFill }"
+      :aria-pressed="baseAttr.noFill"
+      @click="toggleFill"
+    >
+      <span class="no-fill-icon" aria-hidden="true"></span>
+      <span>{{ baseAttr.noFill ? '恢复填充' : '无填充' }}</span>
+      <span class="no-fill-status">{{ baseAttr.noFill ? '当前无填充' : '保留边框' }}</span>
+    </button>
     <!-- <Divider plain></Divider> -->
   </div>
 </template>
@@ -27,53 +36,46 @@
 <script setup name="AttrBute">
 import useSelect from '@/components/editorPro/hooks/select';
 import colorPicker from './color-picker';
-import { toRaw } from 'vue';
+import { pictureBookSwatches, paintToCss, gradientFromPicker } from './color-picker/paint';
+import { debounce } from 'lodash-es';
 import { getCurrentInstance, onMounted, onBeforeUnmount,reactive} from 'vue';
 const update = getCurrentInstance();
 const { fabric, selectType, canvasEditor, isOne } = useSelect();
-const angleKey = 'gradientAngle';
 
 /** 颜色由 stroke 而非 fill 控制的元素（画笔路径、直线、箭头等） */
 const STROKE_BASED_TYPES = ['path', 'line', 'arrow', 'thinTailArrow'];
 
 const isStrokeBasedType = (type) => STROKE_BASED_TYPES.includes(type);
 
-/** 绘本常用色卡（色卡 Tab 中小格点击即设为 fill） */
-const pictureBookSwatches = [
-  { label: '奶油白（纸张感）', hex: '#FFFDF5' },
-  { label: '温暖灰', hex: '#E5E1DA' },
-  { label: '深石灰', hex: '#4A4A4A' },
-  { label: '炭黑', hex: '#2D2926' },
-  { label: '蜜桃粉', hex: '#FFCAD4' },
-  { label: '珊瑚橙', hex: '#F7A072' },
-  { label: '明亮黄', hex: '#F9DC5C' },
-  { label: '芥末黄', hex: '#D4A373' },
-  { label: '砖红', hex: '#BC6C25' },
-  { label: '浅陶土', hex: '#DDB892' },
-  { label: '薄荷绿', hex: '#B7E4C7' },
-  { label: '橄榄绿', hex: '#7B8F62' },
-  { label: '天青蓝', hex: '#A2D2FF' },
-  { label: '牛仔蓝', hex: '#4895EF' },
-  { label: '雾霾蓝', hex: '#8E9AAF' },
-  { label: '香芋紫', hex: '#BDB2FF' },
-  { label: '森林深绿', hex: '#2D6A4F' },
-  { label: '午夜蓝', hex: '#003049' },
-  { label: '梅子色', hex: '#6D597A' },
-  { label: '焦糖褐', hex: '#603808' },
-];
 // 属性值
 const baseAttr = reactive({
   fill: '#ffffffff',
+  noFill: false,
 });
+// Keep each shape's previous paint, including a Fabric gradient, while editing.
+const previousFills = new WeakMap();
 
-const removeFill = () => {
+const savePaint = debounce((object) => {
+  canvasEditor.canvas.fire('object:modified', { target: object });
+}, 300);
+
+const toggleFill = () => {
   const object = canvasEditor.canvas.getActiveObject();
   if (!object) return;
-  object.set('fill', 'transparent');
-  if (!object.stroke || !object.strokeWidth) {
-    object.set({ stroke: '#000000', strokeWidth: 2, strokeUniform: true });
+  savePaint.flush();
+  if (baseAttr.noFill) {
+    const fill = previousFills.get(object) ?? '#ffffff';
+    object.set('fill', fill);
+    baseAttr.fill = paintToCss(fill, object);
+    baseAttr.noFill = false;
+  } else {
+    previousFills.set(object, object.get('fill'));
+    object.set('fill', 'transparent');
+    if (!object.stroke) object.set('stroke', '#000000');
+    if (!object.strokeWidth) object.set('strokeWidth', 2);
+    object.set('strokeUniform', true);
+    baseAttr.noFill = true;
   }
-  baseAttr.fill = 'transparent';
   canvasEditor.canvas.fire('object:modified', { target: object });
   canvasEditor.canvas.requestRenderAll();
 };
@@ -86,17 +88,12 @@ const getObjectAttr = (e) => {
   if (activeObject && isOne) {
     if (isStrokeBasedType(activeObject.type)) {
       const stroke = activeObject.get('stroke');
-      if (typeof stroke === 'string' && stroke) {
-        baseAttr.fill = stroke;
-      }
+      baseAttr.fill = paintToCss(stroke, activeObject);
       return;
     }
     const fill = activeObject.get('fill');
-    if (typeof fill === 'string') {
-      baseAttr.fill = fill;
-    } else {
-      baseAttr.fill = fabricGradientToCss(fill, activeObject);
-    }
+    baseAttr.noFill = fill === 'transparent' || fill == null;
+    if (!baseAttr.noFill) baseAttr.fill = paintToCss(fill, activeObject);
   }
 };
 
@@ -107,70 +104,25 @@ const colorChange = (value) => {
   const color = String(value.color).replace('NaN', '');
   const strokeBased = isStrokeBasedType(activeObject.type);
 
+  const paint = value.mode === '渐变'
+    ? gradientFromPicker(fabric, value, activeObject)
+    : color;
   if (strokeBased) {
-    if (value.mode === '纯色' || value.mode === '色卡') {
-      activeObject.set('stroke', color);
-      // 箭头类元素箭头头部使用 fill 渲染，需同步
-      if (activeObject.type === 'arrow' || activeObject.type === 'thinTailArrow') {
-        activeObject.set('fill', color);
-      }
+    activeObject.set('stroke', paint);
+    if (activeObject.type === 'arrow' || activeObject.type === 'thinTailArrow') {
+      activeObject.set('fill', paint);
     }
-    canvasEditor.canvas.renderAll();
-    return;
-  }
-
-  if (value.mode === '纯色' || value.mode === '色卡') {
-    activeObject.set('fill', color);
-  } else if (value.mode === '渐变') {
-    const currentGradient = cssToFabricGradient(
-      toRaw(value.stops),
-      activeObject.width,
-      activeObject.height,
-      value.angle
-    );
-    activeObject.set('fill', currentGradient, value.angle);
-    activeObject.set(angleKey, value.angle);
+  } else {
+    activeObject.set('fill', paint);
+    previousFills.set(activeObject, paint);
+    baseAttr.noFill = false;
   }
   canvasEditor.canvas.renderAll();
+  savePaint(activeObject);
 };
 
 const dropColor = (value) => {
-  colorChange(value);
-};
-
-const fabricGradientToCss = (val, activeObject) => {
-  // 渐变类型
-  if (!val) return;
-  const angle = activeObject.get(angleKey, val.degree);
-  const colorStops = val.colorStops.map((item) => {
-    return item.color + ' ' + item.offset * 100 + '%';
-  });
-  return `linear-gradient(${angle}deg, ${colorStops})`;
-};
-// css转Fabric渐变
-const cssToFabricGradient = (stops, width, height, angle) => {
-  const gradAngleToCoords = (paramsAngle) => {
-    const anglePI = -parseInt(paramsAngle, 10) * (Math.PI / 180);
-    return {
-      x1: Math.round(50 + Math.sin(anglePI) * 50) / 100,
-      y1: Math.round(50 + Math.cos(anglePI) * 50) / 100,
-      x2: Math.round(50 + Math.sin(anglePI + Math.PI) * 50) / 100,
-      y2: Math.round(50 + Math.cos(anglePI + Math.PI) * 50) / 100,
-    };
-  };
-
-  const angleCoords = gradAngleToCoords(angle);
-  return new fabric.Gradient({
-    type: 'linear',
-    gradientUnits: 'pencentage', // pixels or pencentage 像素 或者 百分比
-    coords: {
-      x1: angleCoords.x1 * width,
-      y1: angleCoords.y1 * height,
-      x2: angleCoords.x2 * width,
-      y2: angleCoords.y2 * height,
-    },
-    colorStops: [...stops],
-  });
+  if (!baseAttr.fill.startsWith('linear-gradient')) colorChange({ mode: '纯色', color: value });
 };
 
 const selectCancel = () => {
@@ -186,6 +138,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  savePaint.flush();
   canvasEditor.off('selectCancel', selectCancel);
   canvasEditor.off('selectOne', getObjectAttr);
   canvasEditor.canvas.off('object:modified', getObjectAttr);
@@ -193,6 +146,21 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.no-fill-button {
+  display: flex; align-items: center; gap: 9px; width: 100%; min-height: 40px;
+  margin-top: 8px; padding: 6px 10px; border: 1px solid #e2e5eb; border-radius: 6px;
+  background: #fff; color: #384252; cursor: pointer; text-align: left; font-size: 13px;
+}
+.no-fill-button:hover { border-color: #8bbbf1; background: #f7faff; }
+.no-fill-button:focus-visible { outline: 2px solid #2d8cf0; outline-offset: 2px; }
+.no-fill-button.is-active { border-color: #529ce9; background: #edf6ff; color: #1766ad; }
+.no-fill-icon {
+  width: 22px; height: 22px; flex: none; border: 1px solid #ccd3dd; border-radius: 4px;
+  background: linear-gradient(135deg, transparent 46%, #e05d67 47%, #e05d67 53%, transparent 54%),
+    conic-gradient(#e4e7eb 25%, #fff 0 50%, #e4e7eb 0 75%, #fff 0) 0 0 / 10px 10px;
+}
+.no-fill-status { margin-left: auto; color: #687587; font-size: 12px; }
+.no-fill-button.is-active .no-fill-status { color: #1766ad; }
 .color-bar {
   width: 30px;
   height: 30px;
