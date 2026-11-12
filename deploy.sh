@@ -75,6 +75,7 @@ check_http_code "${SITE}/books" "200" "SPA 路由 /books" || SMOKE_FAILED=1
 check_http_code "${SITE}/blog" "200" "SPA 路由 /blog" || SMOKE_FAILED=1
 check_http_code "${SITE}/sitemap.xml" "200" "sitemap.xml" || SMOKE_FAILED=1
 check_http_code "${SITE}/robots.txt" "200" "robots.txt" || SMOKE_FAILED=1
+check_http_code "${SITE}/editor-design-templates/design-64f9d2d08376410f92b9a3aace2d7805.json" "200" "设计拼图模板 JSON" || SMOKE_FAILED=1
 check_http_code "${SITE}/__missing_page__" "404" "不存在的页面" || SMOKE_FAILED=1
 check_http_code "${SITE}/blog/__missing_post__" "404" "不存在的文章" || SMOKE_FAILED=1
 check_http_code "${SITE}/books/not-a-valid-id" "404" "无效作品编号" || SMOKE_FAILED=1

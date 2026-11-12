@@ -32,7 +32,7 @@ www.kidstory.cc {
 		header Cache-Control "no-cache, must-revalidate"
 		file_server
 	}
-	@static path /img/* /images/* /blog-assets/* /fonts/* /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
+	@static path /editor-design-templates/* /img/* /images/* /blog-assets/* /fonts/* /js/* /css/* /favicon* /android-chrome* /apple-touch-icon* /site.webmanifest /sitemap.xml /robots.txt
 	handle @static {
 		file_server
 	}
