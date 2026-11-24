@@ -1,5 +1,23 @@
 [
   {
+    "id": "christmas-elegant-quirky-single",
+    "title": "Elegant Quirky Christmas Character",
+    "titleZh": "优雅怪趣圣诞童话角色",
+    "prompt": "Inspired by the reference image, create a single Christmas illustration of [subject], elegant, playful, quirky and warm, with the charm of a vintage fairy-tale picture book and festive decorative art.\n\nGive the subject an imaginative anthropomorphic design, with a slender body and limbs, a moderately exaggerated head, nose, eyes or tail, a light pose and an innocent, humorous expression. Use graceful contours with curled, pointed or asymmetrical details.\n\nDress it in refined Christmas clothing or accessories, using deep red, burgundy, forest green, cream and a little black. Add stripes, dots, plaid, snowflakes or delicate botanical patterns. Keep the colors soft and vintage, with delicate hand-painted strokes and subtle paper texture.\n\nShow the entire subject centered with generous space around it, against a clean white or warm white background. A faint hand-drawn shadow may sit beneath it. Suitable for a Christmas card, holiday decoration or standalone illustration.\n\nNo text, watermarks, borders, complex scenes, multiple subjects, grids, photographic realism, smooth vector icons or obvious 3D effects.",
+    "promptZh": "参照图片的风格，生成一幅独立的 [主体] 圣诞插画，优雅、俏皮、古怪又温暖，带有复古童话绘本和节日装饰画的气质。\n\n主体采用富有想象力的拟人化造型，身体和四肢纤长，头部、鼻子、眼睛或尾巴适度夸张，姿态轻盈，表情天真又带一点幽默。轮廓优美，局部加入卷曲、尖尖或不对称的细节。\n\n穿着精致的圣诞服饰或佩戴节日配件，以深红、酒红、森林绿、奶油白和少量黑色为主，点缀条纹、圆点、格纹、雪花或细小的植物纹样。色彩柔和而略显复古，带有细腻的手绘笔触与轻微纸感。\n\n主体完整居中，四周留白，背景为干净的白色或暖白色，脚下可有一抹淡淡的手绘阴影。画面适合作为圣诞贺卡、节日装饰或独立插画素材。\n\n不要文字、水印、边框、复杂场景、多个主体、九宫格、照片质感、光滑矢量图标或明显的3D效果。",
+    "image": "/images/prompt/elegant-quirky-christmas.webp",
+    "custom": true
+  },
+  {
+    "id": "christmas-pen-ink-single",
+    "title": "Vintage Christmas Pen and Ink Character",
+    "titleZh": "复古圣诞钢笔手绘单主体",
+    "prompt": "A single Christmas illustration of [subject], playful, quirky and warm, like a hand-drawn vintage children's picture book. Draw only one independent subject.\n\nUse fine black pen and ink lines, slightly rough and irregular, with natural handmade character. Build the subject from simple circles and ovals, with amusing proportions, slender limbs and an innocent, humorous expression. Use dense, tiny short strokes, cross-hatching and stippling for feathers, fur, clothing or body texture; avoid overly smooth edges.\n\nKeep the palette primarily black and white, with a little warm vermilion, brick red or orange-red on a scarf, hat or one or two small details. Make the color slightly uneven, as if painted by hand. Use a clean, warm pale cream or light apricot background without a complex scene.\n\nShow the complete subject centered with space around it, and add a few loose black horizontal strokes beneath its feet. The mood is cozy, relaxed and gently humorous.\n\nNo text, watermarks, borders, multiple subjects, grids, smooth vector icons, 3D, gradients or photographic effects.",
+    "promptZh": "参考图片中的黑色细钢笔线条、排线纹理、黑白为主配少量朱红的配色，以及天真幽默的童书插画气质；只绘制一个独立主体。一幅单独的[主体]圣诞插画，俏皮、古怪又温暖，像一本手工绘制的复古儿童绘本。\n\n用黑色钢笔和墨水绘制，细线条略显粗糙、不规则，保留自然随性的手绘感。主体由简单的圆形和椭圆形组成，比例有趣，四肢纤细，表情天真而幽默。用密集而细小的短线、交叉排线和点状笔触表现羽毛、毛发、衣物或身体的纹理；边缘不要过于光滑。\n\n以黑白为主，仅在围巾、帽子或其他一两个小细节上点缀少量温暖的朱红色、砖红色或橘红色，色块有轻微手工上色的不均匀感。背景为温暖的浅奶油色或淡杏色，干净、没有复杂场景。\n\n主体完整居中，四周留白，脚下画几笔随意的黑色横线作为地面。画面温馨、轻松、略带幽默，适合作为独立的圣诞插画素材。\n\n不要文字、水印、边框，不要多个主体，不要九宫格，不要光滑的矢量图标、3D效果、渐变或照片质感。",
+    "image": "/images/prompt/christmas-pen-ink.png",
+    "custom": true
+  },
+  {
     "id": "christmas-001",
     "title": "Sloth Hanging from Candy Cane Christmas Card",
     "prompt": "An adorable printable Christmas card design, aspect ratio 1:1.4. A cute, slow-moving sloth hangs upside down from a candy cane that stretches horizontally across the top of the card. The sloth is wearing a festive ugly Christmas sweater with a pixelated snowflake pattern. He is holding a star tree topper in his slow claws, trying to reach a Christmas tree that is just out of frame. The background is a solid deep teal color to make the sloth pop. Below the sloth, the text reads: Slowly getting into the Spirit in a relaxed, hand-lettered font.",

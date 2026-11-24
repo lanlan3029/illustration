@@ -111,7 +111,7 @@
                                 </button>
                             </template>
                         </div>
-                        <p v-if="activeStyleCategory === 'christmas' || selectedChristmasItem" class="christmas-credit">
+                        <p v-if="(activeStyleCategory === 'christmas' || selectedChristmasItem) && !(selectedChristmasItem && selectedChristmasItem.custom)" class="christmas-credit">
                             <template v-if="selectedChristmasItem">{{ $i18n.locale === 'en' ? 'Prompt by' : '提示词作者' }}: <a :href="selectedChristmasItem.authorUrl || christmasSource" target="_blank" rel="noopener noreferrer">{{ selectedChristmasItem.author }}</a> · </template>
                             <a :href="christmasSource" target="_blank" rel="noopener noreferrer">YouMind OpenLab</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · {{ $i18n.locale === 'en' ? 'Defaults substituted for template fields' : '已将模板字段替换为默认内容' }}
                             <a v-if="selectedChristmasItem && selectedChristmasItem.sourceUrl" :href="selectedChristmasItem.sourceUrl" target="_blank" rel="noopener noreferrer"> · {{ $i18n.locale === 'en' ? 'Original' : '原文' }}</a>
