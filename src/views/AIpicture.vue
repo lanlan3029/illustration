@@ -589,6 +589,10 @@ import {
     visibleIllustrationCategoryIds,
 } from '@/utils/illustrationStyleTabs'
 
+// These server-side Christmas styles use their preview as a style-only reference.
+const CHRISTMAS_STYLE_IDS = new Set(Array.from({ length: 13 }, (_, i) => 2078 + i))
+const isChristmasReferenceStyle = (style) => Boolean(style && CHRISTMAS_STYLE_IDS.has(Number(style.id)))
+
 export default {
     directives: { lazyStyleImage },
     name: 'AIPicture',
@@ -651,6 +655,8 @@ export default {
             handrawStyleReferenceAuto: readHandrawStyleReferenceAutoPreference(),
             handrawAutoReferenceIndex: -1,
             handrawStyleReferenceLoading: false,
+            styleReferenceRequestId: 0,
+            christmasReferenceRemoved: false,
 
             generating: false,
             generatedImageUrl: null,
@@ -853,7 +859,7 @@ export default {
             const isDoodle = this.isObjectDoodleStyle(style)
             const isZine = this.isPoeticZineStyle(style)
             // 底词固定在网站：输入框只显示 C，生成时自动前置 A（basePrompt，不对用户展示）
-            if (isZine || isDoodle || style?.prependBaseOnGenerate || isHandrawLibStyle(style)) {
+            if (isZine || isDoodle || style?.prependBaseOnGenerate || isHandrawLibStyle(style) || isChristmasReferenceStyle(style)) {
                 let base = ''
                 if (isDoodle) {
                     // 喜茶无字：始终用本地强化底词，避免线上旧文案未绑定参考图
@@ -886,7 +892,7 @@ export default {
                     prompt = this.enrichObjectDoodlePrompt(prompt)
                 }
             }
-            if (this.handrawStyleReferenceActive) {
+            if (this.handrawStyleReferenceActive || (isChristmasReferenceStyle(style) && this.handrawAutoReferenceIndex >= 0)) {
                 const loc = this.$i18n?.locale === 'en' ? 'en' : 'zh'
                 prompt = appendHandrawReferenceIsolation(prompt, loc)
             }
@@ -1223,6 +1229,8 @@ export default {
             this.selectedStyleId = null
         },
         removeHandrawAutoReference() {
+            this.styleReferenceRequestId += 1
+            this.handrawStyleReferenceLoading = false
             const idx = this.handrawAutoReferenceIndex
             if (idx >= 0 && idx < this.referenceImageUrls.length) {
                 this.referenceImageUrls.splice(idx, 1)
@@ -1239,9 +1247,15 @@ export default {
         },
         async syncHandrawStyleReference(style) {
             this.removeHandrawAutoReference()
-            if (!style || !isHandrawLibStyle(style) || !this.handrawStyleReferenceAuto) {
+            const christmas = isChristmasReferenceStyle(style)
+            if (!style || (!christmas && (!isHandrawLibStyle(style) || !this.handrawStyleReferenceAuto)) || (christmas && this.christmasReferenceRemoved)) {
                 return
             }
+            if (this.referenceImageUrls.length >= 10) {
+                if (christmas) ElMessage.warning({ message: '参考图已满，请移除一张后重新选择风格', offset: 200 })
+                return
+            }
+            const requestId = this.styleReferenceRequestId
             const previewUrl = this.styleListImage(style) || style.image || style.imageUrl
             if (!previewUrl) return
             this.handrawStyleReferenceLoading = true
@@ -1252,12 +1266,16 @@ export default {
                 })
                 let dataUrl = await this.blobToDataUrl(blob)
                 dataUrl = await this.compressDataUrlIfNeeded(dataUrl, 420 * 1024)
+                if (requestId !== this.styleReferenceRequestId || this.selectedStyleId !== style.id) return
                 this.referenceImageUrls.unshift(dataUrl)
                 this.handrawAutoReferenceIndex = 0
             } catch (err) {
-                console.warn('[AIpicture] handraw style reference load failed', err)
+                console.warn('[AIpicture] style reference load failed', err)
+                if (christmas && requestId === this.styleReferenceRequestId) {
+                    ElMessage.error({ message: '风格参考图加载失败，请重新选择该风格', offset: 200 })
+                }
             } finally {
-                this.handrawStyleReferenceLoading = false
+                if (requestId === this.styleReferenceRequestId) this.handrawStyleReferenceLoading = false
             }
         },
         onHandrawStyleReferenceAutoChange() {
@@ -1273,6 +1291,7 @@ export default {
         },
 
         async selectStyle(styleId) {
+            this.christmasReferenceRemoved = false
             this.selectedStyleId = styleId
             this.selectedOaiTemplateId = null
             const style = this.styles.find(s => s.id === styleId)
@@ -1474,8 +1493,12 @@ export default {
             if (index < 0 || index >= this.referenceImageUrls.length) return
             if (index === this.handrawAutoReferenceIndex) {
                 this.handrawAutoReferenceIndex = -1
-                this.handrawStyleReferenceAuto = false
-                writeHandrawStyleReferenceAutoPreference(false)
+                if (isChristmasReferenceStyle(this.selectedStyle)) {
+                    this.christmasReferenceRemoved = true
+                } else {
+                    this.handrawStyleReferenceAuto = false
+                    writeHandrawStyleReferenceAutoPreference(false)
+                }
             } else if (index < this.handrawAutoReferenceIndex) {
                 this.handrawAutoReferenceIndex -= 1
             }
@@ -1677,6 +1700,17 @@ export default {
             } else if (!this.generatedPrompt) {
                 ElMessage.warning({ message: this.$t('aiPicture.needPrompt') || '请先描述你想要的画面', offset: 200 })
                 return
+            }
+            if (isChristmasReferenceStyle(this.selectedStyle) && !this.christmasReferenceRemoved) {
+                if (this.handrawStyleReferenceLoading) {
+                    ElMessage.warning({ message: '风格参考图正在加载，请稍候', offset: 200 })
+                    return
+                }
+                if (this.handrawAutoReferenceIndex < 0) await this.syncHandrawStyleReference(this.selectedStyle)
+                if (this.handrawAutoReferenceIndex < 0) {
+                    ElMessage.warning({ message: '风格参考图未能加载，请重新选择风格后再试', offset: 200 })
+                    return
+                }
             }
             let refs = (this.referenceImageUrls || []).filter(Boolean)
             if (
